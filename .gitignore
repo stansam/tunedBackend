@@ -24,7 +24,6 @@ tunedessays
 *.json
 tail_src/
 node_modules
-*.config.
-config/
+*.config
 *.docx
 *.pdf

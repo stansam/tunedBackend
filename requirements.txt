@@ -27,13 +27,22 @@ eventlet
 # Email
 Flask-Mail
 
+# Validation
+marshmallow
+marshmallow-sqlalchemy
+
+# Background Tasks
+celery
+redis
+
 # Database Drivers
 # PostgreSQL (production)
-# psycopg2-binary==2.9.9
+psycopg2-binary
 # SQLite (development) - comes with Python
 
 # Security & Password Hashing
-# Note: Werkzeug includes password hashing utilities
+bcrypt
+itsdangerous
 
 # Python Standard Enhancements
 python-dotenv

@@ -20,8 +20,8 @@ class Order(db.Model):
     description = db.Column(db.Text, nullable=False)
     word_count = db.Column(db.Integer, nullable=False)
     page_count = db.Column(db.Float, nullable=False)
-    format_style = db.Column(db.String(50), nullable=True, default=None)  # Fixed: was Text with default=False
-    report_type =db.Column(db.String,default=False, nullable=True)
+    format_style = db.Column(db.String(50), nullable=True, default=None)
+    report_type = db.Column(db.String(50), nullable=True, default=None)
     total_price = db.Column(db.Float, nullable=False)
     status = db.Column(db.Enum(OrderStatus), default=OrderStatus.PENDING, nullable=False)
     paid = db.Column(db.Boolean, default=False)

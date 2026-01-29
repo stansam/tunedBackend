@@ -22,10 +22,8 @@ class User(UserMixin, db.Model):
     last_failed_login = db.Column(db.DateTime)
 
     email_verified = db.Column(db.Boolean, default=False)
-    email_verification_token = db.Column(db.String(100))
-
-    password_reset_token = db.Column(db.String(100), nullable=True)
-    password_reset_expires = db.Column(db.DateTime, nullable=True)
+    # Token storage removed - using itsdangerous for stateless tokens
+    # email_verification_token and password_reset_token handled via itsdangerous
     
     first_name = db.Column(db.String(100))
     last_name = db.Column(db.String(100))
@@ -48,10 +46,7 @@ class User(UserMixin, db.Model):
     last_login_at = db.Column(db.DateTime, nullable=True)
 
     # Table arguments for indexes
-    __table_args__ = (
-        db.Index('ix_user_email_verification_token', 'email_verification_token'),
-        db.Index('ix_user_password_reset_token', 'password_reset_token'),
-    )
+    # No table args needed - token indexes removed
 
     # Relationships
     orders = db.relationship('Order', foreign_keys='Order.client_id', backref='client', lazy=True)

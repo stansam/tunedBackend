@@ -68,6 +68,14 @@ def create_app(config_name=None):
         from tuned.models.user import User
         return User.query.get(int(user_id))
     
+    # JWT token blacklist loader
+    @jwt.token_in_blocklist_loader
+    def check_if_token_revoked(jwt_header, jwt_payload):
+        """Check if JWT token is blacklisted (logout functionality)."""
+        from tuned.redis_client import is_token_blacklisted
+        jti = jwt_payload['jti']
+        return is_token_blacklisted(jti)
+    
     # Register blueprints
     from tuned.admin import admin_bp
     from tuned.auth import auth_bp

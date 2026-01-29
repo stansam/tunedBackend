@@ -163,7 +163,7 @@ def generate_referral_code(length: int = 8) -> str:
     """
     # Use uppercase letters and digits only (exclude ambiguous characters)
     chars = string.ascii_uppercase + string.digits
-    chars = chars.replace('0', '').replace('O', '').replace('I', '').replace('1')
+    chars = chars.replace('0', '').replace('O', '').replace('I', '').replace('1', '')
     
     return ''.join(secrets.choice(chars) for _ in range(length))
 

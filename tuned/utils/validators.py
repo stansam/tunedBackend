@@ -221,6 +221,6 @@ def validate_integer(value: any, min_value: Optional[int] = None, max_value: Opt
         return False, f'Must be at least {min_value}'
     
     if max_value is not None and int_value > max_value:
-        return False, f'Must not exceed {max_value}'
+        return False, f'must not exceed {max_value}'
     
     return True, None

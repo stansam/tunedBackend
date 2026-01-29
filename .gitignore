@@ -29,3 +29,5 @@ node_modules
 *.pdf
 SETUP.md 
 .python-version
+*.rdb
+setupMDs/

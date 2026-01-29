@@ -1,8 +1,8 @@
-from app.extensions import db
+from tuned.extensions import db
 from datetime import datetime, timezone
 import uuid
 from sqlalchemy.sql import func
-from app.models.enums import PaymentStatus, PaymentMethod, TransactionType, RefundStatus, DiscountType, Currency
+from tuned.models.enums import PaymentStatus, PaymentMethod, TransactionType, RefundStatus, DiscountType, Currency
 
 class Payment(db.Model):
     """Model for tracking payments"""

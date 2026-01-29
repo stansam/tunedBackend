@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
-from app.extensions import db
-from app.models.enums import DeliveryStatus, FileType
+from tuned.extensions import db
+from tuned.models.enums import DeliveryStatus, FileType
 
 class OrderDelivery(db.Model):
     id = db.Column(db.Integer, primary_key=True)

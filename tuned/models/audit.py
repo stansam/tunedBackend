@@ -7,7 +7,7 @@ Includes:
 - ActivityLog: Central audit log for all system actions
 - EmailLog: Track all sent emails for debugging and compliance
 """
-from app.extensions import db
+from tuned.extensions import db
 from datetime import datetime, timezone
 
 

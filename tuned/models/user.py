@@ -2,8 +2,8 @@ from datetime import datetime, timezone
 from flask import url_for 
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
-from app.extensions import db
-from app.models.communication import ChatMessage, Chat
+from tuned.extensions import db
+from tuned.models.communication import ChatMessage, Chat
 import enum
 
 class GenderEnum(enum.Enum):

@@ -1,4 +1,4 @@
-from app.extensions import db
+from tuned.extensions import db
 from datetime import datetime, timezone
 
 class PricingCategory(db.Model):

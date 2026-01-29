@@ -1,6 +1,6 @@
-from app.extensions import db
+from tuned.extensions import db
 from datetime import datetime, timezone
-from app.models.enums import ReferralStatus
+from tuned.models.enums import ReferralStatus
 
 class Referral(db.Model):
     id = db.Column(db.Integer, primary_key=True)

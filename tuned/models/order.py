@@ -1,11 +1,11 @@
-from app.extensions import db
+from tuned.extensions import db
 from datetime import datetime, timezone, timedelta
 from uuid import uuid4
-from app.models.user import User
-from app.models.price import PriceRate
-from app.models.service import Service
-from app.models.order_delivery import OrderDelivery, OrderDeliveryFile
-from app.models.enums import OrderStatus, SupportTicketStatus
+from tuned.models.user import User
+from tuned.models.price import PriceRate
+from tuned.models.service import Service
+from tuned.models.order_delivery import OrderDelivery, OrderDeliveryFile
+from tuned.models.enums import OrderStatus, SupportTicketStatus
 
 
 

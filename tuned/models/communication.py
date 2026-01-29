@@ -1,6 +1,6 @@
-from app.extensions import db
+from tuned.extensions import db
 from datetime import datetime, timezone
-from app.models.enums import NotificationType, ChatStatus
+from tuned.models.enums import NotificationType, ChatStatus
 
 class Notification(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -19,7 +19,7 @@ class Notification(db.Model):
 
     def mark_as_read(self):
         self.is_read = True
-        from app.extensions import db
+        from tuned.extensions import db
         db.session.commit()
     
     def to_dict(self):

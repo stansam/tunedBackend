@@ -2,7 +2,7 @@
 Tag model for normalized tag management across services, samples, and blog posts.
 Replaces comma-separated tag strings with proper many-to-many relationships.
 """
-from app.extensions import db
+from tuned.extensions import db
 from datetime import datetime, timezone
 
 

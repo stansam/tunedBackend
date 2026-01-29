@@ -1,0 +1,45 @@
+# Flask Application Dependencies
+# Production-ready package versions for tunedBundle backend
+
+# Core Flask
+Flask
+Werkzeug
+
+# Database
+Flask-SQLAlchemy
+SQLAlchemy
+Flask-Migrate
+Alembic
+
+# Authentication & Authorization
+Flask-Login
+Flask-JWT-Extended
+
+# API & Frontend Integration
+Flask-CORS
+
+# Real-time Communication
+Flask-SocketIO
+python-socketio
+python-engineio
+eventlet
+
+# Email
+Flask-Mail
+
+# Database Drivers
+# PostgreSQL (production)
+# psycopg2-binary==2.9.9
+# SQLite (development) - comes with Python
+
+# Security & Password Hashing
+# Note: Werkzeug includes password hashing utilities
+
+# Python Standard Enhancements
+python-dotenv
+
+# Development Dependencies
+# These should be in a separate requirements-dev.txt in production
+pytest
+pytest-flask
+pytest-cov

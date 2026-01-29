@@ -163,7 +163,7 @@ def auth_headers(sample_user, app):
     from flask_jwt_extended import create_access_token
     
     with app.app_context():
-        access_token = create_access_token(identity=sample_user.id)
+        access_token = create_access_token(identity=str(sample_user.id))
     
     return {
         'Authorization': f'Bearer {access_token}',

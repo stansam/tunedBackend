@@ -14,7 +14,7 @@ class TestRefreshTokenRoute:
     def test_successful_token_refresh(self, client, db, sample_user, app, mock_redis):
         """Test successful access token refresh."""
         with app.app_context():
-            refresh_token = create_refresh_token(identity=sample_user.id)
+            refresh_token = create_refresh_token(identity=str(sample_user.id))
         
         headers = {
             'Authorization': f'Bearer {refresh_token}',
@@ -33,7 +33,7 @@ class TestRefreshTokenRoute:
     def test_refresh_with_access_token_fails(self, client, db, sample_user, app):
         """Test that access token cannot be used for refresh."""
         with app.app_context():
-            access_token = create_access_token(identity=sample_user.id)
+            access_token = create_access_token(identity=str(sample_user.id))
         
         headers = {
             'Authorization': f'Bearer {access_token}',
@@ -65,7 +65,7 @@ class TestRefreshTokenRoute:
     def test_refresh_for_unverified_user(self, client, db, unverified_user, app):
         """Test that unverified users cannot refresh tokens."""
         with app.app_context():
-            refresh_token = create_refresh_token(identity=unverified_user.id)
+            refresh_token = create_refresh_token(identity=str(unverified_user.id))
         
         headers = {
             'Authorization': f'Bearer {refresh_token}',
@@ -85,7 +85,7 @@ class TestRefreshTokenRoute:
         db.session.commit()
         
         with app.app_context():
-            refresh_token = create_refresh_token(identity=sample_user.id)
+            refresh_token = create_refresh_token(identity=str(sample_user.id))
         
         headers = {
             'Authorization': f'Bearer {refresh_token}',

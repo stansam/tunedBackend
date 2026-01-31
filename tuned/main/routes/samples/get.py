@@ -189,7 +189,7 @@ def get_sample_details(slug):
             'slug': sample.slug,
             'word_count': sample.word_count,
             'featured': sample.featured,
-            'tags': sample.tags,
+            'tags': [tag.name for tag in sample.tag_list.all()],
             'image': sample.image,
             'created_at': sample.created_at.isoformat() if sample.created_at else None,
             'service': {

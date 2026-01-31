@@ -65,22 +65,7 @@ def get_blog_comments(slug):
         )
         
         # Serialize data
-        items = [
-            {
-                'id': c.id,
-                'content': c.content,
-                'created_at': c.created_at.isoformat() if c.created_at else None,
-                'user': {
-                    'id': c.user.id,
-                    'name': c.user.get_name(),
-                    'profile_pic': c.user.profile_pic
-                } if c.user else {
-                    'name': c.name,
-                    'email': c.email
-                }
-            }
-            for c in comments.items
-        ]
+        items = [comment.to_dict() for comment in comments.items]
         
         logger.info(f'Blog comments fetched for {slug}: page {page}, total {total}')
         return paginated_response(
@@ -193,22 +178,131 @@ def add_blog_comment(slug):
 
 
 @main_bp.route('/api/blogs/comments/<int:comment_id>/react', methods=['POST'])
-@jwt_required()
+@rate_limit(max_requests=20, window=3600)  # 20 reactions per hour
 def react_to_comment(comment_id):
     """
     React to a blog comment (like/dislike).
     
-    NOTE: This endpoint requires a CommentReaction model to be fully functional.
-    For now, it returns a 501 Not Implemented status.
+    Supports both authenticated users (via JWT, optional) and guests (via IP).
+    Toggle functionality: same reaction removes it, different reaction replaces it.
     
     Request body:
-        - reaction_type: 'like' or 'dislike'
+        - reaction_type: 'like' or 'dislike' (required)
     
     Returns:
-        JSON response
+        JSON response with updated reaction counts
     """
-    # TODO: Implement when CommentReaction model is created
-    return error_response(
-        'Comment reactions are not yet implemented. CommentReaction model needs to be created.',
-        status=501
-    )
+    try:
+        # Validate request data
+        schema = CommentReactionSchema()
+        data = schema.load(request.get_json() or {})
+        
+    except ValidationError as err:
+        return validation_error_response(err.messages)
+    
+    try:
+        # Find comment
+        from tuned.models.blog import BlogComment, CommentReaction
+        comment = BlogComment.query.get(comment_id)
+        
+        if not comment or not comment.approved:
+            return not_found_response('Comment not found')
+        
+        # Get user info (JWT optional)
+        user_id = None
+        try:
+            verify_jwt_in_request(optional=True)
+            identity = get_jwt_identity()
+            if identity:
+                user_id = identity
+        except Exception:
+            pass
+        
+        # Get IP address for guest users
+        ip_address = None
+        if not user_id:
+            ip_address = request.remote_addr or request.environ.get('HTTP_X_REAL_IP', 'unknown')
+        
+        # Check for existing reaction
+        if user_id:
+            existing_reaction = CommentReaction.query.filter_by(
+                user_id=user_id,
+                comment_id=comment_id
+            ).first()
+        else:
+            existing_reaction = CommentReaction.query.filter_by(
+                ip_address=ip_address,
+                comment_id=comment_id
+            ).first()
+        
+        reaction_type = data['reaction_type']
+        action = None
+        
+        if existing_reaction:
+            if existing_reaction.reaction_type == reaction_type:
+                # Same reaction = toggle off (remove)
+                db.session.delete(existing_reaction)
+                action = 'removed'
+                logger.info(f'Reaction removed: comment {comment_id}, type {reaction_type}')
+            else:
+                # Different reaction = update
+                existing_reaction.reaction_type = reaction_type
+                action = 'updated'
+                logger.info(f'Reaction updated: comment {comment_id}, type {reaction_type}')
+        else:
+            # No existing reaction = create new
+            new_reaction = CommentReaction(
+                user_id=user_id,
+                comment_id=comment_id,
+                reaction_type=reaction_type,
+                ip_address=ip_address
+            )
+            db.session.add(new_reaction)
+            action = 'added'
+            logger.info(f'Reaction added: comment {comment_id}, type {reaction_type}')
+        
+        db.session.commit()
+        
+        # Get updated counts
+        likes_count = CommentReaction.query.filter_by(
+            comment_id=comment_id,
+            reaction_type='like'
+        ).count()
+        
+        dislikes_count = CommentReaction.query.filter_by(
+            comment_id=comment_id,
+            reaction_type='dislike'
+        ).count()
+        
+        # Get user's current reaction (if any)
+        if user_id:
+            user_current_reaction = CommentReaction.query.filter_by(
+                user_id=user_id,
+                comment_id=comment_id
+            ).first()
+        else:
+            user_current_reaction = CommentReaction.query.filter_by(
+                ip_address=ip_address,
+                comment_id=comment_id
+            ).first()
+        
+        response_data = {
+            'action': action,
+            'likes_count': likes_count,
+            'dislikes_count': dislikes_count,
+            'user_reaction': user_current_reaction.reaction_type if user_current_reaction else None
+        }
+        
+        return success_response(
+            response_data,
+            message=f'Reaction {action} successfully'
+        )
+        
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f'Error processing comment reaction: {str(e)}')
+        return error_response(
+            'Failed to process reaction',
+            status=500
+        )
+

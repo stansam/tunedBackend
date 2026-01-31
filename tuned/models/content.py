@@ -1,4 +1,5 @@
 from tuned.extensions import db
+from tuned.models.tag import sample_tags
 from datetime import datetime, timezone
 import re
 
@@ -10,7 +11,8 @@ class Sample(db.Model):
     service_id = db.Column(db.Integer, db.ForeignKey('service.id'))
     word_count = db.Column(db.Integer, default=0)
     featured = db.Column(db.Boolean, default=False)
-    tags = db.Column(db.String(255), nullable=True) 
+    # Tags now use many-to-many relationship via sample_tags table  
+    # Old column: tags = db.Column(db.String(255), nullable=True)
     image = db.Column(db.String(255))
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     slug = db.Column(db.String(200), unique=True, nullable=False)
@@ -19,6 +21,9 @@ class Sample(db.Model):
     __table_args__ = (
         db.Index('ix_sample_service_featured', 'service_id', 'featured'),
     )
+    
+    # Relationships
+    tag_list = db.relationship('Tag', secondary=sample_tags, backref='samples', lazy='dynamic')
     
     def __init__(self, **kwargs):
         super(Sample, self).__init__(**kwargs)

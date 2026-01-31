@@ -7,6 +7,7 @@ Includes schemas for:
 - Blog comment reactions
 """
 from marshmallow import Schema, fields, validate, validates, ValidationError
+import re
 
 
 class BlogFilterSchema(Schema):
@@ -112,18 +113,24 @@ class BlogCommentSchema(Schema):
     )
     
     @validates('content')
-    def validate_content(self, value):
-        """Validate comment content for spam patterns."""
+    def validate_content(self, value, **kwargs):
+        """Validate comment content for spam."""
         # Check for excessive links
-        if value.count('http://') + value.count('https://') > 2:
-            raise ValidationError('Comments cannot contain more than 2 links')
+        link_count = len(re.findall(r'http[s]?://', value))
+        if link_count > 3:
+            raise ValidationError('Comment appears to be spam (too many links)')
         
-        # Check for excessive repetition
+        # Check for repetitive patterns
         words = value.lower().split()
-        if len(words) > 5:
-            unique_words = set(words)
-            if len(unique_words) / len(words) < 0.3:
-                raise ValidationError('Comment appears to be spam')
+        if len(words) > 10:
+            word_freq = {}
+            for word in words:
+                word_freq[word] = word_freq.get(word, 0) + 1
+            max_freq = max(word_freq.values())
+            if max_freq > len(words) * 0.5:  # More than 50% repetition
+                raise ValidationError('Comment appears to be spam (excessive repetition)')
+        
+        return value
 
 
 class CommentReactionSchema(Schema):

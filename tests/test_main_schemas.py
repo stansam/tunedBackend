@@ -293,9 +293,9 @@ class TestBlogCommentSchema:
         assert 'content' in exc_info.value.messages
     
     def test_content_too_long(self):
-        """Test that content longer than 2000 chars raises ValidationError"""
+        """Test that content longer than 5000 chars raises ValidationError"""
         schema = BlogCommentSchema()
-        data = {'content': 'a' * 2001}
+        data = {'content': 'a' * 5001}
         with pytest.raises(ValidationError) as exc_info:
             schema.load(data)
         assert 'content' in exc_info.value.messages
@@ -313,8 +313,9 @@ class TestBlogCommentSchema:
     def test_spam_detection_repetition(self):
         """Test that excessive repetition triggers spam detection"""
         schema = BlogCommentSchema()
+        # Create content with >10 words where one word appears >50% of the time
         data = {
-            'content': 'buy now ' * 20  # Excessive repetition
+            'content': 'spam ' * 15 + 'word another test'  # 15 'spam' + 3 other words = >50% repetition
         }
         with pytest.raises(ValidationError) as exc_info:
             schema.load(data)

@@ -32,7 +32,7 @@ class NewsletterSubscribeSchema(Schema):
     )
     
     @validates('email')
-    def validate_email(self, value):
+    def validate_email(self, value, **kwargs):
         """Additional email validation."""
         # Basic email regex
         email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
@@ -44,6 +44,8 @@ class NewsletterSubscribeSchema(Schema):
         domain = value.split('@')[1].lower()
         if domain in disposable_domains:
             raise ValidationError('Disposable email addresses are not allowed')
+        
+        return value
 
 
 class SearchQuerySchema(Schema):

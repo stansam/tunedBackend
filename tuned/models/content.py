@@ -23,7 +23,7 @@ class Sample(db.Model):
     )
     
     # Relationships
-    tag_list = db.relationship('Tag', secondary=sample_tags, backref='samples', lazy='dynamic')
+    tag_list = db.relationship('Tag', secondary=sample_tags, lazy='dynamic')
     
     def __init__(self, **kwargs):
         super(Sample, self).__init__(**kwargs)

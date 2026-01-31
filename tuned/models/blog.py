@@ -38,7 +38,7 @@ class BlogPost(db.Model):
     
     # Relationships
     comments = db.relationship('BlogComment', backref='post', lazy=True, cascade='all, delete-orphan')
-    tag_list = db.relationship('Tag', secondary=blog_post_tags, backref='blog_posts', lazy='dynamic')
+    tag_list = db.relationship('Tag', secondary=blog_post_tags, lazy='dynamic')
     
     def __init__(self, **kwargs):
         super(BlogPost, self).__init__(**kwargs)

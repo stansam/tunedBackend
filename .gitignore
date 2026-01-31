@@ -31,3 +31,5 @@ SETUP.md
 .python-version
 *.rdb
 setupMDs/
+orderFlow.md
+Analysis.md

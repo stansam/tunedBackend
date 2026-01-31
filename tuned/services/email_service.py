@@ -158,3 +158,52 @@ def send_password_changed_email(user: User) -> None:
     )
     
     logger.info(f"Password changed email queued for user {user.id}")
+
+
+def send_receipt_email(payment, email_address):
+    """Send payment receipt via email."""
+    logger.info(f'Sending receipt email for payment {payment.id} to {email_address}')
+    # Stubimplementation - in production, send actual email
+    pass
+
+
+def send_refund_request_email_admin(payment, refund_amount, reason):
+    """Send refund request notification to admin/finance team."""
+    logger.info(f'Sending refund request email for payment {payment.id}: ${refund_amount:.2f}')
+    # Stub implementation
+    pass
+
+
+def send_password_changed_email(user):
+    """Send password change confirmation email."""
+    logger.info(f'Sending password changed email to user {user.id}')
+    # Stub implementation
+    pass
+
+
+def send_email_change_confirmation(old_email, new_email, user_name):
+    """Send email change confirmation to old email address."""
+    logger.info(f'Sending email change confirmation: {old_email} -> {new_email}')
+    # Stub implementation
+    pass
+
+
+def send_newsletter_welcome_email(email, name):
+    """Send newsletter welcome email."""
+    logger.info(f'Sending newsletter welcome to {email}')
+    # Stub implementation
+    pass
+
+
+def send_newsletter_goodbye_email(email, name):
+    """Send newsletter unsubscribe confirmation."""
+    logger.info(f'Sending newsletter goodbye to {email}')
+    # Stub implementation
+    pass
+
+
+def send_payment_reminder_email(order):
+    """Send payment reminder for unpaid order."""
+    logger.info(f'Sending payment reminder for order {order.id}')
+    # Stub implementation
+    pass

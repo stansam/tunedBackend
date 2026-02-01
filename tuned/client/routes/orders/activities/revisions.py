@@ -106,7 +106,7 @@ def request_revision(order_id):
         except Exception as e:
             logger.error(f'Client notification error for revision on order {order_id}: {str(e)}')
         
-        # Notify admins and assigned writer
+        # Notify admins about the revision request
         try:
             admins = User.query.filter_by(is_admin=True, is_active=True).all()
             for admin in admins:
@@ -117,25 +117,13 @@ def request_revision(order_id):
                     type=NotificationType.WARNING,
                     link=f'/admin/orders/{order.id}'
                 )
-                
-            # Notify assigned writer if exists
-            if order.assigned_to:
-                create_notification(
-                    user_id=order.assigned_to,
-                    title=f'Revision Required - {order.order_number}',
-                    message=f'Client requested revisions for "{order.title}"',
-                    type=NotificationType.WARNING,
-                    link=f'/writer/orders/{order.id}'
-                )
         except Exception as e:
             logger.error(f'Notification error for revision on order {order_id}: {str(e)}')
         
         # Send emails
         try:
-            from tuned.services.email_service import send_revision_request_email_admin, send_revision_request_email_writer
+            from tuned.services.email_service import send_revision_request_email_admin
             send_revision_request_email_admin(order, revision_notes)
-            if order.assigned_to:
-                send_revision_request_email_writer(order, revision_notes)
         except Exception as e:
             logger.error(f'Email error for revision on order {order_id}: {str(e)}')
         

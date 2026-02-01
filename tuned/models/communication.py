@@ -1,6 +1,7 @@
 from tuned.extensions import db
 from datetime import datetime, timezone
-from tuned.models.enums import NotificationType, ChatStatus
+from tuned.models.enums import NotificationType, ChatStatus, NewsletterFrequency, NewsletterFormat
+from sqlalchemy.dialects.postgresql import ARRAY
 
 class Notification(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -37,11 +38,25 @@ class Notification(db.Model):
         return f'<Notification {self.title}>'
 
 class NewsletterSubscriber(db.Model):
+    __tablename__ = 'newsletter_subscriber'
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(120), unique=True, nullable=False)
     name = db.Column(db.String(100))
     is_active = db.Column(db.Boolean, default=True)
     subscribed_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    
+    # Newsletter preferences (added in migration 006)
+    frequency = db.Column(
+        db.Enum(NewsletterFrequency),
+        default=NewsletterFrequency.WEEKLY,
+        nullable=False
+    )
+    topics = db.Column(ARRAY(db.String), nullable=True, default=list)
+    format = db.Column(
+        db.Enum(NewsletterFormat),
+        default=NewsletterFormat.HTML,
+        nullable=False
+    )
     
     def __repr__(self):
         return f'<NewsletterSubscriber {self.email}>'

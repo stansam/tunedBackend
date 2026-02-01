@@ -6,10 +6,12 @@ Routes for client-facing functionality:
 - Orders
 - Payments
 - Profile management
+- Revision requests
 """
 from flask import Blueprint
 
 client_bp = Blueprint('client', __name__)
 
 # Import routes at the end to avoid circular imports
-# from . import routes
+from tuned.client.routes import revision_requests
+

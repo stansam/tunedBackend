@@ -21,7 +21,8 @@ from tuned.client.schemas.order import (
 # Payment schemas
 from tuned.client.schemas.payment_schemas import (
     PaymentFilterSchema,
-    ManualPaymentConfirmationSchema,
+    PaymentConfirmationSchema,
+    InvoiceRequestSchema,
     PayPalPaymentSchema,
     BraintreePaymentSchema,
     InvoiceDownloadSchema,
@@ -123,3 +124,10 @@ __all__ = [
     'ChangePasswordSchema',
     'ChangeEmailSchema',
 ]
+
+# Revision request schemas
+from tuned.client.schemas.revision_request import (
+    CreateRevisionRequestSchema,
+    UpdateRevisionRequestSchema,
+    RevisionRequestFilterSchema
+)

@@ -16,6 +16,7 @@ from tuned.utils.auth import hash_password, get_user_ip
 from tuned.utils.decorators import rate_limit
 from tuned.services.email_service import send_verification_email
 from tuned.services.notification_service import create_welcome_notification
+from tuned.services.preference_service import initialize_user_preferences
 from tuned.models.audit import ActivityLog
 from datetime import datetime, timezone
 import logging
@@ -87,6 +88,17 @@ def register():
         
         logger.info(f"New user registered: {user.id} ({user.email})")
         
+        # Initialize user preferences (with error handling to not block registration)
+        try:
+            pref_result = initialize_user_preferences(user.id)
+            if pref_result.get('success'):
+                logger.info(f"Initialized preferences for new user {user.id}")
+            else:
+                logger.warning(f"Failed to initialize preferences for user {user.id}: {pref_result.get('error')}")
+        except Exception as pref_error:
+            # Don't fail registration if preference initialization fails
+            logger.error(f"Preference initialization error for user {user.id}: {str(pref_error)}")
+        
         # Generate verification token
         verification_token = generate_verification_token(user.id, user.email)
         
@@ -95,6 +107,7 @@ def register():
         
         # Create welcome notification
         create_welcome_notification(user)
+
         
         # Log activity
         ActivityLog.log(

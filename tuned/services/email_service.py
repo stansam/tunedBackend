@@ -14,6 +14,69 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+def should_send_email(user_id: int, email_type: str = 'general') -> bool:
+    """
+    Check if an email should be sent based on user preferences.
+    
+    Critical emails (order_confirmations, payment_receipts, account_security)
+    are ALWAYS sent regardless of preferences for compliance and security.
+    
+    Args:
+        user_id: User ID to check preferences for
+        email_type: Type of email (newsletter, promotional, product_updates, etc.)
+        
+    Returns:
+        bool: True if email should be sent, False otherwise
+    """
+    from tuned.models.user import User
+    
+    # Critical emails that MUST always be sent
+    critical_emails = [
+        'order_confirmation',
+        'payment_receipt',
+        'account_security',
+        'password_reset',
+        'email_verification'
+    ]
+    
+    # Always send critical emails
+    if email_type in critical_emails:
+        logger.debug(f"Critical email type '{email_type}' - always sending")
+        return True
+    
+    user = User.query.get(user_id)
+    
+    # Default to True if user not found or preferences don't exist (backward compatible)
+    if not user or not user.email_preferences:
+        logger.debug(f"No email preferences found for user {user_id}, defaulting to send")
+        return True
+    
+    prefs = user.email_preferences
+    
+    # Check if email notifications are globally enabled
+    if not user.notification_preferences or not user.notification_preferences.email_notifications:
+        logger.debug(f"Email notifications globally disabled for user {user_id}")
+        return False
+    
+    # Map email type to preference field
+    type_mapping = {
+        'newsletter': prefs.newsletter,
+        'promotional': prefs.promotional_emails,
+        'product_updates': prefs.product_updates,
+        'marketing': prefs.promotional_emails,
+        'general': True  # General emails always sent
+    }
+    
+    # Check type-specific preference
+    should_send = type_mapping.get(email_type, True)
+    
+    if not should_send:
+        logger.debug(f"Email type '{email_type}' disabled for user {user_id}")
+    
+    return should_send
+
+
+
 def send_verification_email(user: User, verification_token: str) -> None:
     """
     Send email verification link to user.

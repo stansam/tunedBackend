@@ -15,15 +15,71 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+def should_send_notification(user_id: int, notification_category: str = 'general') -> bool:
+    """
+    Check if a notification should be sent based on user preferences.
+    
+    Respects user notification preferences while defaulting to True
+    if preferences don't exist (backward compatible).
+    
+    Args:
+        user_id: User ID to check preferences for
+        notification_category: Category of notification (order_updates, payment_notifications, etc.)
+        
+    Returns:
+        bool: True if notification should be sent, False otherwise
+    """
+    from tuned.models.user import User
+    
+    user = User.query.get(user_id)
+    
+    # Default to True if user not found or preferences don't exist (backward compatible)
+    if not user or not user.notification_preferences:
+        logger.debug(f"No preferences found for user {user_id}, defaulting to send notification")
+        return True
+    
+    prefs = user.notification_preferences
+    
+    # Map category to preference field
+    category_mapping = {
+        'order_updates': prefs.order_updates,
+        'payment': prefs.payment_notifications,
+        'delivery': prefs.delivery_notifications,
+        'revision': prefs.revision_updates,
+        'extension': prefs.extension_updates,
+        'comment': prefs.comment_notifications,
+        'support': prefs.support_ticket_updates,
+        'marketing': prefs.marketing_emails,
+        'general': True  # General notifications always sent
+    }
+    
+    # Check if push notifications are enabled globally
+    if not prefs.push_notifications:
+        logger.debug(f"Push notifications disabled for user {user_id}")
+        return False
+    
+    # Check category-specific preference
+    should_send = category_mapping.get(notification_category, True)
+    
+    if not should_send:
+        logger.debug(f"Notification category '{notification_category}' disabled for user {user_id}")
+    
+    return should_send
+
+
+
 def create_notification(
     user_id: int,
     title: str,
     message: str,
     type: NotificationType = NotificationType.INFO,
-    link: Optional[str] = None
-) -> Notification:
+    link: Optional[str] = None,
+    category: str = 'general'
+) -> Optional[Notification]:
     """
     Create a new notification for a user.
+    
+    Checks user preferences before creating notification.
     
     Args:
         user_id: User ID to notify
@@ -31,10 +87,16 @@ def create_notification(
         message: Notification message
         type: Notification type (info, success, warning, error)
         link: Optional link URL
+        category: Notification category for preference checking
         
     Returns:
-        Notification: Created notification instance
+        Notification: Created notification instance, or None if user has disabled this category
     """
+    # Check preferences before creating notification
+    if not should_send_notification(user_id, category):
+        logger.info(f"Skipping notification for user {user_id} (category: {category} disabled)")
+        return None
+    
     notification = Notification(
         user_id=user_id,
         title=title,

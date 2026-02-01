@@ -83,8 +83,8 @@ def request_revision(order_id):
         delivery_id = data['delivery_id']
         revision_notes = data['revision_notes']
         
-        # Update order status to revision requested
-        order.status = OrderStatus.REVISION_REQUESTED
+        # Update order status to revision
+        order.status = OrderStatus.REVISION
         order.updated_at = datetime.now(timezone.utc)
         
         db.session.commit()

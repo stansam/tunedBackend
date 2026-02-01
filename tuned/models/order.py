@@ -7,6 +7,7 @@ from tuned.models.service import Service
 from tuned.models.order_delivery import OrderDelivery, OrderDeliveryFile
 from tuned.models.enums import OrderStatus, SupportTicketStatus
 from sqlalchemy import event
+from sqlalchemy.orm import validates
 from tuned.utils.orders import generate_public_order_number
 
 
@@ -26,19 +27,26 @@ class Order(db.Model):
     total_price = db.Column(db.Float, nullable=False)
     status = db.Column(db.Enum(OrderStatus), default=OrderStatus.PENDING, nullable=False)
     paid = db.Column(db.Boolean, default=False)
+    is_deleted = db.Column(db.Boolean, default=False, nullable=False)  # Soft delete support
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
-    due_date = db.Column(db.DateTime, nullable=False)
+    delivered_at = db.Column(db.DateTime, nullable=True, default=None)
+    extension_requested = db.Column(db.Boolean, default=False)
+    extension_requested_at = db.Column(db.DateTime, nullable=True, default=None)
+    due_date = db.Column(db.DateTime, nullable=True, default=None)
     writer_is_assigned = db.Column(db.Boolean, default=False)
     writer_assigned_at = db.Column(db.DateTime)
-    extension_requested = db.Column(db.Boolean, default=False)
-    extension_requested_at = db.Column(db.DateTime)
-    
-    # Soft delete
-    is_active = db.Column(db.Boolean, default=True, server_default='true')
-    deleted_at = db.Column(db.DateTime, nullable=True)
+    price_per_page = db.Column(db.Float, nullable=False)
+    subtotal = db.Column(db.Float, nullable=False)
+    discount_amount = db.Column(db.Float, nullable=True, default=0)
+    currency = db.Column(db.Enum('Currency'), default='USD')
+    additional_materials = db.Column(db.Text, nullable=True, default=None)
     
     # Relationships
+    client = db.relationship('User', backref='orders')
+    service = db.relationship('Service', backref='orders')
+    academic_level = db.relationship('AcademicLevel', backref='orders')
+    deadline = db.relationship('Deadline', backref='orders')
     testimonials = db.relationship('Testimonial', backref='order', lazy=True, cascade='all, delete-orphan')
     files = db.relationship('OrderFile', backref='order', lazy=True, cascade='all, delete-orphan')
     payments = db.relationship('Payment', back_populates='order', lazy=True, cascade='all, delete-orphan')
@@ -53,6 +61,53 @@ class Order(db.Model):
         db.CheckConstraint('page_count > 0', name='valid_page_count'),
         db.CheckConstraint('total_price > 0', name='valid_total_price'),
     )
+    
+    # Valid state transitions for order status
+    VALID_STATUS_TRANSITIONS = {
+        OrderStatus.PENDING: [OrderStatus.ACTIVE, OrderStatus.CANCELED],
+        OrderStatus.ACTIVE: [OrderStatus.COMPLETED_PENDING_REVIEW, OrderStatus.OVERDUE, OrderStatus.CANCELED],
+        OrderStatus.COMPLETED_PENDING_REVIEW: [OrderStatus.COMPLETED, OrderStatus.REVISION],
+        OrderStatus.REVISION: [OrderStatus.ACTIVE, OrderStatus.COMPLETED_PENDING_REVIEW],
+        OrderStatus.OVERDUE: [OrderStatus.ACTIVE, OrderStatus.CANCELED],
+        OrderStatus.COMPLETED: [OrderStatus.REVISION],  # Allow revision after completion
+        OrderStatus.CANCELED: [],  # Cannot transition from canceled
+    }
+    
+    @validates('status')
+    def validate_status_transition(self, key, new_status):
+        """
+        Validate order status transitions using state machine logic.
+        
+        Args:
+            key: Attribute name ('status')
+            new_status: New status to transition to
+            
+        Returns:
+            OrderStatus: Validated new status
+            
+        Raises:
+            ValueError: If transition is invalid
+        """
+        # Allow initial status setting (when object is new)
+        if not self.id or not hasattr(self, '_sa_instance_state') or self._sa_instance_state.key is None:
+            return new_status
+        
+        current_status = self.status
+        
+        # If status hasn't changed, allow it
+        if current_status == new_status:
+            return new_status
+        
+        # Check if transition is valid
+        valid_transitions = self.VALID_STATUS_TRANSITIONS.get(current_status, [])
+        
+        if new_status not in valid_transitions:
+            raise ValueError(
+                f'Invalid status transition from {current_status.value} to {new_status.value}. '
+                f'Valid transitions: {[s.value for s in valid_transitions]}'
+            )
+        
+        return new_status
     
     @property
     def status_color(self):

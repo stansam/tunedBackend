@@ -1,0 +1,134 @@
+<mjml>
+  <mj-head>
+    <mj-title>Payment Reminder - Order {{ order_number }}</mj-title>
+    <mj-preview
+      >Complete your payment to start processing your order</mj-preview
+    >
+    <mj-attributes>
+      <mj-all
+        font-family="'Helvetica Neue', Helvetica, Arial, sans-serif"
+      ></mj-all>
+      <mj-text font-size="14px" color="#555555" line-height="20px"></mj-text>
+    </mj-attributes>
+  </mj-head>
+
+  <mj-body background-color="#f4f4f4">
+    <!-- Header -->
+    <mj-section background-color="#ff5722" padding="20px">
+      <mj-column>
+        <mj-text
+          align="center"
+          color="#ffffff"
+          font-size="24px"
+          font-weight="bold"
+        >
+          ⏰ Payment Reminder
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    <!-- Main Content -->
+    <mj-section background-color="#ffffff" padding="40px 30px">
+      <mj-column>
+        <mj-text font-size="16px" color="#333333">
+          Hi {{ client_name }},
+        </mj-text>
+
+        <mj-text font-size="14px" line-height="24px">
+          This is a friendly reminder that your order
+          <strong>{{ order_number }}</strong> is awaiting payment.
+        </mj-text>
+
+        <mj-text
+          font-size="14px"
+          background-color="#fff3e0"
+          padding="15px"
+          border-left="4px solid #ff9800"
+        >
+          ⚠️ <strong>Important:</strong> Orders unpaid for more than 2 hours
+          will be automatically cancelled to ensure fair resource allocation.
+        </mj-text>
+
+        <mj-divider border-color="#e0e0e0" padding="20px 0"></mj-divider>
+
+        <!-- Order Details -->
+        <mj-text font-size="16px" font-weight="bold" color="#333333">
+          Order Summary
+        </mj-text>
+
+        <mj-table>
+          <tr style="border-bottom: 1px solid #ecedee">
+            <td style="padding: 10px; font-weight: 600">Order Number:</td>
+            <td style="padding: 10px">{{ order_number }}</td>
+          </tr>
+          <tr style="border-bottom: 1px solid #ecedee">
+            <td style="padding: 10px; font-weight: 600">Title:</td>
+            <td style="padding: 10px">{{ order_title }}</td>
+          </tr>
+          <tr style="border-bottom: 1px solid #ecedee">
+            <td style="padding: 10px; font-weight: 600">Due Date:</td>
+            <td style="padding: 10px">{{ due_date }}</td>
+          </tr>
+          <tr>
+            <td style="padding: 10px; font-weight: 600">Amount Due:</td>
+            <td
+              style="
+                padding: 10px;
+                font-size: 18px;
+                font-weight: bold;
+                color: #ff5722;
+              "
+            >
+              ${{ total_price }}
+            </td>
+          </tr>
+        </mj-table>
+
+        <!-- CTA Button -->
+        <mj-button
+          background-color="#4caf50"
+          color="#ffffff"
+          href="{{payment_url}}"
+          padding="25px 0"
+          font-size="16px"
+        >
+          Complete Payment Now
+        </mj-button>
+
+        <mj-text font-size="12px" color="#666666" align="center">
+          Secure payment powered by PayPal & Braintree
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    <!-- Payment Methods -->
+    <mj-section background-color="#f8f9fa" padding="30px">
+      <mj-column>
+        <mj-text
+          font-size="14px"
+          font-weight="bold"
+          color="#333333"
+          align="center"
+        >
+          We Accept
+        </mj-text>
+
+        <mj-text font-size="13px" align="center" color="#666666">
+          💳 Credit/Debit Cards • PayPal • Bank Transfer
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    <!-- Footer -->
+    <mj-section background-color="#333333" padding="20px">
+      <mj-column>
+        <mj-text align="center" color="#ffffff" font-size="12px">
+          Need help with payment? Contact {{ support_email }}
+        </mj-text>
+        <mj-text align="center" color="#aaaaaa" font-size="11px">
+          © {{ current_year }} {{ company_name }}. All rights reserved.
+        </mj-text>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>

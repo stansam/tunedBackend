@@ -61,27 +61,29 @@ def calculate_order_price(service, academic_level, deadline, page_count):
     price_per_page = price_rate.price_per_page
     subtotal = price_per_page * page_count
     
-    # Future: Apply discounts here if needed
+    ####### Future: Apply discounts here ###### 
+    ###########################################
+
     total_price = subtotal
     
     return price_per_page, subtotal, total_price
 
 
-def generate_order_number():
-    """Generate a unique order number in format: ORD-YYYYMM-XXXX"""
-    from tuned.models.order import Order
+# def generate_order_number():
+#     """Generate a unique order number in format: ORD-YYYYMM-XXXX"""
+#     from tuned.models.order import Order
     
-    now = datetime.now(timezone.utc)
-    prefix = now.strftime('ORD-%Y%m-')
+#     now = datetime.now(timezone.utc)
+#     prefix = now.strftime('ORD-%Y%m-')
     
-    # Get the count of orders this month
-    month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-    count = Order.query.filter(
-        Order.created_at >= month_start
-    ).count()
+#     # Get the count of orders this month
+#     month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+#     count = Order.query.filter(
+#         Order.created_at >= month_start
+#     ).count()
     
-    order_number = f'{prefix}{count + 1:04d}'
-    return order_number
+#     order_number = f'{prefix}{count + 1:04d}'
+#     return order_number
 
 
 @client_bp.route('/orders/create', methods=['POST'])
@@ -192,7 +194,6 @@ def create_order():
         
         # Create order
         order = Order(
-            order_number=order_number,
             client_id=current_user_id,
             service_id=service.id,
             academic_level_id=academic_level.id,

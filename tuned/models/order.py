@@ -6,12 +6,13 @@ from tuned.models.price import PriceRate
 from tuned.models.service import Service
 from tuned.models.order_delivery import OrderDelivery, OrderDeliveryFile
 from tuned.models.enums import OrderStatus, SupportTicketStatus
-
+from sqlalchemy import event
+from tuned.utils.orders import generate_public_order_number
 
 
 class Order(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    order_number = db.Column(db.String(20), unique=True, nullable=False)
+    order_number = db.Column(db.String(20), unique=True, nullable=False, index=True)
     client_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     service_id = db.Column(db.Integer, db.ForeignKey('service.id'), nullable=False)
     academic_level_id = db.Column(db.Integer, db.ForeignKey('academic_level.id'), nullable=False)
@@ -66,9 +67,6 @@ class Order(db.Model):
         }
         return colors.get(self.status, 'warning')
     
-    @staticmethod
-    def generate_order_number():
-        return f'ORD-{uuid4().hex[:8].upper()}'
     @property
     def latest_delivery(self):
         """Get the most recent delivery for this order"""
@@ -85,6 +83,13 @@ class Order(db.Model):
        
     def __repr__(self):
         return f'<Order {self.order_number}>'
+
+class OrderSequence(db.Model):
+    __tablename__ = "order_sequences"
+
+    year = db.Column(db.Integer, primary_key=True)
+    month = db.Column(db.Integer, primary_key=True)
+    value = db.Column(db.Integer, nullable=False, default=0)
     
 class OrderFile(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -147,3 +152,11 @@ class SupportTicket(db.Model):
     
     def __repr__(self):
         return f'<SupportTicket {self.id} for Order {self.order_id}>'
+
+
+@event.listens_for(Order, "before_insert")
+def set_public_order_number(mapper, connection, target):
+    if target.order_number:
+        return
+
+    target.order_number = generate_public_order_number(connection)

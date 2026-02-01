@@ -1,0 +1,143 @@
+<mjml>
+  <mj-head>
+    <mj-title>Order Completed - {{ order_number }}</mj-title>
+    <mj-preview
+      >Your order has been completed and is ready for download</mj-preview
+    >
+    <mj-attributes>
+      <mj-all
+        font-family="'Helvetica Neue', Helvetica, Arial, sans-serif"
+      ></mj-all>
+      <mj-text font-size="14px" color="#555555" line-height="20px"></mj-text>
+    </mj-attributes>
+  </mj-head>
+
+  <mj-body background-color="#f4f4f4">
+    <!-- Header -->
+    <mj-section background-color="#4caf50" padding="30px">
+      <mj-column>
+        <mj-text
+          align="center"
+          color="#ffffff"
+          font-size="32px"
+          font-weight="bold"
+        >
+          ✨ Order Completed!
+        </mj-text>
+        <mj-text align="center" color="#ffffff" font-size="16px">
+          Your work is ready for review
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    <!-- Main Content -->
+    <mj-section background-color="#ffffff" padding="40px 30px">
+      <mj-column>
+        <mj-text font-size="16px" color="#333333">
+          Hi {{ client_name }},
+        </mj-text>
+
+        <mj-text font-size="14px" line-height="24px">
+          Excellent news! Your order <strong>{{ order_number }}</strong> has
+          been completed and is now ready for your review.
+        </mj-text>
+
+        <mj-divider border-color="#e0e0e0" padding="20px 0"></mj-divider>
+
+        <!-- Order Summary -->
+        <mj-table>
+          <tr style="border-bottom: 1px solid #ecedee">
+            <th style="padding: 10px; font-weight: 600; text-align: left">
+              Order:
+            </th>
+            <td style="padding: 10px">{{ order_title }}</td>
+          </tr>
+          <tr style="border-bottom: 1px solid #ecedee">
+            <th style="padding: 10px; font-weight: 600; text-align: left">
+              Pages:
+            </th>
+            <td style="padding: 10px">{{ pages_count }} pages</td>
+          </tr>
+          <tr>
+            <th style="padding: 10px; font-weight: 600; text-align: left">
+              Delivered:
+            </th>
+            <td style="padding: 10px">{{ delivery_date }}</td>
+          </tr>
+        </mj-table>
+
+        <!-- CTA Button -->
+        <mj-button
+          background-color="#4caf50"
+          color="#ffffff"
+          href="{{download_url}}"
+          padding="25px 0"
+          font-size="16px"
+        >
+          Download Your Files
+        </mj-button>
+
+        <mj-text font-size="12px" color="#999999" align="center">
+          Or access via your dashboard:
+          <a href="{{order_url}}" style="color: #1a73e8">View Order</a>
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    <!-- Review Request -->
+    <mj-section background-color="#f8f9fa" padding="30px">
+      <mj-column>
+        <mj-text
+          font-size="16px"
+          font-weight="bold"
+          color="#333333"
+          align="center"
+        >
+          📋 Please Review Your Work
+        </mj-text>
+
+        <mj-text font-size="14px" align="center">
+          Review your files carefully. If you need any revisions, you can
+          request them within the next <strong>7 days</strong> at no extra cost.
+        </mj-text>
+
+        <mj-button
+          background-color="#ffffff"
+          color="#1a73e8"
+          border="2px solid #1a73e8"
+          href="{{request_revision_url}}"
+          padding="15px 0"
+        >
+          Request Revision
+        </mj-button>
+
+        <mj-divider border-color="#e0e0e0" padding="15px 0"></mj-divider>
+
+        <mj-text font-size="14px" align="center">
+          Happy with the work? Please take a moment to rate your experience!
+        </mj-text>
+
+        <mj-button
+          background-color="#ff9800"
+          color="#ffffff"
+          href="{{rate_url}}"
+          padding="15px 0"
+        >
+          ⭐ Rate Your Experience
+        </mj-button>
+      </mj-column>
+    </mj-section>
+
+    <!-- Footer -->
+    <mj-section background-color="#333333" padding="20px">
+      <mj-column>
+        <mj-text align="center" color="#ffffff" font-size="12px">
+          Need help? Contact us at {{ support_email }}
+        </mj-text>
+        <mj-text align="center" color="#aaaaaa" font-size="11px">
+          © {{ current_year }} {{ company_name }}. All rights reserved.
+        </mj-text>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>

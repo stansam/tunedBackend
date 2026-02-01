@@ -6,7 +6,7 @@ for easy import and usage throughout the application.
 """
 
 # Order schemas
-from tuned.client.schemas.order_schemas import (
+from tuned.client.schemas.order import (
     CreateOrderSchema,
     OrderFilterSchema,
     OrderCommentSchema,
@@ -33,7 +33,7 @@ from tuned.client.schemas.payment_schemas import (
 )
 
 # Referral schemas
-from tuned.client.schemas.referral_schemas import (
+from tuned.client.schemas.referral import (
     ReferralCodeSchema,
     ApplyReferralCodeSchema,
     RedeemRewardSchema,
@@ -46,7 +46,7 @@ from tuned.client.schemas.referral_schemas import (
 )
 
 # Settings - Profile schemas
-from tuned.client.schemas.settings.profile_schemas import (
+from tuned.client.schemas.settings.profile import (
     UpdateProfileSchema,
     UpdateProfilePictureSchema,
     DeleteProfilePictureSchema,
@@ -57,7 +57,7 @@ from tuned.client.schemas.settings.profile_schemas import (
 )
 
 # Settings - Newsletter schemas
-from tuned.client.schemas.settings.newsletter_schemas import (
+from tuned.client.schemas.settings.newsletter import (
     NewsletterSubscribeSchema,
     NewsletterUnsubscribeSchema,
     NewsletterPreferencesSchema,

@@ -6,14 +6,57 @@ from tuned.models.order import Order, OrderComment, OrderFile
 from tuned.models.price  import PricingCategory, PriceRate
 from tuned.models.payment import Payment, Invoice, Transaction, Refund, Discount
 from tuned.models.order_delivery import OrderDelivery, OrderDeliveryFile
-from tuned.models.referral import Referral 
+from tuned.models.referral import Referral
 from tuned.models.communication import Notification, Chat, ChatMessage, NewsletterSubscriber
 from tuned.models.tag import Tag, service_tags, sample_tags, blog_post_tags
 from tuned.models.audit import PriceHistory, OrderStatusHistory, ActivityLog, EmailLog
 from tuned.models.deadline_extension import OrderDeadlineExtensionRequest
 from tuned.models.revision_request import OrderRevisionRequest
+
+# Preference models
+from tuned.models.preferences.notification import UserNotificationPreferences
+from tuned.models.preferences.email import UserEmailPreferences
+from tuned.models.preferences.privacy import UserPrivacySettings
+from tuned.models.preferences.localization import UserLocalizationSettings
+from tuned.models.preferences.accessibility import UserAccessibilityPreferences
+from tuned.models.preferences.billing import UserBillingPreferences
+
 from tuned.models.enums import (
     OrderStatus, SupportTicketStatus, PaymentStatus, PaymentMethod,
     TransactionType, RefundStatus, NotificationType, ChatStatus,
     DeliveryStatus, FileType, ReferralStatus, DiscountType, Currency
 )
+
+__all__ = [
+    'User',
+    'Order',
+    'Service',
+    'OrderItem',
+    'Payment',
+    'Transaction',
+    'Tag',
+    'ServiceTag',
+    'OrderTag',
+    'PriceScale',
+    'ReferralBonus',
+    'Notification',
+    'NewsletterSubscriber',
+    'Chat',
+    'ChatMessage',
+    'OrderDelivery',
+    'SupportTicket',
+    'BlogPost',
+    'BlogCategory',
+    'BlogTag',
+    'ActivityLog',
+    'SystemEvent',
+    'OrderRevisionRequest',
+    'OrderDeadlineExtensionRequest',
+    # Preference models
+    'UserNotificationPreferences',
+    'UserEmailPreferences',
+    'UserPrivacySettings',
+    'UserLocalizationSettings',
+    'UserAccessibilityPreferences',
+    'UserBillingPreferences',
+]

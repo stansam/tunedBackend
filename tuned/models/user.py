@@ -44,6 +44,17 @@ class User(UserMixin, db.Model):
     is_active = db.Column(db.Boolean, default=True, server_default='true')
     deleted_at = db.Column(db.DateTime, nullable=True)
     last_login_at = db.Column(db.DateTime, nullable=True)
+    
+    # User preference cache fields (cached from UserLocalizationSettings)
+    # These are denormalized for performance - UserLocalizationSettings is the authoritative source
+    language = db.Column(db.String(10), default='en', nullable=True)  # ISO 639-1
+    timezone = db.Column(db.String(50), default='UTC', nullable=True)  # IANA timezone
+    updated_at = db.Column(
+        db.DateTime(timezone=True),
+        nullable=True,
+        onupdate=lambda: datetime.now(timezone.utc)
+    )
+
 
     # Table arguments for indexes
     # No table args needed - token indexes removed

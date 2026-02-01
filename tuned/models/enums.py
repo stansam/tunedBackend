@@ -129,3 +129,90 @@ class Priority(enum.Enum):
     NORMAL = "normal"
     HIGH = "high"
     URGENT = "urgent"
+
+
+# ============================================================================
+# USER PREFERENCE ENUMS
+# ============================================================================
+
+class EmailFrequency(enum.Enum):
+    """Email notification frequency preferences"""
+    INSTANT = "instant"
+    DAILY = "daily"
+    WEEKLY = "weekly"
+
+
+class ProfileVisibility(enum.Enum):
+    """User profile visibility settings"""
+    PUBLIC = "public"
+    PRIVATE = "private"
+    FRIENDS_ONLY = "friends_only"
+
+
+class DateFormat(enum.Enum):
+    """Date format preferences"""
+    MM_DD_YYYY = "MM/DD/YYYY"
+    DD_MM_YYYY = "DD/MM/YYYY"
+    YYYY_MM_DD = "YYYY-MM-DD"
+
+
+class TimeFormat(enum.Enum):
+    """Time format preferences"""
+    TWELVE_HOUR = "12h"
+    TWENTY_FOUR_HOUR = "24h"
+
+
+class NumberFormat(enum.Enum):
+    """Number format preferences"""
+    COMMA_DOT = "1,234.56"
+    DOT_COMMA = "1.234,56"
+    SPACE_COMMA = "1 234,56"
+
+
+class WeekStart(enum.Enum):
+    """First day of week preference"""
+    SUNDAY = "sunday"
+    MONDAY = "monday"
+
+
+class NewsletterFrequency(enum.Enum):
+    """Newsletter subscription frequency"""
+    DAILY = "daily"
+    WEEKLY = "weekly"
+    BIWEEKLY = "biweekly"
+    MONTHLY = "monthly"
+
+
+class NewsletterFormat(enum.Enum):
+    """Newsletter format preference"""
+    HTML = "html"
+    TEXT = "text"
+
+
+class InvoiceDeliveryMethod(enum.Enum):
+    """Invoice delivery preference"""
+    EMAIL = "email"
+    DOWNLOAD_ONLY = "download_only"
+
+
+class RuleType(enum.Enum):
+    """Preference rule type for conditional preferences"""
+    NOTIFICATION = "notification"
+    EMAIL = "email"
+
+
+class ExperimentStatus(enum.Enum):
+    """A/B test experiment status"""
+    DRAFT = "draft"
+    ACTIVE = "active"
+    PAUSED = "paused"
+    COMPLETED = "completed"
+
+
+class SuggestionStatus(enum.Enum):
+    """ML personalization suggestion status"""
+    PENDING = "pending"
+    ACCEPTED = "accepted"
+    REJECTED = "rejected"
+    DISMISSED = "dismissed"
+

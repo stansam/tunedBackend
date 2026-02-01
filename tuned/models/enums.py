@@ -104,3 +104,28 @@ class Currency(enum.Enum):
     CAD = "CAD"
     AUD = "AUD"
     # Add more currencies as needed
+
+
+class RevisionRequestStatus(enum.Enum):
+    """Revision request status enumeration"""
+    PENDING = "pending"
+    IN_PROGRESS = "in_progress"
+    COMPLETED = "completed"
+    REJECTED = "rejected"
+    CANCELLED = "cancelled"
+
+
+class ExtensionRequestStatus(enum.Enum):
+    """Deadline extension request status enumeration"""
+    PENDING = "pending"
+    APPROVED = "approved"
+    REJECTED = "rejected"
+    CANCELLED = "cancelled"
+
+
+class Priority(enum.Enum):
+    """Priority levels for requests and tasks"""
+    LOW = "low"
+    NORMAL = "normal"
+    HIGH = "high"
+    URGENT = "urgent"

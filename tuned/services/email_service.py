@@ -121,19 +121,22 @@ def send_password_reset_email(user: User, reset_token: str) -> None:
     request_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S UTC')
     
     # Send email asynchronously
-    send_async_email(
-        to=user.email,
-        subject='Reset Your Password - Tuned Essays',
-        template='client/password_reset',
-        recipient_name=user.get_name(),
-        reset_url=reset_url,
-        request_ip=request_ip,
-        request_time=request_time,
-        support_email=current_app.config.get('MAIL_DEFAULT_SENDER'),
-        current_year=datetime.now().year
-    )
-    
-    logger.info(f"Password reset email queued for user {user.id}")
+    try:
+        send_async_email(
+            to=user.email,
+            subject='Reset Your Password - Tuned Essays',
+            template='client/password_reset',
+            recipient_name=user.get_name(),
+            reset_url=reset_url,
+            request_ip=request_ip,
+            request_time=request_time,
+            support_email=current_app.config.get('MAIL_DEFAULT_SENDER'),
+            current_year=datetime.now().year
+        )
+        logger.info(f"Password reset email queued for user {user.id}")
+    except Exception as e:
+        logger.error(f'Password reset email failed for user {user.id}: {str(e)}')
+        raise
 
 
 def send_password_changed_email(user: User) -> None:
@@ -207,3 +210,86 @@ def send_payment_reminder_email(order):
     logger.info(f'Sending payment reminder for order {order.id}')
     # Stub implementation
     pass
+
+
+def send_revision_request_email_admin(order, revision_notes: str) -> None:
+    """Send email to admins when client requests a revision."""
+    try:
+        subject = f'Revision Request - {order.order_number}'
+        html_body = f"""
+        <h2>New Revision Request</h2>
+        <p>Client: {order.client.get_name()} ({order.client.email})</p>
+        <p>Order: {order.order_number} - {order.title}</p>
+        <p>Revision Notes: {revision_notes}</p>
+        <a href="{current_app.config.get('FRONTEND_URL', 'http://localhost:3000')}/admin/orders/{order.id}">View Order</a>
+        """
+        from tuned.models.user import User
+        admins = User.query.filter_by(is_admin=True, is_active=True).all()
+        for admin in admins:
+            send_async_email(to=admin.email, subject=subject, html_body=html_body)
+        logger.info(f'Revision request email sent for order {order.id}')
+    except Exception as e:
+        logger.error(f'Revision request email failed for order {order.id}: {str(e)}')
+        raise
+
+
+def send_deadline_extension_request_email_admin(order, hours: int, reason: str) -> None:
+    """Send email to admins when client requests deadline extension."""
+    try:
+        subject = f'Deadline Extension Request - {order.order_number}'
+        html_body = f"""
+        <h2>Deadline Extension Request</h2>
+        <p>Client: {order.client.get_name()} ({order.client.email})</p>
+        <p>Order: {order.order_number} - {order.title}</p>
+        <p>Current Due Date: {order.due_date.strftime('%Y-%m-%d %H:%M:%S UTC')}</p>
+        <p>Requested Extension: {hours} hours</p>
+        <p>Reason: {reason}</p>
+        <a href="{current_app.config.get('FRONTEND_URL', 'http://localhost:3000')}/admin/orders/{order.id}">View Order</a>
+        """
+        from tuned.models.user import User
+        admins = User.query.filter_by(is_admin=True, is_active=True).all()
+        for admin in admins:
+            send_async_email(to=admin.email, subject=subject, html_body=html_body)
+        logger.info(f'Extension request email sent for order {order.id}')
+    except Exception as e:
+        logger.error(f'Extension request email failed for order {order.id}: {str(e)}')
+        raise
+
+
+def send_order_created_email_client(order) -> None:
+    """Send order confirmation email to client."""
+    try:
+        subject = f'Order Confirmation - {order.order_number}'
+        html_body = f"""
+        <h2>Thank you for your order!</h2>
+        <p>Order Number: {order.order_number}</p>
+        <p>Title: {order.title}</p>
+        <p>Total: ${order.total_price:.2f}</p>
+        <p>Due Date: {order.due_date.strftime('%Y-%m-%d %H:%M:%S UTC')}</p>
+        <a href="{current_app.config.get('FRONTEND_URL', 'http://localhost:3000')}/orders/{order.id}">View Order</a>
+        """
+        send_async_email(to=order.client.email, subject=subject, html_body=html_body)
+        logger.info(f'Order created email sent to {order.client.email}')
+    except Exception as e:
+        logger.error(f'Order created email failed: {str(e)}')
+
+
+def send_order_created_email_admin(order) -> None:
+    """Send new order notification to admins."""
+    try:
+        subject = f'New Order - {order.order_number}'
+        html_body = f"""
+        <h2>New Order Received</h2>
+        <p>Client: {order.client.get_name()} ({order.client.email})</p>
+        <p>Order: {order.order_number} - {order.title}</p>
+        <p>Total: ${order.total_price:.2f}</p>
+        <p>Due Date: {order.due_date.strftime('%Y-%m-%d %H:%M:%S UTC')}</p>
+        <a href="{current_app.config.get('FRONTEND_URL', 'http://localhost:3000')}/admin/orders/{order.id}">View Order</a>
+        """
+        from tuned.models.user import User
+        admins = User.query.filter_by(is_admin=True, is_active=True).all()
+        for admin in admins:
+            send_async_email(to=admin.email, subject=subject, html_body=html_body)
+        logger.info('New order email sent to admins')
+    except Exception as e:
+        logger.error(f'Order notification to admins failed: {str(e)}')

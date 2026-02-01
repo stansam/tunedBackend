@@ -115,9 +115,8 @@ def log_activity(action: str, entity_type: Optional[str] = None):
                     user_agent=request.headers.get('User-Agent')
                 )
             except Exception as e:
-                # Don't fail the request if logging fails
-                import logging
-                logging.error(f"Failed to log activity: {str(e)}")
+                logger = logging.getLogger(__name__)
+                logger.warning(f'Failed to log activity: {str(e)}')
             
             return result
         
@@ -186,4 +185,104 @@ def cors_preflight(allowed_methods: list = None):
             return f(*args, **kwargs)
         
         return wrapped
+    return decorator
+
+def require_resource_ownership(model_class, id_param='resource_id', client_id_field='client_id'):
+    """
+    Decorator to ensure the current user owns the requested resource.
+    Prevents IDOR (Insecure Direct Object Reference) vulnerabilities.
+    
+    Args:
+        model_class: SQLAlchemy model class to query
+        id_param: Name of the parameter containing the resource ID
+        client_id_field: Name of the field in model that contains owner user ID
+        
+    Usage:
+        @require_resource_ownership(Order, 'order_id')
+        def get_order(order_id):
+            order = g.resource  # Pre-validated and loaded
+            ...
+    
+    Returns:
+        Decorator function that validates ownership and loads resource into g.resource
+    """
+    def decorator(f):
+        @wraps(f)
+        def decorated(*args, **kwargs):
+            from flask import g, request
+            from flask_jwt_extended import get_jwt_identity
+            from tuned.utils.responses import error_response
+            import logging
+            
+            logger = logging.getLogger(__name__)
+            current_user_id = int(get_jwt_identity())
+            
+            # Get resource ID from kwargs or view args
+            resource_id = kwargs.get(id_param)
+            if resource_id is None:
+                resource_id = request.view_args.get(id_param)
+            
+            if resource_id is None:
+                logger.warning(f'Resource ID parameter "{id_param}" not found in request')
+                return error_response('Resource not found', status=404)
+            
+            # Query resource
+            query = model_class.query.filter_by(id=resource_id)
+            
+            # Add ownership filter
+            query = query.filter_by(**{client_id_field: current_user_id})
+            
+            # Add soft delete filter if model has is_deleted
+            if hasattr(model_class, 'is_deleted'):
+                query = query.filter_by(is_deleted=False)
+            elif hasattr(model_class, 'is_active'):
+                query = query.filter_by(is_active=True)
+            
+            resource = query.first()
+            
+            if not resource:
+                logger.warning(
+                    f'IDOR attempt: User {current_user_id} tried to access '
+                    f'{model_class.__name__} {resource_id}'
+                )
+                return error_response('Resource not found', status=404)
+            
+            # Store resource in g for use in route
+            g.resource = resource
+            
+            return f(*args, **kwargs)
+        
+        return decorated
+    return decorator
+
+
+def require_admin():
+    """
+    Decorator to ensure the current user is an admin.
+    
+    Usage:
+        @require_admin()
+        def admin_only_route():
+            ...
+    """
+    def decorator(f):
+        @wraps(f)
+        def decorated(*args, **kwargs):
+            from flask_jwt_extended import get_jwt_identity
+            from tuned.models.user import User
+            from tuned.utils.responses import error_response
+            import logging
+            
+            logger = logging.getLogger(__name__)
+            current_user_id = int(get_jwt_identity())
+            
+            user = User.query.filter_by(id=current_user_id, is_active=True).first()
+            
+            if not user or not user.is_admin:
+                logger.warning(f'Unauthorized admin access attempt by user {current_user_id}')
+                return error_response('Unauthorized access', status=403)
+            
+            return f(*args, **kwargs)
+        
+        return decorated
     return decorator

@@ -20,10 +20,10 @@ try:
 except ImportError:
     pass
 
-try:
-    from tuned.client.routes.orders.activities import revisions
-except ImportError:
-    pass
+# try:
+#     from tuned.client.routes.orders.activities import revisions
+# except ImportError:
+#     pass
 
 try:
     from tuned.client.routes.orders.activities import delivery

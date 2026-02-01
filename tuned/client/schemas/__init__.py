@@ -131,3 +131,10 @@ from tuned.client.schemas.revision_request import (
     UpdateRevisionRequestSchema,
     RevisionRequestFilterSchema
 )
+
+# Deadline extension schemas
+from tuned.client.schemas.deadline_extension import (
+    CreateDeadlineExtensionRequestSchema,
+    UpdateDeadlineExtensionRequestSchema,
+    DeadlineExtensionFilterSchema
+)

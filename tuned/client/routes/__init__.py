@@ -17,10 +17,14 @@ from tuned.client.routes import settings
 # Referral routes
 from tuned.client.routes import referrals
 
+# Deadline extension routes
+from tuned.client.routes import deadline_extensions, revision_requests
 
 __all__ = [
     'orders',
     'payments',
     'settings',
-    'referrals'
+    'referrals',
+    'deadline_extensions',
+    'revision_requests'
 ]

@@ -40,8 +40,8 @@ class Tag(db.Model):
     
     # Relationships with backref
     services = db.relationship('Service', secondary=service_tags, backref=db.backref('tag_objects', lazy='dynamic'))
-    samples = db.relationship('Sample', secondary=sample_tags, backref=db.backref('tag_objects', lazy='dynamic'))
-    blog_posts = db.relationship('BlogPost', secondary=blog_post_tags, backref=db.backref('tag_objects', lazy='dynamic'))
+    samples = db.relationship('Sample', secondary=sample_tags, lazy='dynamic', back_populates='tag_list')
+    blog_posts = db.relationship('BlogPost', secondary=blog_post_tags, lazy='dynamic', back_populates='tag_list')
     
     def __init__(self, name, description=None):
         self.name = name.strip().lower()

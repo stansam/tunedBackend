@@ -109,7 +109,8 @@ def create_app(config_name=None):
     
     # Register shell context for flask shell
     register_shell_context(app)
-    
+    import tuned.tasks.email
+
     return app
 
 

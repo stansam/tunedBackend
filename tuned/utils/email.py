@@ -11,6 +11,7 @@ from flask import current_app, render_template
 from flask_mail import Mail, Message
 from tuned.models.audit import EmailLog
 from tuned.extensions import db, mail
+from tuned.tasks.email import send_email_task
 from typing import List, Optional, Dict, Any
 import logging
 
@@ -102,20 +103,9 @@ def send_async_email(to: str | List[str], subject: str, template: str, **context
             recipient_name='John'
         )
     """
-    from tuned.celery_app import celery_app
-    
-    # Import task here to avoid circular imports
-    @celery_app.task
-    def _send_email_task(to, subject, template, context):
-        """Celery task for sending emails."""
-        from tuned import create_app
-        
-        app = create_app()
-        with app.app_context():
-            send_email(to, subject, template, **context)
     
     # Queue the task
-    _send_email_task.delay(to, subject, template, context)
+    send_email_task.delay(to, subject, template, context)
 
 
 def send_bulk_emails(

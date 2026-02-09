@@ -101,13 +101,13 @@ def login():
         refresh_expires = timedelta(days=30 if remember_me else 7)
         
         access_token = create_access_token(
-            identity=user.id,
+            identity=str(user.id),
             fresh=True,
             expires_delta=access_expires
         )
         
         refresh_token = create_refresh_token(
-            identity=user.id,
+            identity=str(user.id),
             expires_delta=refresh_expires
         )
         

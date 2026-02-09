@@ -23,6 +23,7 @@ def send_email(
     to: str | List[str],
     subject: str,
     template: str,
+    sender: Optional[str] = None,
     **context: Any
 ) -> bool:
     """
@@ -65,7 +66,7 @@ def send_email(
             subject=subject,
             recipients=recipients,
             html=html,
-            sender=current_app.config['MAIL_DEFAULT_SENDER']
+            sender=sender if sender else current_app.config['MAIL_DEFAULT_SENDER']
         )
         
         # Send email
@@ -85,7 +86,7 @@ def send_email(
         return False
 
 
-def send_async_email(to: str | List[str], subject: str, template: str, **context: Any) -> None:
+def send_async_email(to: str | List[str], subject: str, template: str, sender: Optional[str]=None, **context: Any) -> None:
     """
     Send an email asynchronously using Celery.
     
@@ -105,7 +106,10 @@ def send_async_email(to: str | List[str], subject: str, template: str, **context
     """
     
     # Queue the task
-    send_email_task.delay(to, subject, template, context)
+    if sender is None:
+        send_email_task.delay(to, subject, template, context)
+    else:
+        send_email_task.delay(to, subject, template, sender, context)
 
 
 def send_bulk_emails(

@@ -94,6 +94,7 @@ def send_verification_email(user: User, verification_token: str) -> None:
         to=user.email,
         subject='Verify Your Email - Tuned Essays',
         template='client/verify_email',
+        sender="no-reply@tunedessays.com",
         recipient_name=user.get_name(),
         verification_url=verification_url,
         support_email=current_app.config.get('MAIL_DEFAULT_SENDER'),
@@ -115,24 +116,13 @@ def send_welcome_email_delayed(user: User) -> None:
     """
     from tuned.celery_app import celery_app
     import random
+    from tuned.tasks.email import send_welcome_task
     
     # Random delay between 15-30 minutes (900-1800 seconds)
     delay_seconds = random.randint(900, 1800)
     
-    @celery_app.task
-    def _send_welcome_task(user_id):
-        """Celery task for sending welcome email."""
-        from tuned import create_app
-        from tuned.models.user import User
-        
-        app = create_app()
-        with app.app_context():
-            user = User.query.get(user_id)
-            if user:
-                send_welcome_email(user)
-    
     # Queue the task with delay
-    _send_welcome_task.apply_async(args=[user.id], countdown=delay_seconds)
+    send_welcome_task.apply_async(args=[user.id], countdown=delay_seconds)
     
     logger.info(f"Welcome email scheduled for user {user.id} with {delay_seconds}s delay")
 
@@ -189,6 +179,7 @@ def send_password_reset_email(user: User, reset_token: str) -> None:
             to=user.email,
             subject='Reset Your Password - Tuned Essays',
             template='client/password_reset',
+            sender="no-reply@tunedessays.com",
             recipient_name=user.get_name(),
             reset_url=reset_url,
             request_ip=request_ip,
@@ -263,6 +254,7 @@ def send_newsletter_welcome_email(email, name):
 
 def send_newsletter_goodbye_email(email, name):
     """Send newsletter unsubscribe confirmation."""
+    """Newsletter Email:sender="newsletter@tunedessays.com"""
     logger.info(f'Sending newsletter goodbye to {email}')
     # Stub implementation
     pass

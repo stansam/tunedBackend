@@ -68,3 +68,8 @@ def make_celery(app=None):
 # Create Celery instance
 # This will be properly configured when Flask app is created
 celery_app = make_celery()
+
+# Import tasks to ensure they are registered with Celery
+# This must be done after celery_app is initialized to avoid circular imports
+import tuned.tasks.email
+import tuned.tasks.order_tasks

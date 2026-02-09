@@ -82,9 +82,9 @@ def create_app(config_name=None):
     from tuned.client import client_bp
     from tuned.main import main_bp
     
-    app.register_blueprint(admin_bp, url_prefix='/admin')
-    app.register_blueprint(auth_bp, url_prefix='/auth')
-    app.register_blueprint(client_bp, url_prefix='/client')
+    app.register_blueprint(admin_bp, url_prefix='/api/admin')
+    app.register_blueprint(auth_bp, url_prefix='/api/auth')
+    app.register_blueprint(client_bp, url_prefix='/api/client')
     
     # Register preferences blueprint
     from tuned.client.routes.settings.preferences import preferences_bp

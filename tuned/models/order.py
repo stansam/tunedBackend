@@ -43,10 +43,10 @@ class Order(db.Model):
     additional_materials = db.Column(db.Text, nullable=True, default=None)
     
     # Relationships
-    client = db.relationship('User', backref='orders')
-    service = db.relationship('Service', backref='orders')
-    academic_level = db.relationship('AcademicLevel', backref='orders')
-    deadline = db.relationship('Deadline', backref='orders')
+    client = db.relationship('User', back_populates='orders')
+    service = db.relationship('Service', back_populates='orders')
+    academic_level = db.relationship('AcademicLevel', back_populates='orders')
+    deadline = db.relationship('Deadline', back_populates='orders')
     testimonials = db.relationship('Testimonial', backref='order', lazy=True, cascade='all, delete-orphan')
     files = db.relationship('OrderFile', backref='order', lazy=True, cascade='all, delete-orphan')
     payments = db.relationship('Payment', back_populates='order', lazy=True, cascade='all, delete-orphan')

@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 
 
 @auth_bp.route('/register', methods=['POST'])
-@rate_limit(max_requests=3, window=300)  # 3 attempts per 5 minutes
+# @rate_limit(max_requests=3, window=300)  # 3 attempts per 5 minutes
 def register():
     """
     Register a new user account.

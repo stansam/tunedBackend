@@ -36,7 +36,7 @@ class Service(db.Model):
         db.Index('ix_service_category_featured', 'category_id', 'featured'),
     )
     
-    orders = db.relationship('Order', backref='service', lazy=True)
+    orders = db.relationship('Order', back_populates='service', lazy=True)
     samples = db.relationship('Sample', backref='service', lazy=True)
     testimonials = db.relationship('Testimonial', backref='service', lazy=True)
     pricing_category = db.relationship('PricingCategory', back_populates='service')
@@ -87,7 +87,7 @@ class AcademicLevel(db.Model):
     name = db.Column(db.String(100), nullable=False)
     order = db.Column(db.Integer, default=0)
     
-    orders = db.relationship('Order', backref='academic_level', lazy=True)
+    orders = db.relationship('Order', back_populates='academic_level', lazy=True)
     price_rates = db.relationship('PriceRate', backref='academic_level', lazy=True)
     
     def __repr__(self):
@@ -111,7 +111,7 @@ class Deadline(db.Model):
         db.CheckConstraint('hours > 0 AND hours <= 720', name='valid_deadline_hours'),
     )
     
-    orders = db.relationship('Order', backref='deadline', lazy=True)
+    orders = db.relationship('Order', back_populates='deadline', lazy=True)
     price_rates = db.relationship('PriceRate', backref='deadline', lazy=True)
     
     def __repr__(self):

@@ -56,7 +56,7 @@ class User(UserMixin, db.Model):
     # No table args needed - token indexes removed
 
     # Relationships
-    orders = db.relationship('Order', foreign_keys='Order.client_id', backref='client', lazy=True)
+    orders = db.relationship('Order', foreign_keys='Order.client_id', back_populates='client', lazy=True)
     referrals = db.relationship('Referral', foreign_keys='Referral.referrer_id', backref='referrer', lazy=True)
     referred_by = db.relationship('Referral', foreign_keys='Referral.referred_id', backref='referred', lazy=True)
     notifications = db.relationship('Notification', backref='user', lazy=True)

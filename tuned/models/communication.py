@@ -28,7 +28,7 @@ class Notification(db.Model):
             'id':         self.id,
             'title':      self.title,
             'message':    self.message,
-            'type':       self.type,
+            'type':       self.type.value if self.type else None,
             'link':       self.link,
             'is_read':    self.is_read,
             'created_at': self.created_at.isoformat()
@@ -51,7 +51,8 @@ class NewsletterSubscriber(db.Model):
         default=NewsletterFrequency.WEEKLY,
         nullable=False
     )
-    topics = db.Column(ARRAY(db.String), nullable=True, default=list)
+    # topics = db.Column(ARRAY(db.String), nullable=True, default=list)
+    topics = db.Column(db.JSON, nullable=True)
     format = db.Column(
         db.Enum(NewsletterFormat),
         default=NewsletterFormat.HTML,

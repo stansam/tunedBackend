@@ -19,10 +19,10 @@ from tuned.client.schemas.order import (
 )
 
 # Payment schemas
-from tuned.client.schemas.payment_schemas import (
+from tuned.client.schemas.payment import (
     PaymentFilterSchema,
-    PaymentConfirmationSchema,
-    InvoiceRequestSchema,
+    ManualPaymentConfirmationSchema,
+    # InvoiceRequestSchema,
     PayPalPaymentSchema,
     BraintreePaymentSchema,
     InvoiceDownloadSchema,
@@ -47,14 +47,16 @@ from tuned.client.schemas.referral import (
 )
 
 # Settings - Profile schemas
-from tuned.client.schemas.settings.profile import (
+from tuned.client.schemas.settings import (
     UpdateProfileSchema,
     UpdateProfilePictureSchema,
     DeleteProfilePictureSchema,
-    NotificationPreferencesSchema,
-    PrivacySettingsSchema,
+    ChangeEmailSchema,
+    ChangePasswordSchema,
     LanguagePreferenceSchema,
-    EmailPreferencesSchema
+    DeleteProfilePictureSchema
+
+    
 )
 
 # Settings - Newsletter schemas
@@ -65,13 +67,6 @@ from tuned.client.schemas.settings.newsletter import (
     NewsletterTokenSchema
 )
 
-# Settings - Existing schemas (for backwards compatibility)
-try:
-    from tuned.client.schemas.settings.profile.change_password import ChangePasswordSchema
-    from tuned.client.schemas.settings.profile.change_email import ChangeEmailSchema
-except ImportError:
-    ChangePasswordSchema = None
-    ChangeEmailSchema = None
 
 
 __all__ = [

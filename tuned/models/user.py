@@ -4,11 +4,7 @@ from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 from tuned.extensions import db
 from tuned.models.communication import ChatMessage, Chat
-import enum
-
-class GenderEnum(enum.Enum):
-    male = "male"
-    female = "female"
+from tuned.models.enums import GenderEnum
 
 class User(UserMixin, db.Model):
     __tablename__ = 'users'

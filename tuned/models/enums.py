@@ -5,6 +5,9 @@ This module contains all enum types used across database models.
 """
 import enum
 
+class GenderEnum(enum.Enum):
+    male = "male"
+    female = "female"
 
 class OrderStatus(enum.Enum):
     """Order status enumeration"""

@@ -3,6 +3,7 @@ from tuned.extensions import db
 from tuned.models.enums import DeliveryStatus, FileType
 
 class OrderDelivery(db.Model):
+    __tablename__ = 'order_delivery'
     id = db.Column(db.Integer, primary_key=True)
     order_id = db.Column(db.Integer, db.ForeignKey('order.id'), nullable=False)
     delivery_status = db.Column(db.Enum(DeliveryStatus), default=DeliveryStatus.DELIVERED, nullable=False)

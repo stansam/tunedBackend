@@ -31,7 +31,7 @@ class OrderRevisionRequest(db.Model):
     )
     delivery_id = db.Column(
         db.Integer,
-        db.ForeignKey('order_deliveries.id', ondelete='CASCADE'),
+        db.ForeignKey('order_delivery.id', ondelete='CASCADE'),
         nullable=False
     )
     requested_by = db.Column(

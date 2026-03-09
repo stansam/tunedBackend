@@ -1,9 +1,10 @@
 from tuned.extensions import db
+from tuned.models.base import BaseModel
+from tuned.models.tag import service_tags
 from datetime import datetime
 import re
 
-class ServiceCategory(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
+class ServiceCategory(BaseModel):
     name = db.Column(db.String(100), nullable=False)
     description = db.Column(db.Text)
     order = db.Column(db.Integer, default=0)
@@ -20,13 +21,11 @@ class ServiceCategory(db.Model):
             'order': self.order
         }
 
-class Service(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
+class Service(BaseModel):
     name = db.Column(db.String(100), nullable=False)
     description = db.Column(db.Text)
-    category_id = db.Column(db.Integer, db.ForeignKey('service_category.id'))
+    category_id = db.Column(db.String(36), db.ForeignKey('service_category.id'))
     featured = db.Column(db.Boolean, default=False)
-    tags = db.Column(db.String(255), nullable=True) 
     pricing_category_id = db.Column(db.Integer, db.ForeignKey('pricing_category.id'))
     slug = db.Column(db.String(200), unique=True, nullable=False)
     is_active = db.Column(db.Boolean, default=True, server_default='true')
@@ -40,6 +39,7 @@ class Service(db.Model):
     samples = db.relationship('Sample', backref='service', lazy=True)
     testimonials = db.relationship('Testimonial', backref='service', lazy=True)
     pricing_category = db.relationship('PricingCategory', back_populates='service')
+    tag_list = db.relationship('Tag', secondary=service_tags, lazy='dynamic', back_populates='services')
     
     def __init__(self, **kwargs):
         super(Service, self).__init__(**kwargs)
@@ -82,8 +82,7 @@ class Service(db.Model):
             return [tag.strip() for tag in self.tags.split(',')]
         return []
 
-class AcademicLevel(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
+class AcademicLevel(BaseModel):
     name = db.Column(db.String(100), nullable=False)
     order = db.Column(db.Integer, default=0)
     
@@ -100,8 +99,7 @@ class AcademicLevel(db.Model):
         }
     
 
-class Deadline(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
+class Deadline(BaseModel):
     name = db.Column(db.String(100), nullable=False)
     hours = db.Column(db.Integer, nullable=False)
     order = db.Column(db.Integer, default=0)

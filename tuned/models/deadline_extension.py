@@ -5,12 +5,13 @@ Tracks admin requests for deadline extensions on active orders.
 When the admin needs more time to complete work, they request an extension from the client.
 """
 from tuned.extensions import db
+from tuned.models.base import BaseModel
 from datetime import datetime, timezone, timedelta
 from tuned.models.enums import ExtensionRequestStatus, Priority
 from sqlalchemy.orm import validates
 
 
-class OrderDeadlineExtensionRequest(db.Model):
+class OrderDeadlineExtensionRequest(BaseModel):
     """
     Track admin deadline extension requests for active orders.
     
@@ -21,12 +22,9 @@ class OrderDeadlineExtensionRequest(db.Model):
     
     __tablename__ = 'order_deadline_extension_requests'
     
-    # Primary Key
-    id = db.Column(db.Integer, primary_key=True)
-    
     # Foreign Keys
     order_id = db.Column(
-        db.Integer,
+        db.String(36),
         db.ForeignKey('order.id', ondelete='CASCADE'),
         nullable=False,
         index=True
@@ -71,11 +69,8 @@ class OrderDeadlineExtensionRequest(db.Model):
         nullable=False
     )
     reviewed_at = db.Column(db.DateTime(timezone=True), nullable=True)
+    rejection_reason = db.Column(db.Text, nullable=True)  
     
-    # Metadata
-    rejection_reason = db.Column(db.Text, nullable=True)  # Client's reason for rejection
-    
-    # Relationships
     order = db.relationship(
         'Order',
         backref=db.backref('deadline_extension_requests', lazy='dynamic', cascade='all, delete-orphan')
@@ -83,7 +78,6 @@ class OrderDeadlineExtensionRequest(db.Model):
     requester = db.relationship('User', foreign_keys=[requested_by])  # Admin who requested
     reviewer = db.relationship('User', foreign_keys=[reviewed_by])  # Client who approved/rejected
     
-    # Indexes for performance
     __table_args__ = (
         db.Index('ix_extension_request_order_status', 'order_id', 'status'),
         db.Index('ix_extension_request_created', 'requested_at'),

@@ -4,12 +4,13 @@ Order Revision Request model.
 Tracks client requests for revisions after order delivery.
 """
 from tuned.extensions import db
+from tuned.models.base import BaseModel
 from datetime import datetime, timezone
 from tuned.models.enums import RevisionRequestStatus, Priority
 from sqlalchemy.orm import validates
 
 
-class OrderRevisionRequest(db.Model):
+class OrderRevisionRequest(BaseModel):
     """
     Track client revision requests for delivered orders.
     
@@ -18,29 +19,26 @@ class OrderRevisionRequest(db.Model):
     """
     
     __tablename__ = 'order_revision_requests'
-    
-    # Primary Key
-    id = db.Column(db.Integer, primary_key=True)
-    
+
     # Foreign Keys
     order_id = db.Column(
-        db.Integer,
+        db.String(36),
         db.ForeignKey('order.id', ondelete='CASCADE'),
         nullable=False,
         index=True
     )
     delivery_id = db.Column(
-        db.Integer,
+        db.String(36),
         db.ForeignKey('order_delivery.id', ondelete='CASCADE'),
         nullable=False
     )
     requested_by = db.Column(
-        db.Integer,
+        db.String(36),
         db.ForeignKey('users.id'),
         nullable=False
     )
     reviewed_by = db.Column(
-        db.Integer,
+        db.String(36),
         db.ForeignKey('users.id'),
         nullable=True
     )

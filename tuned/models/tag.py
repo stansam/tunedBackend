@@ -4,7 +4,7 @@ Replaces comma-separated tag strings with proper many-to-many relationships.
 """
 from tuned.extensions import db
 from datetime import datetime, timezone
-
+from tuned.models.base import BaseModel
 
 # Association tables for many-to-many relationships
 service_tags = db.Table('service_tags',
@@ -26,17 +26,14 @@ blog_post_tags = db.Table('blog_post_tags',
 )
 
 
-class Tag(db.Model):
+class Tag(BaseModel):
     """Normalized tag model for services, samples, and blog posts"""
     __tablename__ = 'tag'
     
-    id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(50), unique=True, nullable=False, index=True)
     slug = db.Column(db.String(60), unique=True, nullable=False, index=True)
     description = db.Column(db.String(200))
     usage_count = db.Column(db.Integer, default=0)  # Denormalized count for performance
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
-    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
     
     # Relationships with backref
     services = db.relationship('Service', secondary=service_tags, backref=db.backref('tag_objects', lazy='dynamic'))

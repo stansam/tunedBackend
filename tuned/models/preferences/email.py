@@ -8,9 +8,10 @@ user-specific email communication preferences.
 from datetime import datetime, timezone
 from tuned.extensions import db
 from tuned.models.enums import EmailFrequency
+from tuned.models.base import BaseModel
 
 
-class UserEmailPreferences(db.Model):
+class UserEmailPreferences(BaseModel):
     """
     User preferences for email communications.
     
@@ -38,12 +39,9 @@ class UserEmailPreferences(db.Model):
     
     __tablename__ = 'user_email_preferences'
     
-    # Primary Key
-    id = db.Column(db.Integer, primary_key=True)
-    
     # Foreign Key (CASCADE delete, one-to-one)
     user_id = db.Column(
-        db.Integer,
+        db.String(36),
         db.ForeignKey('users.id', ondelete='CASCADE'),
         unique=True,
         nullable=False,
@@ -88,18 +86,6 @@ class UserEmailPreferences(db.Model):
         default=9,
         nullable=True
     )  # 0-23, null if instant
-    
-    # Timestamps
-    created_at = db.Column(
-        db.DateTime(timezone=True),
-        default=lambda: datetime.now(timezone.utc),
-        nullable=False
-    )
-    updated_at = db.Column(
-        db.DateTime(timezone=True),
-        onupdate=lambda: datetime.now(timezone.utc),
-        nullable=True
-    )
     
     # Relationships
     user = db.relationship('User', backref=db.backref('email_preferences', uselist=False, lazy=True))

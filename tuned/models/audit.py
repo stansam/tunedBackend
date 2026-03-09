@@ -7,25 +7,22 @@ Includes:
 - ActivityLog: Central audit log for all system actions
 - EmailLog: Track all sent emails for debugging and compliance
 """
-from tuned.extensions import db
+from tuned.models.base import BaseModel
 from datetime import datetime, timezone
+from tuned.extensions import db
 
-
-class PriceHistory(db.Model):
+class PriceHistory(BaseModel):
     """Track price changes over time for audit trail"""
     __tablename__ = 'price_history'
     
-    id = db.Column(db.Integer, primary_key=True)
-    price_rate_id = db.Column(db.Integer, db.ForeignKey('price_rate.id'), nullable=False, index=True)
+    price_rate_id = db.Column(db.String(36), db.ForeignKey('price_rate.id'), nullable=False, index=True)
     old_price = db.Column(db.Numeric(precision=10, scale=2), nullable=False)
     new_price = db.Column(db.Numeric(precision=10, scale=2), nullable=False)
-    changed_by = db.Column(db.Integer, db.ForeignKey('users.id'))
-    changed_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), index=True)
     reason = db.Column(db.Text)
     
     # Indexes
     __table_args__ = (
-        db.Index('ix_price_history_rate_date', 'price_rate_id', 'changed_at'),
+        db.Index('ix_price_history_rate_date', 'price_rate_id', 'updated_at'),
     )
     
     # Relationships
@@ -36,22 +33,19 @@ class PriceHistory(db.Model):
         return f'<PriceHistory PriceRate:{self.price_rate_id} ${self.old_price}→${self.new_price}>'
 
 
-class OrderStatusHistory(db.Model):
+class OrderStatusHistory(BaseModel):
     """Track order status changes for complete audit trail"""
     __tablename__ = 'order_status_history'
     
-    id = db.Column(db.Integer, primary_key=True)
-    order_id = db.Column(db.Integer, db.ForeignKey('order.id'), nullable=False, index=True)
+    order_id = db.Column(db.String(36), db.ForeignKey('order.id'), nullable=False, index=True)
     old_status = db.Column(db.String(50))
     new_status = db.Column(db.String(50), nullable=False)
-    changed_by = db.Column(db.Integer, db.ForeignKey('users.id'))
-    changed_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), index=True)
     notes = db.Column(db.Text)
     ip_address = db.Column(db.String(45))  # IPv4 or IPv6
     
     # Indexes
     __table_args__ = (
-        db.Index('ix_status_history_order_date', 'order_id', 'changed_at'),
+        db.Index('ix_status_history_order_date', 'order_id', 'updated_at'),
     )
     
     # Relationships
@@ -62,20 +56,18 @@ class OrderStatusHistory(db.Model):
         return f'<OrderStatusHistory Order:{self.order_id} {self.old_status}→{self.new_status}>'
 
 
-class ActivityLog(db.Model):
+class ActivityLog(BaseModel):
     """Central audit log for all important system actions"""
     __tablename__ = 'activity_log'
     
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), index=True)
+    user_id = db.Column(db.String(36), db.ForeignKey('users.id'), index=True)
     action = db.Column(db.String(100), nullable=False, index=True)  # e.g., "order_created", "payment_received"
     entity_type = db.Column(db.String(50), index=True)  # e.g., "Order", "Payment", "User"
-    entity_id = db.Column(db.Integer, index=True)
+    entity_id = db.Column(db.String(36), index=True)
     description = db.Column(db.String(255))
     details = db.Column(db.Text)  # JSON string with additional details
     ip_address = db.Column(db.String(45))
     user_agent = db.Column(db.String(255))
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), index=True)
     
     # Composite indexes for common queries
     __table_args__ = (
@@ -108,22 +100,19 @@ class ActivityLog(db.Model):
         return f'<ActivityLog {self.action} by User:{self.user_id}>'
 
 
-class EmailLog(db.Model):
+class EmailLog(BaseModel):
     """Track all sent emails for debugging, compliance, and audit"""
     __tablename__ = 'email_log'
     
-    id = db.Column(db.Integer, primary_key=True)
     recipient = db.Column(db.String(120), nullable=False, index=True)
     subject = db.Column(db.String(255), nullable=False)
     template = db.Column(db.String(100))  # Email template name used
     status = db.Column(db.String(20), default='pending', index=True)  # pending, sent, failed
     error_message = db.Column(db.Text)
     sent_at = db.Column(db.DateTime)
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), index=True)
     
-    # Optional: Link to related entities
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), index=True)
-    order_id = db.Column(db.Integer, db.ForeignKey('order.id'), index=True)
+    user_id = db.Column(db.String(36), db.ForeignKey('users.id'), index=True)
+    order_id = db.Column(db.String(36), db.ForeignKey('order.id'), index=True)
     
     # Indexes
     __table_args__ = (

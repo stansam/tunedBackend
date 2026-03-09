@@ -3,12 +3,12 @@ from flask import url_for
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 from tuned.extensions import db
+from tuned.models.base import BaseModel
 from tuned.models.communication import ChatMessage, Chat
 from tuned.models.enums import GenderEnum
 
-class User(UserMixin, db.Model):
+class User(UserMixin, BaseModel):
     __tablename__ = 'users'
-    id = db.Column(db.Integer, primary_key=True)
 
     username = db.Column(db.String(64), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
@@ -18,8 +18,6 @@ class User(UserMixin, db.Model):
     last_failed_login = db.Column(db.DateTime)
 
     email_verified = db.Column(db.Boolean, default=False)
-    # Token storage removed - using itsdangerous for stateless tokens
-    # email_verification_token and password_reset_token handled via itsdangerous
     
     first_name = db.Column(db.String(100))
     last_name = db.Column(db.String(100))
@@ -29,32 +27,16 @@ class User(UserMixin, db.Model):
 
     is_admin = db.Column(db.Boolean, default=False, server_default='false')
 
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
-
     referral_code = db.Column(db.String(10), unique=True) 
     reward_points = db.Column(db.Integer, default=0)
 
     braintree_customer_id = db.Column(db.String(50))
 
-    # Soft delete and activity tracking
-    is_active = db.Column(db.Boolean, default=True, server_default='true')
-    deleted_at = db.Column(db.DateTime, nullable=True)
     last_login_at = db.Column(db.DateTime, nullable=True)
     
-    # User preference cache fields (cached from UserLocalizationSettings)
-    # These are denormalized for performance - UserLocalizationSettings is the authoritative source
     language = db.Column(db.String(10), default='en', nullable=True)  # ISO 639-1
     timezone = db.Column(db.String(50), default='UTC', nullable=True)  # IANA timezone
-    updated_at = db.Column(
-        db.DateTime(timezone=True),
-        nullable=True,
-        onupdate=lambda: datetime.now(timezone.utc)
-    )
-
-
-    # Table arguments for indexes
-    # No table args needed - token indexes removed
-
+    
     # Relationships
     orders = db.relationship('Order', foreign_keys='Order.client_id', back_populates='client', lazy=True)
     referrals = db.relationship('Referral', foreign_keys='Referral.referrer_id', backref='referrer', lazy=True)

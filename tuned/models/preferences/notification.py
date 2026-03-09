@@ -7,9 +7,10 @@ user-specific notification channel and category preferences.
 
 from datetime import datetime, timezone
 from tuned.extensions import db
+from tuned.models.base import BaseModel
 
 
-class UserNotificationPreferences(db.Model):
+class UserNotificationPreferences(BaseModel):
     """
     User preferences for notifications.
     
@@ -40,12 +41,9 @@ class UserNotificationPreferences(db.Model):
     
     __tablename__ = 'user_notification_preferences'
     
-    # Primary Key
-    id = db.Column(db.Integer, primary_key=True)
-    
     # Foreign Key (CASCADE delete, one-to-one)
     user_id = db.Column(
-        db.Integer,
+        db.String(36),
         db.ForeignKey('users.id', ondelete='CASCADE'),
         unique=True,
         nullable=False,
@@ -69,19 +67,7 @@ class UserNotificationPreferences(db.Model):
     # Marketing (can be disabled)
     marketing_emails = db.Column(db.Boolean, default=False, nullable=False)
     weekly_summary = db.Column(db.Boolean, default=False, nullable=False)
-    
-    # Timestamps
-    created_at = db.Column(
-        db.DateTime(timezone=True),
-        default=lambda: datetime.now(timezone.utc),
-        nullable=False
-    )
-    updated_at = db.Column(
-        db.DateTime(timezone=True),
-        onupdate=lambda: datetime.now(timezone.utc),
-        nullable=True
-    )
-    
+        
     # Relationships
     user = db.relationship('User', backref=db.backref('notification_preferences', uselist=False, lazy=True))
     

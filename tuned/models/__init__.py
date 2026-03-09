@@ -1,4 +1,4 @@
-from tuned.models.user import User, GenderEnum
+from tuned.models.user import User
 from tuned.models.service import Service, ServiceCategory, AcademicLevel, Deadline
 from tuned.models.content import Sample, FAQ, Testimonial
 from tuned.models.blog import BlogCategory, BlogPost, BlogComment
@@ -14,49 +14,12 @@ from tuned.models.deadline_extension import OrderDeadlineExtensionRequest
 from tuned.models.revision_request import OrderRevisionRequest
 
 # Preference models
-from tuned.models.preferences.notification import UserNotificationPreferences
-from tuned.models.preferences.email import UserEmailPreferences
-from tuned.models.preferences.privacy import UserPrivacySettings
-from tuned.models.preferences.localization import UserLocalizationSettings
-from tuned.models.preferences.accessibility import UserAccessibilityPreferences
-from tuned.models.preferences.billing import UserBillingPreferences
-
+from tuned.models.preferences import (
+    UserNotificationPreferences, UserEmailPreferences, UserPrivacySettings,
+    UserLocalizationSettings, UserAccessibilityPreferences, UserBillingPreferences
+    )
 from tuned.models.enums import (
     OrderStatus, SupportTicketStatus, PaymentStatus, PaymentMethod,
     TransactionType, RefundStatus, NotificationType, ChatStatus,
-    DeliveryStatus, FileType, ReferralStatus, DiscountType, Currency
+    DeliveryStatus, FileType, ReferralStatus, DiscountType, Currency, GenderEnum
 )
-
-__all__ = [
-    'User',
-    'Order',
-    'Service',
-    'OrderItem',
-    'Payment',
-    'Transaction',
-    'Tag',
-    'ServiceTag',
-    'OrderTag',
-    'PriceScale',
-    'ReferralBonus',
-    'Notification',
-    'NewsletterSubscriber',
-    'Chat',
-    'ChatMessage',
-    'OrderDelivery',
-    'SupportTicket',
-    'BlogPost',
-    'BlogCategory',
-    'BlogTag',
-    'ActivityLog',
-    'SystemEvent',
-    'OrderRevisionRequest',
-    'OrderDeadlineExtensionRequest',
-    # Preference models
-    'UserNotificationPreferences',
-    'UserEmailPreferences',
-    'UserPrivacySettings',
-    'UserLocalizationSettings',
-    'UserAccessibilityPreferences',
-    'UserBillingPreferences',
-]

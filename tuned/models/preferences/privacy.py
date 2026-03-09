@@ -8,9 +8,9 @@ user privacy and visibility preferences.
 from datetime import datetime, timezone
 from tuned.extensions import db
 from tuned.models.enums import ProfileVisibility
+from tuned.models.base import BaseModel
 
-
-class UserPrivacySettings(db.Model):
+class UserPrivacySettings(BaseModel):
     """
     User privacy and visibility preferences.
     
@@ -37,13 +37,10 @@ class UserPrivacySettings(db.Model):
     """
     
     __tablename__ = 'user_privacy_settings'
-    
-    # Primary Key
-    id = db.Column(db.Integer, primary_key=True)
-    
+
     # Foreign Key (CASCADE delete, one-to-one)
     user_id = db.Column(
-        db.Integer,
+        db.String(36),
         db.ForeignKey('users.id', ondelete='CASCADE'),
         unique=True,
         nullable=False,
@@ -71,18 +68,6 @@ class UserPrivacySettings(db.Model):
     
     # Search engine indexing
     allow_search_engine_indexing = db.Column(db.Boolean, default=False, nullable=False)
-    
-    # Timestamps
-    created_at = db.Column(
-        db.DateTime(timezone=True),
-        default=lambda: datetime.now(timezone.utc),
-        nullable=False
-    )
-    updated_at = db.Column(
-        db.DateTime(timezone=True),
-        onupdate=lambda: datetime.now(timezone.utc),
-        nullable=True
-    )
     
     # Relationships
     user = db.relationship('User', backref=db.backref('privacy_settings', uselist=False, lazy=True))

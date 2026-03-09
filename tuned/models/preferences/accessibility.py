@@ -7,9 +7,10 @@ user accessibility and usability settings.
 
 from datetime import datetime, timezone
 from tuned.extensions import db
+from tuned.models.base import BaseModel
 
 
-class UserAccessibilityPreferences(db.Model):
+class UserAccessibilityPreferences(BaseModel):
     """
     User accessibility and usability preferences.
     
@@ -35,13 +36,10 @@ class UserAccessibilityPreferences(db.Model):
     """
     
     __tablename__ = 'user_accessibility_preferences'
-    
-    # Primary Key
-    id = db.Column(db.Integer, primary_key=True)
-    
+        
     # Foreign Key (CASCADE delete, one-to-one)
     user_id = db.Column(
-        db.Integer,
+        db.String(36),
         db.ForeignKey('users.id', ondelete='CASCADE'),
         unique=True,
         nullable=False,
@@ -68,17 +66,6 @@ class UserAccessibilityPreferences(db.Model):
     keyboard_navigation_enhanced = db.Column(db.Boolean, default=False, nullable=False)
     focus_indicators_enhanced = db.Column(db.Boolean, default=False, nullable=False)
     
-    # Timestamps
-    created_at = db.Column(
-        db.DateTime(timezone=True),
-        default=lambda: datetime.now(timezone.utc),
-        nullable=False
-    )
-    updated_at = db.Column(
-        db.DateTime(timezone=True),
-        onupdate=lambda: datetime.now(timezone.utc),
-        nullable=True
-    )
     
     # Relationships
     user = db.relationship('User', backref=db.backref('accessibility_preferences', uselist=False, lazy=True))

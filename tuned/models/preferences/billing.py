@@ -8,9 +8,9 @@ user billing and invoice preferences.
 from datetime import datetime, timezone
 from tuned.extensions import db
 from tuned.models.enums import InvoiceDeliveryMethod
+from tuned.models.base import BaseModel
 
-
-class UserBillingPreferences(db.Model):
+class UserBillingPreferences(BaseModel):
     """
     User billing and invoice preferences.
     
@@ -35,12 +35,9 @@ class UserBillingPreferences(db.Model):
     
     __tablename__ = 'user_billing_preferences'
     
-    # Primary Key
-    id = db.Column(db.Integer, primary_key=True)
-    
     # Foreign Key (CASCADE delete, one-to-one)
     user_id = db.Column(
-        db.Integer,
+        db.String(36),
         db.ForeignKey('users.id', ondelete='CASCADE'),
         unique=True,
         nullable=False,
@@ -62,18 +59,6 @@ class UserBillingPreferences(db.Model):
     # Future features (payment provider integration)
     auto_reload_enabled = db.Column(db.Boolean, default=False, nullable=True)
     auto_reload_threshold = db.Column(db.Numeric(10, 2), nullable=True)
-    
-    # Timestamps
-    created_at = db.Column(
-        db.DateTime(timezone=True),
-        default=lambda: datetime.now(timezone.utc),
-        nullable=False
-    )
-    updated_at = db.Column(
-        db.DateTime(timezone=True),
-        onupdate=lambda: datetime.now(timezone.utc),
-        nullable=True
-    )
     
     # Relationships
     user = db.relationship('User', backref=db.backref('billing_preferences', uselist=False, lazy=True))

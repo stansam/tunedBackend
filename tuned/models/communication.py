@@ -1,17 +1,16 @@
 from tuned.extensions import db
+from tuned.models.base import BaseModel
 from datetime import datetime, timezone
 from tuned.models.enums import NotificationType, ChatStatus, NewsletterFrequency, NewsletterFormat
 from sqlalchemy.dialects.postgresql import ARRAY
 
-class Notification(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+class Notification(BaseModel):
+    user_id = db.Column(db.String(36), db.ForeignKey('users.id'), nullable=False)
     title = db.Column(db.String(100), nullable=False)
     message = db.Column(db.Text, nullable=False)
     type = db.Column(db.Enum(NotificationType), default=NotificationType.INFO, nullable=False)
     link = db.Column(db.String(255),    nullable=True)
     is_read = db.Column(db.Boolean, default=False)
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
     # Table arguments for indexes
     __table_args__ = (
@@ -20,7 +19,6 @@ class Notification(db.Model):
 
     def mark_as_read(self):
         self.is_read = True
-        from tuned.extensions import db
         db.session.commit()
     
     def to_dict(self):
@@ -37,21 +35,18 @@ class Notification(db.Model):
     def __repr__(self):
         return f'<Notification {self.title}>'
 
-class NewsletterSubscriber(db.Model):
+class NewsletterSubscriber(BaseModel):
     __tablename__ = 'newsletter_subscriber'
-    id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(120), unique=True, nullable=False)
     name = db.Column(db.String(100))
     is_active = db.Column(db.Boolean, default=True)
     subscribed_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     
-    # Newsletter preferences (added in migration 006)
     frequency = db.Column(
         db.Enum(NewsletterFrequency),
         default=NewsletterFrequency.WEEKLY,
         nullable=False
     )
-    # topics = db.Column(ARRAY(db.String), nullable=True, default=list)
     topics = db.Column(db.JSON, nullable=True)
     format = db.Column(
         db.Enum(NewsletterFormat),
@@ -62,12 +57,11 @@ class NewsletterSubscriber(db.Model):
     def __repr__(self):
         return f'<NewsletterSubscriber {self.email}>'
     
-class Chat(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
-    admin_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+class Chat(BaseModel):
+    user_id = db.Column(db.String(36), db.ForeignKey('users.id'))
+    admin_id = db.Column(db.String(36), db.ForeignKey('users.id'))
     subject = db.Column(db.String(255))
-    order_id = db.Column(db.Integer, db.ForeignKey('order.id'))
+    order_id = db.Column(db.String(36), db.ForeignKey('order.id'))
     status = db.Column(db.Enum(ChatStatus), default=ChatStatus.ACTIVE, nullable=False)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     
@@ -80,10 +74,9 @@ class Chat(db.Model):
     def __repr__(self):
         return f'<Chat {self.id}>'
     
-class ChatMessage(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
-    chat_id = db.Column(db.Integer, db.ForeignKey('chat.id'))
+class ChatMessage(BaseModel):
+    user_id = db.Column(db.String(36), db.ForeignKey('users.id'))
+    chat_id = db.Column(db.String(36), db.ForeignKey('chat.id'))
     content = db.Column(db.Text)
     is_read = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))

@@ -8,9 +8,9 @@ user language, timezone, and formatting preferences.
 from datetime import datetime, timezone
 from tuned.extensions import db
 from tuned.models.enums import DateFormat, TimeFormat, NumberFormat, WeekStart
+from tuned.models.base import BaseModel
 
-
-class UserLocalizationSettings(db.Model):
+class UserLocalizationSettings(BaseModel):
     """
     User language, timezone, and formatting preferences.
     
@@ -40,12 +40,9 @@ class UserLocalizationSettings(db.Model):
     
     __tablename__ = 'user_localization_settings'
     
-    # Primary Key
-    id = db.Column(db.Integer, primary_key=True)
-    
     # Foreign Key (CASCADE delete, one-to-one)
     user_id = db.Column(
-        db.Integer,
+        db.String(36),
         db.ForeignKey('users.id', ondelete='CASCADE'),
         unique=True,
         nullable=False,
@@ -85,19 +82,7 @@ class UserLocalizationSettings(db.Model):
         default=WeekStart.SUNDAY,
         nullable=False
     )
-    
-    # Timestamps
-    created_at = db.Column(
-        db.DateTime(timezone=True),
-        default=lambda: datetime.now(timezone.utc),
-        nullable=False
-    )
-    updated_at = db.Column(
-        db.DateTime(timezone=True),
-        onupdate=lambda: datetime.now(timezone.utc),
-        nullable=True
-    )
-    
+        
     # Relationships
     user = db.relationship('User', backref=db.backref('localization_settings', uselist=False, lazy=True))
     

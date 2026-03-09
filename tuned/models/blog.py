@@ -1,10 +1,10 @@
+from tuned.models.base import BaseModel
 from tuned.extensions import db
 from tuned.models.tag import blog_post_tags
 from datetime import datetime, timezone
 import re
 
-class BlogCategory(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
+class BlogCategory(BaseModel):
     name = db.Column(db.String(100), nullable=False)
     slug = db.Column(db.String(120), unique=True, nullable=False)
     description = db.Column(db.Text)
@@ -15,20 +15,16 @@ class BlogCategory(db.Model):
     def __repr__(self):
         return f'<BlogCategory {self.name}>'
 
-class BlogPost(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
+class BlogPost(BaseModel):
     title = db.Column(db.String(200), nullable=False)
     slug = db.Column(db.String(220), unique=True, nullable=False)
     content = db.Column(db.Text, nullable=False)
     excerpt = db.Column(db.Text)
     featured_image = db.Column(db.String(255))
-    # Tags now use many-to-many relationship via blog_post_tags table
-    # Old column: tags = db.Column(db.String(255))  # Comma-separated tags
     author = db.Column(db.String(100), nullable=False)
     category_id = db.Column(db.Integer, db.ForeignKey('blog_category.id'))
     meta_description = db.Column(db.String(220))
     is_published = db.Column(db.Boolean, default=False)
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     published_at = db.Column(db.DateTime)
     
     # Table arguments for indexes
@@ -64,9 +60,8 @@ class BlogPost(db.Model):
     def __repr__(self):
         return f'<BlogPost {self.title}>'
 
-class BlogComment(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    post_id = db.Column(db.Integer, db.ForeignKey('blog_post.id'))
+class BlogComment(BaseModel):
+    post_id = db.Column(db.String(36), db.ForeignKey('blog_post.id'))
     name = db.Column(db.String(100))
     email = db.Column(db.String(100))
     content = db.Column(db.Text, nullable=False)
@@ -128,7 +123,7 @@ class BlogComment(db.Model):
         return f'<BlogComment {self.id}>'
 
 
-class CommentReaction(db.Model):
+class CommentReaction(BaseModel):
     """
     Track user reactions (like/dislike) on blog comments.
     

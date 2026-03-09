@@ -1,4 +1,5 @@
 from tuned.extensions import db
+from tuned.models.base import BaseModel
 from datetime import datetime, timezone, timedelta
 from uuid import uuid4
 from tuned.models.user import User
@@ -11,13 +12,12 @@ from sqlalchemy.orm import validates
 from tuned.utils.orders import generate_public_order_number
 
 
-class Order(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
+class Order(BaseModel):
     order_number = db.Column(db.String(20), unique=True, nullable=False, index=True)
-    client_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    service_id = db.Column(db.Integer, db.ForeignKey('service.id'), nullable=False)
-    academic_level_id = db.Column(db.Integer, db.ForeignKey('academic_level.id'), nullable=False)
-    deadline_id = db.Column(db.Integer, db.ForeignKey('deadline.id'), nullable=False)
+    client_id = db.Column(db.String(36), db.ForeignKey('users.id'), nullable=False)
+    service_id = db.Column(db.String(36), db.ForeignKey('service.id'), nullable=False)
+    academic_level_id = db.Column(db.String(36), db.ForeignKey('academic_level.id'), nullable=False)
+    deadline_id = db.Column(db.String(36), db.ForeignKey('deadline.id'), nullable=False)
     title = db.Column(db.String(255), nullable=False)
     description = db.Column(db.Text, nullable=False)
     word_count = db.Column(db.Integer, nullable=False)
@@ -27,15 +27,10 @@ class Order(db.Model):
     total_price = db.Column(db.Float, nullable=False)
     status = db.Column(db.Enum(OrderStatus), default=OrderStatus.PENDING, nullable=False)
     paid = db.Column(db.Boolean, default=False)
-    is_deleted = db.Column(db.Boolean, default=False, nullable=False)  # Soft delete support
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
-    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
     delivered_at = db.Column(db.DateTime, nullable=True, default=None)
     extension_requested = db.Column(db.Boolean, default=False)
     extension_requested_at = db.Column(db.DateTime, nullable=True, default=None)
     due_date = db.Column(db.DateTime, nullable=True, default=None)
-    writer_is_assigned = db.Column(db.Boolean, default=False)
-    writer_assigned_at = db.Column(db.DateTime)
     price_per_page = db.Column(db.Float, nullable=False)
     subtotal = db.Column(db.Float, nullable=False)
     discount_amount = db.Column(db.Float, nullable=True, default=0)
@@ -139,20 +134,17 @@ class Order(db.Model):
     def __repr__(self):
         return f'<Order {self.order_number}>'
 
-class OrderSequence(db.Model):
+class OrderSequence(BaseModel):
     __tablename__ = "order_sequences"
 
     year = db.Column(db.Integer, primary_key=True)
     month = db.Column(db.Integer, primary_key=True)
     value = db.Column(db.Integer, nullable=False, default=0)
     
-class OrderFile(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    order_id = db.Column(db.Integer, db.ForeignKey('order.id'), nullable=False)
+class OrderFile(BaseModel):
+    order_id = db.Column(db.String(36), db.ForeignKey('order.id'), nullable=False)
     filename = db.Column(db.String(255), nullable=False)
     file_path = db.Column(db.String(255), nullable=False)
-    # file_category = db.Column(db.String(255), nullable=False)
-    # file_type = db.Column(db.String(255), nullable=False)
     uploaded_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     is_from_client = db.Column(db.Boolean, default=True)
     
@@ -167,21 +159,14 @@ class OrderFile(db.Model):
         except (OSError, TypeError):
             return 0
     
-    # @property
-    # def is_from_client(self):
-    #     user = User.query.get(self.uploaded_by)
-    #     return not user.is_admin
-    
     def __repr__(self):
         return f'<OrderFile {self.filename}>'
 
-class OrderComment(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    order_id = db.Column(db.Integer, db.ForeignKey('order.id'))
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+class OrderComment(BaseModel):
+    order_id = db.Column(db.String(36), db.ForeignKey('order.id'))
+    user_id = db.Column(db.String(36), db.ForeignKey('users.id'))
     message = db.Column(db.Text)
     is_admin = db.Column(db.Boolean, default=False)
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     is_read = db.Column(db.Boolean, default=False)
     
     # Relationship
@@ -191,15 +176,12 @@ class OrderComment(db.Model):
         return f'<OrderComment {self.id}>'
 
 
-class SupportTicket(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    order_id = db.Column(db.Integer, db.ForeignKey('order.id'), nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+class SupportTicket(BaseModel):
+    order_id = db.Column(db.String(36), db.ForeignKey('order.id'), nullable=False)
+    user_id = db.Column(db.String(36), db.ForeignKey('users.id'), nullable=False)
     subject = db.Column(db.String(255), nullable=False)
     message = db.Column(db.Text, nullable=False)
     status = db.Column(db.Enum(SupportTicketStatus), default=SupportTicketStatus.OPEN, nullable=False)
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
-    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
     
     # Relationships
     order = db.relationship('Order', backref='support_tickets')

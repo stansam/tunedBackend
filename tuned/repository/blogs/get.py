@@ -39,7 +39,7 @@ class GetBlogComment:
 
     def execute(self, id: str) -> BlogComment:
         try:
-            comment = self.db.query(BlogComment).filter_by(id=slug)
+            comment = self.db.query(BlogComment).filter_by(id=id)
             if not comment:
                 raise NotFound("comment not found")
 
@@ -54,7 +54,7 @@ class GetCommentReaction:
 
     def execute(self, id: str) -> CommentReaction:
         try:
-            comment_reaction = self.db.query(CommentReaction).filter_by(id=slug)
+            comment_reaction = self.db.query(CommentReaction).filter_by(id=id)
             if not comment_reaction:
                 raise NotFound("reaction not found")
 

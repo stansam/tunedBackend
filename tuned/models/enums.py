@@ -6,8 +6,9 @@ This module contains all enum types used across database models.
 import enum
 
 class GenderEnum(enum.Enum):
-    male = "male"
-    female = "female"
+    MALE = "male"
+    FEMALE = "female"
+    UNKOWN = "unknown"
 
 class OrderStatus(enum.Enum):
     """Order status enumeration"""
@@ -218,4 +219,8 @@ class SuggestionStatus(enum.Enum):
     ACCEPTED = "accepted"
     REJECTED = "rejected"
     DISMISSED = "dismissed"
+
+class BlogReactionType(enum.Enum):
+    LIKE = "like"
+    DISLIKE = "dislike"
 

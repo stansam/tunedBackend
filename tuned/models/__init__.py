@@ -1,7 +1,7 @@
 from tuned.models.user import User
 from tuned.models.service import Service, ServiceCategory, AcademicLevel, Deadline
 from tuned.models.content import Sample, FAQ, Testimonial
-from tuned.models.blog import BlogCategory, BlogPost, BlogComment
+from tuned.models.blog import BlogCategory, BlogPost, BlogComment, CommentReaction
 from tuned.models.order import Order, OrderComment, OrderFile
 from tuned.models.price  import PricingCategory, PriceRate
 from tuned.models.payment import Payment, Invoice, Transaction, Refund, Discount

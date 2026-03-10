@@ -19,9 +19,9 @@ class User(UserMixin, BaseModel):
 
     email_verified = db.Column(db.Boolean, default=False)
     
-    first_name = db.Column(db.String(100))
-    last_name = db.Column(db.String(100))
-    gender = db.Column(db.Enum(GenderEnum), nullable=False)
+    first_name = db.Column(db.String(100), nullable=False)
+    last_name = db.Column(db.String(100), nullable=False)
+    gender = db.Column(db.Enum(GenderEnum), nullable=True)
     phone_number = db.Column(db.String(20), nullable=True)
     profile_pic = db.Column(db.String(120), nullable=True, default='default.png')
 

@@ -18,7 +18,7 @@ CACHE_KEY = 'quote_form:options'
 CACHE_TTL = 600  # 10 minutes
 
 
-@main_bp.route('/api/quote-form/options', methods=['GET'])
+@main_bp.route('/quote-form/options', methods=['GET'])
 def get_quote_form_options():
     """
     Get all dropdown options for quote form.

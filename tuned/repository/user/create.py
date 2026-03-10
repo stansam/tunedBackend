@@ -1,5 +1,4 @@
 from tuned.models import User
-from tuned.extensions import db
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 from tuned.repository.user.exceptions import UserAlreadyExists, DatabaseError

@@ -1,4 +1,5 @@
 from tuned.models.base import BaseModel
+from tuned.models.enums import BlogReactionType
 from tuned.extensions import db
 from tuned.models.tag import blog_post_tags
 from datetime import datetime, timezone
@@ -66,7 +67,6 @@ class BlogComment(BaseModel):
     email = db.Column(db.String(100))
     content = db.Column(db.Text, nullable=False)
     approved = db.Column(db.Boolean, default=False)
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     
     # Relationships
@@ -132,12 +132,10 @@ class CommentReaction(BaseModel):
     """
     __tablename__ = 'comment_reaction'
     
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=True)
-    comment_id = db.Column(db.Integer, db.ForeignKey('blog_comment.id', ondelete='CASCADE'), nullable=False, index=True)
-    reaction_type = db.Column(db.String(10), nullable=False)  # 'like' or 'dislike'
+    user_id = db.Column(db.String(36), db.ForeignKey('users.id', ondelete='CASCADE'), nullable=True)
+    comment_id = db.Column(db.String(36), db.ForeignKey('blog_comment.id', ondelete='CASCADE'), nullable=False, index=True)
+    reaction_type = db.Column(db.Enum(BlogReactionType), nullable=False)  # 'like' or 'dislike'
     ip_address = db.Column(db.String(45), nullable=True)  # For guest users (IPv4/IPv6)
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
     
     # Table arguments for constraints and indexes
     __table_args__ = (

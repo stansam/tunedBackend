@@ -13,7 +13,7 @@ class ServiceService:
     """Service layer for Service business logic."""
 
     def __init__(self) -> None:
-        self._repo = ServiceRepository()
+        self._repo = Repository.service
 
     def create_service(self, data: ServiceDTO) -> Service:
         """Create a new service.
@@ -98,7 +98,7 @@ class ServiceCategoryService:
     """Service layer for ServiceCategory business logic."""
 
     def __init__(self) -> None:
-        self._repo = ServiceCategoryRepository()
+        self._repo = Repository.service_category
 
     def create_category(self, data: ServiceCategoryDTO) -> ServiceCategory:
         """Create a new service category.

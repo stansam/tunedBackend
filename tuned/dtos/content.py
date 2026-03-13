@@ -1,6 +1,10 @@
-from dataclasses import dataclass, field
-from typing import Optional
+from dataclasses import dataclass
+from typing import Optional, List
 
+
+# ---------------------------------------------------------------------------
+# Request DTOs
+# ---------------------------------------------------------------------------
 
 @dataclass
 class DeadlineDTO:
@@ -34,7 +38,7 @@ class TestimonialDTO:
     order_id: str
     content: str
     rating: int
-    is_approved: Optional[bool] = False
+    is_approved: bool = False
 
 
 @dataclass
@@ -43,3 +47,74 @@ class FaqDTO:
     answer: str
     category: str = "General"
     order: int = 0
+
+
+# ---------------------------------------------------------------------------
+# Response DTOs
+# ---------------------------------------------------------------------------
+
+@dataclass
+class SampleResponseDTO:
+    id: str
+    title: str
+    slug: str
+    excerpt: str
+    service_id: str
+    word_count: int
+    featured: bool
+    image: str
+
+    @classmethod
+    def from_model(cls, obj) -> "SampleResponseDTO":
+        return cls(
+            id=obj.id,
+            title=obj.title,
+            slug=obj.slug,
+            excerpt=obj.excerpt or "",
+            service_id=obj.service_id,
+            word_count=obj.word_count or 0,
+            featured=obj.featured,
+            image=obj.image or "",
+        )
+
+
+@dataclass
+class TestimonialResponseDTO:
+    id: str
+    user_id: str
+    service_id: str
+    order_id: str
+    content: str
+    rating: int
+    is_approved: bool
+
+    @classmethod
+    def from_model(cls, obj) -> "TestimonialResponseDTO":
+        return cls(
+            id=obj.id,
+            user_id=obj.user_id,
+            service_id=obj.service_id,
+            order_id=obj.order_id,
+            content=obj.content,
+            rating=obj.rating,
+            is_approved=obj.is_approved,
+        )
+
+
+@dataclass
+class FaqResponseDTO:
+    id: str
+    question: str
+    answer: str
+    category: str
+    order: int
+
+    @classmethod
+    def from_model(cls, obj) -> "FaqResponseDTO":
+        return cls(
+            id=obj.id,
+            question=obj.question,
+            answer=obj.answer,
+            category=obj.category,
+            order=obj.order,
+        )

@@ -2,8 +2,8 @@ import logging
 from typing import Optional
 
 from tuned.models import AcademicLevel
-from tuned.dtos.content import AcademicLevelDTO
-from tuned.repository.content.academic_level import AcademicLevelRepository
+from tuned.dtos import AcademicLevelDTO
+from tuned.repository import Repository
 from tuned.repository.exceptions import AlreadyExists, DatabaseError, NotFound
 
 logger = logging.getLogger(__name__)
@@ -13,7 +13,7 @@ class AcademicLevelService:
     """Service layer for AcademicLevel business logic."""
 
     def __init__(self) -> None:
-        self._repo = AcademicLevelRepository()
+        self._repo = Repository.academic_level
 
     def create_academic_level(self, data: AcademicLevelDTO) -> AcademicLevel:
         """Create a new academic level.

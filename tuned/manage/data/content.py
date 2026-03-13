@@ -1,4 +1,4 @@
-academic_levels = [
+academic_levels_dict = [
     {
         "name": "High School",
         "order": 1
@@ -25,7 +25,7 @@ academic_levels = [
     }
 ]
 
-deadlines = [
+deadlines_dict = [
     {
         "name": "3 Hours",
         "hours": 3,

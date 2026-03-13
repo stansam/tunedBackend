@@ -1,4 +1,4 @@
-samples = [
+samples_dict = [
     {
         "title":"Edited Journal Article: Linguistic Precision in Sociolinguistics",
         "content": "<p>This copyedited article refines academic tone, grammar, and consistency while preserving authorial voice...</p><p>Changes adhere to APA style and enhance clarity in theoretical discussions...</p>",

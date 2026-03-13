@@ -1,4 +1,4 @@
-categories = {
+service_categories_dict = {
     "Proofreading and Editing": [
         ("Proofreading",
         "Covers dissertations, theses, articles, essays, resumes, business documents & more—primarily catching any remaining errors in spelling, grammar, and punctuation before publication."),
@@ -61,7 +61,7 @@ categories = {
     ],
 }
 
-service_to_pricing_category = {
+service_to_pricing_category_dict = {
     # Writing services -> "Writing" pricing category
     "Essays": "Writing",
     "Research Papers": "Writing",
@@ -117,7 +117,7 @@ service_to_pricing_category = {
     "Cover Letters": "Writing",
     "LinkedIn Profile Optimization": "Writing",
 }
-category_descriptions = {
+service_category_descriptions_dict = {
     "Proofreading and Editing": "Whether it is an academic paper, resume, or business document, professional proofreading helps you eliminate errors and improve clarity, style, and coherence.",
     "Writing": "From essays and dissertations to admission papers, we support you in producing structured, original, well-researched and referenced and compelling writing that meets academic and professional standards.",
     "Data Analysis": "Make sense of your data and uncover key insights with accurate analysis, visualizations, and interpretation using trusted tools and methods.",

@@ -1,4 +1,4 @@
-pricing_categories = [
+pricing_categories_dict = [
     {
         "name": "Writing",
         "description" : "Standard pricing for all services.",
@@ -72,6 +72,7 @@ price_rates_data = {
         "3 Hours" : [18.50,	25.50, 25.50, 33.50, 43.50,	47.85]
 }}
 
+# Column names for each of the pricing rates levels
 pricing_level_names = [
     "High School", 
     "Undergraduate", 

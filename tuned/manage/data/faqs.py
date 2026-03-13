@@ -1,4 +1,4 @@
-faqs = [
+faqs_dict = [
     {
         "question": "How does the ordering process work?",
         "answer": "Our ordering process is simple: select the type of paper you need, specify your academic level, choose a deadline, provide your instructions, and make a payment. Once we receive your order, we'll assign it to a writer with expertise in your subject area.",

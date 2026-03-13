@@ -7,3 +7,4 @@ from tuned.manage.commands.create_samples import create_samples
 from tuned.manage.commands.create_testimonials import create_testimonials
 from tuned.manage.commands.create_faqs import create_faqs
 from tuned.manage.commands.create_blogs import create_blogs
+from tuned.manage.commands.seed_db import seed_db

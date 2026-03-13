@@ -1,7 +1,7 @@
 from app.models import User
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
-from app.repository.user.exceptions import UserNotFound, DatabaseError
+from app.repository.exceptions import NotFound, DatabaseError
 
 class GetUserByID:
     def __init__(self, db: Session) -> None:
@@ -11,7 +11,7 @@ class GetUserByID:
         try:
             user = self.db.query(User).filter_by(id=user_id).first()
             if not user:
-                raise UserNotFound("User not found")
+                raise NotFound("User not found")
             return user
         except SQLAlchemyError as e:
             raise DatabaseError(f"Database error while fetching user: {str(e)}") from e
@@ -24,7 +24,7 @@ class GetUserByEmail:
         try:
             user = self.db.query(User).filter_by(email=email).first()
             if not user:
-                raise UserNotFound("User not found")
+                raise NotFound("User not found")
             return user
         except SQLAlchemyError as e:
             raise DatabaseError(f"Database error while fetching user: {str(e)}") from e
@@ -37,7 +37,7 @@ class GetAdminUser:
         try:
             user = self.db.query(User).filter_by(is_admin=True).first()
             if not user:
-                raise UserNotFound("User not found")
+                raise NotFound("User not found")
             return user
         except SQLAlchemyError as e:
             raise DatabaseError(f"Database error while fetching user: {str(e)}") from e
@@ -50,7 +50,7 @@ class GetUsers:
         try:
             users = self.db.query(User).all()
             if not users:
-                raise UserNotFound("Users not found")
+                raise NotFound("Users not found")
             return users
         except SQLAlchemyError as e:
             raise DatabaseError(f"Database error while fetching users: {str(e)}") from e

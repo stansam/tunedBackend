@@ -1,12 +1,8 @@
-"""
-Main blueprint routes.
+from tuned.main.routes.homepage import(
+    GetFeaturedContent, GetQuoteFormOptions
+)
 
-Registers all route modules for the main blueprint.
-"""
-# Import all route modules to register their routes
-from tuned.main.routes import homepage
-from tuned.main.routes import services
-from tuned.main.routes import samples
-from tuned.main.routes import blogs
-
-__all__ = ['homepage', 'services', 'samples', 'blogs']
+ROUTES = [
+    {"url_rule": "/featured", "view_func": GetFeaturedContent.as_view("featured")},
+    {"url_rule": "/quote/options", "view_func": GetQuoteFormOptions.as_view("quote_form_options")}
+]

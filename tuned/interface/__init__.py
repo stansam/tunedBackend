@@ -16,6 +16,7 @@ class Services:
         self._sample = None
         self._testimonial = None
         self._faq = None
+        self._blog = None
         self._price_rate = None
         self._pricing_category = None
 

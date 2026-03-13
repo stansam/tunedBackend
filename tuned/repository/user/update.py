@@ -1,8 +1,8 @@
 from app.models import User
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
-from app.repository.user.ops.get import GetUserByID
-from app.repository.user.exceptions import UserNotFound, DatabaseError
+from app.repository.user.get import GetUserByID
+from app.repository.exceptions import NotFound, DatabaseError
 
 class UpdateUser:
     def __init__(self, db:Session) -> None:
@@ -13,8 +13,8 @@ class UpdateUser:
             get_user_op = GetUserByID(self.db)
             try:
                 user = get_user_op.execute(user_id)
-            except UserNotFound as e:
-                raise UserNotFound("User not found") from e
+            except NotFound as e:
+                raise NotFound("User not found") from e
 
             for key, value in user_data.items():
                 if hasattr(user, key):

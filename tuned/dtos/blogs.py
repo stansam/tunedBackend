@@ -15,6 +15,7 @@ class BlogPostDTO:
     category_id: str
     meta_description: str
     is_published: Optional[bool] = False
+    is_featured: Optional[bool] = False
     published_at: Optional[str] = None
 
 class BlogCommentDTO:

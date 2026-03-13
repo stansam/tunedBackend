@@ -27,7 +27,7 @@ class UserService:
         if existing:
             raise ValueError("Email address already registered.")
         
-        created_user = self.user_repo.create_user(user)
+        created_user = self.user_repo.create_user(data)
             
         return created_user
     

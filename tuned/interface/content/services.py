@@ -63,6 +63,18 @@ class ServiceService:
             DatabaseError: On unexpected database failure.
         """
         return self._repo.get_featured()
+    
+    def list_services_by_category(self) -> dict[str, list[Service]]:
+        """Return all services grouped by category.
+
+        Raises:
+            DatabaseError: On unexpected database failure.
+        """
+        services: list[Service] = self._repo.get_all(active_only=True)
+        services_by_category: dict[str, list[Service]] = defaultdict(list)
+        for service in services:
+            services_by_category[service.category_id].append(service)
+        return services_by_category
 
     def update_service(self, service_id: str, updates: dict) -> Service:
         """Update mutable fields of a service.

@@ -42,6 +42,9 @@ class SampleService:
             DatabaseError: On unexpected database failure.
         """
         return self._repo.get_by_slug(slug)
+    
+    def list_featured_samples(self) -> list[SampleResponseDTO]:
+        return self._repo.get_featured()
 
     def list_samples(
         self,

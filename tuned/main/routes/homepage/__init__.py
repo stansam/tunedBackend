@@ -1,16 +1,19 @@
 """Homepage routes package."""
-from tuned.main.routes.homepage import (
-    featured,
-    quote_form,
-    search,
-    testimonials,
-    newsletter_subscribe
-)
+from tuned.main.routes.homepage.featured import GetFeaturedContent
+from tuned.main.routes.homepage.quote_form import GetQuoteFormOptions
+#  (
+#     featured,
+#     quote_form,
+#     search,
+#     testimonials,
+#     newsletter_subscribe
+# )
 
 __all__ = [
-    'featured',
-    'quote_form',
-    'search',
-    'testimonials',
-    'newsletter_subscribe',
+    'GetFeaturedContent',
+    'GetQuoteFormOptions',
+    # 'quote_form',
+    # 'search',
+    # 'testimonials',
+    # 'newsletter_subscribe',
 ]

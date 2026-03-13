@@ -1,7 +1,7 @@
 from tuned.models import User
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
-from tuned.repository.user.exceptions import UserAlreadyExists, DatabaseError
+from tuned.repository.exceptions import AlreadyExists, DatabaseError
 from tuned.dtos import CreateUserDTO
 
 class CreateUser:
@@ -23,7 +23,7 @@ class CreateUser:
             return new_user
         except IntegrityError as e:
             self.db.rollback()
-            raise UserAlreadyExists("User already exists")
+            raise AlreadyExists("User already exists")
         except SQLAlchemyError as e:
             self.db.rollback()
             raise DatabaseError("Database error while creating user") from e

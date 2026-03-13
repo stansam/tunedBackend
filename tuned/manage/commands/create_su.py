@@ -34,5 +34,7 @@ def create_superuser(username, first_name, last_name, email, password) -> str:
         adminUser = user_service.create_user(admin_dto)
         if adminUser:
             click.echo(f"Admin user created successfully. Email:{adminUser.email}")
+        else:
+            click.echo("Admin user creation failed")
     except Exception as e:
         click.echo(f"Admin user creation failed: {e}")

@@ -27,6 +27,7 @@ class BlogPost(BaseModel):
     category_id = db.Column(db.Integer, db.ForeignKey('blog_category.id'))
     meta_description = db.Column(db.String(220))
     is_published = db.Column(db.Boolean, default=False)
+    is_featured = db.Column(db.Boolean, default=False)
     published_at = db.Column(db.DateTime)
     
     # Table arguments for indexes

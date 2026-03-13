@@ -1,6 +1,7 @@
 from tuned.extensions import db
 from tuned.models.base import BaseModel
 from tuned.models.tag import sample_tags
+from tuned.models.utils import generate_slug
 from datetime import datetime, timezone
 import re
 
@@ -27,17 +28,7 @@ class Sample(BaseModel):
     
     @staticmethod
     def generate_slug(title):
-        base_slug = re.sub(r'[^\w\s-]', '', title.lower())
-        base_slug = re.sub(r'[-\s]+', '-', base_slug).strip('-')
-        
-        slug = base_slug
-        counter = 1
-        
-        while Sample.query.filter_by(slug=slug).first() is not None:
-            slug = f"{base_slug}-{counter}"
-            counter += 1
-            
-        return slug
+        return generate_slug(title, Sample, db.session)
     
     def __repr__(self):
         return f'<Sample {self.title}>'

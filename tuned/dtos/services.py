@@ -1,5 +1,8 @@
+from dataclasses import dataclass
 from typing import Optional
 
+
+@dataclass
 class ServiceDTO:
     name: str
     description: str
@@ -9,7 +12,9 @@ class ServiceDTO:
     slug: Optional[str] = None
     is_active: Optional[bool] = True
 
+
+@dataclass
 class ServiceCategoryDTO:
     name: str
-    description: str
-    order: int
+    description: str = ""
+    order: int = 0

@@ -1,5 +1,6 @@
 from tuned.models.base import BaseModel
 from tuned.models.enums import BlogReactionType
+from tuned.models.utils import generate_slug
 from tuned.extensions import db
 from tuned.models.tag import blog_post_tags
 from datetime import datetime, timezone
@@ -44,19 +45,7 @@ class BlogPost(BaseModel):
     
     @staticmethod
     def generate_slug(title):
-        """Generate a unique slug from blog title, handling collisions"""
-        base_slug = re.sub(r'[^\w\s-]', '', title.lower())
-        base_slug = re.sub(r'[-\s]+', '-', base_slug).strip('-')
-        
-        slug = base_slug
-        counter = 1
-        
-        # Check for existing slugs and append number if collision detected
-        while BlogPost.query.filter_by(slug=slug).first() is not None:
-            slug = f"{base_slug}-{counter}"
-            counter += 1
-            
-        return slug
+        generate_slug(title, BlogPost, db.session)
     
     def __repr__(self):
         return f'<BlogPost {self.title}>'

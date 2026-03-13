@@ -1,5 +1,6 @@
 from tuned.extensions import db
 from tuned.models.base import BaseModel
+from tuned.models.utils import generate_slug
 from tuned.models.tag import service_tags
 from datetime import datetime
 import re
@@ -48,19 +49,7 @@ class Service(BaseModel):
     
     @staticmethod
     def generate_slug(name):
-        """Generate a unique slug from service name, handling collisions"""
-        base_slug = re.sub(r'[^\w\s-]', '', name.lower())
-        base_slug = re.sub(r'[-\s]+', '-', base_slug).strip('-')
-        
-        slug = base_slug
-        counter = 1
-        
-        # Check for existing slugs and append number if collision detected
-        while Service.query.filter_by(slug=slug).first() is not None:
-            slug = f"{base_slug}-{counter}"
-            counter += 1
-            
-        return slug
+        return generate_slug(name, Service, db.session)
     
     def __repr__(self):
         return f'<Service {self.name}>'

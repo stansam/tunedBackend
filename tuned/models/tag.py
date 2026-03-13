@@ -41,9 +41,14 @@ class Tag(BaseModel):
     blog_posts = db.relationship('BlogPost', secondary=blog_post_tags, lazy='dynamic', back_populates='tag_list')
     
     def __init__(self, name, description=None):
-        self.name = name.strip().lower()
-        self.slug = self.name.replace(' ', '-')
+        self.name = name
         self.description = description
+        super(Tag, self).__init__(**kwargs)
+        if not self.slug and self.name:
+            self.slug = self.generate_slug(self.name)
+    
+    def generate_slug(self, name):
+        return generate_slug(name, Tag, db.session)
     
     def increment_usage(self):
         """Increment usage count when tag is applied"""

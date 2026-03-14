@@ -5,7 +5,6 @@ from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 from datetime import datetime, timezone
 from tuned.repository.blogs.helper import handle_tags
-from dataclasses import asdict
 
 class CreateBlog:
     def __init__(self, db:Session):
@@ -58,7 +57,7 @@ class GetFeaturedBlogPosts:
             if not posts:
                 raise NotFound("posts not found")
 
-            return [asdict(BlogPostResponseDTO.from_model(s)) for s in posts]
+            return [BlogPostResponseDTO.from_model(s) for s in posts]
 
         except SQLAlchemyError as e:
             raise DatabaseError(f"Database error while fetching posts: {str(e)}")
@@ -73,7 +72,7 @@ class GetPublishedBlogPosts:
             if not posts:
                 raise NotFound("posts not found")
 
-            return [asdict(BlogPostResponseDTO.from_model(s)) for s in posts]
+            return [BlogPostResponseDTO.from_model(s) for s in posts]
 
         except SQLAlchemyError as e:
             raise DatabaseError(f"Database error while fetching posts: {str(e)}")

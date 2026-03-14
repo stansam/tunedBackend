@@ -2,7 +2,7 @@ import logging
 from typing import Optional
 
 from tuned.models import AcademicLevel
-from tuned.dtos import AcademicLevelDTO
+from tuned.dtos import AcademicLevelDTO, AcademicLevelResponseDTO
 from tuned.repository import repositories
 from tuned.repository.exceptions import AlreadyExists, DatabaseError, NotFound
 
@@ -15,7 +15,7 @@ class AcademicLevelService:
     def __init__(self) -> None:
         self._repo = repositories.academic_level
 
-    def create_academic_level(self, data: AcademicLevelDTO) -> AcademicLevel:
+    def create_academic_level(self, data: AcademicLevelDTO) -> AcademicLevelResponseDTO:
         """Create a new academic level.
 
         Raises:
@@ -27,7 +27,7 @@ class AcademicLevelService:
         logger.info("Academic level created: id=%s name=%s", level.id, level.name)
         return level
 
-    def get_academic_level(self, level_id: str) -> AcademicLevel:
+    def get_academic_level(self, level_id: str) -> AcademicLevelResponseDTO:
         """Retrieve a single academic level by its ID.
 
         Raises:
@@ -36,7 +36,7 @@ class AcademicLevelService:
         """
         return self._repo.get_by_id(level_id)
 
-    def list_academic_levels(self) -> list[AcademicLevel]:
+    def list_academic_levels(self) -> list[AcademicLevelResponseDTO]:
         """Return all academic levels ordered by their display order.
 
         Raises:
@@ -44,7 +44,7 @@ class AcademicLevelService:
         """
         return self._repo.get_all()
 
-    def update_academic_level(self, level_id: str, updates: dict) -> AcademicLevel:
+    def update_academic_level(self, level_id: str, updates: dict) -> AcademicLevelResponseDTO:
         """Update mutable fields of an academic level.
 
         Only keys present on the model are applied; unknown keys are silently

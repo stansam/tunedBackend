@@ -3,7 +3,9 @@ from collections import defaultdict
 
 from tuned.models import Service
 from tuned.models import ServiceCategory
-from tuned.dtos import ServiceDTO, ServiceCategoryDTO
+from tuned.dtos import(
+    ServiceDTO, ServiceCategoryDTO, ServiceResponseDTO, ServiceCategoryResponseDTO
+)
 from tuned.repository import repositories
 from tuned.repository.exceptions import AlreadyExists, DatabaseError, NotFound
 
@@ -16,7 +18,7 @@ class ServiceService:
     def __init__(self) -> None:
         self._repo = repositories.service
 
-    def create_service(self, data: ServiceDTO) -> Service:
+    def create_service(self, data: ServiceDTO) -> ServiceResponseDTO:
         """Create a new service.
 
         Raises:
@@ -28,7 +30,7 @@ class ServiceService:
         logger.info("Service created: id=%s slug=%s", service.id, service.slug)
         return service
 
-    def get_service(self, service_id: str) -> Service:
+    def get_service(self, service_id: str) -> ServiceResponseDTO:
         """Retrieve a service by its ID.
 
         Raises:
@@ -37,7 +39,7 @@ class ServiceService:
         """
         return self._repo.get_by_id(service_id)
 
-    def get_service_by_slug(self, slug: str) -> Service:
+    def get_service_by_slug(self, slug: str) -> ServiceResponseDTO:
         """Retrieve a service by its URL slug.
 
         Raises:
@@ -46,7 +48,7 @@ class ServiceService:
         """
         return self._repo.get_by_slug(slug)
 
-    def list_services(self, active_only: bool = True) -> list[Service]:
+    def list_services(self, active_only: bool = True) -> list[ServiceResponseDTO]:
         """Return all services.
 
         Args:
@@ -57,7 +59,7 @@ class ServiceService:
         """
         return self._repo.get_all(active_only=active_only)
 
-    def list_featured_services(self) -> list[Service]:
+    def list_featured_services(self) -> list[ServiceResponseDTO]:
         """Return active, featured services.
 
         Raises:
@@ -65,19 +67,19 @@ class ServiceService:
         """
         return self._repo.get_featured()
     
-    def list_services_by_category(self) -> dict[str, list[Service]]:
+    def list_services_by_category(self) -> dict[str, list[ServiceResponseDTO]]:
         """Return all services grouped by category.
 
         Raises:
             DatabaseError: On unexpected database failure.
         """
-        services: list[Service] = self._repo.get_all(active_only=True)
-        services_by_category: dict[str, list[Service]] = defaultdict(list)
+        services: list[ServiceResponseDTO] = self._repo.get_all(active_only=True)
+        services_by_category: dict[str, list[ServiceResponseDTO]] = defaultdict(list)
         for service in services:
             services_by_category[service.category_id].append(service)
         return services_by_category
 
-    def update_service(self, service_id: str, updates: dict) -> Service:
+    def update_service(self, service_id: str, updates: dict) -> ServiceResponseDTO:
         """Update mutable fields of a service.
 
         Only whitelisted fields are applied to guard against mass-assignment.
@@ -113,7 +115,7 @@ class ServiceCategoryService:
     def __init__(self) -> None:
         self._repo = repositories.service_category
 
-    def create_category(self, data: ServiceCategoryDTO) -> ServiceCategory:
+    def create_category(self, data: ServiceCategoryDTO) -> ServiceCategoryResponseDTO:
         """Create a new service category.
 
         Raises:
@@ -125,7 +127,7 @@ class ServiceCategoryService:
         logger.info("Service category created: id=%s", category.id)
         return category
 
-    def get_category(self, category_id: str) -> ServiceCategory:
+    def get_category(self, category_id: str) -> ServiceCategoryResponseDTO:
         """Retrieve a service category by its ID.
 
         Raises:
@@ -142,7 +144,7 @@ class ServiceCategoryService:
         """
         return self._repo.get_all()
 
-    def update_category(self, category_id: str, updates: dict) -> ServiceCategory:
+    def update_category(self, category_id: str, updates: dict) -> ServiceCategoryResponseDTO:
         """Update mutable fields of a service category.
 
         Only whitelisted fields are applied to guard against mass-assignment.

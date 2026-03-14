@@ -3,13 +3,13 @@ Main blueprint validation schemas.
 
 Exports all schemas for easy import throughout the main blueprint.
 """
-from tuned.main.schemas.homepage import (
-    NewsletterSubscribeSchema,
+from tuned.apis.main.schemas.homepage import (
+    NewsletterSubscribeSchema, CalculatePriceSchema,
     SearchQuerySchema
 )
-from tuned.main.schemas.services import ServiceFilterSchema
-from tuned.main.schemas.samples import SampleFilterSchema
-from tuned.main.schemas.blogs import (
+from tuned.apis.main.schemas.services import ServiceFilterSchema
+from tuned.apis.main.schemas.samples import SampleFilterSchema
+from tuned.apis.main.schemas.blogs import (
     BlogFilterSchema,
     BlogCommentSchema,
     CommentReactionSchema

@@ -5,7 +5,6 @@ from tuned.extensions import db
 from tuned.models import Sample
 from tuned.dtos.content import SampleDTO, SampleResponseDTO
 from tuned.repository.exceptions import AlreadyExists, DatabaseError, NotFound
-from dataclasses import asdict
 
 class CreateSample:
     def __init__(self, db: Session) -> None:
@@ -74,7 +73,7 @@ class GetAllSamples:
             if featured_only:
                 query = query.filter_by(featured=True)
             samples = query.order_by(Sample.created_at.desc()).all()
-            return [asdict(SampleResponseDTO.from_model(s)) for s in samples]
+            return [SampleResponseDTO.from_model(s) for s in samples]
         except SQLAlchemyError as e:
             raise DatabaseError(f"Database error while fetching samples: {str(e)}") from e
 
@@ -85,7 +84,7 @@ class GetFeaturedSamples:
     def execute(self) -> list[SampleResponseDTO]:
         try:
             samples = self.db.session.query(Sample).filter_by(featured=True).order_by(Sample.created_at.desc()).all()
-            return [asdict(SampleResponseDTO.from_model(s)) for s in samples]
+            return [SampleResponseDTO.from_model(s) for s in samples]
         except SQLAlchemyError as e:
             raise DatabaseError(f"Database error while fetching featured samples: {str(e)}") from e
 

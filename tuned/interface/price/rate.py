@@ -7,15 +7,20 @@ from tuned.dtos import (
 )
 from tuned.repository import repositories
 from tuned.repository.exceptions import AlreadyExists, DatabaseError, NotFound
+from tuned.interface.price.helper import CalculatePriceService
+from typing import TYPE_CHECKING
 
 logger = logging.getLogger(__name__)
-
+if TYPE_CHECKING:
+    from tuned.interface import Services
 
 class PriceRateService:
     """Service layer for PriceRate business logic."""
 
-    def __init__(self) -> None:
+    def __init__(self, interfaces: "Services") -> None:
         self._repo = repositories.price_rate
+        self._interfaces = interfaces
+        # self._calculate_price_service = CalculatePriceService(interfaces)
 
     def create_rate(self, data: PriceRateDTO) -> PriceRateResponseDTO:
         """Create a new price rate.
@@ -90,3 +95,12 @@ class PriceRateService:
         logger.info("Deleting price rate id=%s", rate_id)
         self._repo.delete(rate_id)
         logger.info("Price rate deleted: id=%s", rate_id)
+    
+    def calculate_price(self, data: CalculatePriceRequestDTO) -> CalculatePriceResponseDTO:
+        """Calculate the price for a given order.
+
+        Raises:
+            NotFound: If no rate exists for the given combination.
+            DatabaseError: On unexpected database failure.
+        """
+        return CalculatePriceService(self._interfaces).execute(data)

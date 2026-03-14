@@ -92,3 +92,56 @@ class SearchQuerySchema(Schema):
             'validator_failed': 'Items per page must be between 1 and 100'
         }
     )
+
+class CalculatePriceSchema(Schema):
+    """Schema for price calculation."""
+    service_id = fields.Str(
+        required=True,
+        error_messages={
+            'required': 'Service ID is required',
+            'invalid': 'Service ID must be a string',
+        }
+    )
+    
+    academic_level_id = fields.Str(
+        required=True,
+        error_messages={
+            'required': 'Academic level ID is required',
+            'invalid': 'Academic level ID must be a string',
+        }
+    )
+
+    deadline = fields.AwareDateTime(
+        required=True,
+        error_messages={
+            'required': 'Deadline is required',
+            'invalid': 'Deadline must be a datetime',
+        }
+    )
+    
+    word_count = fields.Int(
+        required=True,
+        error_messages={
+            'required': 'Word count is required',
+            'invalid': 'Word count must be an integer',
+        }
+    )
+
+    page_count = fields.Int(
+        required=True,
+        error_messages={
+            'required': 'Page count is required',
+            'invalid': 'Page count must be an integer',
+        }
+    )
+
+    report_type = fields.Str(
+        required=False,
+        validate=validate.OneOf([
+            'standard', 'turnitin'
+        ]),
+        error_messages={
+            'invalid': 'Invalid report type',
+            'validator_failed': 'Report type must be one of: standard, turnitin'
+        }
+    )

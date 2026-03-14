@@ -1,7 +1,7 @@
 import logging
 
 from tuned.models import Deadline
-from tuned.dtos import DeadlineDTO
+from tuned.dtos import DeadlineDTO, DeadlineResponseDTO
 from tuned.repository import repositories
 from tuned.repository.exceptions import AlreadyExists, DatabaseError, NotFound
 
@@ -14,7 +14,7 @@ class DeadlineService:
     def __init__(self) -> None:
         self._repo = repositories.deadline
 
-    def create_deadline(self, data: DeadlineDTO) -> Deadline:
+    def create_deadline(self, data: DeadlineDTO) -> DeadlineResponseDTO:
         """Create a new deadline option.
 
         Raises:
@@ -26,7 +26,7 @@ class DeadlineService:
         logger.info("Deadline created: id=%s name=%s", deadline.id, deadline.name)
         return deadline
 
-    def get_deadline(self, deadline_id: str) -> Deadline:
+    def get_deadline(self, deadline_id: str) -> DeadlineResponseDTO:
         """Retrieve a single deadline by its ID.
 
         Raises:
@@ -35,7 +35,7 @@ class DeadlineService:
         """
         return self._repo.get_by_id(deadline_id)
 
-    def list_deadlines(self) -> list[Deadline]:
+    def list_deadlines(self) -> list[DeadlineResponseDTO]:
         """Return all deadlines ordered by display order then hours.
 
         Raises:
@@ -43,7 +43,7 @@ class DeadlineService:
         """
         return self._repo.get_all()
 
-    def update_deadline(self, deadline_id: str, updates: dict) -> Deadline:
+    def update_deadline(self, deadline_id: str, updates: dict) -> DeadlineResponseDTO:
         """Update mutable fields of a deadline.
 
         Only whitelisted fields are applied to guard against mass-assignment.

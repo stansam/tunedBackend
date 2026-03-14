@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 from typing import Optional
-
+from tuned.dtos.content import DeadlineResponseDTO
+from datetime import datetime
 
 # ---------------------------------------------------------------------------
 # Request DTOs
@@ -70,3 +71,22 @@ class PriceRateLookupDTO:
     pricing_category_id: str
     academic_level_id: str
     deadline_id: str
+
+
+@dataclass
+class CalculatePriceRequestDTO:
+    deadline: datetime
+    pricing_category_id: str
+    academic_level_id: str
+    word_count: int
+    report_type: Optional[str] = None
+
+@dataclass
+class CalculatePriceResponseDTO:
+    price_per_page: str
+    page_count: int
+    pages_price: int
+    total_price: int
+    deadline_hours: int
+    selected_deadline: DeadlineResponseDTO
+

@@ -57,7 +57,6 @@ def create_app(config_name=None):
     
     socketio.init_app(app, **socketio_kwargs)
     
-    # Configure Flask-Login
     login_manager.login_view = 'auth.login'
     login_manager.login_message = 'Please log in to access this page.'
     login_manager.session_protection = 'strong'
@@ -68,7 +67,6 @@ def create_app(config_name=None):
         from tuned.models.user import User
         return User.query.get(int(user_id))
     
-    # JWT token blacklist loader
     @jwt.token_in_blocklist_loader
     def check_if_token_revoked(jwt_header, jwt_payload):
         """Check if JWT token is blacklisted (logout functionality)."""
@@ -76,26 +74,23 @@ def create_app(config_name=None):
         jti = jwt_payload['jti']
         return is_token_blacklisted(jti)
     
-    # Register blueprints
-    from tuned.admin import admin_bp
-    from tuned.auth import auth_bp
-    from tuned.client import client_bp
-    from tuned.main import main_bp
+    from tuned.apis import(
+        main_bp
+        # , auth_bp, client_bp, admin_bp 
+    ) 
     from tuned.manage import manage_bp
     
-    app.register_blueprint(admin_bp, url_prefix='/api/admin')
-    app.register_blueprint(auth_bp, url_prefix='/api/auth')
-    app.register_blueprint(client_bp, url_prefix='/api/client')
+    # app.register_blueprint(admin_bp, url_prefix='/api/admin')
+    # app.register_blueprint(auth_bp, url_prefix='/api/auth')
+    # app.register_blueprint(client_bp, url_prefix='/api/client')
     app.register_blueprint(manage_bp)
     
-    # Register preferences blueprint
-    from tuned.client.routes.settings.preferences import preferences_bp
-    app.register_blueprint(preferences_bp, url_prefix='/client/settings/preferences')
+    # from tuned.apis.client.routes.settings.preferences import preferences_bp
+    # app.register_blueprint(preferences_bp, url_prefix='/client/settings/preferences')
     
     app.register_blueprint(main_bp, url_prefix="/api")  # No prefix - root routes
 
     
-    # Apply ProxyFix middleware for production deployments behind reverse proxy
     if app.config.get('PROXY_FIX'):
         from werkzeug.middleware.proxy_fix import ProxyFix
         app.wsgi_app = ProxyFix(
@@ -106,10 +101,8 @@ def create_app(config_name=None):
             x_prefix=1    # Trust X-Forwarded-Prefix
         )
     
-    # Register error handlers
     register_error_handlers(app)
     
-    # Register shell context for flask shell
     register_shell_context(app)
 
     return app

@@ -11,7 +11,7 @@ from flask import Blueprint
 main_bp = Blueprint('main', __name__)
 
 # Import routes at the end to avoid circular imports
-from tuned.main.routes import ROUTES
+from tuned.apis.main.routes import ROUTES
 
 for route in ROUTES:
     main_bp.add_url_rule(route['url_rule'], view_func=route['view_func'])

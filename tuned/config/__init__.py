@@ -82,6 +82,8 @@ class BaseConfig:
     # Frontend URL (for email links)
     FRONTEND_URL = os.environ.get('FRONTEND_URL', 'http://localhost:3000')
 
+    WORDS_PER_PAGE = 275
+
 
 class DevelopmentConfig(BaseConfig):
     """Development environment configuration."""

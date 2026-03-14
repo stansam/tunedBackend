@@ -92,7 +92,7 @@ class Services:
     @property
     def price_rate(self) -> PriceRateService:
         if not self._price_rate:
-            self._price_rate = PriceRateService()
+            self._price_rate = PriceRateService(self)
         return self._price_rate
 
     @property
@@ -100,3 +100,5 @@ class Services:
         if not self._pricing_category:
             self._pricing_category = PricingCategoryService()
         return self._pricing_category
+
+

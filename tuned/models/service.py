@@ -63,15 +63,15 @@ class Service(BaseModel):
             'description': self.description,
             'category_id': self.category_id,
             'featured': self.featured,
-            'tags': self.tags,
+            'tags': self.get_tags(),
             'pricing_category_id': self.pricing_category_id
         }
     def get_tags(self):
         """
         Return a list of tags for the service.
         """
-        if self.tags:
-            return [tag.strip() for tag in self.tags.split(',')]
+        if self.tag_list:
+            return [tag.name for tag in self.tag_list]
         return []
 
 class AcademicLevel(BaseModel):

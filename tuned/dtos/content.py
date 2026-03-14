@@ -54,6 +54,36 @@ class FaqDTO:
 # ---------------------------------------------------------------------------
 
 @dataclass
+class AcademicLevelResponseDTO:
+    id: str
+    name: str
+    order: int
+
+    @classmethod
+    def from_model(cls, obj) -> "AcademicLevelResponseDTO":
+        return cls(
+            id=obj.id,
+            name=obj.name,
+            order=obj.order,
+        )
+
+@dataclass
+class DeadlineResponseDTO:
+    id: str
+    name: str
+    hours: int
+    order: int
+
+    @classmethod
+    def from_model(cls, obj) -> "DeadlineResponseDTO":
+        return cls(
+            id=obj.id,
+            name=obj.name,
+            hours=obj.hours,
+            order=obj.order,
+        )
+
+@dataclass
 class SampleResponseDTO:
     id: str
     title: str

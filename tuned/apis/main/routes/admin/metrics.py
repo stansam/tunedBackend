@@ -10,7 +10,7 @@ from tuned.utils.responses import success_response
 from tuned.utils.metrics import metrics
 
 
-@main_bp.route('/api/admin/metrics/endpoints', methods=['GET'])
+# @main_bp.route('/api/admin/metrics/endpoints', methods=['GET'])
 @jwt_required
 @require_admin
 def get_endpoint_metrics():
@@ -35,7 +35,7 @@ def get_endpoint_metrics():
     return success_response(all_metrics)
 
 
-@main_bp.route('/api/admin/metrics/cache', methods=['GET'])
+# @main_bp.route('/api/admin/metrics/cache', methods=['GET'])
 @jwt_required
 @require_admin
 def get_cache_metrics():
@@ -44,7 +44,7 @@ def get_cache_metrics():
     return success_response(cache_data)
 
 
-@main_bp.route('/api/admin/metrics/search', methods=['GET'])
+# @main_bp.route('/api/admin/metrics/search', methods=['GET'])
 @jwt_required
 @require_admin
 def get_search_metrics():
@@ -53,7 +53,7 @@ def get_search_metrics():
     return success_response(search_data)
 
 
-@main_bp.route('/api/admin/metrics/summary', methods=['GET'])
+# @main_bp.route('/api/admin/metrics/summary', methods=['GET'])
 @jwt_required
 @require_admin
 def get_metrics_summary():

@@ -38,16 +38,16 @@ class Order(BaseModel):
     additional_materials = db.Column(db.Text, nullable=True, default=None)
     
     # Relationships
-    client = db.relationship('User', back_populates='orders')
-    service = db.relationship('Service', back_populates='orders')
-    academic_level = db.relationship('AcademicLevel', back_populates='orders')
-    deadline = db.relationship('Deadline', back_populates='orders')
-    testimonials = db.relationship('Testimonial', backref='order', lazy=True, cascade='all, delete-orphan')
-    files = db.relationship('OrderFile', backref='order', lazy=True, cascade='all, delete-orphan')
-    payments = db.relationship('Payment', back_populates='order', lazy=True, cascade='all, delete-orphan')
-    invoice = db.relationship('Invoice', back_populates='order', uselist=False, cascade='all, delete-orphan')
-    comments = db.relationship('OrderComment', backref='order', lazy=True, cascade="all, delete-orphan")
-    deliveries = db.relationship('OrderDelivery', backref='order', lazy=True, cascade="all, delete-orphan")
+    client = db.relationship('User', foreign_keys=[client_id], back_populates='orders')
+    service = db.relationship('Service', foreign_keys=[service_id], back_populates='orders')
+    academic_level = db.relationship('AcademicLevel', foreign_keys=[academic_level_id], back_populates='orders')
+    deadline = db.relationship('Deadline', foreign_keys=[deadline_id], back_populates='orders')
+    testimonials = db.relationship('Testimonial', foreign_keys='Testimonial.order_id', backref='order', lazy=True, cascade='all, delete-orphan')
+    files = db.relationship('OrderFile', foreign_keys='OrderFile.order_id', backref='order', lazy=True, cascade='all, delete-orphan')
+    payments = db.relationship('Payment', foreign_keys='Payment.order_id', back_populates='order', lazy=True, cascade='all, delete-orphan')
+    invoice = db.relationship('Invoice', foreign_keys='Invoice.order_id', back_populates='order', uselist=False, cascade='all, delete-orphan')
+    comments = db.relationship('OrderComment', foreign_keys='OrderComment.order_id', backref='order', lazy=True, cascade="all, delete-orphan")
+    deliveries = db.relationship('OrderDelivery', foreign_keys='OrderDelivery.order_id', backref='order', lazy=True, cascade="all, delete-orphan")
     
     # Table arguments for indexes and constraints
     __table_args__ = (
@@ -170,7 +170,7 @@ class OrderComment(BaseModel):
     is_read = db.Column(db.Boolean, default=False)
     
     # Relationship
-    user = db.relationship('User', backref='order_comments')
+    user = db.relationship('User', foreign_keys=[user_id], backref='order_comments')
     
     def __repr__(self):
         return f'<OrderComment {self.id}>'
@@ -184,8 +184,8 @@ class SupportTicket(BaseModel):
     status = db.Column(db.Enum(SupportTicketStatus), default=SupportTicketStatus.OPEN, nullable=False)
     
     # Relationships
-    order = db.relationship('Order', backref='support_tickets')
-    user = db.relationship('User', backref='support_tickets')
+    order = db.relationship('Order', foreign_keys=[order_id], backref='support_tickets')
+    user = db.relationship('User', foreign_keys=[user_id], backref='support_tickets')
     
     def __repr__(self):
         return f'<SupportTicket {self.id} for Order {self.order_id}>'

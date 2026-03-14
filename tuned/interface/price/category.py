@@ -4,7 +4,7 @@ from tuned.dtos import (
     PricingCategoryDTO,
     PricingCategoryResponseDTO,
 )
-from tuned.repository import Repository
+from tuned.repository import repositories
 from tuned.repository.exceptions import AlreadyExists, DatabaseError, NotFound
 
 logger = logging.getLogger(__name__)
@@ -14,7 +14,7 @@ class PricingCategoryService:
     """Service layer for PricingCategory business logic."""
 
     def __init__(self) -> None:
-        self._repo = Repository.pricing_category
+        self._repo = repositories.pricing_category
 
     def create_category(self, data: PricingCategoryDTO) -> PricingCategoryResponseDTO:
         """Create a new pricing category.

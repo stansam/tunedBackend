@@ -88,7 +88,7 @@ class UserEmailPreferences(BaseModel):
     )  # 0-23, null if instant
     
     # Relationships
-    user = db.relationship('User', backref=db.backref('email_preferences', uselist=False, lazy=True))
+    user = db.relationship('User', foreign_keys=[user_id], backref=db.backref('email_preferences', uselist=False, lazy=True))
     
     def to_dict(self):
         """

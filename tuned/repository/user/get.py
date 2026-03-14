@@ -1,7 +1,7 @@
-from app.models import User
+from tuned.models import User
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
-from app.repository.exceptions import NotFound, DatabaseError
+from tuned.repository.exceptions import NotFound, DatabaseError
 
 class GetUserByID:
     def __init__(self, db: Session) -> None:

@@ -1,5 +1,5 @@
 from tuned.dtos.user import CreateUserDTO
-from tuned.dtos.blogs import BlogCategoryDTO, BlogPostDTO, BlogCommentDTO, CommentReactionDTO
+from tuned.dtos.blogs import BlogCategoryDTO, BlogPostDTO, BlogPostResponseDTO, BlogCommentDTO, CommentReactionDTO
 from tuned.dtos.content import (
     AcademicLevelDTO, DeadlineDTO, SampleDTO, TestimonialDTO, FaqDTO,
     TestimonialResponseDTO, FaqResponseDTO, SampleResponseDTO

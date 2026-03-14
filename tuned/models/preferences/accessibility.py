@@ -68,7 +68,7 @@ class UserAccessibilityPreferences(BaseModel):
     
     
     # Relationships
-    user = db.relationship('User', backref=db.backref('accessibility_preferences', uselist=False, lazy=True))
+    user = db.relationship('User', foreign_keys=[user_id], backref=db.backref('accessibility_preferences', uselist=False, lazy=True))
     
     def to_dict(self):
         """

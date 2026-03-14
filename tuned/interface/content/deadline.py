@@ -2,7 +2,7 @@ import logging
 
 from tuned.models import Deadline
 from tuned.dtos import DeadlineDTO
-from tuned.repository import Repository
+from tuned.repository import repositories
 from tuned.repository.exceptions import AlreadyExists, DatabaseError, NotFound
 
 logger = logging.getLogger(__name__)
@@ -12,7 +12,7 @@ class DeadlineService:
     """Service layer for Deadline business logic."""
 
     def __init__(self) -> None:
-        self._repo = Repository.deadline
+        self._repo = repositories.deadline
 
     def create_deadline(self, data: DeadlineDTO) -> Deadline:
         """Create a new deadline option.

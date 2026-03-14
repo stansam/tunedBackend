@@ -11,7 +11,7 @@ class Notification(BaseModel):
     type = db.Column(db.Enum(NotificationType), default=NotificationType.INFO, nullable=False)
     link = db.Column(db.String(255),    nullable=True)
     is_read = db.Column(db.Boolean, default=False)
-
+    
     # Table arguments for indexes
     __table_args__ = (
         db.Index('ix_notification_user_read_created', 'user_id', 'is_read', 'created_at'),
@@ -26,7 +26,7 @@ class Notification(BaseModel):
             'id':         self.id,
             'title':      self.title,
             'message':    self.message,
-            'type':       self.type.value if self.type else None,
+            'type':       self.type.value,
             'link':       self.link,
             'is_read':    self.is_read,
             'created_at': self.created_at.isoformat()
@@ -58,10 +58,10 @@ class NewsletterSubscriber(BaseModel):
         return f'<NewsletterSubscriber {self.email}>'
     
 class Chat(BaseModel):
-    user_id = db.Column(db.String(36), db.ForeignKey('users.id'))
-    admin_id = db.Column(db.String(36), db.ForeignKey('users.id'))
+    user_id = db.Column(db.String(36), db.ForeignKey('users.id'), nullable=False)
+    admin_id = db.Column(db.String(36), db.ForeignKey('users.id'), nullable=True)
     subject = db.Column(db.String(255))
-    order_id = db.Column(db.String(36), db.ForeignKey('order.id'))
+    order_id = db.Column(db.String(36), db.ForeignKey('order.id'), nullable=True)
     status = db.Column(db.Enum(ChatStatus), default=ChatStatus.ACTIVE, nullable=False)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     
@@ -79,10 +79,9 @@ class ChatMessage(BaseModel):
     chat_id = db.Column(db.String(36), db.ForeignKey('chat.id'))
     content = db.Column(db.Text)
     is_read = db.Column(db.Boolean, default=False)
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     
     # Relationships
-    user = db.relationship('User', backref='chat_messages')
+    user = db.relationship('User', foreign_keys=[user_id], backref='chat_messages')
     
     # Table arguments for indexes
     __table_args__ = (

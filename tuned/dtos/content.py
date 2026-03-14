@@ -35,9 +35,9 @@ class SampleDTO:
 class TestimonialDTO:
     user_id: str
     service_id: str
-    order_id: str
     content: str
     rating: int
+    order_id: Optional[str] = None
     is_approved: bool = False
 
 

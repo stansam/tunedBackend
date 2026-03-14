@@ -81,16 +81,18 @@ def create_app(config_name=None):
     from tuned.auth import auth_bp
     from tuned.client import client_bp
     from tuned.main import main_bp
+    from tuned.manage import manage_bp
     
     app.register_blueprint(admin_bp, url_prefix='/api/admin')
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(client_bp, url_prefix='/api/client')
+    app.register_blueprint(manage_bp)
     
     # Register preferences blueprint
     from tuned.client.routes.settings.preferences import preferences_bp
     app.register_blueprint(preferences_bp, url_prefix='/client/settings/preferences')
     
-    app.register_blueprint(main_bp)  # No prefix - root routes
+    app.register_blueprint(main_bp, url_prefix="/api")  # No prefix - root routes
 
     
     # Apply ProxyFix middleware for production deployments behind reverse proxy

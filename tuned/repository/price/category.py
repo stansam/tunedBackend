@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
-
+from dataclasses import asdict
 from tuned.extensions import db
 from tuned.models import PricingCategory
 from tuned.dtos.price import PricingCategoryDTO, PricingCategoryResponseDTO
@@ -54,7 +54,7 @@ class GetAllPricingCategories:
                 .order_by(PricingCategory.display_order.asc())
                 .all()
             )
-            return [PricingCategoryResponseDTO.from_model(c) for c in categories]
+            return [asdict(PricingCategoryResponseDTO.from_model(c)) for c in categories]
         except SQLAlchemyError as e:
             raise DatabaseError(f"Database error while fetching pricing categories: {str(e)}") from e
 

@@ -26,8 +26,7 @@ class PriceHistory(BaseModel):
     )
     
     # Relationships
-    price_rate = db.relationship('PriceRate', backref='price_history')
-    user = db.relationship('User', backref='price_changes')
+    price_rate = db.relationship('PriceRate', foreign_keys=[price_rate_id], backref='price_history')
     
     def __repr__(self):
         return f'<PriceHistory PriceRate:{self.price_rate_id} ${self.old_price}→${self.new_price}>'
@@ -38,6 +37,7 @@ class OrderStatusHistory(BaseModel):
     __tablename__ = 'order_status_history'
     
     order_id = db.Column(db.String(36), db.ForeignKey('order.id'), nullable=False, index=True)
+    user_id = db.Column(db.String(36), db.ForeignKey('users.id'), nullable=False, index=True)
     old_status = db.Column(db.String(50))
     new_status = db.Column(db.String(50), nullable=False)
     notes = db.Column(db.Text)
@@ -49,8 +49,7 @@ class OrderStatusHistory(BaseModel):
     )
     
     # Relationships
-    order = db.relationship('Order', backref='status_history')
-    user = db.relationship('User', backref='order_status_changes')
+    order = db.relationship('Order', foreign_keys=[order_id], backref='status_history')
     
     def __repr__(self):
         return f'<OrderStatusHistory Order:{self.order_id} {self.old_status}→{self.new_status}>'
@@ -77,7 +76,7 @@ class ActivityLog(BaseModel):
     )
     
     # Relationships
-    user = db.relationship('User', backref='activity_logs')
+    user = db.relationship('User', foreign_keys=[user_id], backref='activity_logs')
     
     @staticmethod
     def log(action, user_id=None, entity_type=None, entity_id=None, description=None, details=None, ip_address=None, user_agent=None):
@@ -112,7 +111,7 @@ class EmailLog(BaseModel):
     sent_at = db.Column(db.DateTime)
     
     user_id = db.Column(db.String(36), db.ForeignKey('users.id'), index=True)
-    order_id = db.Column(db.String(36), db.ForeignKey('order.id'), index=True)
+    order_id = db.Column(db.String(36), db.ForeignKey('order.id'), index=True, nullable=True)
     
     # Indexes
     __table_args__ = (
@@ -121,8 +120,8 @@ class EmailLog(BaseModel):
     )
     
     # Relationships
-    user = db.relationship('User', backref='email_logs')
-    order = db.relationship('Order', backref='email_logs')
+    user = db.relationship('User', foreign_keys=[user_id], backref='email_logs')
+    order = db.relationship('Order', foreign_keys=[order_id], backref='email_logs')
     
     @staticmethod
     def log_email(recipient, subject, template=None, user_id=None, order_id=None):

@@ -1,7 +1,7 @@
 import logging
 
 from tuned.dtos import TestimonialDTO, TestimonialResponseDTO
-from tuned.repository import Repository
+from tuned.repository import repositories
 from tuned.repository.exceptions import DatabaseError, NotFound
 
 logger = logging.getLogger(__name__)
@@ -11,7 +11,7 @@ class TestimonialService:
     """Service layer for Testimonial business logic including moderation."""
 
     def __init__(self) -> None:
-        self._repo = Repository.testimonial
+        self._repo = repositories.testimonial
 
     def submit_testimonial(self, data: TestimonialDTO) -> TestimonialResponseDTO:
         """Submit a new client testimonial (pending moderation by default).

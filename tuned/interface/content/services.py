@@ -1,9 +1,10 @@
 import logging
+from collections import defaultdict
 
 from tuned.models import Service
-from tuned.models.service import ServiceCategory
-from tuned.dtos.services import ServiceDTO, ServiceCategoryDTO
-from tuned.repository.content.services import ServiceRepository, ServiceCategoryRepository
+from tuned.models import ServiceCategory
+from tuned.dtos import ServiceDTO, ServiceCategoryDTO
+from tuned.repository import repositories
 from tuned.repository.exceptions import AlreadyExists, DatabaseError, NotFound
 
 logger = logging.getLogger(__name__)
@@ -13,7 +14,7 @@ class ServiceService:
     """Service layer for Service business logic."""
 
     def __init__(self) -> None:
-        self._repo = Repository.service
+        self._repo = repositories.service
 
     def create_service(self, data: ServiceDTO) -> Service:
         """Create a new service.
@@ -110,7 +111,7 @@ class ServiceCategoryService:
     """Service layer for ServiceCategory business logic."""
 
     def __init__(self) -> None:
-        self._repo = Repository.service_category
+        self._repo = repositories.service_category
 
     def create_category(self, data: ServiceCategoryDTO) -> ServiceCategory:
         """Create a new service category.

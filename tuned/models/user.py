@@ -6,6 +6,8 @@ from tuned.extensions import db
 from tuned.models.base import BaseModel
 from tuned.models.communication import ChatMessage, Chat
 from tuned.models.enums import GenderEnum
+import random
+import string
 
 class User(UserMixin, BaseModel):
     __tablename__ = 'users'
@@ -41,8 +43,18 @@ class User(UserMixin, BaseModel):
     orders = db.relationship('Order', foreign_keys='Order.client_id', back_populates='client', lazy=True)
     referrals = db.relationship('Referral', foreign_keys='Referral.referrer_id', backref='referrer', lazy=True)
     referred_by = db.relationship('Referral', foreign_keys='Referral.referred_id', backref='referred', lazy=True)
-    notifications = db.relationship('Notification', backref='user', lazy=True)
-    testimonials = db.relationship('Testimonial', backref='author', lazy=True, cascade='all, delete-orphan')
+    notifications = db.relationship('Notification', foreign_keys="Notification.user_id", backref='user', lazy=True)
+    testimonials = db.relationship('Testimonial', foreign_keys="Testimonial.user_id", backref='author', lazy=True, cascade='all, delete-orphan')
+
+    def __init__(self, **kwargs):
+        super(User, self).__init__(**kwargs)
+        if not self.referral_code:
+            self.referral_code = self.generate_referral_code()
+
+    # TODO: Implement robust referral code generation
+    def generate_referral_code(self):
+        """Generate a unique referral code for the user."""
+        return ''.join(random.choices(string.ascii_uppercase + string.digits, k=10))
     
     def set_password(self, password):
         """Set the password hash from the provided password."""

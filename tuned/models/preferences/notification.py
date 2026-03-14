@@ -69,7 +69,7 @@ class UserNotificationPreferences(BaseModel):
     weekly_summary = db.Column(db.Boolean, default=False, nullable=False)
         
     # Relationships
-    user = db.relationship('User', backref=db.backref('notification_preferences', uselist=False, lazy=True))
+    user = db.relationship('User', foreign_keys=[user_id], backref=db.backref('notification_preferences', uselist=False, lazy=True))
     
     def to_dict(self):
         """

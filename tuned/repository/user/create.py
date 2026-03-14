@@ -10,9 +10,10 @@ class CreateUser:
 
     def execute(self, user_data: CreateUserDTO) -> User:
         try:
-            password = user_data.pop('password', None)
+            data = user_data.__dict__.copy()
+            password = data.pop('password', None)
             
-            new_user = User(**user_data)
+            new_user = User(**data)
             
             if password:
                 new_user.set_password(password)

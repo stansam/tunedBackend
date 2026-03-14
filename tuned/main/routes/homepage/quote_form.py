@@ -4,10 +4,10 @@ Quote form options endpoint.
 GET /api/quote-form/options - Get all options for populating quote form dropdowns
 """
 from flask import jsonify
-from flask.view import MethodView
+from flask.views import MethodView
 from tuned.main import main_bp
 from tuned.interface import Services
-from tuned.models.service import(
+from tuned.models import(
     Service, ServiceCategory, AcademicLevel, Deadline,
     PricingCategory,
 )
@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 CACHE_KEY = 'quote_form:options'
 CACHE_TTL = 600
 
-class GetQuoteFormOptions: #TODO: Implement strict return types 
+class GetQuoteFormOptions(MethodView): #TODO: Implement strict return types 
     def __init__(self):
         self._interface = Services()
 

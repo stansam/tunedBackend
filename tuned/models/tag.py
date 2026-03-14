@@ -3,6 +3,7 @@ Tag model for normalized tag management across services, samples, and blog posts
 Replaces comma-separated tag strings with proper many-to-many relationships.
 """
 from tuned.extensions import db
+from tuned.models.utils import generate_slug
 from datetime import datetime, timezone
 from tuned.models.base import BaseModel
 
@@ -36,14 +37,14 @@ class Tag(BaseModel):
     usage_count = db.Column(db.Integer, default=0)  # Denormalized count for performance
     
     # Relationships with backref
-    services = db.relationship('Service', secondary=service_tags, backref=db.backref('tag_objects', lazy='dynamic'))
+    services = db.relationship('Service', secondary=service_tags, back_populates='tag_list', lazy='dynamic')
     samples = db.relationship('Sample', secondary=sample_tags, lazy='dynamic', back_populates='tag_list')
     blog_posts = db.relationship('BlogPost', secondary=blog_post_tags, lazy='dynamic', back_populates='tag_list')
     
-    def __init__(self, name, description=None):
+    def __init__(self, name, description=None, **kwargs):
+        super(Tag, self).__init__(**kwargs)
         self.name = name
         self.description = description
-        super(Tag, self).__init__(**kwargs)
         if not self.slug and self.name:
             self.slug = self.generate_slug(self.name)
     

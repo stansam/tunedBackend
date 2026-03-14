@@ -5,7 +5,7 @@ from tuned.dtos import (
     PriceRateResponseDTO,
     PriceRateLookupDTO,
 )
-from tuned.repository import Repository
+from tuned.repository import repositories
 from tuned.repository.exceptions import AlreadyExists, DatabaseError, NotFound
 
 logger = logging.getLogger(__name__)
@@ -15,7 +15,7 @@ class PriceRateService:
     """Service layer for PriceRate business logic."""
 
     def __init__(self) -> None:
-        self._repo = Repository.price_rate
+        self._repo = repositories.price_rate
 
     def create_rate(self, data: PriceRateDTO) -> PriceRateResponseDTO:
         """Create a new price rate.

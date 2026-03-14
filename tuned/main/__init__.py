@@ -14,7 +14,7 @@ main_bp = Blueprint('main', __name__)
 from tuned.main.routes import ROUTES
 
 for route in ROUTES:
-    main_bp.add_url_rule(route['url_rule'], view_func=route['view_func'], methods=route['methods'])
+    main_bp.add_url_rule(route['url_rule'], view_func=route['view_func'])
 
 __all__ = [
     'main_bp',

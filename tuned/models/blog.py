@@ -36,7 +36,7 @@ class BlogPost(BaseModel):
     )
     
     # Relationships
-    comments = db.relationship('BlogComment', backref='post', lazy=True, cascade='all, delete-orphan')
+    comments = db.relationship('BlogComment', foreign_keys="BlogComment.post_id", backref='post', lazy=True, cascade='all, delete-orphan')
     tag_list = db.relationship('Tag', secondary=blog_post_tags, lazy='dynamic', back_populates='blog_posts')
     
     def __init__(self, **kwargs):
@@ -46,7 +46,7 @@ class BlogPost(BaseModel):
     
     @staticmethod
     def generate_slug(title):
-        generate_slug(title, BlogPost, db.session)
+        return generate_slug(title, BlogPost, db.session)
     
     def __repr__(self):
         return f'<BlogPost {self.title}>'
@@ -60,8 +60,8 @@ class BlogComment(BaseModel):
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     
     # Relationships
-    user = db.relationship('User', backref='blog_comments')
-    reactions = db.relationship('CommentReaction', backref='comment', lazy='dynamic', cascade='all, delete-orphan')
+    user = db.relationship('User', foreign_keys=[user_id], backref='blog_comments')
+    reactions = db.relationship('CommentReaction', foreign_keys="CommentReaction.comment_id", backref='comment', lazy='dynamic', cascade='all, delete-orphan')
     
     @property
     def likes_count(self):
@@ -135,14 +135,14 @@ class CommentReaction(BaseModel):
     )
     
     # Relationship
-    user = db.relationship('User', backref='comment_reactions')
+    user = db.relationship('User', foreign_keys=[user_id], backref='comment_reactions')
     
     def to_dict(self):
         """Serialize reaction to dictionary"""
         return {
             'id': self.id,
             'reaction_type': self.reaction_type,
-            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'created_at': self.created_at.isoformat(),
             'user_id': self.user_id
         }
     

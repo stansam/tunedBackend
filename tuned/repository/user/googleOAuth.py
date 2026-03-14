@@ -1,8 +1,8 @@
-from app.models import User
-from app.extensions import db
+from tuned.models import User
+from tuned.extensions import db
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
-from app.repository.user.exceptions import DatabaseError, AuthenticationError
+from tuned.repository.user.exceptions import DatabaseError, AuthenticationError
 from google.oauth2 import id_token
 from google.auth.transport import requests
 import os

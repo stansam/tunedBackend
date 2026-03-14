@@ -24,10 +24,10 @@ class Payment(BaseModel):
     approval_url = db.Column(db.String(500))
     
     # Relationships
-    order = db.relationship('Order', back_populates='payments')
-    user = db.relationship('User', backref=db.backref('payments', lazy=True))
-    transactions = db.relationship('Transaction', backref='payment', lazy=True)
-    invoice = db.relationship('Invoice', back_populates='payment', uselist=False)
+    order = db.relationship('Order', foreign_keys=[order_id], back_populates='payments')
+    user = db.relationship('User', foreign_keys=[user_id], backref=db.backref('payments', lazy=True))
+    transactions = db.relationship('Transaction', foreign_keys='Transaction.payment_id', backref='payment', lazy=True)
+    invoice = db.relationship('Invoice', foreign_keys='Invoice.payment_id', back_populates='payment', uselist=False)
     
     # Table arguments for indexes and constraints
     __table_args__ = (
@@ -64,9 +64,9 @@ class Invoice(BaseModel):
     paid = db.Column(db.Boolean, default=False)
     
     # Relationships
-    order = db.relationship('Order', back_populates='invoice')
-    user = db.relationship('User', backref=db.backref('invoices', lazy=True))
-    payment = db.relationship('Payment', back_populates='invoice')
+    order = db.relationship('Order', foreign_keys=[order_id], back_populates='invoice')
+    user = db.relationship('User', foreign_keys=[user_id], backref=db.backref('invoices', lazy=True))
+    payment = db.relationship('Payment', foreign_keys=[payment_id], back_populates='invoice')
     
     def __init__(self, order_id, user_id, subtotal, total, due_date, payment_id=None, discount=0, tax=0, paid=False):
         # INV-YYYYMM-NNNN
@@ -160,8 +160,8 @@ class Refund(BaseModel):
     processor_refund_id = db.Column(db.String(255))
     
     # Relationships
-    payment = db.relationship('Payment', backref='refunds')
-    admin = db.relationship('User', backref='processed_refunds')
+    payment = db.relationship('Payment', foreign_keys=[payment_id], backref='refunds')
+    admin = db.relationship('User', foreign_keys=[processed_by], backref='processed_refunds')
     
     # Table arguments for constraints
     __table_args__ = (

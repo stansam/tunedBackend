@@ -2,14 +2,15 @@ from tuned.models import BlogCategory
 from tuned.dtos import BlogCategoryDTO
 from tuned.repository.exceptions import NotFound, DatabaseError, AlreadyExists
 from sqlalchemy.orm import Session
-from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 
 class CreateBlogCategory:
     def __init__(self, db:Session):
         self.db = db
     def execute(self, data: BlogCategoryDTO)-> BlogCategory:
         try:
-            category = BlogCategory(**data)
+            data_dict = data.__dict__.copy()
+            category = BlogCategory(**data_dict)
 
             self.db.add(category)
             self.db.commit()
@@ -20,7 +21,7 @@ class CreateBlogCategory:
             raise AlreadyExists("category already exists")
         except SQLAlchemyError as e:
             self.db.rollback()
-            raise DatabaseError("Database error while creating category") from e
+            raise DatabaseError(f"Database error while creating category:\n {str(e)}")
 
 class GetBlogCategoryBySlug:
     def __init__(self, db: Session) -> None:
@@ -36,4 +37,15 @@ class GetBlogCategoryBySlug:
 
         except SQLAlchemyError as e:
             raise DatabaseError(f"Database error while fetching post: {str(e)}") from e
+    
+class ListBlogCategories:
+    def __init__(self, db: Session) -> None:
+        self.db = db
+    
+    def execute(self) -> list[BlogCategory]:
+        try:
+            categories = self.db.query(BlogCategory).all()
+            return categories
+        except SQLAlchemyError as e:
+            raise DatabaseError(f"Database error while fetching categories: {str(e)}") from e
 

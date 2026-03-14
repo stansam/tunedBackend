@@ -9,7 +9,11 @@ from tuned.manage.commands import (
     create_faqs,
     create_blogs,
     seed_db,
+    manage_tables,
 )
+from flask import Blueprint
+
+manage_bp = Blueprint('manage', __name__)
 
 def register_cli_commands(app):
     app.cli.add_command(create_superuser)
@@ -22,3 +26,6 @@ def register_cli_commands(app):
     app.cli.add_command(create_faqs)
     app.cli.add_command(create_blogs)
     app.cli.add_command(seed_db)
+    app.cli.add_command(manage_tables)
+
+register_cli_commands(manage_bp)

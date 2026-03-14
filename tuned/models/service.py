@@ -11,6 +11,9 @@ class ServiceCategory(BaseModel):
     order = db.Column(db.Integer, default=0)
     
     services = db.relationship('Service', backref='category', lazy=True, cascade='all, delete-orphan')
+
+    def __init__(self, **kwargs):
+        super(ServiceCategory, self).__init__(**kwargs)
     
     def __repr__(self):
         return f'<ServiceCategory {self.name}>'
@@ -77,7 +80,7 @@ class AcademicLevel(BaseModel):
     
     orders = db.relationship('Order', back_populates='academic_level', lazy=True)
     price_rates = db.relationship('PriceRate', backref='academic_level', lazy=True)
-    
+
     def __repr__(self):
         return f'<AcademicLevel {self.name}>'
     def to_dict(self):

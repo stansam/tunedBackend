@@ -1,7 +1,7 @@
 import logging
 
 from tuned.dtos import SampleDTO, SampleResponseDTO
-from tuned.repository import Repository
+from tuned.repository import repositories
 from tuned.repository.exceptions import AlreadyExists, DatabaseError, NotFound
 
 logger = logging.getLogger(__name__)
@@ -11,7 +11,7 @@ class SampleService:
     """Service layer for Sample (writing work examples) business logic."""
 
     def __init__(self) -> None:
-        self._repo = Repository.sample
+        self._repo = repositories.sample
 
     def create_sample(self, data: SampleDTO) -> SampleResponseDTO:
         """Create a new sample piece.

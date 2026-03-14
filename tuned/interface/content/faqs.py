@@ -1,7 +1,7 @@
 import logging
 
 from tuned.dtos import FaqDTO, FaqResponseDTO
-from tuned.repository import Repository
+from tuned.repository import repositories
 from tuned.repository.exceptions import AlreadyExists, DatabaseError, NotFound
 
 logger = logging.getLogger(__name__)
@@ -11,7 +11,7 @@ class FAQService:
     """Service layer for FAQ business logic."""
 
     def __init__(self) -> None:
-        self._repo = Repository.faq
+        self._repo = repositories.faq
 
     def create_faq(self, data: FaqDTO) -> FaqResponseDTO:
         """Create a new FAQ entry.

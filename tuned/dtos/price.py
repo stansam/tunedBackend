@@ -83,7 +83,7 @@ class CalculatePriceRequestDTO:
 
 @dataclass
 class CalculatePriceResponseDTO:
-    price_per_page: str
+    price_per_page: int
     page_count: int
     pages_price: int
     total_price: int

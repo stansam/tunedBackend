@@ -2,7 +2,8 @@ from tuned.interface import Services
 from tuned.apis.main.schemas import CalculatePriceSchema
 from tuned.utils.responses import success_response, error_response
 from tuned.redis_client import redis_client
-from tuned.dtos import CalculatePriceRequestDTO
+from tuned.dtos import CalculatePriceRequestDTO, ServiceWithPricingCategory
+from tuned.utils.enums import PricingCategoryEnum
 
 from marshmallow import ValidationError
 from flask.views import MethodView
@@ -20,6 +21,33 @@ CACHE_TTL = 600
 class GetQuoteFormOptions(MethodView): #TODO: Implement strict return types 
     def __init__(self):
         self._interface = Services()
+    
+    def _build_services_response(self) -> list[ServiceWithPricingCategory]:
+        services = self._interface.service.list_services()
+        services_response: list[ServiceWithPricingCategory] = []
+        
+        for service in services:
+            category_name = service.category.name
+            pricing_name = (
+                (service.pricing_category.name).lower() 
+                if service.pricing_category else None
+            )
+
+            pricing_enum = PricingCategoryEnum.from_string(pricing_name)
+            
+
+            services_response.append(
+                ServiceWithPricingCategory(
+                    id = service.id,
+                    name = service.name,
+                    category = category_name,
+                    pricing_category = pricing_enum.value
+                )
+            )
+
+        return services_response
+            
+
 
     def get(self):
         try:
@@ -29,15 +57,12 @@ class GetQuoteFormOptions(MethodView): #TODO: Implement strict return types
                 return success_response(json.loads(cached_data))
             
             # TODO: Implement strict response DTOs
-            services = self._interface.service.list_services_by_category()
-            serialized_services = {k: [asdict(s) for s in v] for k, v in services.items()}          
+            services = self._build_services_response()     
             academic_levels = self._interface.academic_level.list_academic_levels()
-            pricing_categories = self._interface.pricing_category.list_categories()
             
             data = {
-                'services': serialized_services,
-                'academic_levels': [asdict(a) for a in academic_levels],
-                'pricing_categories': [asdict(p) for p in pricing_categories],
+                'services': [asdict(s) for s in services],
+                'levels': [asdict(a) for a in academic_levels],
             }
             
             redis_client.setex(

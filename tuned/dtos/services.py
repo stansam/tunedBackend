@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 from typing import Optional
 from tuned.models import Service
+from tuned.utils.enums import PricingCategoryEnum
+from tuned.dtos.price import PricingCategoryResponseDTO
 
 @dataclass
 class ServiceDTO:
@@ -21,6 +23,14 @@ class ServiceCategoryDTO:
 
 
 @dataclass
+class ServiceWithPricingCategory:
+  id: str
+  name: str
+  category: str # Service category name
+  pricing_category: PricingCategoryEnum # Pricing category name
+
+
+@dataclass
 class ServiceResponseDTO:
     id: str
     name: str
@@ -30,6 +40,8 @@ class ServiceResponseDTO:
     pricing_category_id: str
     slug: str
     is_active: bool
+    category: Optional[ServiceCategoryResponseDTO] = None
+    pricing_category: Optional[PricingCategoryResponseDTO] = None
 
     @classmethod
     def from_model(cls, model: Service) -> "ServiceResponseDTO":
@@ -42,8 +54,11 @@ class ServiceResponseDTO:
             pricing_category_id=model.pricing_category_id,
             slug=model.slug,
             is_active=model.is_active,
-        )
 
+            category=ServiceCategoryResponseDTO.from_model(model.category) if model.category else None,
+            pricing_category=PricingCategoryResponseDTO.from_model(model.pricing_category) if model.pricing_category else None,
+        )
+@dataclass
 class ServiceCategoryResponseDTO:
     id: str
     name: str

@@ -8,4 +8,7 @@ from tuned.dtos.price import (
     PricingCategoryDTO, PriceRateDTO, PricingCategoryResponseDTO, PriceRateResponseDTO, PriceRateLookupDTO, 
     CalculatePriceResponseDTO, CalculatePriceRequestDTO
 )
-from tuned.dtos.services import ServiceDTO, ServiceCategoryDTO, ServiceResponseDTO, ServiceCategoryResponseDTO
+from tuned.dtos.services import (
+    ServiceDTO, ServiceCategoryDTO, ServiceResponseDTO, ServiceCategoryResponseDTO,
+    ServiceWithPricingCategory    
+)

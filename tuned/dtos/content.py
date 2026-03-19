@@ -1,11 +1,6 @@
 from dataclasses import dataclass
 from typing import Optional, List
 
-
-# ---------------------------------------------------------------------------
-# Request DTOs
-# ---------------------------------------------------------------------------
-
 @dataclass
 class DeadlineDTO:
     name: str
@@ -48,10 +43,12 @@ class FaqDTO:
     category: str = "General"
     order: int = 0
 
-
-# ---------------------------------------------------------------------------
-# Response DTOs
-# ---------------------------------------------------------------------------
+@dataclass
+class TagDTO:
+    name: str
+    description: str
+    slug: str
+    usage_count: int
 
 @dataclass
 class AcademicLevelResponseDTO:
@@ -93,6 +90,7 @@ class SampleResponseDTO:
     word_count: int
     featured: bool
     image: str
+    tags: List[TagResponseDTO]
 
     @classmethod
     def from_model(cls, obj) -> "SampleResponseDTO":
@@ -105,6 +103,7 @@ class SampleResponseDTO:
             word_count=obj.word_count or 0,
             featured=obj.featured,
             image=obj.image or "",
+            tags=[TagResponseDTO.from_model(tag) for tag in obj.tag_list],
         )
 
 
@@ -147,4 +146,22 @@ class FaqResponseDTO:
             answer=obj.answer,
             category=obj.category,
             order=obj.order,
+        )
+
+@dataclass
+class TagResponseDTO:
+    id: str
+    name: str
+    description: str
+    slug: str
+    usage_count: int
+
+    @classmethod
+    def from_model(cls, obj) -> "TagResponseDTO":
+        return cls(
+            id=obj.id,
+            name=obj.name,
+            description=obj.description,
+            slug=obj.slug,
+            usage_count=obj.usage_count,
         )

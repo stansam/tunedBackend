@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from typing import Optional
 from datetime import datetime
+from tuned.dtos.content import TagResponseDTO
 
 @dataclass
 class BlogCategoryDTO:
@@ -37,6 +38,7 @@ class BlogPostResponseDTO:
     is_published: bool
     is_featured: bool
     published_at: str
+    tags: List[TagResponseDTO]
 
     @classmethod
     def from_model(cls, obj) -> "BlogPostResponseDTO":
@@ -53,6 +55,7 @@ class BlogPostResponseDTO:
             is_published=obj.is_published,
             is_featured=obj.is_featured,
             published_at=obj.published_at.isoformat() if obj.published_at else "",
+            tags=[TagResponseDTO.from_model(tag) for tag in obj.tag_list],
         )
 
 

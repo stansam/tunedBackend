@@ -3,6 +3,7 @@ from typing import Optional
 from tuned.models import Service
 from tuned.utils.enums import PricingCategoryEnum
 from tuned.dtos.price import PricingCategoryResponseDTO
+from tuned.dtos.content import TagResponseDTO
 
 @dataclass
 class ServiceDTO:
@@ -40,6 +41,7 @@ class ServiceResponseDTO:
     pricing_category_id: str
     slug: str
     is_active: bool
+    tags: List[TagResponseDTO]
     category: Optional[ServiceCategoryResponseDTO] = None
     pricing_category: Optional[PricingCategoryResponseDTO] = None
 
@@ -57,6 +59,7 @@ class ServiceResponseDTO:
 
             category=ServiceCategoryResponseDTO.from_model(model.category) if model.category else None,
             pricing_category=PricingCategoryResponseDTO.from_model(model.pricing_category) if model.pricing_category else None,
+            tags=[TagResponseDTO.from_model(tag) for tag in model.tag_list],
         )
 @dataclass
 class ServiceCategoryResponseDTO:

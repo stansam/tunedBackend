@@ -27,16 +27,16 @@ class BlogRepository:
         self.session = db.session
 
     # Blog posts
-    def create_blog(self, data: BlogPostDTO) -> BlogPost:
+    def create_blog(self, data: BlogPostDTO) -> BlogPostResponseDTO:
         return CreateBlog(self.session).execute(data)
 
-    def get_blog_post_by_slug(self, slug: str) -> BlogPost:
+    def get_blog_post_by_slug(self, slug: str) -> BlogPostResponseDTO:
         return GetBlogPostBySlug(self.session).execute(slug)
 
-    def get_featured(self) -> List[BlogPost]:
+    def get_featured(self) -> List[BlogPostResponseDTO]:
         return GetFeaturedBlogPosts(self.session).execute()
     
-    def get_published(self) -> List[BlogPost]:
+    def get_published(self) -> List[BlogPostResponseDTO]:
         return GetPublishedBlogPosts(self.session).execute()
 
     # Blog categories

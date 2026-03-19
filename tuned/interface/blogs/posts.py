@@ -27,7 +27,7 @@ class BlogPostService:
         logger.info("Blog post created: id=%s", post.id)
         return post
 
-    def get_by_slug(self, slug: str) -> BlogPost:
+    def get_by_slug(self, slug: str) -> BlogPostResponseDTO:
         """Retrieve a blog post by its URL slug.
 
         Raises:
@@ -36,10 +36,10 @@ class BlogPostService:
         """
         return self._repo.get_blog_post_by_slug(slug)
 
-    def list_featured(self) -> List[BlogPost]:
+    def list_featured(self) -> List[BlogPostResponseDTO]:
         """Return featured blog posts."""
         return self._repo.get_featured()
 
-    def list_published(self) -> List[BlogPost]:
+    def list_published(self) -> List[BlogPostResponseDTO]:
         """Return all published blog posts ordered by most recent."""
         return self._repo.get_published()

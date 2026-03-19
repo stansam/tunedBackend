@@ -1,0 +1,120 @@
+<mjml>
+  <mj-head>
+    <mj-title>Welcome to Our Newsletter!</mj-title>
+    <mj-preview>Thank you for subscribing to our newsletter</mj:preview>
+    <mj-attributes>
+      <mj-all font-family="'Helvetica Neue', Helvetica, Arial, sans-serif"></mj-all>
+      <mj-text font-size="14px" color="#555555" line-height="22px"></mj-text>
+    </mj-attributes>
+  </mj-head>
+  
+  <mj-body background-color="#f4f4f4">
+    <!-- Header -->
+    <mj-section background-color="#1a73e8" padding="40px 20px">
+      <mj-column>
+        <mj-text align="center" color="#ffffff" font-size="36px" font-weight="bold">
+          Welcome! 📧
+        </mj-text>
+        <mj-text align="center" color="#ffffff" font-size="16px">
+          You're now part of our community
+        </mj-text>
+      </mj-column>
+    </mj-section>
+    
+    <!-- Main Content -->
+    <mj-section background-color="#ffffff" padding="40px 30px">
+      <mj-column>
+        <mj-text font-size="16px" color="#333333">
+          Hi {{subscriber_name}},
+        </mj-text>
+        
+        <mj-text font-size="14px" line-height="24px">
+          Welcome to our newsletter! We're thrilled to have you join our community of students and professionals.
+        </mj-text>
+        
+        <mj-divider border-color="#e0e0e0" padding="20px 0"></mj-divider>
+        
+        <!-- What to Expect -->
+        <mj-text font-size="18px" font-weight="bold" color="#333333">
+          What You'll Receive:
+        </mj-text>
+        
+        <mj-text font-size="14px">
+          📚 <strong>Academic Writing Tips</strong> - Expert advice to improve your writing<br/>
+          💡 <strong>Study Resources</strong> - Helpful guides and templates<br/>
+          🎉 <strong>Exclusive Discounts</strong> - Special offers for subscribers<br/>
+          📰 <strong>Company Updates</strong> - Latest news and features<br/>
+          ⭐ <strong>Success Stories</strong> - Inspiration from our community
+        </mj-text>
+        
+        <mj-divider border-color="#e0e0e0" padding="20px 0"></mj-divider>
+        
+        <!-- Preference Center -->
+        <mj-text font-size="14px" background-color="#f8f9fa" padding="15px" border-radius="5px">
+          💬 Want to customize your preferences? You can choose which topics you're interested in and how often you hear from us.
+        </mj-text>
+        
+        <mj-button background-color="#1a73e8" color="#ffffff" href="{{preferences_url}}" padding="15px 0">
+          Update Preferences
+        </mj-button>
+      </mj-column>
+    </mj-section>
+    
+    <!-- Special Offer -->
+    <mj-section background-color="#e3f2fd" padding="30px">
+      <mj-column>
+        <mj-text font-size="20px" font-weight="bold" color="#1a73e8" align="center">
+          🎁 Welcome Gift!
+        </mj-text>
+        
+        <mj-text font-size="14px" align="center">
+          As a thank you for subscribing, here's a special discount code:
+        </mj:text>
+        
+        <mj-text font-size="24px" font-weight="bold" color="#ff9800" align="center" padding="10px 0" background-color="#ffffff" border-radius="5px">
+          WELCOME10
+        </mj:text>
+        
+        <mj-text font-size="13px" align="center" color="#666666">
+          Get 10% off your next order • Valid for 30 days
+        </mj:text>
+        
+        <mj-button background-color="#4caf50" color="#ffffff" href="{{order_url}}" padding="15px 0">
+          Place an Order
+        </mj-button>
+      </mj-column>
+    </mj-section>
+    
+    <!-- Social Media -->
+    <mj-section background-color="#ffffff" padding="30px">
+      <mj-column>
+        <mj-text align="center" font-size="14px" font-weight="bold" color="#333333">
+          Connect With Us
+        </mj-text>
+        
+        <mj-social font-size="15px" icon-size="30px" mode="horizontal" padding="10px 0">
+          <mj-social-element name="facebook" href="{{facebook_url}}"></mj-social-element>
+          <mj-social-element name="twitter" href="{{twitter_url}}"></mj-social-element>
+          <mj-social-element name="instagram" href="{{instagram_url}}"></mj-social-element>
+          <mj-social-element name="linkedin" href="{{linkedin_url}}"></mj-social-element>
+        </mj-social>
+      </mj-column>
+    </mj-section>
+    
+    <!-- Footer -->
+    <mj-section background-color="#333333" padding="20px">
+      <mj-column>
+        <mj-text align="center" color="#ffffff" font-size="12px">
+          Questions? Email us at {{support_email}}
+        </mj-text>
+        <mj-text align="center" color="#aaaaaa" font-size="11px">
+          You're receiving this because you subscribed to our newsletter.<br/>
+          <a href="{{unsubscribe_url}}" style="color: #aaaaaa;">Unsubscribe</a> | <a href="{{preferences_url}}" style="color: #aaaaaa;">Preferences</a>
+        </mj-text>
+        <mj-text align="center" color="#aaaaaa" font-size="11px">
+          © {{current_year}} {{company_name}}. All rights reserved.
+        </mj-text>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>

@@ -1,0 +1,85 @@
+pricing_categories_dict = [
+    {
+        "name": "Writing",
+        "description": "Standard pricing for all writing services.",
+        "display_order": 1,
+    },
+    {
+        "name": "Proofreading & Editing",
+        "description": "Premium pricing for high-demand editing services.",
+        "display_order": 2,
+    },
+    {
+        "name": "Technical & Calculations",
+        "description": "Standard pricing for all technical services.",
+        "display_order": 3,
+    },
+    {
+        "name": "Humanizing AI",
+        "description": "Premium pricing for AI humanization and detection removal.",
+        "display_order": 4,
+    },
+]
+
+# Key renamed from price_rates_data → price_rates_dict to match the import alias in data/__init__.py
+# Each sub-dict maps deadline_name → [price_per_page for each academic level in pricing_level_names order]
+price_rates_dict = {
+    "Writing": {
+        "20 Days": [9.00, 11.00, 11.00, 13.00, 15.00, 16.50],
+        "14 Days": [9.50, 11.50, 11.50, 13.50, 15.50, 17.05],
+        "10 Days": [10.00, 12.00, 12.00, 14.00, 16.00, 17.60],
+        "7 Days":  [10.50, 12.50, 12.50, 14.50, 16.50, 18.15],
+        "3 Days":  [11.00, 13.00, 13.00, 15.00, 17.00, 18.70],
+        "48 Hours": [11.25, 13.25, 13.25, 15.25, 17.25, 18.98],
+        "24 Hours": [11.50, 13.50, 13.50, 15.50, 17.50, 19.25],
+        "12 Hours": [12.00, 14.00, 14.00, 16.00, 18.00, 19.80],
+        "6 Hours":  [12.25, 14.25, 14.25, 16.25, 18.25, 20.08],
+        "3 Hours":  [12.50, 14.50, 14.50, 16.50, 18.50, 20.35],
+    },
+    "Proofreading & Editing": {
+        "20 Days": [3.00, 5.00, 5.00, 7.00,  9.00,  9.90],
+        "14 Days": [3.50, 5.50, 5.50, 7.50,  9.50, 10.45],
+        "10 Days": [4.00, 6.00, 6.00, 8.00, 10.00, 11.00],
+        "7 Days":  [4.50, 6.50, 6.50, 8.50, 10.50, 11.55],
+        "3 Days":  [5.00, 7.00, 7.00, 9.00, 11.00, 12.10],
+        "48 Hours": [5.25, 7.25, 7.25, 9.25, 11.25, 12.38],
+        "24 Hours": [5.50, 7.50, 7.50, 9.50, 11.50, 12.65],
+        "12 Hours": [6.00, 8.00, 8.00, 10.00, 12.00, 13.20],
+        "6 Hours":  [6.25, 8.25, 8.25, 10.25, 12.25, 13.48],
+        "3 Hours":  [6.50, 8.50, 8.50, 10.50, 12.50, 13.75],
+    },
+    "Technical & Calculations": {
+        "20 Days": [15.00, 7.00,  7.00,  9.00, 11.00, 12.10],
+        "14 Days": [15.50, 7.50,  7.50,  9.50, 11.50, 12.65],
+        "10 Days": [16.00, 8.00,  8.00, 10.00, 12.00, 13.20],
+        "7 Days":  [16.50, 8.50,  8.50, 10.50, 12.50, 13.75],
+        "3 Days":  [17.00, 9.00,  9.00, 11.00, 13.00, 14.30],
+        "48 Hours": [17.25, 9.25, 9.25, 11.25, 13.25, 14.58],
+        "24 Hours": [17.50, 9.50, 9.50, 11.50, 13.50, 14.85],
+        "12 Hours": [18.00, 10.00, 10.00, 12.00, 14.00, 15.40],
+        "6 Hours":  [18.25, 10.25, 10.25, 12.25, 14.25, 15.68],
+        "3 Hours":  [18.50, 10.50, 10.50, 12.50, 14.50, 15.95],
+    },
+    "Humanizing AI": {
+        "20 Days": [15.00, 22.00, 22.00, 30.00, 40.00, 44.00],
+        "14 Days": [15.50, 22.50, 22.50, 30.50, 40.50, 44.55],
+        "10 Days": [16.00, 23.00, 23.00, 31.00, 41.00, 45.10],
+        "7 Days":  [16.50, 23.50, 23.50, 31.50, 41.50, 45.65],
+        "3 Days":  [17.00, 24.00, 24.00, 32.00, 42.00, 46.20],
+        "48 Hours": [17.25, 24.25, 24.25, 32.25, 42.25, 46.48],
+        "24 Hours": [17.50, 24.50, 24.50, 32.50, 42.50, 46.75],
+        "12 Hours": [18.00, 25.00, 25.00, 33.00, 43.00, 47.30],
+        "6 Hours":  [18.25, 25.25, 25.25, 33.25, 43.25, 47.58],
+        "3 Hours":  [18.50, 25.50, 25.50, 33.50, 43.50, 47.85],
+    },
+}
+
+# Column names — order must exactly match the list order used in price_rates_dict values above
+pricing_level_names = [
+    "High School",
+    "Undergraduate",
+    "Personal",
+    "Master's",
+    "Doctorate",
+    "Professional",
+]

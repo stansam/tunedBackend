@@ -11,6 +11,7 @@ from flask import current_app, render_template
 from flask_mail import Mail, Message
 from tuned.models.audit import EmailLog
 from tuned.extensions import db, mail
+from tuned.tasks.email import send_email_task
 from typing import List, Optional, Dict, Any
 import logging
 
@@ -22,6 +23,7 @@ def send_email(
     to: str | List[str],
     subject: str,
     template: str,
+    sender: Optional[str] = None,
     **context: Any
 ) -> bool:
     """
@@ -64,7 +66,7 @@ def send_email(
             subject=subject,
             recipients=recipients,
             html=html,
-            sender=current_app.config['MAIL_DEFAULT_SENDER']
+            sender=sender if sender else current_app.config['MAIL_DEFAULT_SENDER']
         )
         
         # Send email
@@ -84,7 +86,7 @@ def send_email(
         return False
 
 
-def send_async_email(to: str | List[str], subject: str, template: str, **context: Any) -> None:
+def send_async_email(to: str | List[str], subject: str, template: str, sender: Optional[str]=None, **context: Any) -> None:
     """
     Send an email asynchronously using Celery.
     
@@ -102,20 +104,12 @@ def send_async_email(to: str | List[str], subject: str, template: str, **context
             recipient_name='John'
         )
     """
-    from tuned.celery_app import celery_app
-    
-    # Import task here to avoid circular imports
-    @celery_app.task
-    def _send_email_task(to, subject, template, context):
-        """Celery task for sending emails."""
-        from tuned import create_app
-        
-        app = create_app()
-        with app.app_context():
-            send_email(to, subject, template, **context)
     
     # Queue the task
-    _send_email_task.delay(to, subject, template, context)
+    if sender is None:
+        send_email_task.delay(to, subject, template, context)
+    else:
+        send_email_task.delay(to, subject, template, sender, context)
 
 
 def send_bulk_emails(

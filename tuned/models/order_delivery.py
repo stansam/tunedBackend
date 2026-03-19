@@ -1,12 +1,12 @@
 from datetime import datetime, timezone
 from tuned.extensions import db
 from tuned.models.enums import DeliveryStatus, FileType
+from tuned.models.base import BaseModel
 
-class OrderDelivery(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    order_id = db.Column(db.Integer, db.ForeignKey('order.id'), nullable=False)
+class OrderDelivery(BaseModel):
+    __tablename__ = 'order_delivery'
+    order_id = db.Column(db.String(36), db.ForeignKey('order.id'), nullable=False)
     delivery_status = db.Column(db.Enum(DeliveryStatus), default=DeliveryStatus.DELIVERED, nullable=False)
-    delivered_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     client_notified = db.Column(db.Boolean, default=False)  # Whether client was notified
     client_notified_at = db.Column(db.DateTime)
         
@@ -15,7 +15,7 @@ class OrderDelivery(db.Model):
     
     # Table arguments for indexes
     __table_args__ = (
-        db.Index('ix_delivery_order_date', 'order_id', 'delivered_at'),
+        db.Index('ix_delivery_order_date', 'order_id', 'created_at'),
     )
     
     @property
@@ -41,15 +41,13 @@ class OrderDelivery(db.Model):
         return f'<OrderDelivery Order:{self.order_id} Status:{self.delivery_status}>'
 
 
-class OrderDeliveryFile(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    delivery_id = db.Column(db.Integer, db.ForeignKey('order_delivery.id'), nullable=False)
+class OrderDeliveryFile(BaseModel):
+    delivery_id = db.Column(db.String(36), db.ForeignKey('order_delivery.id'), nullable=False)
     filename = db.Column(db.String(255), nullable=False)
     original_filename = db.Column(db.String(255), nullable=False)  # Original name before any processing
     file_path = db.Column(db.String(255), nullable=False)
     file_type = db.Column(db.Enum(FileType), nullable=False)
     file_format = db.Column(db.String(10))  # pdf, docx, txt, etc.
-    uploaded_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     description = db.Column(db.Text)  # Optional description of the file
     
     @property

@@ -3,8 +3,9 @@ Tag model for normalized tag management across services, samples, and blog posts
 Replaces comma-separated tag strings with proper many-to-many relationships.
 """
 from tuned.extensions import db
+from tuned.models.utils import generate_slug
 from datetime import datetime, timezone
-
+from tuned.models.base import BaseModel
 
 # Association tables for many-to-many relationships
 service_tags = db.Table('service_tags',
@@ -26,27 +27,29 @@ blog_post_tags = db.Table('blog_post_tags',
 )
 
 
-class Tag(db.Model):
+class Tag(BaseModel):
     """Normalized tag model for services, samples, and blog posts"""
     __tablename__ = 'tag'
     
-    id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(50), unique=True, nullable=False, index=True)
     slug = db.Column(db.String(60), unique=True, nullable=False, index=True)
     description = db.Column(db.String(200))
     usage_count = db.Column(db.Integer, default=0)  # Denormalized count for performance
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
-    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
     
     # Relationships with backref
-    services = db.relationship('Service', secondary=service_tags, backref=db.backref('tag_objects', lazy='dynamic'))
-    samples = db.relationship('Sample', secondary=sample_tags, backref=db.backref('tag_objects', lazy='dynamic'))
-    blog_posts = db.relationship('BlogPost', secondary=blog_post_tags, backref=db.backref('tag_objects', lazy='dynamic'))
+    services = db.relationship('Service', secondary=service_tags, back_populates='tag_list', lazy='dynamic')
+    samples = db.relationship('Sample', secondary=sample_tags, lazy='dynamic', back_populates='tag_list')
+    blog_posts = db.relationship('BlogPost', secondary=blog_post_tags, lazy='dynamic', back_populates='tag_list')
     
-    def __init__(self, name, description=None):
-        self.name = name.strip().lower()
-        self.slug = self.name.replace(' ', '-')
+    def __init__(self, name, description=None, **kwargs):
+        super(Tag, self).__init__(**kwargs)
+        self.name = name.strip().lower() if name else name
         self.description = description
+        if not self.slug and self.name:
+            self.slug = self.generate_slug(self.name)
+    
+    def generate_slug(self, name):
+        return generate_slug(name, Tag, db.session)
     
     def increment_usage(self):
         """Increment usage count when tag is applied"""
@@ -61,12 +64,17 @@ class Tag(db.Model):
     
     @staticmethod
     def get_or_create(tag_name):
-        """Get existing tag or create new one"""
-        tag = Tag.query.filter_by(name=tag_name.strip().lower()).first()
+        """Get existing tag or create new one safely using savepoints"""
+        from sqlalchemy.exc import IntegrityError
+        clean_name = tag_name.strip().lower()
+        tag = Tag.query.filter_by(name=clean_name).first()
         if not tag:
-            tag = Tag(name=tag_name)
-            db.session.add(tag)
-            db.session.commit()
+            try:
+                with db.session.begin_nested():
+                    tag = Tag(name=clean_name)
+                    db.session.add(tag)
+            except IntegrityError:
+                tag = Tag.query.filter_by(name=clean_name).first()
         return tag
     
     @staticmethod

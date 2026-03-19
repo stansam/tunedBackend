@@ -1,10 +1,12 @@
+from tuned.models.base import BaseModel
+from tuned.models.enums import BlogReactionType
+from tuned.models.utils import generate_slug
 from tuned.extensions import db
 from tuned.models.tag import blog_post_tags
 from datetime import datetime, timezone
 import re
 
-class BlogCategory(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
+class BlogCategory(BaseModel):
     name = db.Column(db.String(100), nullable=False)
     slug = db.Column(db.String(120), unique=True, nullable=False)
     description = db.Column(db.Text)
@@ -15,20 +17,17 @@ class BlogCategory(db.Model):
     def __repr__(self):
         return f'<BlogCategory {self.name}>'
 
-class BlogPost(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
+class BlogPost(BaseModel):
     title = db.Column(db.String(200), nullable=False)
     slug = db.Column(db.String(220), unique=True, nullable=False)
     content = db.Column(db.Text, nullable=False)
     excerpt = db.Column(db.Text)
     featured_image = db.Column(db.String(255))
-    # Tags now use many-to-many relationship via blog_post_tags table
-    # Old column: tags = db.Column(db.String(255))  # Comma-separated tags
     author = db.Column(db.String(100), nullable=False)
     category_id = db.Column(db.Integer, db.ForeignKey('blog_category.id'))
     meta_description = db.Column(db.String(220))
     is_published = db.Column(db.Boolean, default=False)
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    is_featured = db.Column(db.Boolean, default=False)
     published_at = db.Column(db.DateTime)
     
     # Table arguments for indexes
@@ -37,8 +36,8 @@ class BlogPost(db.Model):
     )
     
     # Relationships
-    comments = db.relationship('BlogComment', backref='post', lazy=True, cascade='all, delete-orphan')
-    tag_list = db.relationship('Tag', secondary=blog_post_tags, lazy='dynamic')
+    comments = db.relationship('BlogComment', foreign_keys="BlogComment.post_id", backref='post', lazy=True, cascade='all, delete-orphan')
+    tag_list = db.relationship('Tag', secondary=blog_post_tags, lazy='dynamic', back_populates='blog_posts')
     
     def __init__(self, **kwargs):
         super(BlogPost, self).__init__(**kwargs)
@@ -47,36 +46,22 @@ class BlogPost(db.Model):
     
     @staticmethod
     def generate_slug(title):
-        """Generate a unique slug from blog title, handling collisions"""
-        base_slug = re.sub(r'[^\w\s-]', '', title.lower())
-        base_slug = re.sub(r'[-\s]+', '-', base_slug).strip('-')
-        
-        slug = base_slug
-        counter = 1
-        
-        # Check for existing slugs and append number if collision detected
-        while BlogPost.query.filter_by(slug=slug).first() is not None:
-            slug = f"{base_slug}-{counter}"
-            counter += 1
-            
-        return slug
+        return generate_slug(title, BlogPost, db.session)
     
     def __repr__(self):
         return f'<BlogPost {self.title}>'
 
-class BlogComment(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    post_id = db.Column(db.Integer, db.ForeignKey('blog_post.id'))
+class BlogComment(BaseModel):
+    post_id = db.Column(db.String(36), db.ForeignKey('blog_post.id'))
     name = db.Column(db.String(100))
     email = db.Column(db.String(100))
     content = db.Column(db.Text, nullable=False)
     approved = db.Column(db.Boolean, default=False)
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     
     # Relationships
-    user = db.relationship('User', backref='blog_comments')
-    reactions = db.relationship('CommentReaction', backref='comment', lazy='dynamic', cascade='all, delete-orphan')
+    user = db.relationship('User', foreign_keys=[user_id], backref='blog_comments')
+    reactions = db.relationship('CommentReaction', foreign_keys="CommentReaction.comment_id", backref='comment', lazy='dynamic', cascade='all, delete-orphan')
     
     @property
     def likes_count(self):
@@ -128,7 +113,7 @@ class BlogComment(db.Model):
         return f'<BlogComment {self.id}>'
 
 
-class CommentReaction(db.Model):
+class CommentReaction(BaseModel):
     """
     Track user reactions (like/dislike) on blog comments.
     
@@ -137,12 +122,10 @@ class CommentReaction(db.Model):
     """
     __tablename__ = 'comment_reaction'
     
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=True)
-    comment_id = db.Column(db.Integer, db.ForeignKey('blog_comment.id', ondelete='CASCADE'), nullable=False, index=True)
-    reaction_type = db.Column(db.String(10), nullable=False)  # 'like' or 'dislike'
+    user_id = db.Column(db.String(36), db.ForeignKey('users.id', ondelete='CASCADE'), nullable=True)
+    comment_id = db.Column(db.String(36), db.ForeignKey('blog_comment.id', ondelete='CASCADE'), nullable=False, index=True)
+    reaction_type = db.Column(db.Enum(BlogReactionType), nullable=False)  # 'like' or 'dislike'
     ip_address = db.Column(db.String(45), nullable=True)  # For guest users (IPv4/IPv6)
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
     
     # Table arguments for constraints and indexes
     __table_args__ = (
@@ -152,14 +135,14 @@ class CommentReaction(db.Model):
     )
     
     # Relationship
-    user = db.relationship('User', backref='comment_reactions')
+    user = db.relationship('User', foreign_keys=[user_id], backref='comment_reactions')
     
     def to_dict(self):
         """Serialize reaction to dictionary"""
         return {
             'id': self.id,
             'reaction_type': self.reaction_type,
-            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'created_at': self.created_at.isoformat(),
             'user_id': self.user_id
         }
     

@@ -1,15 +1,15 @@
 from tuned.extensions import db
+from tuned.models.base import BaseModel
 from datetime import datetime, timezone
 import uuid
 from sqlalchemy.sql import func
 from tuned.models.enums import PaymentStatus, PaymentMethod, TransactionType, RefundStatus, DiscountType, Currency
 
-class Payment(db.Model):
+class Payment(BaseModel):
     """Model for tracking payments"""
-    id = db.Column(db.Integer, primary_key=True)
-    payment_id = db.Column(db.String(100), unique=True, nullable=False)
-    order_id = db.Column(db.Integer, db.ForeignKey('order.id'), nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    payment_id = db.Column(db.String(36), unique=True, nullable=False)
+    order_id = db.Column(db.String(36), db.ForeignKey('order.id'), nullable=False)
+    user_id = db.Column(db.String(36), db.ForeignKey('users.id'), nullable=False)
     currency = db.Column(db.Enum(Currency), default=Currency.USD, nullable=False)
     payment_method_token = db.Column(db.String(255))
     amount = db.Column(db.Float, nullable=False)
@@ -22,15 +22,12 @@ class Payment(db.Model):
     
     payer_id = db.Column(db.String(255))  
     approval_url = db.Column(db.String(500))
-
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
-    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
     
     # Relationships
-    order = db.relationship('Order', back_populates='payments')
-    user = db.relationship('User', backref=db.backref('payments', lazy=True))
-    transactions = db.relationship('Transaction', backref='payment', lazy=True)
-    invoice = db.relationship('Invoice', back_populates='payment', uselist=False)
+    order = db.relationship('Order', foreign_keys=[order_id], back_populates='payments')
+    user = db.relationship('User', foreign_keys=[user_id], backref=db.backref('payments', lazy=True))
+    transactions = db.relationship('Transaction', foreign_keys='Transaction.payment_id', backref='payment', lazy=True)
+    invoice = db.relationship('Invoice', foreign_keys='Invoice.payment_id', back_populates='payment', uselist=False)
     
     # Table arguments for indexes and constraints
     __table_args__ = (
@@ -52,27 +49,24 @@ class Payment(db.Model):
     def __repr__(self):
         return f"Payment {self.payment_id} for Order {self.order_id}"
 
-class Invoice(db.Model):
+class Invoice(BaseModel):
     """Model for invoices"""
-    id = db.Column(db.Integer, primary_key=True)
     invoice_number = db.Column(db.String(20), unique=True, nullable=False)
-    order_id = db.Column(db.Integer, db.ForeignKey('order.id'), nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    payment_id = db.Column(db.Integer, db.ForeignKey('payment.id'))
+    order_id = db.Column(db.String(36), db.ForeignKey('order.id'), nullable=False)
+    user_id = db.Column(db.String(36), db.ForeignKey('users.id'), nullable=False)
+    payment_id = db.Column(db.String(36), db.ForeignKey('payment.id'))
     
     subtotal = db.Column(db.Float, nullable=False)
     discount = db.Column(db.Float, default=0)
     tax = db.Column(db.Float, default=0)
     total = db.Column(db.Float, nullable=False)
-    
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     due_date = db.Column(db.DateTime, nullable=False)
     paid = db.Column(db.Boolean, default=False)
     
     # Relationships
-    order = db.relationship('Order', back_populates='invoice')
-    user = db.relationship('User', backref=db.backref('invoices', lazy=True))
-    payment = db.relationship('Payment', back_populates='invoice')
+    order = db.relationship('Order', foreign_keys=[order_id], back_populates='invoice')
+    user = db.relationship('User', foreign_keys=[user_id], backref=db.backref('invoices', lazy=True))
+    payment = db.relationship('Payment', foreign_keys=[payment_id], back_populates='invoice')
     
     def __init__(self, order_id, user_id, subtotal, total, due_date, payment_id=None, discount=0, tax=0, paid=False):
         # INV-YYYYMM-NNNN
@@ -96,20 +90,17 @@ class Invoice(db.Model):
     def __repr__(self):
         return f"Invoice {self.invoice_number}"
 
-class Transaction(db.Model):
+class Transaction(BaseModel):
     """Model for tracking payment transactions"""
-    id = db.Column(db.Integer, primary_key=True)
     transaction_id = db.Column(db.String(100), unique=True, nullable=False)
-    payment_id = db.Column(db.Integer, db.ForeignKey('payment.id'), nullable=False)
+    payment_id = db.Column(db.String(36), db.ForeignKey('payment.id'), nullable=False)
     type = db.Column(db.Enum(TransactionType), nullable=False)
     amount = db.Column(db.Float, nullable=False)
     status = db.Column(db.String(50), nullable=False)
     
     processor_id = db.Column(db.String(255))
     processor_response = db.Column(db.Text)
-    
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
-    
+
     # Table arguments for constraints
     __table_args__ = (
         db.CheckConstraint('amount > 0', name='valid_transaction_amount'),
@@ -127,8 +118,7 @@ class Transaction(db.Model):
     def __repr__(self):
         return f"{self.type.title()} of {self.amount} for Payment #{self.payment_id}"
     
-class Discount(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
+class Discount(BaseModel):
     code = db.Column(db.String(20), unique=True, nullable=False)
     description = db.Column(db.String(200))
     discount_type = db.Column(db.Enum(DiscountType), default=DiscountType.PERCENTAGE, nullable=False)
@@ -159,21 +149,19 @@ order_discount = db.Table('order_discount',
     db.Column('discount_id', db.Integer, db.ForeignKey('discount.id'), primary_key=True)
 )
 
-class Refund(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    payment_id = db.Column(db.Integer, db.ForeignKey('payment.id'))
+class Refund(BaseModel):
+    payment_id = db.Column(db.String(36), db.ForeignKey('payment.id'))
     amount = db.Column(db.Float, nullable=False)
     reason = db.Column(db.Text)
     status = db.Column(db.Enum(RefundStatus), default=RefundStatus.PENDING, nullable=False)
-    processed_by = db.Column(db.Integer, db.ForeignKey('users.id'))
+    processed_by = db.Column(db.String(36), db.ForeignKey('users.id'))
     refund_date = db.Column(db.DateTime)
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     
     processor_refund_id = db.Column(db.String(255))
     
     # Relationships
-    payment = db.relationship('Payment', backref='refunds')
-    admin = db.relationship('User', backref='processed_refunds')
+    payment = db.relationship('Payment', foreign_keys=[payment_id], backref='refunds')
+    admin = db.relationship('User', foreign_keys=[processed_by], backref='processed_refunds')
     
     # Table arguments for constraints
     __table_args__ = (

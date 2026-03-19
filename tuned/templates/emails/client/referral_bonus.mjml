@@ -1,0 +1,114 @@
+<mjml>
+  <mj-head>
+    <mj-title>You've Earned Referral Bonus!</mj-title>
+    <mj-preview>Someone signed up using your referral code</mj:preview>
+    <mj-attributes>
+      <mj-all font-family="'Helvetica Neue', Helvetica, Arial, sans-serif"></mj-all>
+      <mj-text font-size="14px" color="#555555" line-height="20px"></mj-text>
+    </mj-attributes>
+  </mj-head>
+  
+  <mj-body background-color="#f4f4f4">
+    <!-- Header -->
+    <mj-section background-color="#ff9800" padding="20px">
+      <mj-column>
+        <mj-text align="center" color="#ffffff" font-size="32px" font-weight="bold">
+          🎉 Congratulations!
+        </mj-text>
+        <mj-text align="center" color="#ffffff" font-size="18px">
+          You've earned a referral bonus
+        </mj-text>
+      </mj-column>
+    </mj-section>
+    
+    <!-- Main Content -->
+    <mj-section background-color="#ffffff" padding="40px 30px">
+      <mj-column>
+        <mj-text font-size="16px" color="#333333">
+          Hi {{referrer_name}},
+        </mj-text>
+        
+        <mj-text font-size="14px" line-height="24px">
+          Great news! <strong>{{referee_name}}</strong> just signed up using your referral code, and you've earned bonus points!
+        </mj-text>
+        
+        <mj-divider border-color="#e0e0e0" padding="20px 0"></mj-divider>
+        
+        <!-- Bonus Details -->
+        <mj-section background-color="#fff3e0" border-radius="10px" padding="20px">
+          <mj-column>
+            <mj-text align="center" font-size="48px" font-weight="bold" color="#ff9800" padding="0">
+              +{{bonus_points}}
+            </mj-text>
+            <mj-text align="center" font-size="16px" color="#666666" padding="0">
+              Reward Points
+            </mj-text>
+            <mj-text align="center" font-size="14px" color="#999999">
+              (Worth ${{bonus_value}})
+            </mj-text>
+          </mj-column>
+        </mj-section>
+        
+        <mj-divider border-color="#e0e0e0" padding="20px 0"></mj-divider>
+        
+        <!-- Referral Stats -->
+        <mj-text font-size="16px" font-weight="bold" color="#333333">
+          Your Referral Stats
+        </mj-text>
+        
+        <mj-table>
+          <tr style="border-bottom:1px solid #ecedee;">
+            <td style="padding: 10px; font-weight: 600;">Total Referrals:</td>
+            <td style="padding: 10px; text-align: right;">{{total_referrals}}</td>
+          </tr>
+          <tr style="border-bottom:1px solid #ecedee;">
+            <td style="padding: 10px; font-weight: 600;">Total Points Earned:</td>
+            <td style="padding: 10px; text-align: right; font-weight: bold; color: #ff9800;">{{total_points}}</td>
+          </tr>
+          <tr>
+            <td style="padding: 10px; font-weight: 600;">Available Balance:</td>
+            <td style="padding: 10px; text-align: right; font-weight: bold; color: #00c853;">${{available_balance}}</td>
+          </tr>
+        </mj-table>
+        
+        <!-- CTA Button -->
+        <mj-button background-color="#ff9800" color="#ffffff" href="{{referrals_url}}" padding="20px 0">
+          View Referral Dashboard
+        </mj-button>
+      </mj-column>
+    </mj-section>
+    
+    <!-- Keep Sharing Section -->
+    <mj-section background-color="#f8f9fa" padding="30px">
+      <mj-column>
+        <mj-text font-size="16px" font-weight="bold" color="#333333" align="center">
+          Keep Sharing, Keep Earning!
+        </mj-text>
+        
+        <mj-text font-size="14px" align="center">
+          Share your code: <strong style="color: #ff9800; font-size: 16px;">{{referral_code}}</strong>
+        </mj-text>
+        
+        <mj-text font-size="14px" align="center">
+          For every friend who signs up and completes an order, you both earn bonus points!
+        </mj-text>
+        
+        <mj-button background-color="#1a73e8" color="#ffffff" href="{{share_url}}" padding="15px 0">
+          Share Your Code
+        </mj-button>
+      </mj-column>
+    </mj-section>
+    
+    <!-- Footer -->
+    <mj-section background-color="#333333" padding="20px">
+      <mj-column>
+        <mj-text align="center" color="#ffffff" font-size="12px">
+          Questions about rewards? Email {{support_email}}
+        </mj-text>
+        <mj-text align="center" color="#aaaaaa" font-size="11px">
+          © {{current_year}} {{company_name}}. All rights reserved.
+        </mj-text>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>

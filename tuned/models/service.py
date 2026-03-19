@@ -1,14 +1,19 @@
 from tuned.extensions import db
+from tuned.models.base import BaseModel
+from tuned.models.utils import generate_slug
+from tuned.models.tag import service_tags
 from datetime import datetime
 import re
 
-class ServiceCategory(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
+class ServiceCategory(BaseModel):
     name = db.Column(db.String(100), nullable=False)
     description = db.Column(db.Text)
     order = db.Column(db.Integer, default=0)
     
     services = db.relationship('Service', backref='category', lazy=True, cascade='all, delete-orphan')
+
+    def __init__(self, **kwargs):
+        super(ServiceCategory, self).__init__(**kwargs)
     
     def __repr__(self):
         return f'<ServiceCategory {self.name}>'
@@ -20,13 +25,11 @@ class ServiceCategory(db.Model):
             'order': self.order
         }
 
-class Service(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
+class Service(BaseModel):
     name = db.Column(db.String(100), nullable=False)
     description = db.Column(db.Text)
-    category_id = db.Column(db.Integer, db.ForeignKey('service_category.id'))
+    category_id = db.Column(db.String(36), db.ForeignKey('service_category.id'))
     featured = db.Column(db.Boolean, default=False)
-    tags = db.Column(db.String(255), nullable=True) 
     pricing_category_id = db.Column(db.Integer, db.ForeignKey('pricing_category.id'))
     slug = db.Column(db.String(200), unique=True, nullable=False)
     is_active = db.Column(db.Boolean, default=True, server_default='true')
@@ -36,10 +39,11 @@ class Service(db.Model):
         db.Index('ix_service_category_featured', 'category_id', 'featured'),
     )
     
-    orders = db.relationship('Order', backref='service', lazy=True)
+    orders = db.relationship('Order', back_populates='service', lazy=True)
     samples = db.relationship('Sample', backref='service', lazy=True)
     testimonials = db.relationship('Testimonial', backref='service', lazy=True)
     pricing_category = db.relationship('PricingCategory', back_populates='service')
+    tag_list = db.relationship('Tag', secondary=service_tags, lazy='dynamic', back_populates='services')
     
     def __init__(self, **kwargs):
         super(Service, self).__init__(**kwargs)
@@ -48,19 +52,7 @@ class Service(db.Model):
     
     @staticmethod
     def generate_slug(name):
-        """Generate a unique slug from service name, handling collisions"""
-        base_slug = re.sub(r'[^\w\s-]', '', name.lower())
-        base_slug = re.sub(r'[-\s]+', '-', base_slug).strip('-')
-        
-        slug = base_slug
-        counter = 1
-        
-        # Check for existing slugs and append number if collision detected
-        while Service.query.filter_by(slug=slug).first() is not None:
-            slug = f"{base_slug}-{counter}"
-            counter += 1
-            
-        return slug
+        return generate_slug(name, Service, db.session)
     
     def __repr__(self):
         return f'<Service {self.name}>'
@@ -71,25 +63,24 @@ class Service(db.Model):
             'description': self.description,
             'category_id': self.category_id,
             'featured': self.featured,
-            'tags': self.tags,
+            'tags': self.get_tags(),
             'pricing_category_id': self.pricing_category_id
         }
     def get_tags(self):
         """
         Return a list of tags for the service.
         """
-        if self.tags:
-            return [tag.strip() for tag in self.tags.split(',')]
+        if self.tag_list:
+            return [tag.name for tag in self.tag_list]
         return []
 
-class AcademicLevel(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
+class AcademicLevel(BaseModel):
     name = db.Column(db.String(100), nullable=False)
     order = db.Column(db.Integer, default=0)
     
-    orders = db.relationship('Order', backref='academic_level', lazy=True)
+    orders = db.relationship('Order', back_populates='academic_level', lazy=True)
     price_rates = db.relationship('PriceRate', backref='academic_level', lazy=True)
-    
+
     def __repr__(self):
         return f'<AcademicLevel {self.name}>'
     def to_dict(self):
@@ -100,8 +91,7 @@ class AcademicLevel(db.Model):
         }
     
 
-class Deadline(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
+class Deadline(BaseModel):
     name = db.Column(db.String(100), nullable=False)
     hours = db.Column(db.Integer, nullable=False)
     order = db.Column(db.Integer, default=0)
@@ -111,7 +101,7 @@ class Deadline(db.Model):
         db.CheckConstraint('hours > 0 AND hours <= 720', name='valid_deadline_hours'),
     )
     
-    orders = db.relationship('Order', backref='deadline', lazy=True)
+    orders = db.relationship('Order', back_populates='deadline', lazy=True)
     price_rates = db.relationship('PriceRate', backref='deadline', lazy=True)
     
     def __repr__(self):

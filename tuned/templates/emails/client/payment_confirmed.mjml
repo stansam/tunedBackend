@@ -1,0 +1,133 @@
+<mjml>
+  <mj-head>
+    <mj-title>Payment Successful - {{ order_number }}</mj-title>
+    <mj-preview>Your payment has been received successfully</mj-preview>
+    <mj-attributes>
+      <mj-all
+        font-family="'Helvetica Neue', Helvetica, Arial, sans-serif"
+      ></mj-all>
+      <mj-text font-size="14px" color="#555555" line-height="20px"></mj-text>
+    </mj-attributes>
+  </mj-head>
+
+  <mj-body background-color="#f4f4f4">
+    <!-- Header -->
+    <mj-section background-color="#00c853" padding="20px">
+      <mj-column>
+        <mj-text
+          align="center"
+          color="#ffffff"
+          font-size="28px"
+          font-weight="bold"
+        >
+          ✓ Payment Successful
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    <!-- Main Content -->
+    <mj-section background-color="#ffffff" padding="40px 30px">
+      <mj-column>
+        <mj-text font-size="16px" color="#333333">
+          Hi {{ client_name }},
+        </mj-text>
+
+        <mj-text font-size="14px" line-height="24px">
+          Great news! We've received your payment and your order is now
+          confirmed. Our team will begin working on it right away.
+        </mj-text>
+
+        <mj-divider border-color="#e0e0e0" padding="20px 0"></mj-divider>
+
+        <!-- Payment Details -->
+        <mj-text font-size="18px" font-weight="bold" color="#333333">
+          Payment Receipt
+        </mj-text>
+
+        <mj-table>
+          <tr style="border-bottom: 1px solid #ecedee; text-align: left">
+            <th style="padding: 10px; font-weight: 600">Transaction ID:</th>
+            <td style="padding: 10px">{{ transaction_id }}</td>
+          </tr>
+          <tr style="border-bottom: 1px solid #ecedee; text-align: left">
+            <th style="padding: 10px; font-weight: 600">Order Number:</th>
+            <td style="padding: 10px">{{ order_number }}</td>
+          </tr>
+          <tr style="border-bottom: 1px solid #ecedee; text-align: left">
+            <th style="padding: 10px; font-weight: 600">Payment Method:</th>
+            <td style="padding: 10px">{{ payment_method }}</td>
+          </tr>
+          <tr style="border-bottom: 1px solid #ecedee; text-align: left">
+            <th style="padding: 10px; font-weight: 600">Amount Paid:</th>
+            <td
+              style="
+                padding: 10px;
+                font-size: 18px;
+                font-weight: bold;
+                color: #00c853;
+              "
+            >
+              ${{ amount_paid }}
+            </td>
+          </tr>
+          <tr style="text-align: left">
+            <th style="padding: 10px; font-weight: 600">Payment Date:</th>
+            <td style="padding: 10px">{{ payment_date }}</td>
+          </tr>
+        </mj-table>
+
+        <mj-divider border-color="#e0e0e0" padding="20px 0"></mj-divider>
+
+        <!-- CTA Buttons -->
+        <mj-button
+          background-color="#1a73e8"
+          color="#ffffff"
+          href="{{order_url}}"
+          padding="10px 0"
+        >
+          View Order Details
+        </mj-button>
+
+        <mj-button
+          background-color="#ffffff"
+          color="#1a73e8"
+          border="2px solid #1a73e8"
+          href="{{invoice_url}}"
+          padding="10px 0"
+        >
+          Download Invoice
+        </mj-button>
+      </mj-column>
+    </mj-section>
+
+    <!-- What's Next Section -->
+    <mj-section background-color="#e8f5e9" padding="30px">
+      <mj-column>
+        <mj-text font-size="16px" font-weight="bold" color="#333333">
+          📝 What's Next?
+        </mj-text>
+
+        <mj-text font-size="14px">
+          • Our team is reviewing your requirements<br />
+          • A qualified writer will be assigned within 2 hours<br />
+          • You'll receive updates throughout the process<br />
+          • Your completed work will be delivered by:
+          <strong>{{ due_date }}</strong>
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    <!-- Footer -->
+    <mj-section background-color="#333333" padding="20px">
+      <mj-column>
+        <mj-text align="center" color="#ffffff" font-size="12px">
+          Questions? Contact us at {{ support_email }} | Phone:
+          {{ support_phone }}
+        </mj-text>
+        <mj-text align="center" color="#aaaaaa" font-size="11px">
+          © {{ current_year }} {{ company_name }}. All rights reserved.
+        </mj-text>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>

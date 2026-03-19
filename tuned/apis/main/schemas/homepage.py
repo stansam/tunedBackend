@@ -103,11 +103,11 @@ class CalculatePriceSchema(Schema):
         }
     )
     
-    academic_level_id = fields.Str(
+    level_id = fields.Str(
         required=True,
         error_messages={
-            'required': 'Academic level ID is required',
-            'invalid': 'Academic level ID must be a string',
+            'required': 'Level ID is required',
+            'invalid': 'Level ID must be a string',
         }
     )
 

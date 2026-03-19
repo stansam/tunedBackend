@@ -101,7 +101,7 @@ class CalculatePrice(MethodView):
         return CalculatePriceRequestDTO(
             deadline=data.get('deadline'),
             pricing_category_id=data.get('pricing_category_id'),
-            academic_level_id=data.get('academic_level_id'),
+            academic_level_id=data.get('level_id'),
             word_count=data.get('word_count'),
             report_type=data.get('report_type', None)
         )
@@ -137,7 +137,7 @@ class CalculatePrice(MethodView):
             return error_response(
                 'Invalid data provided',
                 status=400,
-                details=err.messages
+                errors=err.messages
             )
         except Exception as e:
             logger.error(f'Error calculating price: {str(e)}')

@@ -29,7 +29,7 @@ class GetFeaturedContent(MethodView): #TODO: Implement strict return types
                 return success_response(json.loads(cached_data))
             
             # TODO: Implement strict response DTOs
-            featured_services = self._interface.pricing_category.list_categories()
+            featured_services = self._interface.service_category.list_categories()
             featured_samples = self._interface.sample.list_featured_samples()
             featured_blogs = self._interface.blog.list_featured_blogs()
             data = {

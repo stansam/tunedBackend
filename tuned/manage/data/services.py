@@ -124,5 +124,6 @@ service_category_descriptions_dict = {
     "Business and Market Research": "Strengthen your business strategy with detailed, data-driven research. Gain insights into competitors, markets, and industry trends that support smart decisions and professional reports.",
     "Presentations": "Impress your audience with visually engaging, professionally designed presentations. Communicate complex ideas clearly and confidently in any setting, academic, business, or creative.",
     "Resume Writing": "Present your experience and skills in the best possible light. Whether you’re applying for your first job or making a career move, we help you create a strong, customized resume and cover letter.",
-    "Technical Writing & Calculations": "Break down complex ideas into clear, well-structured content. From scientific reports to math-based tasks, this service helps you communicate technical details accurately and efficiently."
+    "Technical Writing & Calculations": "Break down complex ideas into clear, well-structured content. From scientific reports to math-based tasks, this service helps you communicate technical details accurately and efficiently.",
+    "Grant Research": "Find the right funding opportunities for your goals. We connect you with relevant grants and help align your project or organization with the expectations of potential funders."
 }

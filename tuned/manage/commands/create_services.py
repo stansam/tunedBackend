@@ -71,10 +71,8 @@ def create_services() -> None:
         f"Service Categories — created: {sc_created}, skipped: {sc_skipped}"
     )
 
-    # Refresh service category map after creation
     service_cat_map = _build_service_cat_map()
 
-    # --- Services ---
     svc_created = svc_skipped = svc_failed = 0
     click.echo("\nSeeding services…")
 

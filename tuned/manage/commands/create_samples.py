@@ -86,6 +86,7 @@ def create_samples() -> None:
             click.echo(f"  ⚠ Skipped (already exists): {entry['title']}")
             skipped += 1
         except Exception as exc:
+            db.session.rollback()
             logger.exception("Failed to create sample %s", entry.get("title"))
             click.echo(f"  ✗ Error creating sample {entry.get('title')}: {exc}")
             failed += 1

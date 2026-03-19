@@ -146,4 +146,55 @@ blogPosts = [
         "featured_image": "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=1200&q=80",
         "meta_description": "Step-by-step guide to writing a winning dissertation proposal — structure, tips, and annotated examples.",
     },
+    {
+        "title": "Mastering the Art of Public Speaking in Academia",
+        "content": (
+            "<p>Public speaking is a vital skill for presenting research findings, teaching, and defending your thesis.</p>"
+            "<p>This article explores effective techniques to conquer stage fright, structure your presentations logically, and engage your audience.</p>"
+            "<p>Learn how to design impactful slides and deliver your message with confidence and clarity.</p>"
+        ),
+        "excerpt": "A comprehensive guide to improving your academic presentation skills and conquering stage fright.",
+        "author": "Dr. Sarah Ochieng",
+        "category_slug": "student-life",
+        "tags": "public speaking, presentations, student life, academic success",
+        "is_published": True,
+        "is_featured": True,
+        "published_at": datetime.now() - timedelta(days=2),
+        "featured_image": "https://images.unsplash.com/photo-1475721028070-dfc798ce0a90?w=1200&q=80",
+        "meta_description": "Enhance your academic public speaking skills and deliver presentations with confidence and clarity.",
+    },
+    {
+        "title": "Writing a Strong Literature Review: Tips and Tricks",
+        "content": (
+            "<p>A literature review is more than a summary; it's a critical synthesis of existing research.</p>"
+            "<p>Discover how to effectively search for scholarly articles, organize your findings thematically, and identify gaps in the literature.</p>"
+            "<p>This step-by-step guide helps you lay a solid theoretical foundation for your academic projects.</p>"
+        ),
+        "excerpt": "Learn how to conduct and write a comprehensive and critical literature review.",
+        "author": "Amina Waweru",
+        "category_slug": "academic-writing",
+        "tags": "literature review, research, academic writing, synthesis",
+        "is_published": True,
+        "is_featured": True,
+        "published_at": datetime.now() - timedelta(days=5),
+        "featured_image": "https://images.unsplash.com/photo-1455390582262-044cdead277a?w=1200&q=80",
+        "meta_description": "Step-by-step guide to finding, analyzing, and synthesizing scholarly sources for your literature review.",
+    },
+    {
+        "title": "The Essential Guide to Networking for Researchers",
+        "content": (
+            "<p>Building a robust professional network is crucial for collaborative research and career advancement.</p>"
+            "<p>This post discusses effective strategies for connecting with peers and mentors at academic conferences and through digital platforms.</p>"
+            "<p>Learn how to craft an impactful elevator pitch, follow up meaningfully, and cultivate lasting academic relationships.</p>"
+        ),
+        "excerpt": "Effective networking strategies to advance your academic career and foster research collaborations.",
+        "author": "James Kariuki",
+        "category_slug": "career-professional-development",
+        "tags": "networking, academic career, professional development, conferences",
+        "is_published": True,
+        "is_featured": True,
+        "published_at": datetime.now() - timedelta(days=8),
+        "featured_image": "https://images.unsplash.com/photo-1515162816999-a0c47dc192f7?w=1200&q=80",
+        "meta_description": "A guide for researchers on how to build and maintain a strong professional network both online and offline.",
+    },
 ]

@@ -43,7 +43,7 @@ class Tag(BaseModel):
     
     def __init__(self, name, description=None, **kwargs):
         super(Tag, self).__init__(**kwargs)
-        self.name = name
+        self.name = name.strip().lower() if name else name
         self.description = description
         if not self.slug and self.name:
             self.slug = self.generate_slug(self.name)
@@ -64,12 +64,17 @@ class Tag(BaseModel):
     
     @staticmethod
     def get_or_create(tag_name):
-        """Get existing tag or create new one"""
-        tag = Tag.query.filter_by(name=tag_name.strip().lower()).first()
+        """Get existing tag or create new one safely using savepoints"""
+        from sqlalchemy.exc import IntegrityError
+        clean_name = tag_name.strip().lower()
+        tag = Tag.query.filter_by(name=clean_name).first()
         if not tag:
-            tag = Tag(name=tag_name)
-            db.session.add(tag)
-            db.session.commit()
+            try:
+                with db.session.begin_nested():
+                    tag = Tag(name=clean_name)
+                    db.session.add(tag)
+            except IntegrityError:
+                tag = Tag.query.filter_by(name=clean_name).first()
         return tag
     
     @staticmethod

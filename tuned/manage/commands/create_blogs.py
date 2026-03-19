@@ -118,6 +118,7 @@ def create_blogs() -> None:
             click.echo(f"  ⚠ Skipped (already exists): {entry['title'][:60]}")
             bp_skipped += 1
         except Exception as exc:
+            db.session.rollback()
             logger.exception("Failed to create blog post %s", entry.get("title"))
             click.echo(f"  ✗ Error creating post '{entry.get('title', '')}': {exc}")
             bp_failed += 1

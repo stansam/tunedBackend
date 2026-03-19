@@ -1,9 +1,3 @@
-"""
-create_faqs — seed frequently asked questions.
-
-Usage:
-    flask create-faqs
-"""
 import logging
 import click
 from flask.cli import with_appcontext

@@ -125,6 +125,17 @@ class DeleteSample:
             self.db.session.rollback()
             raise DatabaseError("Database error while deleting sample.") from e
 
+class GetSamplesByServiceId:
+    def __init__(self, db: Session) -> None:
+        self.db = db
+
+    def execute(self, service_id: str) -> list[SampleResponseDTO]:
+        try:
+            samples = self.db.session.query(Sample).filter_by(service_id=service_id).all()
+            return [SampleResponseDTO.from_model(s) for s in samples]
+        except SQLAlchemyError as e:
+            raise DatabaseError(f"Database error while fetching samples: {str(e)}") from e
+
 
 class SampleRepository:
     """Facade composing all Sample command objects."""
@@ -156,3 +167,6 @@ class SampleRepository:
 
     def delete(self, sample_id: str) -> None:
         return DeleteSample(self.db).execute(sample_id)
+
+    def get_samples_by_service_id(self, service_id: str) -> list[SampleResponseDTO]:
+        return GetSamplesByServiceId(self.db).execute(service_id)

@@ -106,7 +106,7 @@ class AcademicLevelRepository:
     def get_by_id(self, level_id: str) -> AcademicLevelResponseDTO:
         return GetAcademicLevelByID(self.db).execute(level_id)
 
-    def get_all(self) -> list[AcademicLevel]:
+    def get_all(self) -> list[AcademicLevelResponseDTO]:
         return GetAllAcademicLevels(self.db).execute()
 
     def update(self, level_id: str, updates: dict) -> AcademicLevelResponseDTO:

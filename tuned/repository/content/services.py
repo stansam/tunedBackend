@@ -231,6 +231,19 @@ class DeleteServiceCategory:
             self.db.session.rollback()
             raise DatabaseError("Database error while deleting service category.") from e
 
+class GetServicesByCategory:
+    def __init__(self, db: Session) -> None:
+        self.db = db
+
+    def execute(self, category_id: str) -> list[ServiceResponseDTO]:
+        try:
+            services = self.db.session.query(Service).filter_by(category_id=category_id).all()
+            if not services:
+                raise NotFound("No services found in this category.")
+            return [ServiceResponseDTO.from_model(service) for service in services]
+        except SQLAlchemyError as e:
+            raise DatabaseError("Database error while fetching services by category.") from e
+
 
 # ---------------------------------------------------------------------------
 # Repository facades
@@ -262,6 +275,8 @@ class ServiceRepository:
 
     def delete(self, service_id: str) -> None:
         return DeleteService(self.db).execute(service_id)
+    def get_services_by_category(self, category_id: str) -> list[ServiceResponseDTO]:
+        return GetServicesByCategory(self.db).execute(category_id)
 
 
 class ServiceCategoryRepository:

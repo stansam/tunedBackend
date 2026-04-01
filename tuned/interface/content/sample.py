@@ -84,3 +84,12 @@ class SampleService:
         logger.info("Deleting sample id=%s", sample_id)
         self._repo.delete(sample_id)
         logger.info("Sample deleted: id=%s", sample_id)
+
+    def get_samples_by_service_id(self, service_id: str) -> list[SampleResponseDTO]:
+        """Return all samples for a given service.
+
+        Raises:
+            NotFound: If no service exists with the given ID.
+            DatabaseError: On unexpected database failure.
+        """
+        return self._repo.get_samples_by_service_id(service_id)

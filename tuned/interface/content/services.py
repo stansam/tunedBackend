@@ -107,6 +107,15 @@ class ServiceService:
         logger.info("Deleting service id=%s", service_id)
         self._repo.delete(service_id)
         logger.info("Service deleted: id=%s", service_id)
+    
+    def get_services_by_category(self, category_id: str) -> list[ServiceResponseDTO]:
+        """Return all services in a category.
+
+        Raises:
+            NotFound: If no category exists with the given ID.
+            DatabaseError: On unexpected database failure.
+        """
+        return self._repo.get_services_by_category(category_id)
 
 
 class ServiceCategoryService:

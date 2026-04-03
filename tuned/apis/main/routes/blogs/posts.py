@@ -1,6 +1,6 @@
 from flask import request
 from flask.views import MethodView
-from tuned.interface import Services
+from tuned.interface import blog_post as _interface
 from tuned.utils.responses import paginated_response, error_response, validation_error_response, success_response
 from tuned.redis_client import redis_client
 from tuned.apis.main.schemas import BlogFilterSchema
@@ -19,7 +19,6 @@ CACHE_TTL = 300
 
 class ListBlogPosts(MethodView):
     def __init__(self):
-        self._interface = Services()
         self._schema = BlogFilterSchema()
 
     def get(self):
@@ -45,7 +44,7 @@ class ListBlogPosts(MethodView):
                     total=data.get("total")
                     )
             req = BlogPostListRequestDTO(**params)
-            blogs = self._interface.blog_post.list_published(req)
+            blogs = _interface.list_published(req)
             data = asdict(blogs)
 
             redis_client.setex(
@@ -68,8 +67,6 @@ class ListBlogPosts(MethodView):
             )
 
 class GetBlogPost(MethodView):
-    def __init__(self):
-        self._interface = Services()
 
     def get(self, slug):
         try:
@@ -78,7 +75,7 @@ class GetBlogPost(MethodView):
                 logger.debug('Returning blog from cache')
                 return success_response(json.loads(cached_data))
             
-            blog = self._interface.blog_post.get_by_slug(slug)
+            blog = _interface.get_by_slug(slug)
             data = {
                 'blog': asdict(blog)
             }

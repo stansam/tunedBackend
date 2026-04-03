@@ -6,67 +6,68 @@ from tuned.dtos import (
 )
 from tuned.repository import repositories
 from tuned.repository.exceptions import AlreadyExists, DatabaseError, NotFound
+from tuned.core.logging import get_logger
 
-logger = logging.getLogger(__name__)
+logger: logging.Logger = get_logger(__name__)
 
 
 class PricingCategoryService:
-    """Service layer for PricingCategory business logic."""
-
     def __init__(self) -> None:
         self._repo = repositories.pricing_category
 
     def create_category(self, data: PricingCategoryDTO) -> PricingCategoryResponseDTO:
-        """Create a new pricing category.
-
-        Raises:
-            AlreadyExists: If a category with this name already exists.
-            DatabaseError: On unexpected database failure.
-        """
-        logger.info("Creating pricing category: %s", data.name)
-        result = self._repo.create(data)
-        logger.info("Pricing category created: id=%s", result.id)
-        return result
+        try:
+            logger.info("Creating pricing category: %s", data.name)
+            result = self._repo.create(data)
+            logger.info("Pricing category created: id=%s", result.id)
+            return result
+        except AlreadyExists:
+            logger.error("Pricing category already exists: %s", data.name)
+            raise AlreadyExists("Pricing category already exists")
+        except DatabaseError:
+            logger.error("Database error while creating pricing category")
+            raise DatabaseError("Database error while creating pricing category")
 
     def get_category(self, category_id: str) -> PricingCategoryResponseDTO:
-        """Retrieve a pricing category by ID.
-
-        Raises:
-            NotFound: If no category exists with the given ID.
-            DatabaseError: On unexpected database failure.
-        """
-        return self._repo.get_by_id(category_id)
+        try:
+            return self._repo.get_by_id(category_id)
+        except NotFound:
+            logger.error("Pricing category not found: %s", category_id)
+            raise NotFound("Pricing category not found")
+        except DatabaseError:
+            logger.error("Database error while fetching pricing category")
+            raise DatabaseError("Database error while fetching pricing category")
 
     def list_categories(self) -> list[PricingCategoryResponseDTO]:
-        """Return all pricing categories ordered by display_order.
-
-        Raises:
-            DatabaseError: On unexpected database failure.
-        """
-        return self._repo.get_all()
+        try:
+            return self._repo.get_all()
+        except DatabaseError:
+            logger.error("Database error while fetching pricing categories")
+            raise DatabaseError("Database error while fetching pricing categories")
 
     def update_category(self, category_id: str, updates: dict) -> PricingCategoryResponseDTO:
-        """Update mutable fields of a pricing category.
-
-        Raises:
-            NotFound: If no category exists with the given ID.
-            AlreadyExists: If the update would cause a name conflict.
-            DatabaseError: On unexpected database failure.
-        """
-        allowed = {"name", "description", "display_order"}
-        safe_updates = {k: v for k, v in updates.items() if k in allowed}
-        logger.info("Updating pricing category id=%s fields=%s", category_id, list(safe_updates.keys()))
-        result = self._repo.update(category_id, safe_updates)
-        logger.info("Pricing category updated: id=%s", category_id)
-        return result
+        try:
+            allowed = {"name", "description", "display_order"}
+            safe_updates = {k: v for k, v in updates.items() if k in allowed}
+            logger.info("Updating pricing category id=%s fields=%s", category_id, list(safe_updates.keys()))
+            result = self._repo.update(category_id, safe_updates)
+            logger.info("Pricing category updated: id=%s", category_id)
+            return result
+        except NotFound:
+            logger.error("Pricing category not found: %s", category_id)
+            raise NotFound("Pricing category not found")
+        except DatabaseError:
+            logger.error("Database error while updating pricing category")
+            raise DatabaseError("Database error while updating pricing category")
 
     def delete_category(self, category_id: str) -> None:
-        """Permanently delete a pricing category.
-
-        Raises:
-            NotFound: If no category exists with the given ID.
-            DatabaseError: On unexpected database failure.
-        """
-        logger.info("Deleting pricing category id=%s", category_id)
-        self._repo.delete(category_id)
-        logger.info("Pricing category deleted: id=%s", category_id)
+        try:
+            logger.info("Deleting pricing category id=%s", category_id)
+            self._repo.delete(category_id)
+            logger.info("Pricing category deleted: id=%s", category_id)
+        except NotFound:
+            logger.error("Pricing category not found: %s", category_id)
+            raise NotFound("Pricing category not found")
+        except DatabaseError:
+            logger.error("Database error while deleting pricing category")
+            raise DatabaseError("Database error while deleting pricing category")

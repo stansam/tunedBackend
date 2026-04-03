@@ -117,8 +117,6 @@ class DeleteFAQ:
 
 
 class FAQRepository:
-    """Facade composing all FAQ command objects."""
-
     def __init__(self) -> None:
         self.db = db
 

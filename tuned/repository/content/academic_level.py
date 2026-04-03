@@ -95,8 +95,6 @@ class DeleteAcademicLevel:
 
 
 class AcademicLevelRepository:
-    """Facade that composes all academic-level command objects."""
-
     def __init__(self) -> None:
         self.db = db
 

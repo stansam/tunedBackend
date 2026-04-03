@@ -1,5 +1,6 @@
+from tuned.core.logging import get_logger
 from flask.views import MethodView
-from tuned.interface import Services
+from tuned.interface import service as _interface, blog_category as _category_interface, sample as _samples_interface
 from tuned.utils.responses import success_response, error_response
 from tuned.redis_client import redis_client
 
@@ -8,7 +9,7 @@ from dataclasses import asdict
 import json
 import logging
 
-logger = logging.getLogger(__name__)
+logger: logging.Logger = get_logger(__name__)
 
 CACHE_KEY = 'services:list'
 CACHE_TTL = 300
@@ -19,8 +20,7 @@ class GetServicesList(MethodView):
             cached = redis_client.get(CACHE_KEY)
             if cached:
                 return success_response(json.loads(cached), "Services fetched successfully")
-            interface = Services()
-            services = interface.service.list_services()
+            services = _interface.list_services()
 
             redis_client.setex(
                 CACHE_KEY, CACHE_TTL,
@@ -39,8 +39,7 @@ class GetServiceCategoriesList(MethodView):
             if cached:
                 return success_response("Services categories fetched successfully", json.loads(cached))
             
-            interface = Services()
-            categories = interface.service_category.list_categories()
+            categories = _category_interface.list_categories()
             categories = [asdict(c) for c in categories]
             redis_client.setex(
                 CACHE_KEY, CACHE_TTL,
@@ -58,9 +57,8 @@ class GetServicesByCategory(MethodView):
             cached = redis_client.get(f'service:category:{category_id}')
             if cached:
                 return success_response(json.loads(cached), "Services fetched successfully")
-            
-            interface = Services()
-            services = interface.service.get_services_by_category(category_id)
+
+            services = _interface.get_services_by_category(category_id)
             services = [asdict(s) for s in services]
 
             redis_client.setex(
@@ -81,8 +79,7 @@ class GetServicesBySlug(MethodView):
             if cached:
                 return success_response(json.loads(cached), "Service fetched successfully")
             
-            interface = Services()
-            service = interface.service.get_service_by_slug(slug)
+            service = _interface.get_service_by_slug(slug)
             service = asdict(service)
             
 
@@ -103,10 +100,9 @@ class GetServicesRelated(MethodView):
             if cached:
                 return success_response(json.loads(cached), "Service related fetched successfully")
             
-            interface = Services()
-            service = interface.service.get_service_by_slug(slug)
-            related_services = interface.service.get_services_by_category(service.category_id)
-            related_samples = interface.sample.get_samples_by_service_id(service.id)
+            service = _interface.get_service_by_slug(slug)
+            related_services = _interface.get_services_by_category(service.category_id)
+            related_samples = _samples_interface.get_samples_by_service_id(service.id)
 
             related_services = [asdict(s) for s in related_services]
             related_samples = [asdict(s) for s in related_samples]

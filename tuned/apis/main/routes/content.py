@@ -1,14 +1,14 @@
+from tuned.core.logging import get_logger
 from flask.views import MethodView
 from tuned.interface import Services
 from tuned.utils.responses import success_response, error_response
 from tuned.redis_client import redis_client
-from tuned.dtos import AcademicLevelResponseDTO
 
 from dataclasses import asdict
 import json
 import logging
 
-logger = logging.getLogger(__name__)
+logger: logging.Logger = get_logger(__name__)
 
 CACHE_TTL = 300
 CACHE_KEY_ACADEMIC_LEVELS = 'academic_levels:list'

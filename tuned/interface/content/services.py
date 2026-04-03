@@ -1,182 +1,112 @@
 import logging
 from collections import defaultdict
-
-from tuned.models import Service
-from tuned.models import ServiceCategory
 from tuned.dtos import(
-    ServiceDTO, ServiceCategoryDTO, ServiceResponseDTO, ServiceCategoryResponseDTO
+    ServiceDTO, ServiceResponseDTO
 )
 from tuned.repository import repositories
 from tuned.repository.exceptions import AlreadyExists, DatabaseError, NotFound
+from tuned.core.logging import get_logger
 
-logger = logging.getLogger(__name__)
-
+logger: logging.Logger = get_logger(__name__)
 
 class ServiceService:
-    """Service layer for Service business logic."""
-
     def __init__(self) -> None:
         self._repo = repositories.service
 
     def create_service(self, data: ServiceDTO) -> ServiceResponseDTO:
-        """Create a new service.
-
-        Raises:
-            AlreadyExists: If a service with the same name or slug already exists.
-            DatabaseError: On unexpected database failure.
-        """
-        logger.info("Creating service: %s", data.name)
-        service = self._repo.create(data)
-        logger.info("Service created: id=%s slug=%s", service.id, service.slug)
-        return service
+        try:
+            logger.info("Creating service: %s", data.name)
+            service = self._repo.create(data)
+            logger.info("Service created: id=%s slug=%s", service.id, service.slug)
+            return service
+        except AlreadyExists:
+            logger.error("service already exists")
+            raise AlreadyExists("service already exists")
+        except DatabaseError:
+            logger.error("Database error while creating service")
+            raise DatabaseError("Database error while creating service")
 
     def get_service(self, service_id: str) -> ServiceResponseDTO:
-        """Retrieve a service by its ID.
-
-        Raises:
-            NotFound: If no service exists with the given ID.
-            DatabaseError: On unexpected database failure.
-        """
-        return self._repo.get_by_id(service_id)
+        try:
+            return self._repo.get_by_id(service_id)
+        except NotFound:
+            logger.error("service not found: %s", service_id)
+            raise NotFound("service not found")
+        except DatabaseError:
+            logger.error("Database error while fetching service")
+            raise DatabaseError("Database error while fetching service")
 
     def get_service_by_slug(self, slug: str) -> ServiceResponseDTO:
-        """Retrieve a service by its URL slug.
-
-        Raises:
-            NotFound: If no service exists with the given slug.
-            DatabaseError: On unexpected database failure.
-        """
-        return self._repo.get_by_slug(slug)
+        try:
+            return self._repo.get_by_slug(slug)
+        except NotFound:
+            logger.error("service not found: %s", slug)
+            raise NotFound("service not found")
+        except DatabaseError:
+            logger.error("Database error while fetching service")
+            raise DatabaseError("Database error while fetching service")
 
     def list_services(self, active_only: bool = True) -> list[ServiceResponseDTO]:
-        """Return all services.
-
-        Args:
-            active_only: When True (default) only active services are returned.
-
-        Raises:
-            DatabaseError: On unexpected database failure.
-        """
-        return self._repo.get_all(active_only=active_only)
+        try:
+            return self._repo.get_all(active_only=active_only)
+        except NotFound:
+            logger.error("services not found")
+            raise NotFound("services not found")
+        except DatabaseError:
+            logger.error("Database error while fetching services")
+            raise DatabaseError("Database error while fetching services")
 
     def list_featured_services(self) -> list[ServiceResponseDTO]:
-        """Return active, featured services.
-
-        Raises:
-            DatabaseError: On unexpected database failure.
-        """
-        return self._repo.get_featured()
+        try:
+            return self._repo.get_featured()
+        except NotFound:
+            logger.error("services not found")
+            raise NotFound("services not found")
+        except DatabaseError:
+            logger.error("Database error while fetching services")
+            raise DatabaseError("Database error while fetching services")
     
     def list_services_by_category(self) -> dict[str, list[ServiceResponseDTO]]:
-        """Return all services grouped by category.
-
-        Raises:
-            DatabaseError: On unexpected database failure.
-        """
-        services: list[ServiceResponseDTO] = self._repo.get_all(active_only=True)
-        services_by_category: dict[str, list[ServiceResponseDTO]] = defaultdict(list)
-        for service in services:
-            services_by_category[service.category_id].append(service)
-        return services_by_category
+        try:
+            services: list[ServiceResponseDTO] = self._repo.get_all(active_only=True)
+            services_by_category: dict[str, list[ServiceResponseDTO]] = defaultdict(list)
+            for service in services:
+                services_by_category[service.category_id].append(service)
+            return services_by_category
+        except NotFound:
+            logger.error("services not found")
+            raise NotFound("services not found")
+        except DatabaseError:
+            logger.error("Database error while fetching services")
+            raise DatabaseError("Database error while fetching services")
 
     def update_service(self, service_id: str, updates: dict) -> ServiceResponseDTO:
-        """Update mutable fields of a service.
-
-        Only whitelisted fields are applied to guard against mass-assignment.
-
-        Raises:
-            NotFound: If no service exists with the given ID.
-            AlreadyExists: If the update would create a name or slug conflict.
-            DatabaseError: On unexpected database failure.
-        """
-        allowed_fields = {"name", "description", "category_id", "featured",
-                          "pricing_category_id", "slug", "is_active"}
-        safe_updates = {k: v for k, v in updates.items() if k in allowed_fields}
-        logger.info("Updating service id=%s fields=%s", service_id, list(safe_updates.keys()))
-        service = self._repo.update(service_id, safe_updates)
-        logger.info("Service updated: id=%s", service_id)
-        return service
+        try:
+            allowed_fields = {"name", "description", "category_id", "featured",
+                            "pricing_category_id", "slug", "is_active"}
+            safe_updates = {k: v for k, v in updates.items() if k in allowed_fields}
+            logger.info("Updating service id=%s fields=%s", service_id, list(safe_updates.keys()))
+            service = self._repo.update(service_id, safe_updates)
+            logger.info("Service updated: id=%s", service_id)
+            return service
+        except NotFound:
+            logger.error("service not found: %s", service_id)
+            raise NotFound("service not found")
+        except DatabaseError:
+            logger.error("Database error while updating service")
+            raise DatabaseError("Database error while updating service")
 
     def delete_service(self, service_id: str) -> None:
-        """Permanently delete a service.
-
-        Raises:
-            NotFound: If no service exists with the given ID.
-            DatabaseError: On unexpected database failure.
-        """
         logger.info("Deleting service id=%s", service_id)
         self._repo.delete(service_id)
         logger.info("Service deleted: id=%s", service_id)
     
     def get_services_by_category(self, category_id: str) -> list[ServiceResponseDTO]:
-        """Return all services in a category.
-
-        Raises:
-            NotFound: If no category exists with the given ID.
-            DatabaseError: On unexpected database failure.
-        """
-        return self._repo.get_services_by_category(category_id)
-
-
-class ServiceCategoryService:
-    """Service layer for ServiceCategory business logic."""
-
-    def __init__(self) -> None:
-        self._repo = repositories.service_category
-
-    def create_category(self, data: ServiceCategoryDTO) -> ServiceCategoryResponseDTO:
-        """Create a new service category.
-
-        Raises:
-            AlreadyExists: If a category with the same name already exists.
-            DatabaseError: On unexpected database failure.
-        """
-        logger.info("Creating service category: %s", data.name)
-        category = self._repo.create(data)
-        logger.info("Service category created: id=%s", category.id)
-        return category
-
-    def get_category(self, category_id: str) -> ServiceCategoryResponseDTO:
-        """Retrieve a service category by its ID.
-
-        Raises:
-            NotFound: If no category exists with the given ID.
-            DatabaseError: On unexpected database failure.
-        """
-        return self._repo.get_by_id(category_id)
-
-    def list_categories(self) -> list[ServiceCategory]:
-        """Return all service categories ordered by their display order.
-
-        Raises:
-            DatabaseError: On unexpected database failure.
-        """
-        return self._repo.get_all()
-
-    def update_category(self, category_id: str, updates: dict) -> ServiceCategoryResponseDTO:
-        """Update mutable fields of a service category.
-
-        Only whitelisted fields are applied to guard against mass-assignment.
-
-        Raises:
-            NotFound: If no category exists with the given ID.
-            AlreadyExists: If the update would create a name conflict.
-            DatabaseError: On unexpected database failure.
-        """
-        allowed_fields = {"name", "description", "order"}
-        safe_updates = {k: v for k, v in updates.items() if k in allowed_fields}
-        logger.info("Updating service category id=%s fields=%s", category_id, list(safe_updates.keys()))
-        category = self._repo.update(category_id, safe_updates)
-        logger.info("Service category updated: id=%s", category_id)
-        return category
-
-    def delete_category(self, category_id: str) -> None:
-        """Permanently delete a service category.
-
-        Raises:
-            NotFound: If no category exists with the given ID.
-            DatabaseError: On unexpected database failure.
-        """
-        logger.info("Deleting service category id=%s", category_id)
-        self._repo.delete(category_id)
-        logger.info("Service category deleted: id=%s", category_id)
+        try:
+            return self._repo.get_services_by_category(category_id)
+        except NotFound:
+            logger.error("services not found: %s", category_id)
+            raise NotFound("services not found")
+        except DatabaseError:
+            logger.error("Database error while fetching services")
+            raise DatabaseError("Database error while fetching services")

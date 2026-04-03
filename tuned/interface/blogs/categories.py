@@ -5,23 +5,15 @@ from typing import List
 from tuned.dtos import BlogCategoryDTO
 from tuned.repository import repositories
 from tuned.repository.exceptions import AlreadyExists, DatabaseError, NotFound
+from tuned.core.logging import get_logger
 
-logger = logging.getLogger(__name__)
-
+logger: logging.Logger = get_logger(__name__)
 
 class BlogCategoryService:
-    """Service layer for BlogCategory business logic."""
-
     def __init__(self) -> None:
         self._repo = repositories.blog
 
     def create_category(self, data: BlogCategoryDTO) -> BlogCategoryResponseDTO:
-        """Create a new blog category.
-
-        Raises:
-            AlreadyExists: If a category with this slug already exists.
-            DatabaseError: On unexpected database failure.
-        """
         try:
             logger.debug("Creating blog category: %s", data.name)
             category = self._repo.create_blog_category(data)
@@ -35,12 +27,6 @@ class BlogCategoryService:
             raise DatabaseError("Database error while creating category")
 
     def get_by_slug(self, slug: str) -> BlogCategoryResponseDTO:
-        """Retrieve a blog category by its URL slug.
-
-        Raises:
-            NotFound: If no category exists with the given slug.
-            DatabaseError: On unexpected database failure.
-        """
         try:
             logger.debug("Fetching blog category: %s", slug)
             return self._repo.get_blog_category_by_slug(slug)
@@ -52,7 +38,6 @@ class BlogCategoryService:
             raise DatabaseError("Database error while fetching category")
 
     def list_categories(self) -> List[BlogCategoryResponseDTO]:
-        """Return all blog categories."""
         try:
             logger.debug("Fetching all blog categories")
             return self._repo.list_blog_categories()
@@ -62,7 +47,6 @@ class BlogCategoryService:
 
     
     def update_or_delete_category(self, id: str, data: BlogCategoryDTO) -> BlogCategoryResponseDTO:
-        """Update or delete a blog category."""
         try:
             logger.debug("Updating or deleting blog category: %s", id)
             return self._repo.update_or_delete_category(id, data)

@@ -1,13 +1,14 @@
 from flask.views import MethodView
-from tuned.interface import Services
+from tuned.interface import service as _service_interface, sample as _sample_interface, blog_post as _blog_interface
 from tuned.utils.responses import success_response, error_response
 from tuned.redis_client import redis_client
+from tuned.core.logging import get_logger
 
 from dataclasses import asdict
 import json
 import logging
 
-logger = logging.getLogger(__name__)
+logger: logging.Logger = get_logger(__name__)
 
 CACHE_KEY = 'homepage:featured'
 CACHE_TTL = 300
@@ -24,9 +25,9 @@ class GetFeaturedContent(MethodView): #TODO: Implement strict return types
                 return success_response(json.loads(cached_data))
             
             # TODO: Implement strict response DTOs
-            featured_services = self._interface.service_category.list_categories()
-            featured_samples = self._interface.sample.list_featured_samples()
-            featured_blogs = self._interface.blog.list_featured_blogs()
+            featured_services = _service_interface.list_categories()
+            featured_samples = _sample_interface.list_featured_samples()
+            featured_blogs = _blog_interface.list_featured()
             data = {
                 'services': [asdict(s) for s in featured_services],
                 'samples': [asdict(s) for s in featured_samples],

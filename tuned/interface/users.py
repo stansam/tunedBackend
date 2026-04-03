@@ -5,10 +5,12 @@ from tuned.models.user import User
 from tuned.repository import repositories
 from tuned.dtos import CreateUserDTO
 from tuned.repository.exceptions import NotFound
+from tuned.core.logging import get_logger
 
 import logging
 
-logger = logging.getLogger(__name__)
+logger: logging.Logger = get_logger(__name__)
+
 class UserService:
     def __init__(self):
         self._repo = repositories.user

@@ -97,8 +97,6 @@ class DeletePricingCategory:
 
 
 class PricingCategoryRepository:
-    """Facade composing all PricingCategory command objects."""
-
     def __init__(self) -> None:
         self.db = db
 

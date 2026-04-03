@@ -1,5 +1,4 @@
-from tuned.dtos.blogs import CommentReactionResponseDTO
-from tuned.dtos.blogs import BlogCommentResponseDTO
+from tuned.dtos.blogs import CommentReactionResponseDTO, BlogCommentResponseDTO
 from typing import List
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError

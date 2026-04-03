@@ -307,23 +307,21 @@
 #         )
 
 from flask.views import MethodView
-from tuned.interface import Services
+from tuned.interface import blog_comment as _interface
 from tuned.utils.responses import success_response, error_response
 from tuned.redis_client import redis_client
+from tuned.core.logging import get_logger
 
 from dataclasses import asdict
 import json
 import logging
 
-logger = logging.getLogger(__name__)
+logger: logging.Logger = get_logger(__name__)
 
 CACHE_KEY = 'blogs:comments'
 CACHE_TTL = 300
 
 class GetBlogComments(MethodView):
-    def __init__(self):
-        self._interface = Services()
-
     def get(self, blog_id):
         try:
             cached_data = redis_client.get(f'{CACHE_KEY}:{blog_id}')
@@ -331,7 +329,7 @@ class GetBlogComments(MethodView):
                 logger.debug('Returning comments from cache')
                 return success_response(json.loads(cached_data))
             
-            comments = self._interface.blog_comment.get_blog_comments(blog_id)
+            comments = _interface.get_blog_comments(blog_id)
             data = {
                 'comments': [asdict(c) for c in comments]
             }

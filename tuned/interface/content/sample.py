@@ -3,93 +3,98 @@ import logging
 from tuned.dtos import SampleDTO, SampleResponseDTO
 from tuned.repository import repositories
 from tuned.repository.exceptions import AlreadyExists, DatabaseError, NotFound
+from tuned.core.logging import get_logger
 
-logger = logging.getLogger(__name__)
+logger: logging.Logger = get_logger(__name__)
 
 
 class SampleService:
-    """Service layer for Sample (writing work examples) business logic."""
-
     def __init__(self) -> None:
         self._repo = repositories.sample
 
     def create_sample(self, data: SampleDTO) -> SampleResponseDTO:
-        """Create a new sample piece.
-
-        Raises:
-            AlreadyExists: If a sample with this title or slug already exists.
-            DatabaseError: On unexpected database failure.
-        """
-        logger.info("Creating sample: %s", data.title)
-        result = self._repo.create(data)
-        logger.info("Sample created: id=%s slug=%s", result.id, result.slug)
-        return result
+        try:
+            logger.info("Creating sample: %s", data.title)
+            result = self._repo.create(data)
+            logger.info("Sample created: id=%s slug=%s", result.id, result.slug)
+            return result
+        except AlreadyExists:
+            logger.error("Sample already exists: %s", data.title)
+            raise AlreadyExists("Sample already exists")
+        except DatabaseError:
+            logger.error("Failed to create sample: %s", data.title)
+            raise DatabaseError("Failed to create sample")
 
     def get_sample(self, sample_id: str) -> SampleResponseDTO:
-        """Retrieve a sample by ID.
-
-        Raises:
-            NotFound: If no sample exists with the given ID.
-            DatabaseError: On unexpected database failure.
-        """
-        return self._repo.get_by_id(sample_id)
+        try:
+            return self._repo.get_by_id(sample_id)
+        except NotFound:
+            logger.error("Sample not found: %s", sample_id)
+            raise NotFound("Sample not found")
+        except DatabaseError:
+            logger.error("Failed to get sample: %s", sample_id)
+            raise DatabaseError("Failed to get sample")
 
     def get_sample_by_slug(self, slug: str) -> SampleResponseDTO:
-        """Retrieve a sample by its URL slug.
-
-        Raises:
-            NotFound: If no sample exists with the given slug.
-            DatabaseError: On unexpected database failure.
-        """
-        return self._repo.get_by_slug(slug)
+        try:
+            return self._repo.get_by_slug(slug)
+        except NotFound:
+            logger.error("Sample not found: %s", slug)
+            raise NotFound("Sample not found")
+        except DatabaseError:
+            logger.error("Failed to get sample: %s", slug)
+            raise DatabaseError("Failed to get sample")
     
     def list_featured_samples(self) -> list[SampleResponseDTO]:
-        return self._repo.get_featured()
+        try:
+            return self._repo.get_featured()
+        except DatabaseError:
+            logger.error("Failed to get featured samples")
+            raise DatabaseError("Failed to get featured samples")
 
     def list_samples(
         self,
         service_id: str | None = None,
         featured_only: bool = False,
     ) -> list[SampleResponseDTO]:
-        """Return samples, optionally filtered by service or featured flag.
-
-        Raises:
-            DatabaseError: On unexpected database failure.
-        """
-        return self._repo.get_all(service_id=service_id, featured_only=featured_only)
+        try:
+            return self._repo.get_all(service_id=service_id, featured_only=featured_only)
+        except DatabaseError:
+            logger.error("Failed to get samples")
+            raise DatabaseError("Failed to get samples")
 
     def update_sample(self, sample_id: str, updates: dict) -> SampleResponseDTO:
-        """Update mutable fields of a sample.
-
-        Raises:
-            NotFound: If no sample exists with the given ID.
-            AlreadyExists: If the update would cause a title/slug conflict.
-            DatabaseError: On unexpected database failure.
-        """
-        allowed = {"title", "content", "excerpt", "service_id",
-                   "word_count", "featured", "image", "slug"}
-        safe_updates = {k: v for k, v in updates.items() if k in allowed}
-        logger.info("Updating sample id=%s fields=%s", sample_id, list(safe_updates.keys()))
-        result = self._repo.update(sample_id, safe_updates)
-        logger.info("Sample updated: id=%s", sample_id)
-        return result
+        try:
+            allowed = {"title", "content", "excerpt", "service_id",
+                    "word_count", "featured", "image", "slug"}
+            safe_updates = {k: v for k, v in updates.items() if k in allowed}
+            logger.info("Updating sample id=%s fields=%s", sample_id, list(safe_updates.keys()))
+            result = self._repo.update(sample_id, safe_updates)
+            logger.info("Sample updated: id=%s", sample_id)
+            return result
+        except NotFound:
+            logger.error("Sample not found: %s", sample_id)
+            raise NotFound("Sample not found")
+        except DatabaseError:
+            logger.error("Failed to update sample: %s", sample_id)
+            raise DatabaseError("Failed to update sample")
 
     def delete_sample(self, sample_id: str) -> None:
-        """Permanently delete a sample.
-
-        Raises:
-            NotFound: If no sample exists with the given ID.
-            DatabaseError: On unexpected database failure.
-        """
-        logger.info("Deleting sample id=%s", sample_id)
-        self._repo.delete(sample_id)
-        logger.info("Sample deleted: id=%s", sample_id)
+        try:
+            logger.info("Deleting sample id=%s", sample_id)
+            self._repo.delete(sample_id)
+            logger.info("Sample deleted: id=%s", sample_id)
+        except NotFound:
+            logger.error("Sample not found: %s", sample_id)
+            raise NotFound("Sample not found")
+        except DatabaseError:
+            logger.error("Failed to delete sample: %s", sample_id)
+            raise DatabaseError("Failed to delete sample")
 
     def get_samples_by_service_id(self, service_id: str) -> list[SampleResponseDTO]:
-        """Return all samples for a given service.
-
-        Raises:
-            NotFound: If no service exists with the given ID.
-            DatabaseError: On unexpected database failure.
-        """
-        return self._repo.get_samples_by_service_id(service_id)
+        try:
+            return self._repo.get_samples_by_service_id(service_id)
+        except DatabaseError:
+            logger.error("Failed to get samples by service id: %s", service_id)
+            raise DatabaseError("Failed to get samples by service id")
+            

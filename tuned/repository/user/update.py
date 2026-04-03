@@ -1,8 +1,8 @@
-from app.models import User
+from tuned.models import User
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
-from app.repository.user.get import GetUserByID
-from app.repository.exceptions import NotFound, DatabaseError
+from tuned.repository.user.get import GetUserByID
+from tuned.repository.exceptions import NotFound, DatabaseError
 
 class UpdateUser:
     def __init__(self, db:Session) -> None:

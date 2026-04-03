@@ -26,14 +26,12 @@ def validate_email(email: str) -> bool:
     if not email or not isinstance(email, str):
         return False
     
-    # RFC 5322 compliant email regex (simplified)
     pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
     
-    # Additional checks
-    if len(email) > 320:  # RFC 5321 max length
+    if len(email) > 320:
         return False
     
-    if '..' in email:  # No consecutive dots
+    if '..' in email:
         return False
         
     return bool(re.match(pattern, email.strip()))
@@ -82,7 +80,6 @@ def validate_password_strength(password: str) -> tuple[bool, Optional[str]]:
     if not re.search(r'[!@#$%^&*(),.?":{}|<>_\-+=\[\]\\\/;]', password):
         return False, 'Password must contain at least one special character'
     
-    # Check for common weak passwords
     common_passwords = ['password', '12345678', 'password123', 'qwerty123']
     if password.lower() in common_passwords:
         return False, 'Password is too common, please choose a stronger password'

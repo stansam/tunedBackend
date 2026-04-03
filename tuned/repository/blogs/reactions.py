@@ -1,19 +1,20 @@
 from tuned.models import CommentReaction
-from tuned.dtos import CommentReactionDTO
+from tuned.dtos import CommentReactionDTO, CommentReactionResponseDTO
 from tuned.repository.exceptions import NotFound, DatabaseError, AlreadyExists
 from sqlalchemy.orm import Session
-from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 
 class CreateCommentReaction:
     def __init__(self, db:Session):
         self.db = db
-    def execute(self, data: CommentReactionDTO)-> CommentReaction:
+    def execute(self, data: CommentReactionDTO)-> CommentReactionResponseDTO:
         try:
             reaction = CommentReaction(**data)
 
             self.db.add(reaction)
             self.db.commit()
-            return reaction
+            self.db.refresh(reaction)
+            return CommentReactionResponseDTO.from_model(reaction)
 
         except IntegrityError as e:
             self.db.rollback()
@@ -26,13 +27,56 @@ class GetCommentReaction:
     def __init__(self, db: Session) -> None:
         self.db = db
 
-    def execute(self, id: str) -> CommentReaction:
+    def execute(self, id: str) -> CommentReactionResponseDTO:
         try:
             comment_reaction = self.db.query(CommentReaction).filter_by(id=id)
             if not comment_reaction:
                 raise NotFound("reaction not found")
 
-            return comment_reaction
+            return CommentReactionResponseDTO.from_model(comment_reaction)
 
         except SQLAlchemyError as e:
             raise DatabaseError(f"Database error while fetching reaction: {str(e)}") from e
+
+class UpdateOrDeleteCommentReaction:
+    def __init__(self, db: Session) -> None:
+        self.db = db
+
+    def execute(self, id: str, data: CommentReactionDTO) -> CommentReactionResponseDTO:
+        try:
+            comment_reaction = self.db.query(CommentReaction).filter_by(id=id).first()
+            if not comment_reaction:
+                raise NotFound("reaction not found")
+            
+            if data.reaction_type:
+                comment_reaction.reaction_type = data.reaction_type
+            if data.is_deleted:
+                comment_reaction.is_deleted = data.is_deleted
+                comment_reaction.deleted_at = data.deleted_at
+                comment_reaction.deleted_by = data.deleted_by
+            if data.updated_at:
+                comment_reaction.updated_at = data.updated_at
+            if data.updated_by:
+                comment_reaction.updated_by = data.updated_by
+
+            self.db.add(comment_reaction)            
+            self.db.commit()
+            self.db.refresh(comment_reaction)
+            return CommentReactionResponseDTO.from_model(comment_reaction)
+
+        except SQLAlchemyError as e:
+            self.db.rollback()
+            raise DatabaseError(f"Database error while updating reaction: {str(e)}") from e
+
+class  GetCommentReactions:
+    def __init__(self, db: Session) -> None:
+        self.db = db
+
+    def execute(self, comment_id: str) -> List[CommentReactionResponseDTO]:
+        try:
+            comment_reactions = self.db.query(CommentReaction).filter_by(comment_id=comment_id)
+            if not comment_reactions:
+                return []
+            return [CommentReactionResponseDTO.from_model(reaction) for reaction in comment_reactions]
+        except SQLAlchemyError as e:
+            raise DatabaseError(f"Database error while fetching reactions: {str(e)}") from e

@@ -1,31 +1,49 @@
 from dataclasses import dataclass
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime
 from tuned.dtos.content import TagResponseDTO
+from tuned.dtos.base import BaseDTO, PaginationDTO
+from tuned.models import BlogReactionType
+from dataclasses import field
 
 @dataclass
-class BlogCategoryDTO:
+class BlogCategoryDTO(BaseDTO):
     name: str
     slug: str
     description: str 
 
+@dataclass
+class BlogCategoryResponseDTO(BaseDTO):
+    id: str
+    name: str
+    slug: str
+    description: str
+
+    @classmethod
+    def from_model(cls, obj) -> "BlogCategoryResponseDTO":
+        return cls(
+            id=str(obj.id),
+            name=obj.name,
+            slug=obj.slug,
+            description=obj.description,
+        )
 
 @dataclass
-class BlogPostDTO:
+class BlogPostDTO(BaseDTO):
     title: str
     content: str
     author: str
     category_id: str
-    slug: Optional[str] = None
     excerpt: str = ""
     featured_image: str = ""
     meta_description: str = ""
     is_published: bool = False
     is_featured: bool = False
+    slug: Optional[str] = None
     published_at: Optional[datetime] = None
 
 @dataclass
-class BlogPostResponseDTO:
+class BlogPostResponseDTO(BaseDTO):
     id: str
     title: str
     content: str
@@ -38,6 +56,7 @@ class BlogPostResponseDTO:
     is_published: bool
     is_featured: bool
     published_at: str
+    comments: List[BlogCommentResponseDTO]
     tags: List[TagResponseDTO]
 
     @classmethod
@@ -55,28 +74,62 @@ class BlogPostResponseDTO:
             is_published=obj.is_published,
             is_featured=obj.is_featured,
             published_at=obj.published_at.isoformat() if obj.published_at else "",
+            comments=[BlogCommentResponseDTO.from_model(comment) for comment in obj.comments],
             tags=[TagResponseDTO.from_model(tag) for tag in obj.tag_list],
         )
 
+@dataclass
+class BlogPostListResponseDTO(PaginationDTO):
+    blogs: List[BlogPostResponseDTO]
+    total: int
+
+    @classmethod
+    def from_model(cls, obj) -> "BlogPostListResponseDTO":
+        return cls(
+            blogs=[BlogPostResponseDTO.from_model(blog) for blog in obj.blogs],
+            total=obj.total,
+            sort=obj.sort,
+            order=obj.order,
+            page=obj.page,
+            per_page=obj.per_page,
+        )
+
+    
 
 @dataclass
-class BlogCommentDTO:
+class BlogPostListRequestDTO(PaginationDTO):
+    q: Optional[str] = None
+    category_id: Optional[str] = None
+    is_published: Optional[bool] = None
+    is_featured: Optional[bool] = None
+
+@dataclass
+class BlogCommentDTO(BaseDTO):
     post_id: str
     content: str
     name: str = ""
     email: str = ""
-    user_id: Optional[str] = None
+    user_id: str = None
     approved: bool = False
 
 @dataclass
-class BlogCommentResponseDTO:
+class BlogCommentResponseDTO(BaseDTO):
     id: str
     post_id: str
     content: str
     name: str = ""
     email: str = ""
-    user_id: Optional[str] = None
+    user_id: str = None
     approved: bool = False
+    reactions: List[CommentReactionResponseDTO] = field(default_factory=list)
+
+    @property
+    def total_likes(self) -> int:
+        return len([r for r in self.reactions if r.reaction_type == BlogReactionType.LIKE])
+
+    @property
+    def total_dislikes(self) -> int:
+        return len([r for r in self.reactions if r.reaction_type == BlogReactionType.DISLIKE])
 
     @classmethod
     def from_model(cls, obj) -> "BlogCommentResponseDTO":
@@ -88,22 +141,26 @@ class BlogCommentResponseDTO:
             email=obj.email,
             user_id=str(obj.user_id),
             approved=obj.approved,
+            reactions=[CommentReactionResponseDTO.from_model(reaction) for reaction in obj.reactions],
+            total_likes=obj.total_likes,
+            total_dislikes=obj.total_dislikes,
         )
 
 
 @dataclass
-class CommentReactionDTO:
+class CommentReactionDTO(BaseDTO):
     comment_id: str
     reaction_type: str
     user_id: Optional[str] = None
     ip_address: Optional[str] = None
+    
 
 @dataclass
-class CommentReactionResponseDTO:
+class CommentReactionResponseDTO(BaseDTO):
     id: str
     comment_id: str
     reaction_type: str
-    user_id: Optional[str] = None
+    user_id: str = None
     ip_address: Optional[str] = None
 
     @classmethod

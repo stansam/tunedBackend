@@ -7,7 +7,7 @@ This module provides a configured Redis client instance used for:
 - Caching (future use)
 """
 import redis
-from tuned.config import config
+from tuned.core.config import config
 import os
 
 

@@ -1,8 +1,3 @@
-"""
-Homepage featured content endpoint.
-
-GET /api/featured - Fetch featured services, samples, and blog posts
-"""
 from flask.views import MethodView
 from tuned.interface import Services
 from tuned.utils.responses import success_response, error_response

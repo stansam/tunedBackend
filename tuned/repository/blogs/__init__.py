@@ -46,7 +46,7 @@ class BlogRepository:
     def get_featured(self) -> List[BlogPostResponseDTO]:
         return GetFeaturedBlogPosts(self.session).execute()
     
-    def get_published(self, req: BlogPostListRequestDTO) -> List[BlogPostResponseDTO]:
+    def get_published(self, req: BlogPostListRequestDTO) -> BlogPostResponseDTO:
         return GetPublishedBlogPosts(self.session, req).execute()
     
     def update_or_delete_post(self, id: str, data: BlogPostDTO) -> BlogPostResponseDTO:

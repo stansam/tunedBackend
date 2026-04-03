@@ -1,21 +1,22 @@
+from backend.tuned.dtos.base import BaseDTO
 from dataclasses import dataclass
 from typing import Optional, List
 
 @dataclass
-class DeadlineDTO:
+class DeadlineDTO(BaseDTO):
     name: str
     hours: int
     order: int = 0
 
 
 @dataclass
-class AcademicLevelDTO:
+class AcademicLevelDTO(BaseDTO):
     name: str
     order: int = 0
 
 
 @dataclass
-class SampleDTO:
+class SampleDTO(BaseDTO):
     title: str
     content: str
     service_id: str
@@ -27,7 +28,7 @@ class SampleDTO:
 
 
 @dataclass
-class TestimonialDTO:
+class TestimonialDTO(BaseDTO):
     user_id: str
     service_id: str
     content: str
@@ -37,21 +38,21 @@ class TestimonialDTO:
 
 
 @dataclass
-class FaqDTO:
+class FaqDTO(BaseDTO):
     question: str
     answer: str
     category: str = "General"
     order: int = 0
 
 @dataclass
-class TagDTO:
+class TagDTO(BaseDTO):
     name: str
     description: str
     slug: str
     usage_count: int
 
 @dataclass
-class AcademicLevelResponseDTO:
+class AcademicLevelResponseDTO(BaseDTO):
     id: str
     name: str
     order: int
@@ -65,7 +66,7 @@ class AcademicLevelResponseDTO:
         )
 
 @dataclass
-class DeadlineResponseDTO:
+class DeadlineResponseDTO(BaseDTO):
     id: str
     name: str
     hours: int
@@ -81,7 +82,7 @@ class DeadlineResponseDTO:
         )
 
 @dataclass
-class SampleResponseDTO:
+class SampleResponseDTO(BaseDTO):
     id: str
     title: str
     slug: str
@@ -106,9 +107,30 @@ class SampleResponseDTO:
             tags=[TagResponseDTO.from_model(tag) for tag in obj.tag_list],
         )
 
+@dataclass
+class SampleListResponseDTO(PaginationDTO):
+    samples: List[SampleResponseDTO]
+    total: int
+
+    @classmethod
+    def from_model(cls, obj) -> "SampleListResponseDTO":
+        return cls(
+            samples=[SampleResponseDTO.from_model(sample) for sample in obj.samples],
+            total=obj.total,
+            sort=obj.sort,
+            order=obj.order,
+            page=obj.page,
+            per_page=obj.per_page,
+        )
 
 @dataclass
-class TestimonialResponseDTO:
+class SampleListRequestDTO(PaginationDTO):
+    q: Optional[str] = None
+    service_id: Optional[str] = None
+    is_featured: Optional[bool] = None
+    
+@dataclass
+class TestimonialResponseDTO(BaseDTO):
     id: str
     user_id: str
     service_id: str
@@ -131,7 +153,7 @@ class TestimonialResponseDTO:
 
 
 @dataclass
-class FaqResponseDTO:
+class FaqResponseDTO(BaseDTO):
     id: str
     question: str
     answer: str
@@ -149,7 +171,7 @@ class FaqResponseDTO:
         )
 
 @dataclass
-class TagResponseDTO:
+class TagResponseDTO(BaseDTO):
     id: str
     name: str
     description: str

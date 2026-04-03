@@ -5,7 +5,7 @@ from tuned.dtos.blogs import(
 )
 from tuned.dtos.content import (
     AcademicLevelDTO, AcademicLevelResponseDTO, DeadlineDTO, DeadlineResponseDTO, SampleDTO, TestimonialDTO, FaqDTO,
-    TestimonialResponseDTO, FaqResponseDTO, SampleResponseDTO
+    TestimonialResponseDTO, FaqResponseDTO, SampleResponseDTO, SampleListResponseDTO, SampleListRequestDTO
 )
 from tuned.dtos.price import (
     PricingCategoryDTO, PriceRateDTO, PricingCategoryResponseDTO, PriceRateResponseDTO, PriceRateLookupDTO, 

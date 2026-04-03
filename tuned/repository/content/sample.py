@@ -1,9 +1,12 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, Query
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 
 from tuned.extensions import db
 from tuned.models import Sample
-from tuned.dtos.content import SampleDTO, SampleResponseDTO
+from tuned.dtos.content import(
+    SampleDTO, SampleResponseDTO,
+    SampleListResponseDTO, SampleListRequestDTO
+)
 from tuned.repository.exceptions import AlreadyExists, DatabaseError, NotFound
 
 class CreateSample:
@@ -60,20 +63,61 @@ class GetSampleBySlug:
         except SQLAlchemyError as e:
             raise DatabaseError(f"Database error while fetching sample: {str(e)}") from e
 
+def getSampleListResponse(
+    query: Query[Sample], req: SampleListRequestDTO
+) -> SampleListResponseDTO:
+    if req.is_featured:
+        query = query.filter_by(featured=req.is_featured)
+    if req.service_id:
+        query = query.filter_by(service_id=req.service_id)
+    if req.q:
+        search_pattern = f"%{req.q}%"
+        query = query.filter(
+            or_(
+                Sample.title.ilike(search_pattern),
+                Sample.excerpt.ilike(search_pattern),
+                Sample.content.ilike(search_pattern)
+            )
+        )
+
+    sort_map = {
+        "created_at": Sample.created_at,
+        "title": Sample.title,
+    }
+
+    sort_field = sort_map.get(req.sort, Sample.created_at)
+    order_func = asc if req.order == "asc" else desc
+
+    query = query.order_by(order_func(sort_field))
+
+    total = query.order_by(None).count()
+
+    page = max(req.page or 1, 1)
+    per_page = min(req.per_page or 10, 100)
+
+    items = query.offset((page - 1) * per_page).limit(per_page).all()
+
+    return SampleListResponseDTO(
+        samples=[SampleResponseDTO.from_model(s) for s in items],
+        total=total,
+        page=page,
+        per_page=per_page,
+        sort=req.sort,
+        order=req.order,
+    )
 
 class GetAllSamples:
     def __init__(self, db: Session) -> None:
         self.db = db
 
-    def execute(self, service_id: str | None = None, featured_only: bool = False) -> list[SampleResponseDTO]:
+    def execute(self, req: SampleListRequestDTO) -> SampleListResponseDTO:
         try:
             query = self.db.session.query(Sample)
-            if service_id:
-                query = query.filter_by(service_id=service_id)
-            if featured_only:
-                query = query.filter_by(featured=True)
-            samples = query.order_by(Sample.created_at.desc()).all()
-            return [SampleResponseDTO.from_model(s) for s in samples]
+            samples = getSampleListResponse(query, req)
+            if not samples:
+                samples = []
+            
+            return samples
         except SQLAlchemyError as e:
             raise DatabaseError(f"Database error while fetching samples: {str(e)}") from e
 
@@ -157,10 +201,9 @@ class SampleRepository:
 
     def get_all(
         self,
-        service_id: str | None = None,
-        featured_only: bool = False,
+        req: SampleListRequestDTO
     ) -> list[SampleResponseDTO]:
-        return GetAllSamples(self.db).execute(service_id, featured_only)
+        return GetAllSamples(self.db).execute(req)
 
     def update(self, sample_id: str, updates: dict) -> SampleResponseDTO:
         return UpdateSample(self.db).execute(sample_id, updates)

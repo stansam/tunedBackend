@@ -1,38 +1,25 @@
-"""
-Flask application factory.
-
-This module provides the create_app() factory function that creates and
-configures a Flask application instance. This pattern allows:
-- Multiple app instances (e.g., for testing)
-- Configuration based on environment
-- No side effects on import
-- Proper extension initialization order
-"""
 import os
+import logging
 from flask import Flask
-from tuned.config import config
-
+from tuned.core.config import config
+from tuned.core.logging import _configure_logging
 
 def create_app(config_name=None):
-    """
-    Create and configure a Flask application instance.
-    
-    Args:
-        config_name (str): Configuration name ('development', 'testing', 'production')
-                          If None, uses FLASK_ENV environment variable.
-    
-    Returns:
-        Flask: Configured Flask application instance
-    """
-    # Create Flask app instance
     app = Flask(__name__)
     
-    # Load configuration
     if config_name is None:
         config_name = os.environ.get('FLASK_ENV', 'development')
+    
+    _configure_logging(config[config_name])
+    logger = logging.getLogger(__name__)
+    logger.info(
+        "Creating Flask app [env=%s version=%s]",
+        config[config_name].FLASK_ENV,
+        config[config_name].APP_VERSION,
+    )
+
     app.config.from_object(config[config_name])
     
-    # Initialize extensions
     from tuned.extensions import db, migrate, login_manager, jwt, cors, socketio, mail
     
     db.init_app(app)
@@ -41,14 +28,12 @@ def create_app(config_name=None):
     jwt.init_app(app)
     mail.init_app(app)
     
-    # Configure CORS
     cors_origins = app.config.get('CORS_ORIGINS', '*')
     cors.init_app(app, origins=cors_origins, supports_credentials=True)
     
-    # Configure SocketIO
     socketio_kwargs = {
         'cors_allowed_origins': cors_origins,
-        'async_mode': 'eventlet',  # or 'gevent' for production
+        'async_mode': 'eventlet',
         'logger': app.config.get('DEBUG', False),
         'engineio_logger': app.config.get('DEBUG', False)
     }

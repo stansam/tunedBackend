@@ -1,4 +1,3 @@
-"""Homepage routes package."""
 from tuned.apis.main.routes.homepage.featured import GetFeaturedContent
 from tuned.apis.main.routes.homepage.quote_form import GetQuoteFormOptions, CalculatePrice
 #  (

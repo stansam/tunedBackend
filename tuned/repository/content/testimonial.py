@@ -64,8 +64,6 @@ class GetApprovedTestimonials:
 
 
 class GetPendingTestimonials:
-    """Admin-only — fetch unapproved testimonials awaiting moderation."""
-
     def __init__(self, db: Session) -> None:
         self.db = db
 
@@ -137,8 +135,6 @@ class DeleteTestimonial:
 
 
 class TestimonialRepository:
-    """Facade composing all Testimonial command objects."""
-
     def __init__(self) -> None:
         self.db = db
 

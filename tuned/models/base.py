@@ -10,3 +10,5 @@ class BaseModel(db.Model):
     created_by = db.Column(db.String(36), db.ForeignKey('users.id'))
     updated_by = db.Column(db.String(36), db.ForeignKey('users.id'))
     is_deleted = db.Column(db.Boolean, default=False, nullable=False) 
+    deleted_at = db.Column(db.DateTime, nullable=True)
+    deleted_by = db.Column(db.String(36), db.ForeignKey('users.id'), nullable=True)

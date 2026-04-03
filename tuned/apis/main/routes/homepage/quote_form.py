@@ -1,9 +1,14 @@
-from tuned.interface import Services
+from tuned.interface import(
+    service as _service_interface, 
+    academic_level as _academic_level_interface,
+    price_rate as _price_interface
+)
 from tuned.apis.main.schemas import CalculatePriceSchema
 from tuned.utils.responses import success_response, error_response
 from tuned.redis_client import redis_client
 from tuned.dtos import CalculatePriceRequestDTO, ServiceWithPricingCategory
 from tuned.utils.enums import PricingCategoryEnum
+from tuned.core.logging import get_logger
 
 from marshmallow import ValidationError
 from flask.views import MethodView
@@ -12,18 +17,14 @@ from flask import request
 import json
 import logging
 
-logger = logging.getLogger(__name__)
+logger: logging.Logger = get_logger(__name__)
 
 CACHE_KEY = 'quote:options'
-
 CACHE_TTL = 600
 
-class GetQuoteFormOptions(MethodView): #TODO: Implement strict return types 
-    def __init__(self):
-        self._interface = Services()
-    
+class GetQuoteFormOptions(MethodView): #TODO: Implement strict return types    
     def _build_services_response(self) -> list[ServiceWithPricingCategory]:
-        services = self._interface.service.list_services()
+        services = _service_interface.list_services()
         services_response: list[ServiceWithPricingCategory] = []
         
         for service in services:
@@ -46,8 +47,6 @@ class GetQuoteFormOptions(MethodView): #TODO: Implement strict return types
             )
 
         return services_response
-            
-
 
     def get(self):
         try:
@@ -58,7 +57,7 @@ class GetQuoteFormOptions(MethodView): #TODO: Implement strict return types
             
             # TODO: Implement strict response DTOs
             services = self._build_services_response()     
-            academic_levels = self._interface.academic_level.list_academic_levels()
+            academic_levels = _academic_level_interface.list_academic_levels()
             
             data = {
                 'services': [asdict(s) for s in services],
@@ -91,7 +90,6 @@ class GetQuoteFormOptions(MethodView): #TODO: Implement strict return types
 
 class CalculatePrice(MethodView):
     def __init__(self):
-        self._interface = Services()
         self._schema = CalculatePriceSchema()
     
     def _convert_schema_to_dto(self, data: dict) -> CalculatePriceRequestDTO:
@@ -106,8 +104,9 @@ class CalculatePrice(MethodView):
             report_type=data.get('report_type', None)
         )
     def _get_service_pricing_category(self, service_id: int) -> int:
+        from tuned.repository.exceptions import DatabaseError, NotFound
         try:
-            service = self._interface.service.get_service(service_id)
+            service = _service_interface.get_service(service_id)
             return service.pricing_category_id
         except NotFound as e:
             raise NotFound(f"Service not found: {str(e)}.") from e
@@ -123,12 +122,10 @@ class CalculatePrice(MethodView):
             validated_data = self._schema.load(data)
 
             service_category_id = self._get_service_pricing_category(validated_data['service_id'])
-
-
             validated_data['pricing_category_id'] = service_category_id
 
             dto = self._convert_schema_to_dto(validated_data)
-            price = self._interface.price_rate.calculate_price(dto)
+            price = _price_interface.calculate_price(dto)
 
             return success_response(price)
 

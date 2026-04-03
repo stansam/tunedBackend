@@ -130,8 +130,6 @@ class DeletePriceRate:
 
 
 class PriceRateRepository:
-    """Facade composing all PriceRate command objects."""
-
     def __init__(self) -> None:
         self.db = db
 

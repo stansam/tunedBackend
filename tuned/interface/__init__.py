@@ -4,7 +4,12 @@ from tuned.interface.content import (
     ServiceCategoryService, ServiceService, TestimonialService
 )
 from tuned.interface.price import PriceRateService, PricingCategoryService
-from tuned.interface.blogs import BlogCategoryService, BlogPostService, BlogsService
+from tuned.interface.blogs import(
+    BlogCategoryService,
+    BlogPostService,
+    BlogCommentService,
+    CommentReactionService
+)
 
 
 class Services:
@@ -17,9 +22,11 @@ class Services:
         self._sample = None
         self._testimonial = None
         self._faq = None
-        self._blog = None
+        # self._blog = None
         self._blog_category = None
         self._blog_post = None
+        self._blog_comment = None
+        self._comment_reaction = None
         self._price_rate = None
         self._pricing_category = None
 
@@ -71,23 +78,34 @@ class Services:
             self._testimonial = TestimonialService()
         return self._testimonial
 
+    # @property
+    # def blog(self) -> BlogsService:
+    #     if not self._blog:
+    #         self._blog = BlogsService()
+    #     return self._blog
     @property
-    def blog(self) -> BlogsService:
-        if not self._blog:
-            self._blog = BlogsService()
-        return self._blog
+    def blog_post(self) -> BlogPostService:
+        if not self._blog_post:
+            self._blog_post = BlogPostService()
+        return self._blog_post
 
     @property
     def blog_category(self) -> BlogCategoryService:
         if not self._blog_category:
             self._blog_category = BlogCategoryService()
         return self._blog_category
-
+    
     @property
-    def blog_post(self) -> BlogPostService:
-        if not self._blog_post:
-            self._blog_post = BlogPostService()
-        return self._blog_post
+    def blog_comment(self) -> BlogCommentService:
+        if not self._blog_comment:
+            self._blog_comment = BlogCommentService()
+        return self._blog_comment
+    
+    @property
+    def comment_reaction(self) -> CommentReactionService:
+        if not self._comment_reaction:
+            self._comment_reaction = CommentReactionService()
+        return self._comment_reaction
 
     @property
     def price_rate(self) -> PriceRateService:
@@ -102,3 +120,20 @@ class Services:
         return self._pricing_category
 
 
+interface = Services()
+# services = interface.service
+user = interface.user
+academic_level = interface.academic_level
+deadline = interface.deadline
+service = interface.service
+service_category = interface.service_category
+sample = interface.sample
+testimonial = interface.testimonial
+faq = interface.faq
+# blog = interface.blog
+blog_category = interface.blog_category
+blog_post = interface.blog_post
+blog_comment = interface.blog_comment
+comment_reaction = interface.comment_reaction
+price_rate = interface.price_rate
+pricing_category = interface.pricing_category

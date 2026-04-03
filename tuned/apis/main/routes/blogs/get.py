@@ -6,8 +6,8 @@ GET /api/blogs/<slug> - Get blog post details
 """
 from flask import request
 from sqlalchemy import or_, desc, asc
-from tuned.main import main_bp
-from tuned.main.schemas import BlogFilterSchema
+from tuned.apis.main import main_bp
+from tuned.apis.main.schemas import BlogFilterSchema
 from tuned.models.blog import BlogPost
 from tuned.utils.responses import (
     success_response,

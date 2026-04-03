@@ -94,8 +94,6 @@ class DeleteDeadline:
 
 
 class DeadlineRepository:
-    """Facade that composes all deadline command objects."""
-
     def __init__(self) -> None:
         self.db = db
 

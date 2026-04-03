@@ -1,16 +1,21 @@
-from tuned.repository import repositories
 from tuned.interface.blogs.categories import BlogCategoryService
 from tuned.interface.blogs.posts import BlogPostService
-from tuned.dtos import BlogPostResponseDTO
+from tuned.interface.blogs.comments import BlogCommentService
+from tuned.interface.blogs.reactions import CommentReactionService
 
-class BlogsService:
-    """Service facade for blog listing operations."""
+# class BlogsService:
+#     """Service facade for blog listing operations."""
 
-    def __init__(self):
-        self._repo = repositories.blog
+#     def __init__(self):
+#         self._repo = repositories.blog
 
-    def list_featured_blogs(self) -> BlogPostResponseDTO:
-        return self._repo.get_featured()
+#     def list_featured_blogs(self) -> BlogPostResponseDTO:
+#         return self._repo.get_featured()
 
 
-__all__ = ["BlogsService", "BlogCategoryService", "BlogPostService"]
+__all__ = [
+    "BlogPostService",
+    "BlogCategoryService",
+    "BlogCommentService",
+    "CommentReactionService"
+]

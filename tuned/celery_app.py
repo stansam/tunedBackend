@@ -15,7 +15,7 @@ Usage:
     celery -A tuned.celery_app beat --loglevel=info
 """
 from celery import Celery
-from tuned.config import config
+from tuned.core.config import config
 import os
 
 

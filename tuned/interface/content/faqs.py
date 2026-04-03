@@ -3,8 +3,9 @@ import logging
 from tuned.dtos import FaqDTO, FaqResponseDTO
 from tuned.repository import repositories
 from tuned.repository.exceptions import AlreadyExists, DatabaseError, NotFound
+from tuned.core.logging import get_logger
 
-logger = logging.getLogger(__name__)
+logger: logging.Logger = get_logger(__name__)
 
 
 class FAQService:
@@ -14,67 +15,65 @@ class FAQService:
         self._repo = repositories.faq
 
     def create_faq(self, data: FaqDTO) -> FaqResponseDTO:
-        """Create a new FAQ entry.
-
-        Raises:
-            AlreadyExists: If a FAQ with this question already exists.
-            DatabaseError: On unexpected database failure.
-        """
-        logger.info("Creating FAQ in category '%s'", data.category)
-        result = self._repo.create(data)
-        logger.info("FAQ created: id=%s", result.id)
-        return result
+        try:
+            logger.info("Creating FAQ in category '%s'", data.category)
+            result = self._repo.create(data)
+            logger.info("FAQ created: id=%s", result.id)
+            return result
+        except AlreadyExists:
+            logger.error("FAQ already exists: %s", data.question)
+            raise AlreadyExists("FAQ already exists")
+        except DatabaseError:
+            logger.error("Database error while creating FAQ")
+            raise DatabaseError("Database error while creating FAQ")
 
     def get_faq(self, faq_id: str) -> FaqResponseDTO:
-        """Retrieve a FAQ by ID.
-
-        Raises:
-            NotFound: If no FAQ exists with the given ID.
-            DatabaseError: On unexpected database failure.
-        """
-        return self._repo.get_by_id(faq_id)
+        try:
+            return self._repo.get_by_id(faq_id)
+        except NotFound:
+            logger.error("FAQ not found: %s", faq_id)
+            raise NotFound("FAQ not found")
+        except DatabaseError:
+            logger.error("Database error while fetching FAQ")
+            raise DatabaseError("Database error while fetching FAQ")
 
     def list_faqs(self, category: str | None = None) -> list[FaqResponseDTO]:
-        """Return all FAQs ordered by category then display order.
-
-        Args:
-            category: Optionally filter by category name.
-
-        Raises:
-            DatabaseError: On unexpected database failure.
-        """
-        return self._repo.get_all(category=category)
+        try:
+            return self._repo.get_all(category=category)
+        except DatabaseError:
+            logger.error("Database error while fetching FAQs")
+            raise DatabaseError("Database error while fetching FAQs")
 
     def list_categories(self) -> list[str]:
-        """Return distinct FAQ category names for navigation/filtering.
-
-        Raises:
-            DatabaseError: On unexpected database failure.
-        """
-        return self._repo.get_categories()
+        try:
+            return self._repo.get_categories()
+        except DatabaseError:
+            logger.error("Database error while fetching FAQ categories")
+            raise DatabaseError("Database error while fetching FAQ categories")
 
     def update_faq(self, faq_id: str, updates: dict) -> FaqResponseDTO:
-        """Update mutable fields of a FAQ.
-
-        Raises:
-            NotFound: If no FAQ exists with the given ID.
-            AlreadyExists: If the update would cause a question conflict.
-            DatabaseError: On unexpected database failure.
-        """
-        allowed = {"question", "answer", "category", "order"}
-        safe_updates = {k: v for k, v in updates.items() if k in allowed}
-        logger.info("Updating FAQ id=%s fields=%s", faq_id, list(safe_updates.keys()))
-        result = self._repo.update(faq_id, safe_updates)
-        logger.info("FAQ updated: id=%s", faq_id)
-        return result
+        try:
+            allowed = {"question", "answer", "category", "order"}
+            safe_updates = {k: v for k, v in updates.items() if k in allowed}
+            logger.info("Updating FAQ id=%s fields=%s", faq_id, list(safe_updates.keys()))
+            result = self._repo.update(faq_id, safe_updates)
+            logger.info("FAQ updated: id=%s", faq_id)
+            return result
+        except NotFound:
+            logger.error("FAQ not found: %s", faq_id)
+            raise NotFound("FAQ not found")
+        except DatabaseError:
+            logger.error("Database error while updating FAQ")
+            raise DatabaseError("Database error while updating FAQ")
 
     def delete_faq(self, faq_id: str) -> None:
-        """Permanently delete a FAQ.
-
-        Raises:
-            NotFound: If no FAQ exists with the given ID.
-            DatabaseError: On unexpected database failure.
-        """
-        logger.info("Deleting FAQ id=%s", faq_id)
-        self._repo.delete(faq_id)
-        logger.info("FAQ deleted: id=%s", faq_id)
+        try:
+            logger.info("Deleting FAQ id=%s", faq_id)
+            self._repo.delete(faq_id)
+            logger.info("FAQ deleted: id=%s", faq_id)
+        except NotFound:
+            logger.error("FAQ not found: %s", faq_id)
+            raise NotFound("FAQ not found")
+        except DatabaseError:
+            logger.error("Database error while deleting FAQ")
+            raise DatabaseError("Database error while deleting FAQ")

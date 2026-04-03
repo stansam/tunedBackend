@@ -1,72 +1,69 @@
 import logging
-
-from tuned.models import Deadline
 from tuned.dtos import DeadlineDTO, DeadlineResponseDTO
 from tuned.repository import repositories
 from tuned.repository.exceptions import AlreadyExists, DatabaseError, NotFound
+from tuned.core.logging import get_logger
 
-logger = logging.getLogger(__name__)
+logger: logging.Logger = get_logger(__name__)
 
 
 class DeadlineService:
-    """Service layer for Deadline business logic."""
-
     def __init__(self) -> None:
         self._repo = repositories.deadline
 
     def create_deadline(self, data: DeadlineDTO) -> DeadlineResponseDTO:
-        """Create a new deadline option.
-
-        Raises:
-            AlreadyExists: If a deadline with the same name already exists.
-            DatabaseError: On unexpected database failure.
-        """
-        logger.info("Creating deadline: %s (%dh)", data.name, data.hours)
-        deadline = self._repo.create(data)
-        logger.info("Deadline created: id=%s name=%s", deadline.id, deadline.name)
-        return deadline
+        try:
+            logger.info("Creating deadline: %s (%dh)", data.name, data.hours)
+            deadline = self._repo.create(data)
+            logger.info("Deadline created: id=%s name=%s", deadline.id, deadline.name)
+            return deadline
+        except AlreadyExists:
+            logger.error("Deadline already exists: %s", data.name)
+            raise AlreadyExists("Deadline already exists")
+        except DatabaseError:
+            logger.error("Database error while creating deadline")
+            raise DatabaseError("Database error while creating deadline")
 
     def get_deadline(self, deadline_id: str) -> DeadlineResponseDTO:
-        """Retrieve a single deadline by its ID.
-
-        Raises:
-            NotFound: If no deadline exists with the given ID.
-            DatabaseError: On unexpected database failure.
-        """
-        return self._repo.get_by_id(deadline_id)
+        try:
+            return self._repo.get_by_id(deadline_id)
+        except NotFound:
+            logger.error("Deadline not found: %s", deadline_id)
+            raise NotFound("Deadline not found")
+        except DatabaseError:
+            logger.error("Database error while fetching deadline")
+            raise DatabaseError("Database error while fetching deadline")
 
     def list_deadlines(self) -> list[DeadlineResponseDTO]:
-        """Return all deadlines ordered by display order then hours.
-
-        Raises:
-            DatabaseError: On unexpected database failure.
-        """
-        return self._repo.get_all()
+        try:
+            return self._repo.get_all()
+        except DatabaseError:
+            logger.error("Database error while fetching deadlines")
+            raise DatabaseError("Database error while fetching deadlines")
 
     def update_deadline(self, deadline_id: str, updates: dict) -> DeadlineResponseDTO:
-        """Update mutable fields of a deadline.
-
-        Only whitelisted fields are applied to guard against mass-assignment.
-
-        Raises:
-            NotFound: If no deadline exists with the given ID.
-            AlreadyExists: If the update would create a name conflict.
-            DatabaseError: On unexpected database failure.
-        """
-        allowed_fields = {"name", "hours", "order"}
-        safe_updates = {k: v for k, v in updates.items() if k in allowed_fields}
-        logger.info("Updating deadline id=%s fields=%s", deadline_id, list(safe_updates.keys()))
-        deadline = self._repo.update(deadline_id, safe_updates)
-        logger.info("Deadline updated: id=%s", deadline_id)
-        return deadline
+        try:
+            allowed_fields = {"name", "hours", "order"}
+            safe_updates = {k: v for k, v in updates.items() if k in allowed_fields}
+            logger.info("Updating deadline id=%s fields=%s", deadline_id, list(safe_updates.keys()))
+            deadline = self._repo.update(deadline_id, safe_updates)
+            logger.info("Deadline updated: id=%s", deadline_id)
+            return deadline
+        except NotFound:
+            logger.error("Deadline not found: %s", deadline_id)
+            raise NotFound("Deadline not found")
+        except DatabaseError:
+            logger.error("Database error while updating deadline")
+            raise DatabaseError("Database error while updating deadline")
 
     def delete_deadline(self, deadline_id: str) -> None:
-        """Permanently delete a deadline.
-
-        Raises:
-            NotFound: If no deadline exists with the given ID.
-            DatabaseError: On unexpected database failure.
-        """
-        logger.info("Deleting deadline id=%s", deadline_id)
-        self._repo.delete(deadline_id)
-        logger.info("Deadline deleted: id=%s", deadline_id)
+        try:
+            logger.info("Deleting deadline id=%s", deadline_id)
+            self._repo.delete(deadline_id)
+            logger.info("Deadline deleted: id=%s", deadline_id)
+        except NotFound:
+            logger.error("Deadline not found: %s", deadline_id)
+            raise NotFound("Deadline not found")
+        except DatabaseError:
+            logger.error("Database error while deleting deadline")
+            raise DatabaseError("Database error while deleting deadline")

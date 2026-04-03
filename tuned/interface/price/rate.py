@@ -4,103 +4,104 @@ from tuned.dtos import (
     PriceRateDTO,
     PriceRateResponseDTO,
     PriceRateLookupDTO,
+    CalculatePriceRequestDTO,
+    CalculatePriceResponseDTO,
 )
+from tuned.interface import price_rate
 from tuned.repository import repositories
 from tuned.repository.exceptions import AlreadyExists, DatabaseError, NotFound
 from tuned.interface.price.helper import CalculatePriceService
-from typing import TYPE_CHECKING
+from tuned.core.logging import get_logger
 
-logger = logging.getLogger(__name__)
-if TYPE_CHECKING:
-    from tuned.interface import Services
+logger: logging.Logger = get_logger(__name__)
 
 class PriceRateService:
-    """Service layer for PriceRate business logic."""
-
-    def __init__(self, interfaces: "Services") -> None:
+    def __init__(self) -> None:
         self._repo = repositories.price_rate
-        self._interfaces = interfaces
-        # self._calculate_price_service = CalculatePriceService(interfaces)
+        self._interfaces = price_rate
 
     def create_rate(self, data: PriceRateDTO) -> PriceRateResponseDTO:
-        """Create a new price rate.
-
-        Raises:
-            AlreadyExists: If a rate for this category/level/deadline triple already exists.
-            DatabaseError: On unexpected database failure.
-        """
-        logger.info(
-            "Creating price rate: category=%s level=%s deadline=%s price=%.2f",
-            data.pricing_category_id,
-            data.academic_level_id,
-            data.deadline_id,
-            data.price_per_page,
-        )
-        result = self._repo.create(data)
-        logger.info("Price rate created: id=%s", result.id)
-        return result
+        try:
+            logger.info(
+                "Creating price rate: category=%s level=%s deadline=%s price=%.2f",
+                data.pricing_category_id,
+                data.academic_level_id,
+                data.deadline_id,
+                data.price_per_page,
+            )
+            result = self._repo.create(data)
+            logger.info("Price rate created: id=%s", result.id)
+            return result
+        except AlreadyExists:
+            logger.error("Price rate already exists: %s", data.name)
+            raise AlreadyExists("Price rate already exists")
+        except DatabaseError:
+            logger.error("Database error while creating price rate")
+            raise DatabaseError("Database error while creating price rate")
 
     def get_rate(self, rate_id: str) -> PriceRateResponseDTO:
-        """Retrieve a price rate by ID.
-
-        Raises:
-            NotFound: If no rate exists with the given ID.
-            DatabaseError: On unexpected database failure.
-        """
-        return self._repo.get_by_id(rate_id)
+        try:
+            return self._repo.get_by_id(rate_id)
+        except NotFound:
+            logger.error("Price rate not found: %s", rate_id)
+            raise NotFound("Price rate not found")
+        except DatabaseError:
+            logger.error("Database error while fetching price rate")
+            raise DatabaseError("Database error while fetching price rate")
 
     def lookup_rate(self, lookup: PriceRateLookupDTO) -> PriceRateResponseDTO:
-        """Resolve the active rate for a specific category/academic-level/deadline combination.
-
-        This is the primary query used during order pricing.
-
-        Raises:
-            NotFound: If no active rate exists for the given combination.
-            DatabaseError: On unexpected database failure.
-        """
-        return self._repo.get_by_dimensions(lookup)
+        try:
+            return self._repo.get_by_dimensions(lookup)
+        except NotFound:
+            logger.error("Price rate not found: %s", lookup)
+            raise NotFound("Price rate not found")
+        except DatabaseError:
+            logger.error("Database error while fetching price rate")
+            raise DatabaseError("Database error while fetching price rate")
 
     def list_rates_by_category(
         self, pricing_category_id: str, active_only: bool = True
     ) -> list[PriceRateResponseDTO]:
-        """Return all rates for a given pricing category.
-
-        Raises:
-            DatabaseError: On unexpected database failure.
-        """
-        return self._repo.get_by_category(pricing_category_id, active_only)
+        try:
+            return self._repo.get_by_category(pricing_category_id, active_only)
+        except DatabaseError:
+            logger.error("Database error while fetching price rate")
+            raise DatabaseError("Database error while fetching price rate")
 
     def update_rate(self, rate_id: str, updates: dict) -> PriceRateResponseDTO:
-        """Update mutable fields of a price rate.
-
-        Raises:
-            NotFound: If no rate exists with the given ID.
-            AlreadyExists: If the update would violate the unique constraint.
-            DatabaseError: On unexpected database failure.
-        """
-        allowed = {"price_per_page", "is_active"}
-        safe_updates = {k: v for k, v in updates.items() if k in allowed}
-        logger.info("Updating price rate id=%s fields=%s", rate_id, list(safe_updates.keys()))
-        result = self._repo.update(rate_id, safe_updates)
-        logger.info("Price rate updated: id=%s", rate_id)
-        return result
+        try:
+            allowed = {"price_per_page", "is_active"}
+            safe_updates = {k: v for k, v in updates.items() if k in allowed}
+            logger.info("Updating price rate id=%s fields=%s", rate_id, list(safe_updates.keys()))
+            result = self._repo.update(rate_id, safe_updates)
+            logger.info("Price rate updated: id=%s", rate_id)
+            return result
+        except NotFound:
+            logger.error("Price rate not found: %s", rate_id)
+            raise NotFound("Price rate not found")
+        except DatabaseError:
+            logger.error("Database error while updating price rate")
+            raise DatabaseError("Database error while updating price rate")
 
     def delete_rate(self, rate_id: str) -> None:
-        """Permanently delete a price rate.
-
-        Raises:
-            NotFound: If no rate exists with the given ID.
-            DatabaseError: On unexpected database failure.
-        """
-        logger.info("Deleting price rate id=%s", rate_id)
-        self._repo.delete(rate_id)
-        logger.info("Price rate deleted: id=%s", rate_id)
+        try:
+            logger.info("Deleting price rate id=%s", rate_id)
+            self._repo.delete(rate_id)
+            logger.info("Price rate deleted: id=%s", rate_id)
+        except NotFound:
+            logger.error("Price rate not found: %s", rate_id)
+            raise NotFound("Price rate not found")
+        except DatabaseError:
+            logger.error("Database error while deleting price rate")
+            raise DatabaseError("Database error while deleting price rate")
     
     def calculate_price(self, data: CalculatePriceRequestDTO) -> CalculatePriceResponseDTO:
-        """Calculate the price for a given order.
-
-        Raises:
-            NotFound: If no rate exists for the given combination.
-            DatabaseError: On unexpected database failure.
-        """
-        return CalculatePriceService(self._interfaces).execute(data)
+        try:
+            logger.info("Calculating price for data=%s", data)
+            return CalculatePriceService(self._interfaces).execute(data)
+        except NotFound:
+            logger.error("Price rate not found: %s", data)
+            raise NotFound("Price rate not found")
+        except DatabaseError:
+            logger.error("Database error while calculating price")
+            raise DatabaseError("Database error while calculating price")

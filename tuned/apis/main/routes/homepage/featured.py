@@ -1,5 +1,5 @@
 from flask.views import MethodView
-from tuned.interface import service as _service_interface, sample as _sample_interface, blog_post as _blog_interface
+from tuned.interface import service_category as _service_interface, sample as _sample_interface, blog_post as _blog_interface
 from tuned.utils.responses import success_response, error_response
 from tuned.redis_client import redis_client
 from tuned.core.logging import get_logger
@@ -14,9 +14,6 @@ CACHE_KEY = 'homepage:featured'
 CACHE_TTL = 300
 
 class GetFeaturedContent(MethodView): #TODO: Implement strict return types 
-    def __init__(self):
-        self._interface = Services()
-
     def get(self):
         try:
             cached_data = redis_client.get(CACHE_KEY)

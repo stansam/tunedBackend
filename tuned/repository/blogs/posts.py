@@ -39,7 +39,7 @@ class GetBlogPostBySlug:
 
     def execute(self, slug: str) -> BlogPostResponseDTO:
         try:
-            post = self.db.query(BlogPost).filter_by(slug=slug)
+            post = self.db.query(BlogPost).filter_by(slug=slug).first()
             if not post:
                 raise NotFound("post not found")
 

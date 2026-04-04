@@ -1,4 +1,4 @@
-from backend.tuned.dtos.base import BaseDTO
+from tuned.dtos.base import BaseDTO, PaginationDTO
 from dataclasses import dataclass
 from typing import Optional, List
 

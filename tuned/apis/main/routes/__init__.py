@@ -10,7 +10,7 @@ from tuned.apis.main.routes.blogs import(
     ListBlogCategories
 )
 from tuned.apis.main.routes.content import(
-    GetAcademicLevels
+    GetAcademicLevels, SampleListView
 )
 
 
@@ -32,4 +32,6 @@ ROUTES = [
     {"url_rule": "/blogs/<string:slug>/comments", "view_func": GetBlogComments.as_view("blog_comments")},
 
     {"url_rule": "/blogs/categories", "view_func": ListBlogCategories.as_view("blog_categories")},
+    
+    {"url_rule": "/samples", "view_func": SampleListView.as_view("samples")},
 ]

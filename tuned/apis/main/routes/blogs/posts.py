@@ -35,7 +35,7 @@ class ListBlogPosts(MethodView):
             cache_key = f'{CACHE_KEY}:{json.dumps(params)}'
             cached_data = redis_client.get(cache_key)
             if cached_data:
-                logger.debug('Returning blogs from cache')
+                logger.debug(f'Returning blogs from cache')
                 data = json.loads(cached_data)
                 return paginated_response(
                     items=data.get("blogs"),

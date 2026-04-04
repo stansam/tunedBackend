@@ -101,7 +101,6 @@ class BlogPostListRequestDTO(PaginationDTO):
     q: Optional[str] = None
     category_id: Optional[str] = None
     is_published: Optional[bool] = None
-    is_featured: Optional[bool] = None
 
 @dataclass
 class BlogCommentDTO(BaseDTO):

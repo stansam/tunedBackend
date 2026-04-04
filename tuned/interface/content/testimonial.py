@@ -1,9 +1,8 @@
-from backend.tuned.repository.exceptions import AlreadyExists
 import logging
 
 from tuned.dtos import TestimonialDTO, TestimonialResponseDTO
 from tuned.repository import repositories
-from tuned.repository.exceptions import DatabaseError, NotFound
+from tuned.repository.exceptions import DatabaseError, NotFound, AlreadyExists
 from tuned.core.logging import get_logger
 
 logger: logging.Logger = get_logger(__name__)

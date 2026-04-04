@@ -13,11 +13,11 @@ import re
 class BlogFilterSchema(Schema):
     """Schema for filtering and paginating blog posts."""
     
-    category_id = fields.Int(
+    category_id = fields.Str(
         required=False,
-        validate=validate.Range(min=1),
+        validate=validate.Length(min=1),
         error_messages={
-            'invalid': 'Category ID must be an integer',
+            'invalid': 'Category ID must be a string',
             'validator_failed': 'Category ID must be at least 1'
         }
     )

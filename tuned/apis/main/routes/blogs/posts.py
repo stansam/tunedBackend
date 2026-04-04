@@ -76,9 +76,7 @@ class GetBlogPost(MethodView):
                 return success_response(json.loads(cached_data))
             
             blog = _interface.get_by_slug(slug)
-            data = {
-                'blog': asdict(blog)
-            }
+            data = asdict(blog)
 
             redis_client.setex(
                 f'blog:{slug}',

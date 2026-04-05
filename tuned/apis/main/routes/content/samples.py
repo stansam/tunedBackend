@@ -210,12 +210,15 @@
 #             'Failed to fetch sample details',
 #             status=500
 #         )
+from tuned.dtos import SampleListRequestDTO
 from tuned.core.logging import get_logger
 from flask.views import MethodView
-from tuned.interface import sample
-from tuned.utils.responses import success_response, error_response, paginated_response
+from flask import request
+from tuned.interface import sample as interface
+from tuned.utils.responses import success_response, error_response, paginated_response, validation_error_response
+from tuned.apis.main.schemas import SampleFilterSchema
 from tuned.redis_client import redis_client
-
+from marshmallow import ValidationError
 from dataclasses import asdict
 import json
 import logging
@@ -227,20 +230,35 @@ CACHE_KEY_SAMPLES = 'samples:list'
 
 
 class SampleListView(MethodView):
+    def __init__(self):
+        self._schema = SampleFilterSchema()
+
     def get(self):
         try:
-            cached_data = redis_client.get(CACHE_KEY_SAMPLES)
+            params = {}
+            if request.args:
+                params = self._schema.load(request.args)
+            
+        except ValidationError as err:
+            logger.error(f'Validation error: {str(err)}')
+            return validation_error_response(err.messages)
+
+        try:
+            cache_key = f"{CACHE_KEY_SAMPLES}:{json.dumps(params)}"
+            cached_data = redis_client.get(cache_key)
             if cached_data:
                 data = json.loads(cached_data)
                 logger.info(f'Samples fetched from cache: page {data.get("page")}, total {data.get("total")}')
+
                 return paginated_response(
                     items=data.get("samples"),
                     page=data.get("page", 1),
                     per_page=data.get("per_page", 12),
                     total=data.get("total")
                 )
-            
-            samples = sample.get_all_samples()
+
+            samples_dto = SampleListRequestDTO(**params)
+            samples = interface.list_samples(samples_dto)
             samples_data = asdict(samples)
 
             redis_client.set(
@@ -263,3 +281,41 @@ class SampleListView(MethodView):
             )
             
 
+class SampleDetailView(MethodView):
+    def get(self, slug):
+        try:
+            cached_data = redis_client.get(f'sample:{slug}')
+            if cached_data:
+                data = json.loads(cached_data)
+                logger.info(f'Sample fetched from cache: {slug}')
+                return success_response(data)
+            
+            sample_data = interface.get_sample_by_slug(slug)
+            sample_data = asdict(sample_data)
+
+            redis_client.set(
+                f'sample:{slug}',
+                json.dumps(sample_data),
+                ex=CACHE_TTL
+            )
+
+            return success_response(sample_data)
+        except Exception as e:
+            logger.error(f'Error fetching sample: {str(e)}')
+            return error_response(
+                'Failed to fetch sample',
+                status=500
+            )
+
+class SampleServiceView(MethodView):
+    def get(self):
+        try:
+            services = interface.get_sample_services()
+            services_data = [asdict(s) for s in services]
+            return success_response(services_data)
+        except Exception as e:
+            logger.error(f'Error fetching sample services: {str(e)}')
+            return error_response(
+                'Failed to fetch sample services',
+                status=500
+            )

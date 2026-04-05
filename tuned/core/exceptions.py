@@ -1,6 +1,3 @@
-class RepositoryException(Exception):
-    pass
-
 class DatabaseError(Exception):
     pass
 

@@ -10,9 +10,9 @@ from marshmallow import Schema, fields, validate
 class SampleFilterSchema(Schema):
     """Schema for filtering and paginating samples."""
     
-    service_id = fields.Int(
+    service_id = fields.Str(
         required=False,
-        validate=validate.Range(min=1),
+        validate=validate.Length(min=1),
         error_messages={
             'invalid': 'Service ID must be an integer',
             'validator_failed': 'Service ID must be at least 1'

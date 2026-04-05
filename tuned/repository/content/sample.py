@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session, Query
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 
+from sqlalchemy import or_, asc, desc
 from tuned.extensions import db
 from tuned.models import Sample
 from tuned.dtos.content import(
@@ -66,7 +67,7 @@ class GetSampleBySlug:
 def getSampleListResponse(
     query: Query[Sample], req: SampleListRequestDTO
 ) -> SampleListResponseDTO:
-    if req.is_featured:
+    if req.featured:
         query = query.filter_by(featured=req.is_featured)
     if req.service_id:
         query = query.filter_by(service_id=req.service_id)
@@ -110,6 +111,20 @@ class GetAllSamples:
     def __init__(self, db: Session) -> None:
         self.db = db
 
+    def execute(self) -> list[SampleResponseDTO]:
+        try:
+            samples = self.db.session.query(Sample).all()
+            if not samples:
+                samples = []
+            
+            return [SampleResponseDTO.from_model(s) for s in samples]
+        except SQLAlchemyError as e:
+            raise DatabaseError(f"Database error while fetching samples: {str(e)}") from e
+
+class ListAllSamples:
+    def __init__(self, db: Session) -> None:
+        self.db = db
+
     def execute(self, req: SampleListRequestDTO) -> SampleListResponseDTO:
         try:
             query = self.db.session.query(Sample)
@@ -120,7 +135,6 @@ class GetAllSamples:
             return samples
         except SQLAlchemyError as e:
             raise DatabaseError(f"Database error while fetching samples: {str(e)}") from e
-
 class GetFeaturedSamples:
     def __init__(self, db: Session) -> None:
         self.db = db
@@ -199,11 +213,14 @@ class SampleRepository:
     def get_featured(self) -> list[SampleResponseDTO]:
         return GetFeaturedSamples(self.db).execute()
 
-    def get_all(
+    def get_all(self) -> list[SampleResponseDTO]:
+        return GetAllSamples(self.db).execute()
+    
+    def list_all(
         self,
         req: SampleListRequestDTO
     ) -> list[SampleResponseDTO]:
-        return GetAllSamples(self.db).execute(req)
+        return ListAllSamples(self.db).execute(req)
 
     def update(self, sample_id: str, updates: dict) -> SampleResponseDTO:
         return UpdateSample(self.db).execute(sample_id, updates)

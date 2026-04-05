@@ -1,11 +1,11 @@
-from tuned.dtos.user import CreateUserDTO
+from tuned.dtos.user import CreateUserDTO, LoginRequestDTO, UserResponseDTO
 from tuned.dtos.blogs import(
     BlogCategoryDTO, BlogCategoryResponseDTO, BlogPostDTO, BlogPostResponseDTO, BlogCommentDTO,
-    BlogCommentResponseDTO, CommentReactionDTO, CommentReactionResponseDTO, BlogPostListResponseDTO, BlogPostListRequestDTO
+    BlogCommentResponseDTO, CommentReactionDTO, CommentReactionResponseDTO, BlogPostListResponseDTO, BlogPostListRequestDTO, PostByCategoryRequestDTO
 )
 from tuned.dtos.content import (
     AcademicLevelDTO, AcademicLevelResponseDTO, DeadlineDTO, DeadlineResponseDTO, SampleDTO, TestimonialDTO, FaqDTO,
-    TestimonialResponseDTO, FaqResponseDTO, SampleResponseDTO, SampleListResponseDTO, SampleListRequestDTO
+    TestimonialResponseDTO, FaqResponseDTO, SampleResponseDTO, SampleListResponseDTO, SampleListRequestDTO, SampleServiceResponseDTO
 )
 from tuned.dtos.price import (
     PricingCategoryDTO, PriceRateDTO, PricingCategoryResponseDTO, PriceRateResponseDTO, PriceRateLookupDTO, 

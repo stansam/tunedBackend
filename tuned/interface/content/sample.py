@@ -1,6 +1,6 @@
 import logging
 
-from tuned.dtos import SampleDTO, SampleResponseDTO, SampleListRequestDTO, SampleListResponseDTO
+from tuned.dtos import SampleDTO, SampleResponseDTO, SampleListRequestDTO, SampleListResponseDTO, SampleServiceResponseDTO
 from tuned.repository import repositories
 from tuned.repository.exceptions import AlreadyExists, DatabaseError, NotFound
 from tuned.core.logging import get_logger
@@ -57,7 +57,7 @@ class SampleService:
         req: SampleListRequestDTO
     ) -> SampleListResponseDTO:
         try:
-            return self._repo.get_all(req)
+            return self._repo.list_all(req)
         except DatabaseError:
             logger.error("Failed to get samples")
             raise DatabaseError("Failed to get samples")
@@ -96,4 +96,16 @@ class SampleService:
         except DatabaseError:
             logger.error("Failed to get samples by service id: %s", service_id)
             raise DatabaseError("Failed to get samples by service id")
+        
+    def get_sample_services(self) -> list[SampleServiceResponseDTO]:
+        try:
+            samples = self._repo.get_all()
+            services = []
+            for sample in samples:
+                services.append(sample.service)
+            return services
+        except DatabaseError:
+            logger.error("Failed to get sample services")
+            raise DatabaseError("Failed to get sample services")
+        
             

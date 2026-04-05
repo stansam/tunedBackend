@@ -1,5 +1,5 @@
 from tuned.models import BlogPost
-from tuned.dtos import BlogPostDTO, BlogPostResponseDTO, BlogPostListRequestDTO, BlogPostListResponseDTO
+from tuned.dtos import BlogPostDTO, BlogPostResponseDTO, BlogPostListRequestDTO, BlogPostListResponseDTO, PostByCategoryRequestDTO
 from tuned.repository.exceptions import NotFound, DatabaseError, AlreadyExists
 from sqlalchemy.orm import Session, Query
 from sqlalchemy import or_, asc, desc
@@ -192,5 +192,21 @@ def getBlogPostListResponse(
         sort=req.sort,
         order=req.order,
     )
+
+class GetBlogsByCategory:
+    def __init__(self, db: Session, req: PostByCategoryRequestDTO) -> None:
+        self.db = db
+        self.req = req
+    
+    def execute(self) -> list[BlogPostResponseDTO]:
+        try:
+
+            query = self.db.query(BlogPost).filter_by(is_published=True, category_id=self.req.category_id).filter(BlogPost.slug != self.req.exclude).limit(self.req.per_page)
+            post = [BlogPostResponseDTO.from_model(s) for s in query]
+            
+            return post
+
+        except SQLAlchemyError as e:
+            raise DatabaseError(f"Database error while fetching posts: {str(e)}")
         
     

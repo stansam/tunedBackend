@@ -82,6 +82,21 @@ class DeadlineResponseDTO(BaseDTO):
         )
 
 @dataclass
+class SampleServiceResponseDTO:
+    id: str
+    name: str
+    slug: str
+
+    @classmethod
+    def from_model(cls, obj) -> "SampleServiceResponseDTO":
+        return cls(
+            id=obj.id,
+            name=obj.name,
+            slug=obj.slug,
+        )
+    
+
+@dataclass
 class SampleResponseDTO(BaseDTO):
     id: str
     title: str
@@ -92,6 +107,7 @@ class SampleResponseDTO(BaseDTO):
     featured: bool
     image: str
     tags: List[TagResponseDTO]
+    service: SampleServiceResponseDTO
 
     @classmethod
     def from_model(cls, obj) -> "SampleResponseDTO":
@@ -105,6 +121,7 @@ class SampleResponseDTO(BaseDTO):
             featured=obj.featured,
             image=obj.image or "",
             tags=[TagResponseDTO.from_model(tag) for tag in obj.tag_list],
+            service=SampleServiceResponseDTO.from_model(obj.service),
         )
 
 @dataclass
@@ -127,7 +144,7 @@ class SampleListResponseDTO(PaginationDTO):
 class SampleListRequestDTO(PaginationDTO):
     q: Optional[str] = None
     service_id: Optional[str] = None
-    is_featured: Optional[bool] = None
+    featured: Optional[bool] = None
     
 @dataclass
 class TestimonialResponseDTO(BaseDTO):

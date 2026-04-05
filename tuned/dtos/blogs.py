@@ -171,3 +171,9 @@ class CommentReactionResponseDTO(BaseDTO):
             user_id=str(obj.user_id),
             ip_address=obj.ip_address,
         )
+
+@dataclass
+class PostByCategoryRequestDTO:
+    category_id: str
+    exclude: str
+    per_page: int = 3

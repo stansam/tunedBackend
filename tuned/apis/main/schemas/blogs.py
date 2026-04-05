@@ -145,3 +145,32 @@ class CommentReactionSchema(Schema):
             'validator_failed': 'Reaction type must be either like or dislike'
         }
     )
+
+# class PostByCategorySchema(Schema):
+    category_id = fields.Str(
+        required=True,
+        validate=validate.Length(min=1),
+        error_messages={
+            'required': 'Category ID is required',
+            'invalid': 'Category ID must be a string',
+            'validator_failed': 'Category ID must be at least 1'
+        }
+    )
+    exclude = fields.Str(
+        required=True,
+        validate=validate.Length(min=1),
+        error_messages={
+            'required': 'Slug is required',
+            'invalid': 'Slug must be a string',
+            'validator_failed': 'Slug must be at least 1'
+        }
+    )
+    per_page = fields.Int(
+        required=False,
+        validate=validate.Range(min=1, max=5),
+        load_default=3,
+        error_messages={
+            'invalid': 'Per page must be an integer',
+            'validator_failed': 'Per page must be between 1 and 5'
+        }
+    )

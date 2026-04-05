@@ -11,7 +11,6 @@ import logging
 
 logger: logging.Logger = get_logger(__name__)
 
-
 CACHE_KEY: str = "blog:categories"
 CACHE_TTL: int = 60 * 60 * 24
 

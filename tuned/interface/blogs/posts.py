@@ -1,7 +1,7 @@
 import logging
 from typing import List
 
-from tuned.dtos import BlogPostDTO, BlogPostResponseDTO, BlogPostListResponseDTO, BlogPostListRequestDTO
+from tuned.dtos import BlogPostDTO, BlogPostResponseDTO, BlogPostListResponseDTO, BlogPostListRequestDTO, PostByCategoryRequestDTO
 from tuned.repository import repositories
 from tuned.repository.exceptions import AlreadyExists, DatabaseError, NotFound
 from tuned.core.logging import get_logger
@@ -75,3 +75,26 @@ class BlogPostService:
         except DatabaseError:
             logger.error("Database error while updating or deleting post")
             raise DatabaseError("Database error while fetching comment")
+
+    def get_by_category(self, req: PostByCategoryRequestDTO) -> BlogPostResponseDTO:
+        try:
+            logger.debug("Fetching blog post: %s", req.exclude)
+            return self._repo.get_by_category(req)
+        except NotFound:
+            logger.error("Post not found: %s", req.exclude)
+            raise NotFound("post not found")
+        except DatabaseError:
+            logger.error("Database error while fetching post")
+            raise DatabaseError("Database error while fetching post")
+    
+    def get_related(self, slug: str) -> BlogPostResponseDTO:
+        try:
+            logger.debug("Fetching related blog posts: %s", slug)
+            post = self.get_by_slug(slug)
+            return self.get_by_category(PostByCategoryRequestDTO(category_id=post.category_id, exclude=slug, per_page=3))
+        except NotFound:
+            logger.error("Post not found: %s", slug)
+            raise NotFound("post not found")
+        except DatabaseError:
+            logger.error("Database error while fetching post")
+            raise DatabaseError("Database error while fetching post")

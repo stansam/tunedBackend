@@ -1,11 +1,11 @@
-from tuned.dtos.blogs import CommentReactionResponseDTO, BlogCommentResponseDTO
+# from tuned.dtos.blogs import CommentReactionResponseDTO, BlogCommentResponseDTO
 from typing import List
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 from tuned.repository.blogs.posts import (
-    CreateBlog, GetBlogPostBySlug,
+    CreateBlog, GetBlogPostBySlug, GetBlogsByCategory,
     GetFeaturedBlogPosts, GetPublishedBlogPosts,
-    UpdateOrDeleteBlogPost, GetBlogPostByID, BlogPostListRequestDTO
+    UpdateOrDeleteBlogPost, GetBlogPostByID, PostByCategoryRequestDTO,
 )
 from tuned.repository.blogs.categories import (
     CreateBlogCategory, GetBlogCategoryBySlug, ListBlogCategories,
@@ -21,7 +21,7 @@ from tuned.repository.blogs.reactions import (
 )
 from tuned.dtos import (
     BlogCategoryDTO, BlogCommentDTO,
-    BlogPostDTO, CommentReactionDTO,
+    BlogPostDTO, CommentReactionDTO, BlogPostListRequestDTO,
     BlogPostResponseDTO, BlogCategoryResponseDTO,
     BlogCommentResponseDTO, CommentReactionResponseDTO
 )
@@ -51,6 +51,9 @@ class BlogRepository:
     
     def update_or_delete_post(self, id: str, data: BlogPostDTO) -> BlogPostResponseDTO:
         return UpdateOrDeleteBlogPost(self.session).execute(id, data)
+    
+    def get_by_category(self, req: PostByCategoryRequestDTO) -> BlogPostResponseDTO:
+        return GetBlogsByCategory(self.session, req).execute()
 
     # Blog categories
     def create_blog_category(self, data: BlogCategoryDTO) -> BlogCategoryResponseDTO:

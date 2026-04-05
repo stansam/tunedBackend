@@ -27,8 +27,8 @@ class ServiceCategoryDTO:
 class ServiceWithPricingCategory:
   id: str
   name: str
-  category: str # Service category name
-  pricing_category: PricingCategoryEnum # Pricing category name
+  category: str
+  pricing_category: PricingCategoryEnum
 
 
 @dataclass

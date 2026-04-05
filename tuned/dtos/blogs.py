@@ -101,7 +101,6 @@ class BlogPostListRequestDTO(PaginationDTO):
     q: Optional[str] = None
     category_id: Optional[str] = None
     is_published: Optional[bool] = None
-    is_featured: Optional[bool] = None
 
 @dataclass
 class BlogCommentDTO(BaseDTO):
@@ -172,3 +171,9 @@ class CommentReactionResponseDTO(BaseDTO):
             user_id=str(obj.user_id),
             ip_address=obj.ip_address,
         )
+
+@dataclass
+class PostByCategoryRequestDTO:
+    category_id: str
+    exclude: str
+    per_page: int = 3

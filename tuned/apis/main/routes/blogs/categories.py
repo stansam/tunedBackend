@@ -11,7 +11,6 @@ import logging
 
 logger: logging.Logger = get_logger(__name__)
 
-
 CACHE_KEY: str = "blog:categories"
 CACHE_TTL: int = 60 * 60 * 24
 
@@ -21,18 +20,18 @@ class ListBlogCategories(MethodView):
             cached_data = redis_client.get(CACHE_KEY)
             if cached_data:
                 logger.debug('Returning blog categories from cache')
-                return success_response(cached_data)
+                return success_response(json.loads(cached_data))
             
             categories = _interface.list_categories()
-            categories = [asdict(category) for category in categories]
+            categories_dict = [asdict(category) for category in categories]
             
             redis_client.set(
                 CACHE_KEY,
-                json.dumps(categories),
+                json.dumps(categories_dict),
                 ex=CACHE_TTL
                 )
             
-            return success_response(categories)
+            return success_response(categories_dict)
         except Exception as e:
             logger.error(f'Error fetching blog categories: {str(e)}')
             return error_response(

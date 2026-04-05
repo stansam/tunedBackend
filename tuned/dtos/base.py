@@ -10,6 +10,7 @@ class BaseDTO:
     updated_at: Optional[datetime] = None
     updated_by: Optional[str] = None
     created_by: Optional[str] = None
+    created_at: Optional[datetime] = None
 
 
 @dataclass(kw_only=True)

@@ -1,10 +1,6 @@
-"""
-Auth routes package.
+from tuned.apis.auth.routes.auth import AuthCheck, Login
 
-Registers all authentication routes with the auth blueprint.
-"""
-from tuned.auth.routes import register, login, logout, verify_email, password_reset, refresh
-
-
-# Routes are automatically registered when imported
-# Flask blueprint decorator handles route registration
+ROUTES = [
+    {'url_rule': '/auth/me', 'view_func': AuthCheck.as_view('auth_check'), 'methods': ['GET']},
+    {'url_rule': '/auth/login', 'view_func': Login.as_view('login'), 'methods': ['POST']}
+]

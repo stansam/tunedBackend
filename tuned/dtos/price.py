@@ -3,10 +3,6 @@ from typing import Optional
 from tuned.dtos.content import DeadlineResponseDTO
 from datetime import datetime
 
-# ---------------------------------------------------------------------------
-# Request DTOs
-# ---------------------------------------------------------------------------
-
 @dataclass
 class PricingCategoryDTO:
     name: str
@@ -21,11 +17,6 @@ class PriceRateDTO:
     deadline_id: str
     price_per_page: float
     is_active: Optional[bool] = True
-
-
-# ---------------------------------------------------------------------------
-# Response DTOs
-# ---------------------------------------------------------------------------
 
 @dataclass
 class PricingCategoryResponseDTO:

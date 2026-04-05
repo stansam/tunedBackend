@@ -1,7 +1,7 @@
 from tuned.models import BlogPost
-from tuned.dtos import BlogPostDTO, BlogPostResponseDTO, BlogPostListRequestDTO, BlogPostListResponseDTO
+from tuned.dtos import BlogPostDTO, BlogPostResponseDTO, BlogPostListRequestDTO, BlogPostListResponseDTO, PostByCategoryRequestDTO
 from tuned.repository.exceptions import NotFound, DatabaseError, AlreadyExists
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, Query
 from sqlalchemy import or_, asc, desc
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 from datetime import datetime, timezone
@@ -39,7 +39,7 @@ class GetBlogPostBySlug:
 
     def execute(self, slug: str) -> BlogPostResponseDTO:
         try:
-            post = self.db.query(BlogPost).filter_by(slug=slug)
+            post = self.db.query(BlogPost).filter_by(slug=slug).first()
             if not post:
                 raise NotFound("post not found")
 
@@ -88,7 +88,7 @@ class GetPublishedBlogPosts:
             query = self.db.query(BlogPost).filter_by(is_published=True) #.order_by(BlogPost.published_at.desc()).all()
             post = getBlogPostListResponse(query, self.req)
             if not post:
-                raise NotFound("posts not found")
+                post = []
             
             return post
 
@@ -153,16 +153,9 @@ class UpdateOrDeleteBlogPost:
 def getBlogPostListResponse(
     query: Query[BlogPost], req: BlogPostListRequestDTO
 ) -> list[BlogPostListResponseDTO]:
-    # posts = [BlogPostListResponseDTO.from_model(s) for s in query.all()]
-
-    # if req.is_published is not None:
-    #     query = query.filter_by(is_published=req.is_published)
-        
-    # Filter by category
     if req.category_id:
         query = query.filter_by(category_id=req.category_id)
         
-    # Search by title/excerpt/content
     if req.q:
         search_pattern = f"%{req.q}%"
         query = query.filter(
@@ -199,5 +192,21 @@ def getBlogPostListResponse(
         sort=req.sort,
         order=req.order,
     )
+
+class GetBlogsByCategory:
+    def __init__(self, db: Session, req: PostByCategoryRequestDTO) -> None:
+        self.db = db
+        self.req = req
+    
+    def execute(self) -> list[BlogPostResponseDTO]:
+        try:
+
+            query = self.db.query(BlogPost).filter_by(is_published=True, category_id=self.req.category_id).filter(BlogPost.slug != self.req.exclude).limit(self.req.per_page)
+            post = [BlogPostResponseDTO.from_model(s) for s in query]
+            
+            return post
+
+        except SQLAlchemyError as e:
+            raise DatabaseError(f"Database error while fetching posts: {str(e)}")
         
     

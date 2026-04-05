@@ -1,6 +1,6 @@
 import logging
 
-from tuned.dtos import SampleDTO, SampleResponseDTO
+from tuned.dtos import SampleDTO, SampleResponseDTO, SampleListRequestDTO, SampleListResponseDTO, SampleServiceResponseDTO
 from tuned.repository import repositories
 from tuned.repository.exceptions import AlreadyExists, DatabaseError, NotFound
 from tuned.core.logging import get_logger
@@ -54,11 +54,10 @@ class SampleService:
 
     def list_samples(
         self,
-        service_id: str | None = None,
-        featured_only: bool = False,
-    ) -> list[SampleResponseDTO]:
+        req: SampleListRequestDTO
+    ) -> SampleListResponseDTO:
         try:
-            return self._repo.get_all(service_id=service_id, featured_only=featured_only)
+            return self._repo.list_all(req)
         except DatabaseError:
             logger.error("Failed to get samples")
             raise DatabaseError("Failed to get samples")
@@ -97,4 +96,28 @@ class SampleService:
         except DatabaseError:
             logger.error("Failed to get samples by service id: %s", service_id)
             raise DatabaseError("Failed to get samples by service id")
+        
+    def get_sample_services(self) -> list[SampleServiceResponseDTO]:
+        try:
+            samples = self._repo.get_all()
+            services = []
+            for sample in samples:
+                services.append(sample.service)
+            return services
+        except DatabaseError:
+            logger.error("Failed to get sample services")
+            raise DatabaseError("Failed to get sample services")
+        
+    def get_related(self, slug: str) -> SampleResponseDTO:
+        try:
+            logger.debug("Fetching related samples: %s", slug)
+            sample = self.get_sample_by_slug(slug)
+            return self.get_samples_by_service_id(sample.service_id)
+        except NotFound:
+            logger.error("Sample not found: %s", slug)
+            raise NotFound("Sample not found")
+        except DatabaseError:
+            logger.error("Database error while fetching sample")
+            raise DatabaseError("Database error while fetching sample")
+        
             

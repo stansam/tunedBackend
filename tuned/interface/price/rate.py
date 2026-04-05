@@ -7,18 +7,21 @@ from tuned.dtos import (
     CalculatePriceRequestDTO,
     CalculatePriceResponseDTO,
 )
-from tuned.interface import price_rate
 from tuned.repository import repositories
 from tuned.repository.exceptions import AlreadyExists, DatabaseError, NotFound
 from tuned.interface.price.helper import CalculatePriceService
 from tuned.core.logging import get_logger
+from typing import TYPE_CHECKING
 
 logger: logging.Logger = get_logger(__name__)
 
+if TYPE_CHECKING:
+    from tuned.interface import Services
+
 class PriceRateService:
-    def __init__(self) -> None:
+    def __init__(self, interfaces: "Services") -> None:
         self._repo = repositories.price_rate
-        self._interfaces = price_rate
+        self._interfaces = interfaces
 
     def create_rate(self, data: PriceRateDTO) -> PriceRateResponseDTO:
         try:

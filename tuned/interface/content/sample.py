@@ -108,4 +108,16 @@ class SampleService:
             logger.error("Failed to get sample services")
             raise DatabaseError("Failed to get sample services")
         
+    def get_related(self, slug: str) -> SampleResponseDTO:
+        try:
+            logger.debug("Fetching related samples: %s", slug)
+            sample = self.get_sample_by_slug(slug)
+            return self.get_samples_by_service_id(sample.service_id)
+        except NotFound:
+            logger.error("Sample not found: %s", slug)
+            raise NotFound("Sample not found")
+        except DatabaseError:
+            logger.error("Database error while fetching sample")
+            raise DatabaseError("Database error while fetching sample")
+        
             

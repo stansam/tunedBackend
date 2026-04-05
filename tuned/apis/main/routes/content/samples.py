@@ -319,3 +319,29 @@ class SampleServiceView(MethodView):
                 'Failed to fetch sample services',
                 status=500
             )
+
+class SampleRelatedView(MethodView):
+    def get(self, slug):
+        try:
+            cached_data = redis_client.get(f'sample:{slug}:related')
+            if cached_data:
+                data = json.loads(cached_data)
+                logger.info(f'Sample related fetched from cache: {slug}')
+                return success_response(data)
+            
+            related_samples = interface.get_related(slug)
+            related_samples_data = [asdict(s) for s in related_samples]
+
+            redis_client.set(
+                f'sample:{slug}:related',
+                json.dumps(related_samples_data),
+                ex=CACHE_TTL
+            )
+
+            return success_response(related_samples_data)
+        except Exception as e:
+            logger.error(f'Error fetching related samples: {str(e)}')
+            return error_response(
+                'Failed to fetch related samples',
+                status=500
+            )

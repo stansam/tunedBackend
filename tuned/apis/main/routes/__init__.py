@@ -10,7 +10,7 @@ from tuned.apis.main.routes.blogs import(
     ListBlogCategories, GetRelatedBlogPosts
 )
 from tuned.apis.main.routes.content import(
-    GetAcademicLevels, SampleListView, SampleDetailView, SampleServiceView
+    GetAcademicLevels, SampleListView, SampleDetailView, SampleServiceView, SampleRelatedView
 )
 
 
@@ -37,4 +37,5 @@ ROUTES = [
     {"url_rule": "/samples", "view_func": SampleListView.as_view("samples"), 'methods': ['GET']},
     {"url_rule": "/samples/<string:slug>", "view_func": SampleDetailView.as_view("sample_detail"), 'methods': ['GET']},
     {"url_rule": "/samples/services", "view_func": SampleServiceView.as_view("sample_services"), 'methods': ['GET']},
+    {"url_rule": "/samples/<string:slug>/related", "view_func": SampleRelatedView.as_view("sample_related"), 'methods': ['GET']},
 ]

@@ -10,7 +10,6 @@ from tuned.apis.auth.schemas.login import LoginSchema
 from tuned.dtos import UserResponseDTO, LoginRequestDTO 
 from dataclasses import asdict
 from marshmallow import ValidationError
-# import json
 import logging
 
 logger: logging.Logger = get_logger(__name__)

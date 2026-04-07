@@ -7,7 +7,7 @@ from tuned.dtos import CreateUserDTO, LoginRequestDTO, UserResponseDTO
 from tuned.repository.exceptions import NotFound
 from tuned.core.logging import get_logger
 from tuned.models import User
-
+from tuned.utils.validators import validate_email, validate_username
 import logging
 
 logger: logging.Logger = get_logger(__name__)
@@ -18,23 +18,36 @@ class UserService:
 
     def login_user(self, credentials: LoginRequestDTO) -> UserResponseDTO:
         try:
-            user = self._repo.get_user_by_email(credentials.email)
+            user = None
+            # if credentials.identifier.endswith(".com"):
+            # try:
+            if validate_email(credentials.identifier):
+                user = self._repo.get_user_by_email(credentials.identifier)
+            if user is None:
+                success, username = validate_username(credentials.identifier)
+                if success:
+                    user = self._repo.get_user_by_username(username)
+            if user is None:
+                raise InvalidCredentials("Invalid email or username.")
+            # except NotFound:
+            #     user = self._repo.get_user_by_username(credentials.identifier)
+                
             if not user.check_password(credentials.password):
-                logger.error(f"User with email {credentials.email}, login failed.")
+                logger.error(f"User with email/identifier {credentials.identifier}, login failed.")
                 raise InvalidCredentials(f"login failed, password is incorrect.")
             
-            login_user(user, remember=credentials.remember)
+            login_user(user, remember=credentials.remember_me)
             
             user.last_login = datetime.now(timezone.utc)
-            self._repo.update(user.id, {"last_login": user.last_login}, commit=True)
+            self._repo.update_user(user.id, {"last_login": user.last_login})
             user_dto = UserResponseDTO.from_model(user)
             return True, asdict(user_dto)
         except NotFound:
-            logger.error(f"User with email {credentials.email} not found.")
-            raise NotFound(f"User with email {credentials.email} not found.")
+            logger.error(f"User with email/identifier {credentials.identifier} not found.")
+            raise NotFound(f"User with email/identifier {credentials.identifier} not found.")
         except DatabaseError:
-            logger.error(f"Database error while fetching user with email {credentials.email}.")
-            raise DatabaseError(f"Database error while fetching user with email {credentials.email}.")
+            logger.error(f"Database error while fetching user with email/identifier {credentials.identifier}.")
+            raise DatabaseError(f"Database error while fetching user with email/identifier {credentials.identifier}.")
 
     def create_user(self, data: CreateUserDTO) -> UserResponseDTO:
         # try:

@@ -3,12 +3,12 @@ from tuned.utils.validators import validate_email
 
 class LoginSchema(Schema):
     """Schema for user login."""
-    email = fields.Str(required=True)
+    identifier = fields.Str(required=True)
     password = fields.Str(required=True, load_only=True)
     remember_me = fields.Bool(load_default=False)
     
-    @validates('email')
-    def validate_email_field(self, value, **kwargs):
+    @validates('identifier')
+    def validate_identifier_field(self, value, **kwargs):
         """Basic validation - ensure not empty."""
         if not value or not value.strip():
             raise ValidationError('Email or username is required')

@@ -28,6 +28,19 @@ class GetUserByEmail:
             return user
         except SQLAlchemyError as e:
             raise DatabaseError(f"Database error while fetching user: {str(e)}") from e
+
+class GetUserByUsername:
+    def __init__(self, db: Session) -> None:
+        self.db = db
+
+    def execute(self, username: str) -> User:
+        try:
+            user = self.db.query(User).filter_by(username=username).first()
+            if not user:
+                raise NotFound("User not found")
+            return user
+        except SQLAlchemyError as e:
+            raise DatabaseError(f"Database error while fetching user: {str(e)}") from e
         
 class GetAdminUser:
     def __init__(self, db: Session) -> None:

@@ -20,7 +20,7 @@ class CreateUserDTO:
 
 @dataclass
 class LoginRequestDTO:
-    email: str
+    identifier: str
     password: str
     remember_me: Optional[bool] = False
 
@@ -30,7 +30,7 @@ class UserResponseDTO:
     email: str
     name: str
     avatar_url: str
-    role: str
+    # role: str
     session_created_at: Optional[str] = None
 
     @classmethod
@@ -39,7 +39,7 @@ class UserResponseDTO:
             id=str(obj.id),
             email=obj.email,
             name=f"{obj.first_name} {obj.last_name}",
-            avatar_url=obj.avatar_url,
-            role=obj.role,
+            avatar_url=obj.profile_pic,
+            # role=obj.role,
             session_created_at=datetime.now(timezone.utc).isoformat(),
         )

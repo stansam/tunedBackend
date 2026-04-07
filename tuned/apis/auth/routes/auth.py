@@ -34,9 +34,10 @@ class Login(MethodView):
         try:
             schema = LoginSchema()
 
-            data = None
-            if request.args:
-                data = schema.loads(request.args)
+            data = request.get_json()
+            data = schema.load(data)
+            # if request.args:
+            #     data = schema.loads(request.args)
 
         except ValidationError as err:
             logger.error(f'Validation error: {str(err)}')
@@ -44,24 +45,31 @@ class Login(MethodView):
         
         try:
             data = LoginRequestDTO(**data)
-            user = _interface.login_user(data)
-            user_dto = UserResponseDTO.from_model(user)
-            return success_response(asdict(user_dto))
+            success, user = _interface.login_user(data)
+            if not success:
+                logger.error(f'login failed for {data.identifier} invalid credentials.')
+                return error_response(
+                    'Invalid credentials',
+                    status=401
+                )
+            
+            logger.info(f'User {user["email"]} is logged in')
+            return success_response(user)
         except NotFound:
-            logger.error(f'User with email {data.email} not found.')
+            logger.error(f'User with email/username {data.identifier} not found.')
             return error_response(
                 'User not found',
                 status=404
             )
         except InvalidCredentials:
-            logger.error(f'login failed for {data.email} invalid credentials.')
+            logger.error(f'login failed for {data.identifier} invalid credentials.')
             return error_response(
                 'Invalid credentials',
                 status=401
             )
         except Exception as e:
-            logger.error(f'login failed for {data.email}.')
+            logger.error(f'login failed for {data.identifier}.: {str(e)}')
             return error_response(
-                'login failed for {data.email}, try again.',
+                f'login failed try again.',
                 status=500
             )

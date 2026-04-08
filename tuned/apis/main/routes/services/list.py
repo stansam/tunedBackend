@@ -39,7 +39,7 @@ class GetServiceCategoriesList(MethodView):
             cached = redis_client.get(f'{CACHE_KEY}:categories')
             if cached:
                 logger.info("Services categories fetched successfully from cache")
-                return success_response("Services categories fetched successfully", json.loads(cached))
+                return success_response(json.loads(cached), "Services categories fetched successfully")
             
             categories = _category_interface.list_categories()
             categories = [asdict(c) for c in categories]
@@ -58,7 +58,7 @@ class GetServiceCategoriesList(MethodView):
 class GetServicesByCategory(MethodView):
     def get(self, category_id):
         try:
-            cached = redis_client.get(f'service:category:{category_id}')
+            cached = redis_client.get(f'service:category:{category_id}:list')
             if cached:
                 logger.info("Services fetched successfully from cache")
                 return success_response(json.loads(cached), "Services fetched successfully")
@@ -67,7 +67,7 @@ class GetServicesByCategory(MethodView):
             services = [asdict(s) for s in services]
 
             redis_client.setex(
-                f'service:category:{category_id}', CACHE_TTL,
+                f'service:category:{category_id}:list', CACHE_TTL,
                 json.dumps(services)
             )
 
@@ -110,7 +110,7 @@ class GetServicesRelated(MethodView):
                 logger.info("Service related fetched successfully from cache")
                 return success_response(json.loads(cached), "Service related fetched successfully")
             
-            service = _interface.get_service_by_slug(slug)
+            service = _interface.get_service(slug)
             related_services = _interface.get_services_by_category(service.category_id)
             related_samples = _samples_interface.get_samples_by_service_id(service.id)
 
@@ -128,7 +128,7 @@ class GetServicesRelated(MethodView):
             )
 
             logger.info("Service related fetched successfully")
-            return success_response(asdict(data_items), "Service related fetched successfully")
+            return success_response(data_items, "Service related fetched successfully")
 
         except Exception as e:
             logger.error(f"Error fetching service related: {str(e)}")

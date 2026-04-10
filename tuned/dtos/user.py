@@ -43,3 +43,31 @@ class UserResponseDTO:
             # role=obj.role,
             session_created_at=datetime.now(timezone.utc).isoformat(),
         )
+
+from dataclasses import dataclass, field
+from typing import Optional
+from datetime import datetime
+
+@dataclass
+class UpdateUserDTO:
+    user_id: str
+    username: Optional[str] = None
+    email: Optional[str] = None
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    gender: Optional[str] = None
+    phone_number: Optional[str] = None
+    profile_pic: Optional[str] = None
+    failed_login_attempts: Optional[int] = None
+    last_failed_login: Optional[datetime] = None
+    last_login_at: Optional[datetime] = None
+    language: Optional[str] = None
+    timezone: Optional[str] = None
+    password_hash: Optional[str] = None
+    is_admin: Optional[bool] = field(default=None, repr=False)
+
+    def to_dict(self):
+        return {
+            k: v for k, v in self.__dict__.items()
+            if k != "user_id" and v is not None
+        }

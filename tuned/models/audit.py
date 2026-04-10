@@ -63,8 +63,8 @@ class ActivityLog(BaseModel):
     action = db.Column(db.String(100), nullable=False, index=True)  # e.g., "order_created", "payment_received"
     entity_type = db.Column(db.String(50), index=True)  # e.g., "Order", "Payment", "User"
     entity_id = db.Column(db.String(36), index=True)
-    description = db.Column(db.String(255))
-    details = db.Column(db.Text)  # JSON string with additional details
+    before = db.Column(db.JSON, nullable=True)
+    after = db.Column(db.JSON, nullable=True)
     ip_address = db.Column(db.String(45))
     user_agent = db.Column(db.String(255))
     
@@ -77,23 +77,6 @@ class ActivityLog(BaseModel):
     
     # Relationships
     user = db.relationship('User', foreign_keys=[user_id], backref='activity_logs')
-    
-    @staticmethod
-    def log(action, user_id=None, entity_type=None, entity_id=None, description=None, details=None, ip_address=None, user_agent=None):
-        """Helper method to create activity log entry"""
-        log_entry = ActivityLog(
-            user_id=user_id,
-            action=action,
-            entity_type=entity_type,
-            entity_id=entity_id,
-            description=description,
-            details=details,
-            ip_address=ip_address,
-            user_agent=user_agent
-        )
-        db.session.add(log_entry)
-        db.session.commit()
-        return log_entry
     
     def __repr__(self):
         return f'<ActivityLog {self.action} by User:{self.user_id}>'

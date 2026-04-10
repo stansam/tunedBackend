@@ -13,6 +13,8 @@ class BaseConfig:
     LOG_LEVEL: str = "DEBUG"
     LOG_FORMAT: Literal["text", "json"] = "json"
     
+    REQUIRE_EMAIL_VERIFICATION: bool = True
+
     SQLALCHEMY_TRACK_MODIFICATIONS: bool = False
     SQLALCHEMY_RECORD_QUERIES: bool = True
     SQLALCHEMY_ECHO: bool = False

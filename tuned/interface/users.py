@@ -1,61 +1,150 @@
 from tuned.repository.exceptions import AlreadyExists, DatabaseError, InvalidCredentials
+from tuned.interface.audit import audit_service
 from dataclasses import asdict
-from datetime import datetime, timezone
+from typing import Optional
+from datetime import datetime, timezone, timedelta
 from flask_login import login_user
 from tuned.repository import repositories
-from tuned.dtos import CreateUserDTO, LoginRequestDTO, UserResponseDTO
+from tuned.dtos import CreateUserDTO, LoginRequestDTO, UserResponseDTO, UpdateUserDTO, ActivityLogCreateDTO
 from tuned.repository.exceptions import NotFound
 from tuned.core.logging import get_logger
 from tuned.models import User
 from tuned.utils.validators import validate_email, validate_username
+from tuned.utils.auth import is_email_verified_required
+from tuned.utils.variables import Variables
 import logging
+import math
 
 logger: logging.Logger = get_logger(__name__)
 
 class UserService:
     def __init__(self):
         self._repo = repositories.user
+        self._log_user = audit_service.activity_log
+    
+    def _check_account_lockout(self, user: User) -> tuple[User, bool, Optional[str]]:
+        if user.failed_login_attempts >= 5:
+            if user.last_failed_login:
+                lockout_duration = timedelta(minutes=15)
+                lockout_expires = user.last_failed_login + lockout_duration
+                
+                if datetime.now(timezone.utc) < lockout_expires:
+                    remaining = lockout_expires - datetime.now(timezone.utc)
+                    minutes = max(1, math.ceil(remaining.total_seconds() / 60))
+                    
+                    return user, True, f"Account temporarily locked. Try again in {minutes} minutes."
+                else:
+                    user.failed_login_attempts = 0
+                    user.last_failed_login = None
+                    return user, False, None
+        
+        return user, False, None
+    
+    def _record_login_attempt(self, user: User, success: bool = True, ip_address: Optional[str] = None) -> User:
+        if success:
+            user.failed_login_attempts = 0
+            user.last_failed_login = None
+            user.last_login_at = datetime.now(timezone.utc)
+            
+            logger.info(f"Successful login for user {user.id} from IP {ip_address}")
+            return user
+        else:
+            user.failed_login_attempts = self._repo.increment_failed_login_attempts(user.id)
+            user.last_failed_login = datetime.now(timezone.utc)
+            
+            logger.warning(
+                f"Failed login attempt for user {user.id} from IP {ip_address}. "
+                f"Total attempts: {user.failed_login_attempts}"
+            )
 
-    def login_user(self, credentials: LoginRequestDTO) -> UserResponseDTO:
+            return user
+
+    def _log_user_activity(self, before, after, credentials, action):
+        audit_dto = ActivityLogCreateDTO(
+            user_id=str(after.id),
+            action=action,
+            entity_type=Variables.USER_ENTITY_TYPE,
+            entity_id=str(after.id),
+            before=before,
+            after=after,
+            ip_address=credentials.ip_address,
+            user_agent=credentials.user_agent,
+            created_by=str(after.id),
+        )
+        self._log_user.log(audit_dto)
+
+    def login_user(self, credentials: LoginRequestDTO) -> dict:
         try:
-            user = None
-            # if credentials.identifier.endswith(".com"):
-            # try:
-            if validate_email(credentials.identifier):
-                user = self._repo.get_user_by_email(credentials.identifier)
-            if user is None:
+            user = self._repo.get_user_by_email(credentials.identifier) if validate_email(credentials.identifier) else None
+            if not user:
                 success, username = validate_username(credentials.identifier)
                 if success:
                     user = self._repo.get_user_by_username(username)
-            if user is None:
+            if not user:
+                logger.error(f"User not found.")
                 raise InvalidCredentials("Invalid email or username.")
-            # except NotFound:
-            #     user = self._repo.get_user_by_username(credentials.identifier)
-                
+            
+            existing_user = user
+
+            if is_email_verified_required():
+                if not user.email_verified:
+                    logger.info(f'Login blocked — email not verified: {user.email}')
+                    raise InvalidCredentials("Email not verified.")
+            
+            user, is_locked, error_message = self._check_account_lockout(user)
+            if is_locked:
+                logger.error(f"User account locked.")
+                raise InvalidCredentials(error_message)
+
             if not user.check_password(credentials.password):
-                logger.error(f"User with email/identifier {credentials.identifier}, login failed.")
-                raise InvalidCredentials(f"login failed, password is incorrect.")
+                user = self._record_login_attempt(user, False, credentials.ip_address)
+
+                update_user_dto = UpdateUserDTO(
+                    user_id=str(user.id),
+                    failed_login_attempts=user.failed_login_attempts,
+                    last_failed_login=user.last_failed_login,
+                )
+
+                updated_user = self._repo.update_user(user.id, update_user_dto)
+
+                self._log_user_activity(
+                    before=user,
+                    after=updated_user,
+                    credentials=credentials,
+                    action=Variables.USER_LOGIN_ACTION,
+                )
+
+                logger.error(f"User with email/username, login failed.")
+                raise InvalidCredentials(f"Invalid email/username or password.")
             
             login_user(user, remember=credentials.remember_me)
             
-            user.last_login = datetime.now(timezone.utc)
-            self._repo.update_user(user.id, {"last_login": user.last_login})
+            user = self._record_login_attempt(user, True, credentials.ip_address)
+            
+            update_user_dto = UpdateUserDTO(
+                user_id=str(user.id),
+                last_login_at=user.last_login_at,
+            )
+
+            user = self._repo.update_user(user.id, update_user_dto)
+            
+            self._log_user_activity(
+                    before=existing_user,
+                    after=user,
+                    credentials=credentials,
+                    action=Variables.USER_LOGIN_ACTION,
+                )
+
             user_dto = UserResponseDTO.from_model(user)
             return True, asdict(user_dto)
         except NotFound:
-            logger.error(f"User with email/identifier {credentials.identifier} not found.")
-            raise NotFound(f"User with email/identifier {credentials.identifier} not found.")
+            logger.error(f"User with email/username not found.")
+            raise NotFound(f"User with email/username not found.")
         except DatabaseError:
-            logger.error(f"Database error while fetching user with email/identifier {credentials.identifier}.")
-            raise DatabaseError(f"Database error while fetching user with email/identifier {credentials.identifier}.")
+            logger.error(f"Database error while fetching user with email/username.")
+            raise DatabaseError(f"Database error while fetching user with email/username.")
 
     def create_user(self, data: CreateUserDTO) -> UserResponseDTO:
-        # try:
-        #     existing = self._repo.get_user_by_email(data.email)
-        #     if existing:
-        #         raise ValueError("Email address already registered.")
-        # except NotFound:
-        #     pass
         try:
             created_user = self._repo.create_user(data)
             user_dto = UserResponseDTO.from_model(created_user)

@@ -5,7 +5,7 @@ from tuned.repository.user.get import GetUserByEmail, GetUserByID, GetAdminUser,
 from tuned.repository.user.update import UpdateUser
 from tuned.repository.user.exceptions import UserNotFound
 from tuned.extensions import db
-
+import string
 class UserRepository: 
     def __init__(self):
         self.db = db  
@@ -21,3 +21,5 @@ class UserRepository:
         return GetAdminUser(self.db.session).execute()
     def update_user(self, user_id: string, updates: dict) -> User:
         return UpdateUser(self.db.session).execute(user_id, updates)
+    def increment_failed_login_attempts(self, user_id: string) -> int:
+        return UpdateUser(self.db.session).increment_failed_login_attempts(user_id)

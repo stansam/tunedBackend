@@ -84,11 +84,14 @@ class User(UserMixin, BaseModel):
         ).count()
     
     def get_profile_pic_url(self):
-        filename = self.profile_pic if self.profile_pic and self.profile_pic != 'default.png' else 'default.png'
+        # filename = self.profile_pic if self.profile_pic and self.profile_pic != 'default.png' else 'default.png'
     
-        if self.is_admin:
-            return url_for('admin.static', filename=f'assets/profile_pics/{filename}')
-        return url_for('client.static', filename=f'client/assets/profile_pics/{filename}')
+        # if self.is_admin:
+        #     return url_for('static', filename=f'assets/profile_pics/{filename}')
+        # return url_for('static', filename=f'client/assets/profile_pics/{filename}')
+        if self.gender == GenderEnum.FEMALE:
+            return url_for('static', filename='ladyDefault.png', _external=True)
+        return url_for('static', filename='manDefault.png', _external=True)
     
     def __repr__(self):
         return f'<User {self.username}>'

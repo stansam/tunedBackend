@@ -2,7 +2,7 @@ import os
 import logging
 from flask import Flask
 from tuned.core.config import config
-from tuned.core.logging import _configure_logging
+from tuned.core.logging import _configure_logging, get_logger
 
 def create_app(config_name=None):
     app = Flask(__name__)
@@ -11,7 +11,7 @@ def create_app(config_name=None):
         config_name = os.environ.get('FLASK_ENV', 'development')
     
     _configure_logging(config[config_name])
-    logger = logging.getLogger(__name__)
+    logger: logging.Logger = get_logger(__name__)
     logger.info(
         "Creating Flask app [env=%s version=%s]",
         config[config_name].FLASK_ENV,
@@ -50,7 +50,8 @@ def create_app(config_name=None):
     def load_user(user_id):
         """Load user by ID for Flask-Login."""
         from tuned.models.user import User
-        return User.query.get(int(user_id))
+        from tuned.models.base import db
+        return db.session.query(User).filter(User.id == user_id).first()
     
     @jwt.token_in_blocklist_loader
     def check_if_token_revoked(jwt_header, jwt_payload):

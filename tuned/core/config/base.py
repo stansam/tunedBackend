@@ -23,7 +23,7 @@ class BaseConfig:
     
     SESSION_COOKIE_NAME: str = 'tuned_session'
     SESSION_COOKIE_HTTPONLY: bool = True
-    SESSION_COOKIE_SAMESITE: str = 'None'
+    SESSION_COOKIE_SAMESITE: str = 'Lax'
     SESSION_COOKIE_PATH: str = '/'
     PERMANENT_SESSION_LIFETIME: timedelta = timedelta(days=7)
     
@@ -36,7 +36,7 @@ class BaseConfig:
     JWT_TOKEN_LOCATION: list[str] = ['headers', 'cookies']
     JWT_COOKIE_SECURE: bool = True  # Only send over HTTPS
     JWT_COOKIE_CSRF_PROTECT: bool = True
-    JWT_COOKIE_SAMESITE: str = 'None'
+    JWT_COOKIE_SAMESITE: str = 'Lax'
     JWT_ACCESS_COOKIE_NAME: str = 'tuned_access_token'
     JWT_REFRESH_COOKIE_NAME: str = 'tuned_refresh_token'
     JWT_COOKIE_PATH: str = '/'

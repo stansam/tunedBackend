@@ -1,15 +1,15 @@
 from sqlalchemy.orm import Session
 from tuned.models import User
+from tuned.dtos import CreateUserDTO, UpdateUserDTO
 from tuned.repository.user.create import CreateUser
 from tuned.repository.user.get import GetUserByEmail, GetUserByID, GetAdminUser, GetUserByUsername
 from tuned.repository.user.update import UpdateUser
-from tuned.repository.user.exceptions import UserNotFound
 from tuned.extensions import db
 import string
 class UserRepository: 
     def __init__(self):
         self.db = db  
-    def create_user(self, user_data: dict) -> User:
+    def create_user(self, user_data: CreateUserDTO) -> User:
         return CreateUser(self.db.session).execute(user_data)
     def get_user_by_id(self, user_id: string) -> User:
         return GetUserByID(self.db.session).execute(user_id)
@@ -19,7 +19,7 @@ class UserRepository:
         return GetUserByUsername(self.db.session).execute(username)
     def get_admin_user(self) -> User:
         return GetAdminUser(self.db.session).execute()
-    def update_user(self, user_id: string, updates: dict) -> User:
-        return UpdateUser(self.db.session).execute(user_id, updates)
+    def update_user(self, updates: UpdateUserDTO) -> User:
+        return UpdateUser(self.db.session).execute(updates)
     def increment_failed_login_attempts(self, user_id: string) -> int:
         return UpdateUser(self.db.session).increment_failed_login_attempts(user_id)

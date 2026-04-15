@@ -12,8 +12,9 @@ from flask.cli import with_appcontext
 from sqlalchemy import text, inspect as sa_inspect
 
 from tuned.extensions import db
+from tuned.core.logging import get_logger
 
-logger = logging.getLogger(__name__)
+logger: logging.Logger = get_logger(__name__)
 
 # Tables that are considered "seed data" — targeted by --empty-all
 SEED_TABLES = [

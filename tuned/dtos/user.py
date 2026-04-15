@@ -2,10 +2,10 @@ from datetime import timezone, datetime
 from dataclasses import dataclass
 from typing import Optional
 from tuned.models.enums import GenderEnum
-# from tuned.dtos.base import BaseDTO
+from tuned.dtos.base import BaseRequestDTO
 
 @dataclass
-class CreateUserDTO:
+class CreateUserDTO(BaseRequestDTO):
     username: str
     email: str
     password: str
@@ -19,7 +19,7 @@ class CreateUserDTO:
     timezone: Optional[str] = "UTC"
 
 @dataclass
-class LoginRequestDTO:
+class LoginRequestDTO(BaseRequestDTO):
     identifier: str
     password: str
     remember_me: Optional[bool] = False
@@ -27,8 +27,8 @@ class LoginRequestDTO:
 @dataclass
 class UserResponseDTO:
     id: str
-    email: str
     name: str
+    email: str
     avatar_url: str
     # role: str
     session_created_at: Optional[str] = None
@@ -37,9 +37,9 @@ class UserResponseDTO:
     def from_model(cls, obj) -> "UserResponseDTO":
         return cls(
             id=str(obj.id),
+            name=" ".join(filter(None, [obj.first_name, obj.last_name])),
             email=obj.email,
-            name=f"{obj.first_name} {obj.last_name}",
-            avatar_url=obj.profile_pic,
+            avatar_url=obj.get_profile_pic_url(),
             # role=obj.role,
             session_created_at=datetime.now(timezone.utc).isoformat(),
         )

@@ -105,7 +105,7 @@ class UserService:
                     last_failed_login=user.last_failed_login,
                 )
 
-                updated_user = self._repo.update_user(user.id, update_user_dto)
+                updated_user = self._repo.update_user(update_user_dto)
 
                 self._log_user_activity(
                     before=user,
@@ -126,7 +126,7 @@ class UserService:
                 last_login_at=user.last_login_at,
             )
 
-            user = self._repo.update_user(user.id, update_user_dto)
+            user = self._repo.update_user(update_user_dto)
             
             self._log_user_activity(
                     before=existing_user,
@@ -136,6 +136,8 @@ class UserService:
                 )
 
             user_dto = UserResponseDTO.from_model(user)
+
+            logger.info(f"User login successful.")
             return True, asdict(user_dto)
         except NotFound:
             logger.error(f"User with email/username not found.")
@@ -144,11 +146,42 @@ class UserService:
             logger.error(f"Database error while fetching user with email/username.")
             raise DatabaseError(f"Database error while fetching user with email/username.")
 
-    def create_user(self, data: CreateUserDTO) -> UserResponseDTO:
+    def create_user(self, data: CreateUserDTO) -> dict:
         try:
+            # _repo.create_user returns the SQLAlchemy User model instance,
+            # which is what flask_login.login_user() requires.
             created_user = self._repo.create_user(data)
+
+            # Establish a session immediately after registration so the user
+            # does not need a separate login request.  remember=False means
+            # the session cookie will expire at browser close (appropriate for
+            # a new registration — the user can choose "remember me" on next login).
+            login_user(created_user, remember=False)
+
             user_dto = UserResponseDTO.from_model(created_user)
-            return asdict(user_dto)
+            user_dict = asdict(user_dto)
+
+            # Audit the registration event using the shared activity-log helper.
+            # This mirrors the pattern used in login_user() above.
+            audit_dto = ActivityLogCreateDTO(
+                user_id=str(created_user.id),
+                action='user_register',
+                entity_type=Variables.USER_ENTITY_TYPE,
+                entity_id=str(created_user.id),
+                before=None,
+                after=created_user,
+                ip_address=None,  # IP is not available in the interface layer
+                user_agent=None,
+                created_by=str(created_user.id),
+            )
+            self._log_user.log(audit_dto)
+
+            logger.info(
+                f'User {created_user.email} (id={created_user.id}) '
+                f'registered and logged in successfully'
+            )
+            return user_dict
+
         except AlreadyExists:
             logger.error(f"User with email {data.email} already exists.")
             raise AlreadyExists(f"User with email {data.email} already exists.")

@@ -2,7 +2,7 @@ from tuned.dtos.base import BaseRequestDTO
 from tuned.repository.exceptions import AlreadyExists, DatabaseError, InvalidCredentials
 from tuned.interface.audit import audit_service
 from tuned.redis_client import redis_client
-from tuned.services.email_service import send_verification_email
+# removed synchronous email import to enforce decoupled architecture via celery Queue
 from dataclasses import asdict
 from typing import Optional
 from datetime import datetime, timezone, timedelta
@@ -12,6 +12,7 @@ from tuned.dtos import (
     CreateUserDTO, LoginRequestDTO, UserResponseDTO, UpdateUserDTO,
     ActivityLogCreateDTO, EmailVerificationResendDTO, EmailVerifyConfirmDTO,
 )
+from tuned.core.events import event_bus
 from tuned.repository.exceptions import NotFound, AlreadyExists
 from tuned.core.logging import get_logger
 from tuned.models import User
@@ -171,7 +172,12 @@ class UserService:
             self._log_user.log(audit_dto)
             try:
                 _user, raw_token = self._repo.generate_verification_token(str(created_user.id))
-                send_verification_email(_user, raw_token)
+                event_bus.emit('user.registered', {
+                    'user_id': created_user.id,
+                    'raw_token': raw_token,
+                    'email': created_user.email,
+                    'name': created_user.get_name()
+                })
             except Exception as token_exc:
                 logger.error(
                     f'[create_user] Token/email step failed for user {created_user.id}: {token_exc!r}'
@@ -206,7 +212,12 @@ class UserService:
 
         try:
             _user, raw_token = self._repo.generate_verification_token(str(user.id))
-            send_verification_email(_user, raw_token)
+            event_bus.emit('user.resend_verification_email', {
+                'user_id': _user.id,
+                'raw_token': raw_token,
+                'email': _user.email,
+                'name': _user.get_name()
+            })
         except AlreadyExists:
             return True
         except Exception as exc:
@@ -234,6 +245,10 @@ class UserService:
                 created_by=str(verified_user.id),
             )
             self._log_user.log(audit_dto)
+
+            event_bus.emit('user.email_verified', {
+                'user_id': verified_user.id
+            })
 
             logger.info(f'Email verified for user {verified_user.id}')
             return True, 'ok'

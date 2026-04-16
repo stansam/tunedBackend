@@ -42,6 +42,10 @@ def create_app(config_name=None):
     
     socketio.init_app(app, **socketio_kwargs)
     
+    from tuned.celery_app import make_celery
+    celery = make_celery(flask_app=app)
+    app.celery = celery
+    
     login_manager.login_view = 'auth.login'
     login_manager.login_message = 'Please log in to access this page.'
     login_manager.session_protection = 'strong'
@@ -61,13 +65,14 @@ def create_app(config_name=None):
         return is_token_blacklisted(jti)
     
     from tuned.apis import(
-        main_bp, auth_bp
+        main_bp, auth_bp, notifications_bp
         # ,  client_bp, admin_bp 
     ) 
     from tuned.manage import manage_bp
     
     # app.register_blueprint(admin_bp, url_prefix='/api/admin')
     app.register_blueprint(auth_bp, url_prefix='/api')
+    app.register_blueprint(notifications_bp, url_prefix='/api/notifications')
     # app.register_blueprint(client_bp, url_prefix='/api/client')
     app.register_blueprint(manage_bp)
     
@@ -90,6 +95,12 @@ def create_app(config_name=None):
     register_error_handlers(app)
     
     register_shell_context(app)
+
+    try:
+        from tuned.core.event_registry import register_all_handlers
+        register_all_handlers()
+    except ImportError:
+        pass
 
     return app
 

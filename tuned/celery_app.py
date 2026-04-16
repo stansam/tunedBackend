@@ -15,6 +15,7 @@ def make_celery(flask_app=None) -> Celery:
         backend=flask_config.CELERY_RESULT_BACKEND,
         include=[
             'tuned.tasks.email',
+            'tuned.tasks.notifications',
             'tuned.tasks.order_tasks',
         ],
     )
@@ -29,6 +30,7 @@ def make_celery(flask_app=None) -> Celery:
         task_reject_on_worker_lost=True,
         task_routes={
             'tuned.tasks.email.*': {'queue': 'email'},
+            'tuned.tasks.notifications.*': {'queue': 'notifications'},
             'tuned.tasks.order_tasks.*': {'queue': 'orders'},
         },
         broker_transport_options={

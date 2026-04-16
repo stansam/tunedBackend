@@ -88,14 +88,6 @@ def send_verification_email(user: User, raw_token: str) -> None:
         )
 
 
-def send_welcome_email_delayed(user: User) -> None:
-    from tuned.tasks.email import send_welcome_task
-    delay_seconds = random.randint(900, 1800)
-    
-    send_welcome_task.apply_async(args=[user.id], countdown=delay_seconds)    
-    logger.info(f"Welcome email scheduled for user {user.id} with {delay_seconds}s delay")
-
-
 def send_welcome_email(user: User) -> None:
     from tuned.utils.email import send_async_email
 

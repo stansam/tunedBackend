@@ -10,6 +10,7 @@ from tuned.interface.blogs import(
     BlogCommentService,
     CommentReactionService
 )
+from tuned.interface.notification import NotificationInterface
 
 
 class Services:
@@ -29,6 +30,7 @@ class Services:
         self._comment_reaction = None
         self._price_rate = None
         self._pricing_category = None
+        self._notification = None
 
     @property
     def user(self) -> UserService:
@@ -119,6 +121,12 @@ class Services:
             self._pricing_category = PricingCategoryService()
         return self._pricing_category
 
+    @property
+    def notification(self) -> NotificationInterface:
+        if not self._notification:
+            self._notification = NotificationInterface()
+        return self._notification
+
 
 interface = Services()
 # services = interface.service
@@ -137,3 +145,4 @@ blog_comment = interface.blog_comment
 comment_reaction = interface.comment_reaction
 price_rate = interface.price_rate
 pricing_category = interface.pricing_category
+notification = interface.notification

@@ -53,12 +53,13 @@ def send_transactional_email(
     acks_late=True,
 )
 def send_welcome_task(self, user_id: str) -> None:
+    from tuned.repository.user.get import GetUserByID
+    from tuned.repository.exceptions import NotFound
+    from tuned.extensions import db
     try:
-        user: User | None = db.session.query(User).filter(User.id == user_id).first()
-        if user:
-            send_welcome_email(user)
-        else:
-            logger.warning(f"[email] send_welcome_task: user {user_id} not found — skipping")
-
+        user: User = GetUserByID(db.session).execute(user_id)
+        send_welcome_email(user)
+    except NotFound:
+        logger.warning(f"[email] send_welcome_task: user {user_id} not found — skipping")
     except Exception as exc:
         raise self.retry(exc=exc, countdown=120)

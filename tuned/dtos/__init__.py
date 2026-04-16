@@ -24,3 +24,6 @@ from tuned.dtos.audit import (
     ActivityLogFilterDTO, EmailLogCreateDTO, EmailLogResponseDTO,
     EmailLogUpdateDTO, EmailLogFilterDTO, AuditListResponseDTO
 )
+from tuned.dtos.notification import (
+    NotificationCreateDTO, NotificationResponseDTO
+)

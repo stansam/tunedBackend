@@ -1,3 +1,5 @@
+from tuned.models import GenderEnum
+from tuned.dtos.base import BaseRequestDTO
 from flask import request, current_app, session, make_response
 from flask_login import current_user, login_required, logout_user
 from flask.views import MethodView
@@ -98,7 +100,7 @@ class Logout(MethodView):
 
 
 class Register(MethodView):
-    decorators = [rate_limit(max_requests=3, window=300)]
+    # decorators = [rate_limit(max_requests=3, window=300)]
 
     def post(self):
         try:
@@ -115,8 +117,31 @@ class Register(MethodView):
             return validation_error_response(err.messages)
 
         try:
-            user_dto = CreateUserDTO(**data, ip_address=get_user_ip(), user_agent=get_user_agent())
-            result = _interface.create_user(user_dto)
+            # name_parts = data.pop('name').split()
+            # if len(name_parts) >= 2:
+            #     data['first_name'] = name_parts[0]
+            #     data['last_name'] = ' '.join(name_parts[1:])
+            # else: 
+            #     return error_response('Full name is required', status=400)
+
+            # gender = data.get('gender', '').lower()
+            # if gender == 'm':
+            #     data['gender'] = 'male'
+            # elif gender == 'f':
+            #     data['gender'] = 'female'
+            # else:
+            #     return error_response('Invalid gender', status=400)
+            
+            if 'confirm_password' in data:
+                del data['confirm_password']
+            
+            if 'gender' in data:
+                data['gender'] = GenderEnum(data['gender'])
+                
+
+            user_dto = CreateUserDTO(**data)
+            locale = BaseRequestDTO(ip_address=get_user_ip(), user_agent=get_user_agent())
+            result = _interface.create_user(user_dto, locale)
 
             logger.info(f'User {result.get("email")} registered successfully')
             return success_response(result)

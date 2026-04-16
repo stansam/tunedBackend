@@ -5,7 +5,6 @@ from typing import Any
 from celery.utils.log import get_task_logger
 
 from tuned.celery_app import celery_app
-from tuned.utils.email import send_email
 from tuned.models import User
 from tuned.extensions import db
 from tuned.services.email_service import send_welcome_email
@@ -31,6 +30,7 @@ def send_transactional_email(
     context: dict[str, Any],
     sender: str | None = None,
 ) -> None:
+    from tuned.utils.email import send_email
     try:
         send_email(to=to, subject=subject, template=template, sender=sender, **context)
         logger.info(f"[email] '{subject}' sent to {to}")

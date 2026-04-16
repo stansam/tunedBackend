@@ -6,10 +6,7 @@ from flask import request
 from flask.views import MethodView
 from marshmallow import ValidationError
 
-from tuned.apis.auth.schemas.email_verification import (
-    EmailVerifyResendSchema,
-    EmailVerifyConfirmSchema,
-)
+from tuned.apis.auth.schemas import EmailVerifyResendSchema, EmailVerifyConfirmSchema
 from tuned.core.exceptions import NotFound
 from tuned.core.logging import get_logger
 from tuned.dtos import EmailVerificationResendDTO, EmailVerifyConfirmDTO

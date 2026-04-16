@@ -1,8 +1,3 @@
-"""
-Global utilities package.
-
-Exports commonly used utility functions for the entire application.
-"""
 from tuned.utils.responses import (
     success_response,
     error_response,

@@ -2,7 +2,6 @@ from flask import current_app, render_template
 from flask_mail import Mail, Message
 from tuned.models.audit import EmailLog
 from tuned.extensions import db, mail
-from tuned.tasks.email import send_email_task
 from typing import List, Optional, Dict, Any
 import logging
 
@@ -50,10 +49,11 @@ def send_email(
 
 
 def send_async_email(to: str | List[str], subject: str, template: str, sender: Optional[str]=None, **context: Any) -> None:
+    from tuned.tasks.email import send_transactional_email
     if sender is None:
-        send_email_task.delay(to, subject, template, context)
+        send_transactional_email.delay(to, subject, template, context)
     else:
-        send_email_task.delay(to, subject, template, sender, context)
+        send_transactional_email.delay(to, subject, template, sender, context)
 
 
 def send_bulk_emails(

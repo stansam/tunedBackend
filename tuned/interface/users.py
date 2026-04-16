@@ -1,3 +1,4 @@
+from tuned.dtos.base import BaseRequestDTO
 from tuned.repository.exceptions import AlreadyExists, DatabaseError, InvalidCredentials
 from tuned.interface.audit import audit_service
 from tuned.redis_client import redis_client
@@ -151,19 +152,20 @@ class UserService:
             logger.error(f"Database error while fetching user with email/username.")
             raise DatabaseError(f"Database error while fetching user with email/username.")
 
-    def create_user(self, data: CreateUserDTO) -> dict:
+    def create_user(self, data: CreateUserDTO, locale: BaseRequestDTO ) -> dict:
         try:
+
             created_user = self._repo.create_user(data)
 
             audit_dto = ActivityLogCreateDTO(
                 user_id=str(created_user.id),
-                action='user_register',
+                action=Variables.USER_REGISTER_ACTION,
                 entity_type=Variables.USER_ENTITY_TYPE,
                 entity_id=str(created_user.id),
                 before=None,
                 after=created_user,
-                ip_address=data.ip_address,
-                user_agent=data.user_agent,
+                ip_address=locale.ip_address,
+                user_agent=locale.user_agent,
                 created_by=str(created_user.id),
             )
             self._log_user.log(audit_dto)
@@ -222,7 +224,7 @@ class UserService:
 
             audit_dto = ActivityLogCreateDTO(
                 user_id=str(verified_user.id),
-                action='email_verified',
+                action=Variables.EMAIL_VERIFICATION_ACTION,
                 entity_type=Variables.USER_ENTITY_TYPE,
                 entity_id=str(verified_user.id),
                 before=None,

@@ -1,5 +1,4 @@
 from flask import current_app
-from tuned.utils.email import send_async_email
 from tuned.core.logging import get_logger
 from tuned.models import User
 from tuned.utils.auth import get_user_ip
@@ -98,6 +97,8 @@ def send_welcome_email_delayed(user: User) -> None:
 
 
 def send_welcome_email(user: User) -> None:
+    from tuned.utils.email import send_async_email
+
     frontend_url = current_app.config.get('FRONTEND_URL', 'http://localhost:3000')
     dashboard_url = f"{frontend_url}/dashboard"
     support_url = f"{frontend_url}/support"
@@ -117,6 +118,7 @@ def send_welcome_email(user: User) -> None:
 
 
 def send_password_reset_email(user: User, reset_token: str) -> None:    
+    from tuned.utils.email import send_async_email
     frontend_url = current_app.config.get('FRONTEND_URL', 'http://localhost:3000')
     reset_url = f"{frontend_url}/reset-password?token={reset_token}"
     
@@ -143,6 +145,7 @@ def send_password_reset_email(user: User, reset_token: str) -> None:
 
 
 def send_password_changed_email(user: User) -> None:
+    from tuned.utils.email import send_async_email
     send_async_email(
         to=user.email,
         subject='Password Changed - Tuned Essays',
@@ -200,6 +203,7 @@ def send_payment_reminder_email(order):
 
 
 def send_revision_request_email_admin(order, revision_notes: str) -> None:
+    from tuned.utils.email import send_async_email
     try:
         subject = f'Revision Request - {order.order_number}'
         html_body = f"""
@@ -219,6 +223,7 @@ def send_revision_request_email_admin(order, revision_notes: str) -> None:
 
 
 def send_deadline_extension_request_email_admin(order, hours: int, reason: str) -> None:
+    from tuned.utils.email import send_async_email
     try:
         subject = f'Deadline Extension Request - {order.order_number}'
         html_body = f"""
@@ -240,6 +245,7 @@ def send_deadline_extension_request_email_admin(order, hours: int, reason: str) 
 
 
 def send_order_created_email_client(order) -> None:
+    from tuned.utils.email import send_async_email
     try:
         subject = f'Order Confirmation - {order.order_number}'
         html_body = f"""
@@ -257,6 +263,7 @@ def send_order_created_email_client(order) -> None:
 
 
 def send_order_created_email_admin(order) -> None:
+    from tuned.utils.email import send_async_email
     try:
         subject = f'New Order - {order.order_number}'
         html_body = f"""

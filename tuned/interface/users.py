@@ -78,7 +78,10 @@ class UserService:
             user_agent=credentials.user_agent,
             created_by=str(after.id),
         )
-        self._log_user.log(audit_dto)
+        try:
+            self._log_user.log(audit_dto)
+        except Exception as exc:
+            logger.error(f"[audit] Failed to log user activity for {after.id}: {exc!r}")
 
     def login_user(self, credentials: LoginRequestDTO) -> dict:
         try:
@@ -244,19 +247,25 @@ class UserService:
                 user_agent=dto.user_agent,
                 created_by=str(verified_user.id),
             )
-            self._log_user.log(audit_dto)
+            try:
+                self._log_user.log(audit_dto)
+            except Exception as audit_exc:
+                logger.error(f"[audit] Failed to log email verification for {verified_user.id}: {audit_exc!r}")
 
-            event_bus.emit('user.email_verified', {
-                'user_id': verified_user.id
-            })
+            try:
+                event_bus.emit('user.email_verified', {
+                    'user_id': verified_user.id
+                })
+            except Exception as event_exc:
+                logger.error(f"[events] Failed to emit user.email_verified for {verified_user.id}: {event_exc!r}")
 
             logger.info(f'Email verified for user {verified_user.id}')
-            return True, 'ok'
+            return True, Variables.OK
 
         except NotFound:
-            return False, 'not_found'
+            return False, Variables.NOT_FOUND
         except AlreadyExists:
-            return False, 'already_verified'
+            return False, Variables.ALREADY_VERIFIED
         except ValueError as exc:
             reason = str(exc)  # 'expired', 'invalid', 'no_token'
             return False, reason

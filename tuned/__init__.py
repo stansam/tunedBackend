@@ -42,9 +42,9 @@ def create_app(config_name=None):
     
     socketio.init_app(app, **socketio_kwargs)
     
-    from tuned.celery_app import make_celery
-    celery = make_celery(flask_app=app)
-    app.celery = celery
+    from tuned.celery_app import celery_app, init_celery
+    init_celery(app)
+    app.celery = celery_app
     
     login_manager.login_view = 'auth.login'
     login_manager.login_message = 'Please log in to access this page.'

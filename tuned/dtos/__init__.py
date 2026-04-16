@@ -1,4 +1,7 @@
-from tuned.dtos.user import CreateUserDTO, LoginRequestDTO, UserResponseDTO, UpdateUserDTO
+from tuned.dtos.user import (
+    CreateUserDTO, LoginRequestDTO, UserResponseDTO, UpdateUserDTO,
+    EmailVerificationResendDTO, EmailVerifyConfirmDTO,
+)
 from tuned.dtos.blogs import(
     BlogCategoryDTO, BlogCategoryResponseDTO, BlogPostDTO, BlogPostResponseDTO, BlogCommentDTO,
     BlogCommentResponseDTO, CommentReactionDTO, CommentReactionResponseDTO, BlogPostListResponseDTO, BlogPostListRequestDTO, PostByCategoryRequestDTO

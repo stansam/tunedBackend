@@ -1,9 +1,13 @@
-from sqlalchemy.orm import Session
 from tuned.models import User
 from tuned.dtos import CreateUserDTO, UpdateUserDTO
 from tuned.repository.user.create import CreateUser
 from tuned.repository.user.get import GetUserByEmail, GetUserByID, GetAdminUser, GetUserByUsername
 from tuned.repository.user.update import UpdateUser
+from tuned.repository.user.email_verification import (
+    GenerateAndStoreVerificationToken,
+    ConfirmEmailVerification,
+    GetUserForResend,
+)
 from tuned.extensions import db
 import string
 class UserRepository: 
@@ -23,3 +27,12 @@ class UserRepository:
         return UpdateUser(self.db.session).execute(updates)
     def increment_failed_login_attempts(self, user_id: string) -> int:
         return UpdateUser(self.db.session).increment_failed_login_attempts(user_id)
+
+    def generate_verification_token(self, user_id: str) -> tuple[User, str]:
+        return GenerateAndStoreVerificationToken(self.db.session).execute(user_id)
+
+    def confirm_email_verification(self, user_id: str, raw_token: str) -> User:
+        return ConfirmEmailVerification(self.db.session).execute(user_id, raw_token)
+
+    def get_user_for_resend(self, email: str) -> User | None:
+        return GetUserForResend(self.db.session).execute(email)

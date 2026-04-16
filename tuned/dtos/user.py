@@ -1,5 +1,5 @@
 from datetime import timezone, datetime
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Optional
 from tuned.models.enums import GenderEnum
 from tuned.dtos.base import BaseRequestDTO
@@ -44,10 +44,6 @@ class UserResponseDTO:
             session_created_at=datetime.now(timezone.utc).isoformat(),
         )
 
-from dataclasses import dataclass, field
-from typing import Optional
-from datetime import datetime
-
 @dataclass
 class UpdateUserDTO:
     user_id: str
@@ -71,3 +67,14 @@ class UpdateUserDTO:
             k: v for k, v in self.__dict__.items()
             if k != "user_id" and v is not None
         }
+
+
+@dataclass
+class EmailVerificationResendDTO(BaseRequestDTO):
+    email: str
+
+
+@dataclass
+class EmailVerifyConfirmDTO(BaseRequestDTO):
+    uid: str
+    token: str

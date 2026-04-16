@@ -1,23 +1,33 @@
 from marshmallow import Schema, fields, validates, ValidationError
 from tuned.utils.validators import validate_email
 
-class EmailVerificationSchema(Schema):
-    """Schema for email verification."""
-    token = fields.Str(required=True)
-    
-    @validates('token')
-    def validate_token_field(self, value, **kwargs):
-        """Basic token validation."""
-        if not value or not value.strip():
-            raise ValidationError('Verification token is required')
 
+class EmailVerifyResendSchema(Schema):
+    email = fields.Email(required=True, error_messages={
+        'required': 'Email address is required.',
+        'invalid': 'Please provide a valid email address.',
+    })
 
-class ResendVerificationSchema(Schema):
-    """Schema for resending verification email."""
-    email = fields.Email(required=True)
-    
     @validates('email')
-    def validate_email_field(self, value, **kwargs):
-        """Validate email format."""
+    def validate_email_field(self, value: str, **kwargs) -> None:
         if not validate_email(value):
-            raise ValidationError('Invalid email format')
+            raise ValidationError('Please provide a valid email address.')
+
+
+class EmailVerifyConfirmSchema(Schema):
+    uid = fields.Str(required=True, error_messages={
+        'required': 'User identifier (uid) is required.',
+    })
+    token = fields.Str(required=True, error_messages={
+        'required': 'Verification token is required.',
+    })
+
+    @validates('uid')
+    def validate_uid(self, value: str, **kwargs) -> None:
+        if not value or len(value.strip()) == 0:
+            raise ValidationError('User identifier must not be empty.')
+
+    @validates('token')
+    def validate_token(self, value: str, **kwargs) -> None:
+        if len(value) < 40:
+            raise ValidationError('Token appears to be malformed.')

@@ -1,12 +1,17 @@
 from tuned.repository.exceptions import AlreadyExists, DatabaseError, InvalidCredentials
 from tuned.interface.audit import audit_service
+from tuned.redis_client import redis_client
+from tuned.services.email_service import send_verification_email
 from dataclasses import asdict
 from typing import Optional
 from datetime import datetime, timezone, timedelta
 from flask_login import login_user
 from tuned.repository import repositories
-from tuned.dtos import CreateUserDTO, LoginRequestDTO, UserResponseDTO, UpdateUserDTO, ActivityLogCreateDTO
-from tuned.repository.exceptions import NotFound
+from tuned.dtos import (
+    CreateUserDTO, LoginRequestDTO, UserResponseDTO, UpdateUserDTO,
+    ActivityLogCreateDTO, EmailVerificationResendDTO, EmailVerifyConfirmDTO,
+)
+from tuned.repository.exceptions import NotFound, AlreadyExists
 from tuned.core.logging import get_logger
 from tuned.models import User
 from tuned.utils.validators import validate_email, validate_username
@@ -148,21 +153,8 @@ class UserService:
 
     def create_user(self, data: CreateUserDTO) -> dict:
         try:
-            # _repo.create_user returns the SQLAlchemy User model instance,
-            # which is what flask_login.login_user() requires.
             created_user = self._repo.create_user(data)
 
-            # Establish a session immediately after registration so the user
-            # does not need a separate login request.  remember=False means
-            # the session cookie will expire at browser close (appropriate for
-            # a new registration — the user can choose "remember me" on next login).
-            login_user(created_user, remember=False)
-
-            user_dto = UserResponseDTO.from_model(created_user)
-            user_dict = asdict(user_dto)
-
-            # Audit the registration event using the shared activity-log helper.
-            # This mirrors the pattern used in login_user() above.
             audit_dto = ActivityLogCreateDTO(
                 user_id=str(created_user.id),
                 action='user_register',
@@ -170,17 +162,24 @@ class UserService:
                 entity_id=str(created_user.id),
                 before=None,
                 after=created_user,
-                ip_address=None,  # IP is not available in the interface layer
-                user_agent=None,
+                ip_address=data.ip_address,
+                user_agent=data.user_agent,
                 created_by=str(created_user.id),
             )
             self._log_user.log(audit_dto)
+            try:
+                _user, raw_token = self._repo.generate_verification_token(str(created_user.id))
+                send_verification_email(_user, raw_token)
+            except Exception as token_exc:
+                logger.error(
+                    f'[create_user] Token/email step failed for user {created_user.id}: {token_exc!r}'
+                )
 
             logger.info(
-                f'User {created_user.email} (id={created_user.id}) '
-                f'registered and logged in successfully'
+                f'User {created_user.email} (id={created_user.id}) registered — '
+                f'verification email dispatched'
             )
-            return user_dict
+            return {'email': created_user.email}
 
         except AlreadyExists:
             logger.error(f"User with email {data.email} already exists.")
@@ -188,6 +187,66 @@ class UserService:
         except DatabaseError:
             logger.error(f"Database error while creating user with email {data.email}.")
             raise DatabaseError(f"Database error while creating user with email {data.email}.")
+
+    def resend_verification_email(self, dto: EmailVerificationResendDTO) -> bool:
+        cooldown_key = f'email_resend_cooldown:{dto.email}'
+        if redis_client.exists(cooldown_key):
+            ttl: int = redis_client.ttl(cooldown_key)
+            raise ValueError(f'rate_limited:{ttl}')
+
+        user: User | None = self._repo.get_user_for_resend(dto.email)
+        if user is None:
+            redis_client.setex(cooldown_key, 60, '1')
+            return True
+
+        if user.email_verified:
+            return True
+
+        try:
+            _user, raw_token = self._repo.generate_verification_token(str(user.id))
+            send_verification_email(_user, raw_token)
+        except AlreadyExists:
+            return True
+        except Exception as exc:
+            logger.error(f'[resend] Token/email error for {dto.email}: {exc!r}')
+            redis_client.setex(cooldown_key, 60, '1')
+            raise
+
+        redis_client.setex(cooldown_key, 60, '1')
+        logger.info(f'[resend] Verification email re-queued for {dto.email}')
+        return True
+
+    def confirm_email_verification(self, dto: EmailVerifyConfirmDTO) -> tuple[bool, str]:
+        try:
+            verified_user = self._repo.confirm_email_verification(dto.uid, dto.token)
+
+            audit_dto = ActivityLogCreateDTO(
+                user_id=str(verified_user.id),
+                action='email_verified',
+                entity_type=Variables.USER_ENTITY_TYPE,
+                entity_id=str(verified_user.id),
+                before=None,
+                after=verified_user,
+                ip_address=dto.ip_address,
+                user_agent=dto.user_agent,
+                created_by=str(verified_user.id),
+            )
+            self._log_user.log(audit_dto)
+
+            logger.info(f'Email verified for user {verified_user.id}')
+            return True, 'ok'
+
+        except NotFound:
+            return False, 'not_found'
+        except AlreadyExists:
+            return False, 'already_verified'
+        except ValueError as exc:
+            reason = str(exc)  # 'expired', 'invalid', 'no_token'
+            return False, reason
+        except DatabaseError as exc:
+            logger.error(f'[confirm] DB error for uid {dto.uid}: {exc!r}')
+            raise
+
     
     def get_user_by_email(self, email) -> User:
         try:

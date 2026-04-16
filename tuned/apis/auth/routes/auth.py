@@ -9,6 +9,7 @@ from tuned.utils.auth import (
 )
 from tuned.utils.decorators import rate_limit
 from tuned.core.exceptions import InvalidCredentials, NotFound
+from tuned.repository.exceptions import AlreadyExists
 from tuned.core.logging import get_logger
 from tuned.apis.auth.schemas.login import LoginSchema
 from tuned.apis.auth.schemas.registration import RegistrationSchema
@@ -77,15 +78,6 @@ class Logout(MethodView):
 
             logout_user()
             session.clear()
-
-            # Build the success response, then explicitly delete the session
-            # cookie from the browser so the client immediately loses the
-            # session —-  not just on next restart or natural expiry.
-            #
-            # Flask's logout_user() invalidates the server-side session, but
-            # the Set-Cookie header with Max-Age=0 is the only reliable way
-            # to tell the browser to remove the cookie immediately on all
-            # browsers (Safari in particular caches cookies aggressively).
             resp_body, status_code = success_response('Logged out successfully')
             response = make_response(resp_body, status_code)
 
@@ -106,7 +98,6 @@ class Logout(MethodView):
 
 
 class Register(MethodView):
-    # Stricter rate limit for registration — prevents automated account creation.
     decorators = [rate_limit(max_requests=3, window=300)]
 
     def post(self):
@@ -125,14 +116,14 @@ class Register(MethodView):
 
         try:
             user_dto = CreateUserDTO(**data, ip_address=get_user_ip(), user_agent=get_user_agent())
-            # create_user() now calls flask_login.login_user() internally after
-            # creating the account, establishing a session immediately —- the
-            # user is authenticated without needing a separate login request.
-            user_dict = _interface.create_user(user_dto)
+            result = _interface.create_user(user_dto)
 
-            logger.info(f'User {user_dict.get("email")} registered successfully')
-            return success_response(user_dict)
+            logger.info(f'User {result.get("email")} registered successfully')
+            return success_response(result)
 
+        except AlreadyExists:
+            logger.error(f'User {data.get("email")} already exists')
+            return error_response('An account with that email or username already exists.', status=409)
         except Exception as e:
             logger.error(f'Registration error: {str(e)}')
-            return error_response('Registration failed', status=500)
+            return error_response('Registration failed. Please try again.', status=500)

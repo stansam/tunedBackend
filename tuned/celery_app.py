@@ -1,75 +1,51 @@
-"""
-Celery configuration and application instance.
+from __future__ import annotations
 
-This module initializes Celery for background task processing.
-Celery workers handle:
-- Asynchronous email sending
-- Delayed welcome emails (15-30 min after verification)
-- Other background tasks
-
-Usage:
-    # Start a Celery worker
-    celery -A tuned.celery_app worker --loglevel=info
-    
-    # Start Celery beat (scheduler for periodic tasks)
-    celery -A tuned.celery_app beat --loglevel=info
-"""
 from celery import Celery
 from tuned.core.config import config
 import os
 
 
-def make_celery(app=None):
-    """
-    Create and configure Celery instance.
-    
-    Args:
-        app: Flask application instance (optional)
-        
-    Returns:
-        Celery: Configured Celery instance
-    """
-    # Get config name from environment
+def make_celery(flask_app=None) -> Celery:
     config_name = os.environ.get('FLASK_ENV', 'development')
     flask_config = config[config_name]
-    
-    # Create Celery instance
+
     celery = Celery(
         'tuned',
         broker=flask_config.CELERY_BROKER_URL,
-        backend=flask_config.CELERY_RESULT_BACKEND
+        backend=flask_config.CELERY_RESULT_BACKEND,
+        include=[
+            'tuned.tasks.email',
+            'tuned.tasks.order_tasks',
+        ],
     )
-    
-    # Update Celery config from Flask config
+
     celery.conf.update(
         task_serializer=flask_config.CELERY_TASK_SERIALIZER,
         result_serializer=flask_config.CELERY_RESULT_SERIALIZER,
         accept_content=flask_config.CELERY_ACCEPT_CONTENT,
         timezone=flask_config.CELERY_TIMEZONE,
         enable_utc=flask_config.CELERY_ENABLE_UTC,
+        task_acks_late=True,
+        task_reject_on_worker_lost=True,
+        task_routes={
+            'tuned.tasks.email.*': {'queue': 'email'},
+            'tuned.tasks.order_tasks.*': {'queue': 'orders'},
+        },
+        broker_transport_options={
+            'visibility_timeout': 3600,  # 1 hour
+        },
     )
-    
-    # If Flask app provided, create app context for tasks
-    if app:
+
+    if flask_app is not None:
         class ContextTask(celery.Task):
-            """
-            Make celery tasks work with Flask app context.
-            Ensures database and other Flask extensions are available in tasks.
-            """
+            _flask_app = flask_app
+
             def __call__(self, *args, **kwargs):
-                with app.app_context():
+                with self._flask_app.app_context():
                     return self.run(*args, **kwargs)
-        
+
         celery.Task = ContextTask
-    
+
     return celery
 
-
-# Create Celery instance
-# This will be properly configured when Flask app is created
 celery_app = make_celery()
-
-# Import tasks to ensure they are registered with Celery
-# This must be done after celery_app is initialized to avoid circular imports
-import tuned.tasks.email
-import tuned.tasks.order_tasks

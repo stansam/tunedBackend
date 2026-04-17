@@ -14,9 +14,10 @@ class ContextTask(Task):
         
         global flask_app_instance
         if flask_app_instance is None:
-            from tuned import create_app
-            flask_env = os.environ.get('FLASK_ENV', 'development')
-            flask_app_instance = create_app(flask_env)
+            # from tuned import create_app
+            # flask_env = os.environ.get('FLASK_ENV', 'development')
+            # flask_app_instance = create_app(flask_env)
+            raise RuntimeError("Celery app not initialized with Flask app")
             
         with flask_app_instance.app_context():
             return self.run(*args, **kwargs)

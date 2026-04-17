@@ -42,9 +42,11 @@ def create_app(config_name=None):
     
     socketio.init_app(app, **socketio_kwargs)
     
-    from tuned.celery_app import celery_app, init_celery
-    init_celery(app)
-    app.celery = celery_app
+    # from tuned.celery_app import celery_app, init_celery
+    # from tuned.core.events.bootstrap import init_events
+    # init_celery(app)
+    # # init_events()
+    # app.celery = celery_app
     
     login_manager.login_view = 'auth.login'
     login_manager.login_message = 'Please log in to access this page.'
@@ -96,11 +98,11 @@ def create_app(config_name=None):
     
     register_shell_context(app)
 
-    try:
-        from tuned.core.event_registry import register_all_handlers
-        register_all_handlers()
-    except ImportError:
-        pass
+    # try:
+    #     from tuned.core.event_registry import register_all_handlers
+    #     register_all_handlers()
+    # except ImportError:
+    #     pass
 
     return app
 

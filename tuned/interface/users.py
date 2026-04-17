@@ -12,7 +12,7 @@ from tuned.dtos import (
     CreateUserDTO, LoginRequestDTO, UserResponseDTO, UpdateUserDTO,
     ActivityLogCreateDTO, EmailVerificationResendDTO, EmailVerifyConfirmDTO,
 )
-from tuned.core.events import event_bus
+from tuned.core.events import get_event_bus
 from tuned.repository.exceptions import NotFound, AlreadyExists
 from tuned.core.logging import get_logger
 from tuned.models import User
@@ -23,7 +23,7 @@ import logging
 import math
 
 logger: logging.Logger = get_logger(__name__)
-
+event_bus = get_event_bus()
 class UserService:
     def __init__(self):
         self._repo = repositories.user

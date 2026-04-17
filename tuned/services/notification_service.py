@@ -61,12 +61,11 @@ def create_notification(
         return None
     
     from tuned.tasks.notifications import create_in_app_notification
-    # Queue task for real-time insert and push
     create_in_app_notification.delay(
         user_id=str(user_id),
         title=title,
         message=message,
-        notification_type=type.value if hasattr(type, 'value') else str(type),
+        notification_type=type,
         action_url=link,
         category=category
     )

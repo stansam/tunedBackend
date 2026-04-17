@@ -41,7 +41,7 @@ def _on_email_verified(payload: dict) -> None:
         user_id=user_id,
         title='Email Verified',
         message='Your email has been verified. Welcome to TunedEssays!',
-        notification_type=NotificationType.SUCCESS.value,
+        notification_type=NotificationType.SUCCESS.value.upper(),
     )
 
 def _on_password_changed(payload: dict) -> None:
@@ -51,7 +51,7 @@ def _on_password_changed(payload: dict) -> None:
         user_id=user_id,
         title='Password Changed',
         message="Your password has been successfully updated. If this wasn't you, please contact support immediately.",
-        notification_type=NotificationType.WARNING.value,
+        notification_type=NotificationType.WARNING.value.upper(),
     )
 
 def register_all_handlers() -> None:

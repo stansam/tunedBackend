@@ -1,12 +1,12 @@
 from dataclasses import dataclass
 from typing import Optional
-
+from tuned.models import NotificationType
 @dataclass
 class NotificationCreateDTO:
     user_id: str
     title: str
     message: str
-    notification_type: str = 'info'
+    notification_type: NotificationType = NotificationType.INFO
     link: Optional[str] = None
     category: str = 'general'
 

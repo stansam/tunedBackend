@@ -1,3 +1,4 @@
+from tuned.models import NotificationType
 from tuned.celery_app import celery_app
 from celery.utils.log import get_task_logger
 from typing import Optional
@@ -16,7 +17,7 @@ def create_in_app_notification(
     user_id: str,
     title: str,
     message: str,
-    notification_type: str = 'info',
+    notification_type: NotificationType = NotificationType.INFO,
     action_url: Optional[str] = None,
     category: str = 'general',
 ) -> None:

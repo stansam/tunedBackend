@@ -2,7 +2,6 @@ from tuned.dtos.base import BaseRequestDTO
 from tuned.repository.exceptions import AlreadyExists, DatabaseError, InvalidCredentials
 from tuned.interface.audit import audit_service
 from tuned.redis_client import redis_client
-# removed synchronous email import to enforce decoupled architecture via celery Queue
 from dataclasses import asdict
 from typing import Optional
 from datetime import datetime, timezone, timedelta

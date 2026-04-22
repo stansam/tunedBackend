@@ -45,7 +45,7 @@ def create_in_app_notification(
                 'type': notification_type,
                 'link': action_url,
                 'is_read': False,
-                'created_at': notif.created_at.isoformat() if notif.created_at else None
+                'created_at': notif.created_at
             },
             room=f'user_{user_id}',
         )
@@ -54,3 +54,8 @@ def create_in_app_notification(
     except Exception as exc:
         logger.error(f"[notif] Error creating notification for user {user_id}: {exc!r}")
         raise self.retry(exc=exc, countdown=30)
+
+@celery_app.task
+def test_flask_context():
+    from flask import current_app
+    return current_app.config.get("APP_VERSION")

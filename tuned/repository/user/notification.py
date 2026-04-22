@@ -4,7 +4,7 @@ from tuned.models.communication import Notification
 from tuned.dtos.notification import NotificationCreateDTO, NotificationResponseDTO
 from tuned.repository.exceptions import DatabaseError, NotFound
 from typing import List
-
+from datetime import datetime, timezone
 class NotificationRepository:
     def __init__(self, session: Session) -> None:
         self.session = session
@@ -17,7 +17,10 @@ class NotificationRepository:
                 message=data.message,
                 type=data.notification_type,
                 link=data.link,
-                is_read=False
+                is_read=False,
+                created_at=datetime.now(timezone.utc),
+                created_by=data.user_id
+
             )
             self.session.add(notification)
             self.session.commit()

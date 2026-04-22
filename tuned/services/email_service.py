@@ -1,36 +1,15 @@
-"""
-Email service module.
-
-High-level email operations for authentication workflows.
-Integrates with email utility functions and Celery for async sending.
-"""
 from flask import current_app
-from tuned.utils.email import send_async_email
-from tuned.models.user import User
+from tuned.core.logging import get_logger
+from tuned.models import User
+from tuned.utils.auth import get_user_ip
 from datetime import datetime
 import logging
+import random
+
+logger: logging.Logger = get_logger(__name__)
 
 
-logger = logging.getLogger(__name__)
-
-
-def should_send_email(user_id: int, email_type: str = 'general') -> bool:
-    """
-    Check if an email should be sent based on user preferences.
-    
-    Critical emails (order_confirmations, payment_receipts, account_security)
-    are ALWAYS sent regardless of preferences for compliance and security.
-    
-    Args:
-        user_id: User ID to check preferences for
-        email_type: Type of email (newsletter, promotional, product_updates, etc.)
-        
-    Returns:
-        bool: True if email should be sent, False otherwise
-    """
-    from tuned.models.user import User
-    
-    # Critical emails that MUST always be sent
+def should_send_email(user_id: int, email_type: str = 'general') -> bool:    
     critical_emails = [
         'order_confirmation',
         'payment_receipt',
@@ -39,35 +18,30 @@ def should_send_email(user_id: int, email_type: str = 'general') -> bool:
         'email_verification'
     ]
     
-    # Always send critical emails
     if email_type in critical_emails:
         logger.debug(f"Critical email type '{email_type}' - always sending")
         return True
     
     user = User.query.get(user_id)
     
-    # Default to True if user not found or preferences don't exist (backward compatible)
     if not user or not user.email_preferences:
         logger.debug(f"No email preferences found for user {user_id}, defaulting to send")
         return True
     
     prefs = user.email_preferences
     
-    # Check if email notifications are globally enabled
     if not user.notification_preferences or not user.notification_preferences.email_notifications:
         logger.debug(f"Email notifications globally disabled for user {user_id}")
         return False
     
-    # Map email type to preference field
     type_mapping = {
         'newsletter': prefs.newsletter,
         'promotional': prefs.promotional_emails,
         'product_updates': prefs.product_updates,
         'marketing': prefs.promotional_emails,
-        'general': True  # General emails always sent
+        'general': True
     }
     
-    # Check type-specific preference
     should_send = type_mapping.get(email_type, True)
     
     if not should_send:
@@ -77,69 +51,50 @@ def should_send_email(user_id: int, email_type: str = 'general') -> bool:
 
 
 
-def send_verification_email(user: User, verification_token: str) -> None:
-    """
-    Send email verification link to user.
-    
-    Args:
-        user: User model instance
-        verification_token: Verification token from tokens utility
-    """
-    # Build verification URL
+def send_verification_email(user: User, raw_token: str) -> None:
+    from tuned.tasks.email import send_transactional_email
+
     frontend_url = current_app.config.get('FRONTEND_URL', 'http://localhost:3000')
-    verification_url = f"{frontend_url}/verify-email?token={verification_token}"
-    
-    # Send email asynchronously
-    send_async_email(
-        to=user.email,
-        subject='Verify Your Email - Tuned Essays',
-        template='client/verify_email',
-        sender="no-reply@tunedessays.com",
-        recipient_name=user.get_name(),
-        verification_url=verification_url,
-        support_email=current_app.config.get('MAIL_DEFAULT_SENDER'),
-        company_name='Tuned Essays',
-        current_year=datetime.now().year
+    verification_url = (
+        f"{frontend_url}/auth/register/verify-email/confirm"
+        f"?uid={user.id}&token={raw_token}"
     )
-    
-    logger.info(f"Verification email queued for user {user.id}")
+    expires_hours = current_app.config.get('EMAIL_VERIFICATION_TOKEN_EXPIRES_HOURS', 24)
 
+    try:
+        send_transactional_email.apply_async(
+            kwargs={
+                'to': user.email,
+                'subject': 'Verify Your Email — TunedEssays',
+                'template': 'verify_email',
+                'context': {
+                    'recipient_name': user.get_name(),
+                    'verification_url': verification_url,
+                    'support_email': current_app.config.get(
+                        'MAIL_DEFAULT_SENDER', 'info@tunedessays.com'
+                    ),
+                    'current_year': datetime.now().year,
+                    'expires_hours': expires_hours,
+                },
+                'sender': 'no-reply@tunedessays.com',
+            },
+            queue='email',
+        )
+        logger.info(f"[email_service] Verification email queued for user {user.id}")
 
-def send_welcome_email_delayed(user: User) -> None:
-    """
-    Send welcome email with delay (15-30 minutes after email verification).
-    
-    Uses Celery countdown to delay execution.
-    
-    Args:
-        user: User model instance
-    """
-    from tuned.celery_app import celery_app
-    import random
-    from tuned.tasks.email import send_welcome_task
-    
-    # Random delay between 15-30 minutes (900-1800 seconds)
-    delay_seconds = random.randint(900, 1800)
-    
-    # Queue the task with delay
-    send_welcome_task.apply_async(args=[user.id], countdown=delay_seconds)
-    
-    logger.info(f"Welcome email scheduled for user {user.id} with {delay_seconds}s delay")
+    except Exception as exc:
+        logger.error(
+            f"[email_service] Failed to queue verification email for user {user.id}: {exc!r}"
+        )
 
 
 def send_welcome_email(user: User) -> None:
-    """
-    Send welcome email to user (called by delayed task).
-    
-    Args:
-        user: User model instance
-    """
-    # Build dashboard URL
+    from tuned.utils.email import send_async_email
+
     frontend_url = current_app.config.get('FRONTEND_URL', 'http://localhost:3000')
     dashboard_url = f"{frontend_url}/dashboard"
     support_url = f"{frontend_url}/support"
     
-    # Send email asynchronously
     send_async_email(
         to=user.email,
         subject='Welcome to Tuned Essays!',
@@ -154,26 +109,14 @@ def send_welcome_email(user: User) -> None:
     logger.info(f"Welcome email sent to user {user.id}")
 
 
-def send_password_reset_email(user: User, reset_token: str) -> None:
-    """
-    Send password reset link to user.
-    
-    Args:
-        user: User model instance
-        reset_token: Password reset token from tokens utility
-    """
-    from flask import request
-    from tuned.utils.auth import get_user_ip
-    
-    # Build reset URL
+def send_password_reset_email(user: User, reset_token: str) -> None:    
+    from tuned.utils.email import send_async_email
     frontend_url = current_app.config.get('FRONTEND_URL', 'http://localhost:3000')
     reset_url = f"{frontend_url}/reset-password?token={reset_token}"
     
-    # Get request info for security display
     request_ip = get_user_ip()
     request_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S UTC')
     
-    # Send email asynchronously
     try:
         send_async_email(
             to=user.email,
@@ -194,22 +137,13 @@ def send_password_reset_email(user: User, reset_token: str) -> None:
 
 
 def send_password_changed_email(user: User) -> None:
-    """
-    Send confirmation email after password change.
-    
-    Args:
-        user: User model instance
-    """
-    # For now, we can reuse a simple email or create a dedicated template
-    # This is a simple confirmation, no action needed
     from tuned.utils.email import send_async_email
-    
     send_async_email(
         to=user.email,
         subject='Password Changed - Tuned Essays',
-        template='client/verify_email',  # Reuse template structure
+        template='client/verify_email',
         recipient_name=user.get_name(),
-        verification_url='#',  # No action needed
+        verification_url='#',
         support_email=current_app.config.get('MAIL_DEFAULT_SENDER'),
         current_year=datetime.now().year
     )
@@ -220,35 +154,30 @@ def send_password_changed_email(user: User) -> None:
 def send_receipt_email(payment, email_address):
     """Send payment receipt via email."""
     logger.info(f'Sending receipt email for payment {payment.id} to {email_address}')
-    # Stubimplementation - in production, send actual email
     pass
 
 
 def send_refund_request_email_admin(payment, refund_amount, reason):
     """Send refund request notification to admin/finance team."""
     logger.info(f'Sending refund request email for payment {payment.id}: ${refund_amount:.2f}')
-    # Stub implementation
     pass
 
 
 def send_password_changed_email(user):
     """Send password change confirmation email."""
     logger.info(f'Sending password changed email to user {user.id}')
-    # Stub implementation
     pass
 
 
 def send_email_change_confirmation(old_email, new_email, user_name):
     """Send email change confirmation to old email address."""
     logger.info(f'Sending email change confirmation: {old_email} -> {new_email}')
-    # Stub implementation
     pass
 
 
 def send_newsletter_welcome_email(email, name):
     """Send newsletter welcome email."""
     logger.info(f'Sending newsletter welcome to {email}')
-    # Stub implementation
     pass
 
 
@@ -256,19 +185,17 @@ def send_newsletter_goodbye_email(email, name):
     """Send newsletter unsubscribe confirmation."""
     """Newsletter Email:sender="newsletter@tunedessays.com"""
     logger.info(f'Sending newsletter goodbye to {email}')
-    # Stub implementation
     pass
 
 
 def send_payment_reminder_email(order):
     """Send payment reminder for unpaid order."""
     logger.info(f'Sending payment reminder for order {order.id}')
-    # Stub implementation
     pass
 
 
 def send_revision_request_email_admin(order, revision_notes: str) -> None:
-    """Send email to admins when client requests a revision."""
+    from tuned.utils.email import send_async_email
     try:
         subject = f'Revision Request - {order.order_number}'
         html_body = f"""
@@ -278,7 +205,6 @@ def send_revision_request_email_admin(order, revision_notes: str) -> None:
         <p>Revision Notes: {revision_notes}</p>
         <a href="{current_app.config.get('FRONTEND_URL', 'http://localhost:3000')}/admin/orders/{order.id}">View Order</a>
         """
-        from tuned.models.user import User
         admins = User.query.filter_by(is_admin=True, is_active=True).all()
         for admin in admins:
             send_async_email(to=admin.email, subject=subject, html_body=html_body)
@@ -289,7 +215,7 @@ def send_revision_request_email_admin(order, revision_notes: str) -> None:
 
 
 def send_deadline_extension_request_email_admin(order, hours: int, reason: str) -> None:
-    """Send email to admins when client requests deadline extension."""
+    from tuned.utils.email import send_async_email
     try:
         subject = f'Deadline Extension Request - {order.order_number}'
         html_body = f"""
@@ -301,7 +227,6 @@ def send_deadline_extension_request_email_admin(order, hours: int, reason: str) 
         <p>Reason: {reason}</p>
         <a href="{current_app.config.get('FRONTEND_URL', 'http://localhost:3000')}/admin/orders/{order.id}">View Order</a>
         """
-        from tuned.models.user import User
         admins = User.query.filter_by(is_admin=True, is_active=True).all()
         for admin in admins:
             send_async_email(to=admin.email, subject=subject, html_body=html_body)
@@ -312,7 +237,7 @@ def send_deadline_extension_request_email_admin(order, hours: int, reason: str) 
 
 
 def send_order_created_email_client(order) -> None:
-    """Send order confirmation email to client."""
+    from tuned.utils.email import send_async_email
     try:
         subject = f'Order Confirmation - {order.order_number}'
         html_body = f"""
@@ -330,7 +255,7 @@ def send_order_created_email_client(order) -> None:
 
 
 def send_order_created_email_admin(order) -> None:
-    """Send new order notification to admins."""
+    from tuned.utils.email import send_async_email
     try:
         subject = f'New Order - {order.order_number}'
         html_body = f"""
@@ -341,7 +266,6 @@ def send_order_created_email_admin(order) -> None:
         <p>Due Date: {order.due_date.strftime('%Y-%m-%d %H:%M:%S UTC')}</p>
         <a href="{current_app.config.get('FRONTEND_URL', 'http://localhost:3000')}/admin/orders/{order.id}">View Order</a>
         """
-        from tuned.models.user import User
         admins = User.query.filter_by(is_admin=True, is_active=True).all()
         for admin in admins:
             send_async_email(to=admin.email, subject=subject, html_body=html_body)

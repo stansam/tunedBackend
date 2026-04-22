@@ -20,6 +20,8 @@ class User(UserMixin, BaseModel):
     last_failed_login = db.Column(db.DateTime)
 
     email_verified = db.Column(db.Boolean, default=False)
+    email_verification_token = db.Column(db.String(128), nullable=True, index=True)
+    email_verification_token_expires_at = db.Column(db.DateTime(timezone=True), nullable=True)
     
     first_name = db.Column(db.String(100), nullable=False)
     last_name = db.Column(db.String(100), nullable=False)
@@ -57,15 +59,12 @@ class User(UserMixin, BaseModel):
         return ''.join(random.choices(string.ascii_uppercase + string.digits, k=10))
     
     def set_password(self, password):
-        """Set the password hash from the provided password."""
         self.password_hash = generate_password_hash(password)
 
     def check_password(self, password):
-        """Check if the provided password matches the stored hash."""
         return check_password_hash(self.password_hash, password)
 
     def get_name(self):
-        """Return full name if available, otherwise username."""
         if self.first_name and self.last_name:
             return f"{self.first_name} {self.last_name}"
         return self.username
@@ -84,11 +83,14 @@ class User(UserMixin, BaseModel):
         ).count()
     
     def get_profile_pic_url(self):
-        filename = self.profile_pic if self.profile_pic and self.profile_pic != 'default.png' else 'default.png'
+        # filename = self.profile_pic if self.profile_pic and self.profile_pic != 'default.png' else 'default.png'
     
-        if self.is_admin:
-            return url_for('admin.static', filename=f'assets/profile_pics/{filename}')
-        return url_for('client.static', filename=f'client/assets/profile_pics/{filename}')
+        # if self.is_admin:
+        #     return url_for('static', filename=f'assets/profile_pics/{filename}')
+        # return url_for('static', filename=f'client/assets/profile_pics/{filename}')
+        if self.gender == GenderEnum.FEMALE:
+            return url_for('static', filename='ladyDefault.png', _external=True)
+        return url_for('static', filename='manDefault.png', _external=True)
     
     def __repr__(self):
         return f'<User {self.username}>'

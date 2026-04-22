@@ -2,7 +2,7 @@ import os
 import logging
 from flask import Flask
 from tuned.core.config import config
-from tuned.core.logging import _configure_logging
+from tuned.core.logging import _configure_logging, get_logger
 
 def create_app(config_name=None):
     app = Flask(__name__)
@@ -11,7 +11,7 @@ def create_app(config_name=None):
         config_name = os.environ.get('FLASK_ENV', 'development')
     
     _configure_logging(config[config_name])
-    logger = logging.getLogger(__name__)
+    logger: logging.Logger = get_logger(__name__)
     logger.info(
         "Creating Flask app [env=%s version=%s]",
         config[config_name].FLASK_ENV,
@@ -42,6 +42,13 @@ def create_app(config_name=None):
     
     socketio.init_app(app, **socketio_kwargs)
     
+    from tuned.celery_app import celery_app, init_celery
+    from tuned.core.events.bootstrap import init_events
+    init_celery(app)
+    init_events()
+    app.celery = celery_app
+    app.extensions['celery'] = celery_app
+    
     login_manager.login_view = 'auth.login'
     login_manager.login_message = 'Please log in to access this page.'
     login_manager.session_protection = 'strong'
@@ -50,7 +57,8 @@ def create_app(config_name=None):
     def load_user(user_id):
         """Load user by ID for Flask-Login."""
         from tuned.models.user import User
-        return User.query.get(int(user_id))
+        from tuned.models.base import db
+        return db.session.query(User).filter(User.id == user_id).first()
     
     @jwt.token_in_blocklist_loader
     def check_if_token_revoked(jwt_header, jwt_payload):
@@ -60,13 +68,14 @@ def create_app(config_name=None):
         return is_token_blacklisted(jti)
     
     from tuned.apis import(
-        main_bp
-        # , auth_bp, client_bp, admin_bp 
+        main_bp, auth_bp, notifications_bp
+        # ,  client_bp, admin_bp 
     ) 
     from tuned.manage import manage_bp
     
     # app.register_blueprint(admin_bp, url_prefix='/api/admin')
-    # app.register_blueprint(auth_bp, url_prefix='/api/auth')
+    app.register_blueprint(auth_bp, url_prefix='/api')
+    app.register_blueprint(notifications_bp, url_prefix='/api/notifications')
     # app.register_blueprint(client_bp, url_prefix='/api/client')
     app.register_blueprint(manage_bp)
     
@@ -89,6 +98,8 @@ def create_app(config_name=None):
     register_error_handlers(app)
     
     register_shell_context(app)
+
+
 
     return app
 

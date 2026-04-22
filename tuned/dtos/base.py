@@ -28,3 +28,8 @@ class PaginationDTO:
             page=model.page,
             per_page=model.per_page,
         )
+
+@dataclass(kw_only=True)
+class BaseRequestDTO:
+    ip_address: Optional[str] = None
+    user_agent: Optional[str] = None

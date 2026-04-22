@@ -1,24 +1,16 @@
-"""
-Development server entry point.
+import eventlet
+eventlet.monkey_patch() 
 
-⚠️ WARNING: Do NOT use in production!
-For production, use wsgi.py with Gunicorn or uWSGI.
-
-Usage:
-    python app.py
-    
-or:
-    export FLASK_ENV=development
-    flask run
-"""
 from tuned import create_app
 from tuned.extensions import socketio
+# from tuned.core.events.bootstrap import init_events
+# from tuned.celery_app import init_celery
 
-# Create app instance
 app = create_app()
+# init_celery(app)
+# init_events()
 
 if __name__ == '__main__':
-    # Use socketio.run() instead of app.run() for WebSocket support
     socketio.run(
         app,
         debug=True,

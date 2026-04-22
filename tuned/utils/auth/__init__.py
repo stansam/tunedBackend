@@ -1,8 +1,3 @@
-"""
-Auth utilities package.
-
-Exports auth-specific utility functions.
-"""
 from tuned.utils.auth.password import (
     hash_password,
     verify_password,
@@ -12,13 +7,9 @@ from tuned.utils.auth.password import (
 )
 
 from tuned.utils.auth.helpers import (
-    get_current_user,
-    check_account_lockout,
-    record_login_attempt,
     get_user_ip,
     get_user_agent,
     is_email_verified_required,
-    get_user_by_email_or_username
 )
 
 from tuned.utils.auth.decorators import (

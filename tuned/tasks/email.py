@@ -1,25 +1,65 @@
+from __future__ import annotations
+
+from typing import Any
+
+from celery.utils.log import get_task_logger
+
 from tuned.celery_app import celery_app
-from typing import Any, List, Dict
+from tuned.models import User
+from tuned.extensions import db
+from tuned.services.email_service import send_welcome_email
 
-@celery_app.task(name="tuned.utils.email.send_email_task")
-def send_email_task(to: str | List[str], subject: str, template: str, context: Dict[str, Any]) -> None:
-    """Celery task for sending emails."""
+logger = get_task_logger(__name__)
+
+
+@celery_app.task(
+    name='tuned.tasks.email.send_transactional_email',
+    bind=True,
+    queue='email',
+    max_retries=3,
+    default_retry_delay=60,
+    soft_time_limit=30,
+    time_limit=60,
+    acks_late=True,
+)
+def send_transactional_email(
+    self,
+    to: str,
+    subject: str,
+    template: str,
+    context: dict[str, Any],
+    sender: str | None = None,
+) -> None:
     from tuned.utils.email import send_email
-    from tuned import create_app
+    try:
+        send_email(to=to, subject=subject, template=template, sender=sender, **context)
+        logger.info(f"[email] '{subject}' sent to {to}")
 
-    app = create_app()
-    with app.app_context():
-        send_email(to, subject, template, **context)
+    except Exception as exc:
+        attempt = self.request.retries
+        delay = 60 * (2 ** attempt)  # 60s, 120s, 240s
+        logger.warning(
+            f"[email] Failed ({attempt}/{self.max_retries}) sending '{subject}' to {to}: "
+            f"{exc!r} — retrying in {delay}s"
+        )
+        raise self.retry(exc=exc, countdown=delay)
 
-@celery_app.task(name="tuned.tasks.email.send_welcome_task")
-def send_welcome_task(user_id):
-    """Celery task for sending welcome email."""
-    from tuned import create_app
-    from tuned.models.user import User
-    from tuned.services.email_service import send_welcome_email
-    
-    app = create_app()
-    with app.app_context():
-        user = User.query.get(user_id)
-        if user:
-            send_welcome_email(user)
+
+@celery_app.task(
+    name='tuned.tasks.email.send_welcome_task',
+    bind=True,
+    queue='email',
+    max_retries=2,
+    acks_late=True,
+)
+def send_welcome_task(self, user_id: str) -> None:
+    from tuned.repository.user.get import GetUserByID
+    from tuned.repository.exceptions import NotFound
+    from tuned.extensions import db
+    try:
+        user: User = GetUserByID(db.session).execute(user_id)
+        send_welcome_email(user)
+    except NotFound:
+        logger.warning(f"[email] send_welcome_task: user {user_id} not found — skipping")
+    except Exception as exc:
+        raise self.retry(exc=exc, countdown=120)

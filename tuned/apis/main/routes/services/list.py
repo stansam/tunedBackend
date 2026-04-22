@@ -1,6 +1,6 @@
 from tuned.core.logging import get_logger
 from flask.views import MethodView
-from tuned.interface import service as _interface, blog_category as _category_interface, sample as _samples_interface
+from tuned.interface import service as _interface, service_category as _category_interface, sample as _samples_interface
 from tuned.utils.responses import success_response, error_response
 from tuned.redis_client import redis_client
 
@@ -21,12 +21,13 @@ class GetServicesList(MethodView):
             if cached:
                 return success_response(json.loads(cached), "Services fetched successfully")
             services = _interface.list_services()
+            services_dict = [asdict(s) for s in services] 
 
             redis_client.setex(
                 CACHE_KEY, CACHE_TTL,
-                json.dumps(asdict(services))
+                json.dumps(services_dict)
             )
-            return success_response("Services fetched successfully", asdict(services))
+            return success_response("Services fetched successfully", services_dict)
 
         except Exception as e:
             logger.error(f"Error fetching services: {str(e)}")
@@ -35,16 +36,19 @@ class GetServicesList(MethodView):
 class GetServiceCategoriesList(MethodView):
     def get(self):
         try:
-            cached = redis_client.get(CACHE_KEY)
+            cached = redis_client.get(f'{CACHE_KEY}:categories')
             if cached:
-                return success_response("Services categories fetched successfully", json.loads(cached))
+                logger.info("Services categories fetched successfully from cache")
+                return success_response(json.loads(cached), "Services categories fetched successfully")
             
             categories = _category_interface.list_categories()
             categories = [asdict(c) for c in categories]
             redis_client.setex(
-                CACHE_KEY, CACHE_TTL,
+                f'{CACHE_KEY}:categories', CACHE_TTL,
                 json.dumps(categories)
             )
+
+            logger.info("Services categories fetched successfully")
             return success_response(categories, "Services categories fetched successfully")
 
         except Exception as e:
@@ -54,18 +58,20 @@ class GetServiceCategoriesList(MethodView):
 class GetServicesByCategory(MethodView):
     def get(self, category_id):
         try:
-            cached = redis_client.get(f'service:category:{category_id}')
+            cached = redis_client.get(f'service:category:{category_id}:list')
             if cached:
+                logger.info("Services fetched successfully from cache")
                 return success_response(json.loads(cached), "Services fetched successfully")
 
             services = _interface.get_services_by_category(category_id)
             services = [asdict(s) for s in services]
 
             redis_client.setex(
-                f'service:category:{category_id}', CACHE_TTL,
+                f'service:category:{category_id}:list', CACHE_TTL,
                 json.dumps(services)
             )
 
+            logger.info("Services fetched successfully")
             return success_response(services, "Services fetched successfully")
 
         except Exception as e:
@@ -77,6 +83,7 @@ class GetServicesBySlug(MethodView):
         try:
             cached = redis_client.get(f'service:{slug}')
             if cached:
+                logger.info("Service fetched successfully from cache")
                 return success_response(json.loads(cached), "Service fetched successfully")
             
             service = _interface.get_service_by_slug(slug)
@@ -87,6 +94,8 @@ class GetServicesBySlug(MethodView):
                 f'service:{slug}', CACHE_TTL,
                 json.dumps(service)
             )
+
+            logger.info("Service fetched successfully")
             return success_response(service, "Service fetched successfully")
 
         except Exception as e:
@@ -98,9 +107,10 @@ class GetServicesRelated(MethodView):
         try:
             cached = redis_client.get(f'service:{slug}:related')
             if cached:
+                logger.info("Service related fetched successfully from cache")
                 return success_response(json.loads(cached), "Service related fetched successfully")
             
-            service = _interface.get_service_by_slug(slug)
+            service = _interface.get_service(slug)
             related_services = _interface.get_services_by_category(service.category_id)
             related_samples = _samples_interface.get_samples_by_service_id(service.id)
 
@@ -117,7 +127,8 @@ class GetServicesRelated(MethodView):
                 json.dumps(data_items)
             )
 
-            return success_response(asdict(data_items), "Service related fetched successfully")
+            logger.info("Service related fetched successfully")
+            return success_response(data_items, "Service related fetched successfully")
 
         except Exception as e:
             logger.error(f"Error fetching service related: {str(e)}")

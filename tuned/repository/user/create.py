@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 from tuned.repository.exceptions import AlreadyExists, DatabaseError
 from tuned.dtos import CreateUserDTO
-
+from datetime import datetime, timezone
 class CreateUser:
     def __init__(self, db: Session) -> None:
         self.db = db
@@ -19,8 +19,14 @@ class CreateUser:
                 new_user.set_password(password)
             
             self.db.add(new_user)
+            self.db.flush()
+
+            new_user.created_at = datetime.now(timezone.utc)
+            new_user.created_by = new_user.id
+
             self.db.commit()
             self.db.refresh(new_user)
+
             return new_user
         except IntegrityError as e:
             self.db.rollback()

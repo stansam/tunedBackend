@@ -23,8 +23,8 @@ class UserRepository:
         return GetUserByUsername(self.db.session).execute(username)
     def get_admin_user(self) -> User:
         return GetAdminUser(self.db.session).execute()
-    def update_user(self, updates: UpdateUserDTO) -> User:
-        return UpdateUser(self.db.session).execute(updates)
+    def update_user(self, updates: UpdateUserDTO, actor_id: string) -> User:
+        return UpdateUser(self.db.session).execute(updates, actor_id=actor_id)
     def increment_failed_login_attempts(self, user_id: string) -> int:
         return UpdateUser(self.db.session).increment_failed_login_attempts(user_id)
 

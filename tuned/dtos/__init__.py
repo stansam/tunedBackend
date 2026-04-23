@@ -1,6 +1,7 @@
 from tuned.dtos.user import (
     CreateUserDTO, LoginRequestDTO, UserResponseDTO, UpdateUserDTO,
     EmailVerificationResendDTO, EmailVerifyConfirmDTO,
+    ProfileResponseDTO, ChangePasswordRequestDTO, UpdateProfileRequestDTO
 )
 from tuned.dtos.blogs import(
     BlogCategoryDTO, BlogCategoryResponseDTO, BlogPostDTO, BlogPostResponseDTO, BlogCommentDTO,

@@ -6,6 +6,12 @@ from tuned.apis.client.routes.dashboard import (
     DashboardAlerts
 )
 from tuned.apis.client.routes.orders import ReorderOrder
+from tuned.apis.client.routes.profile import (
+    ProfileView,
+    AvatarUploadView,
+    VerifyEmailView,
+    ChangePasswordView
+)
 
 CLIENT_ROUTES = [
     {
@@ -36,6 +42,26 @@ CLIENT_ROUTES = [
     {
         "rule": "/orders/<string:order_id>/reorder",
         "view_func": ReorderOrder.as_view("order_reorder"),
+        "methods": ["POST"],
+    },
+    {
+        "rule": "/profile",
+        "view_func": ProfileView.as_view("profile_view"),
+        "methods": ["GET", "PATCH"],
+    },
+    {
+        "rule": "/profile/avatar",
+        "view_func": AvatarUploadView.as_view("avatar_upload_view"),
+        "methods": ["POST", "DELETE"],
+    },
+    {
+        "rule": "/profile/verify-email",
+        "view_func": VerifyEmailView.as_view("verify_email_view"),
+        "methods": ["POST"],
+    },
+    {
+        "rule": "/profile/change-password",
+        "view_func": ChangePasswordView.as_view("change_password_view"),
         "methods": ["POST"],
     },
 ]

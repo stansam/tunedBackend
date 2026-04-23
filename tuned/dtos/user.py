@@ -78,3 +78,59 @@ class EmailVerificationResendDTO(BaseRequestDTO):
 class EmailVerifyConfirmDTO(BaseRequestDTO):
     uid: str
     token: str
+
+@dataclass
+class ProfileResponseDTO:
+    id: str
+    username: str
+    email: str
+    first_name: str
+    last_name: str
+    gender: Optional[str]
+    phone_number: Optional[str]
+    profile_pic_url: Optional[str]
+    email_verified: bool
+    is_admin: bool
+    reward_points: int
+    last_login_at: Optional[str]
+    failed_login_attempts: int
+    last_failed_login: Optional[str]
+    created_at: str
+
+    @classmethod
+    def from_model(cls, obj) -> "ProfileResponseDTO":
+        gender_val = obj.gender.value if obj.gender else None
+        
+        last_login = obj.last_login_at.isoformat() if obj.last_login_at else None
+        last_failed = obj.last_failed_login.isoformat() if obj.last_failed_login else None
+        created = obj.created_at.isoformat() if obj.created_at else None
+        
+        return cls(
+            id=str(obj.id),
+            username=obj.username,
+            email=obj.email,
+            first_name=obj.first_name,
+            last_name=obj.last_name,
+            gender=gender_val,
+            phone_number=obj.phone_number,
+            profile_pic_url=obj.get_profile_pic_url(),
+            email_verified=obj.email_verified,
+            is_admin=obj.is_admin,
+            reward_points=obj.reward_points,
+            last_login_at=last_login,
+            failed_login_attempts=obj.failed_login_attempts,
+            last_failed_login=last_failed,
+            created_at=created,
+        )
+
+@dataclass
+class UpdateProfileRequestDTO:
+    first_name: str
+    last_name: str
+    phone_number: Optional[str] = None
+    gender: Optional[str] = None
+
+@dataclass
+class ChangePasswordRequestDTO:
+    current_password: str
+    new_password: str

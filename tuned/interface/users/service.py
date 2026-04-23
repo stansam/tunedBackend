@@ -10,7 +10,12 @@ from tuned.repository import repositories
 from tuned.dtos import (
     CreateUserDTO, LoginRequestDTO, UserResponseDTO, UpdateUserDTO,
     ActivityLogCreateDTO, EmailVerificationResendDTO, EmailVerifyConfirmDTO,
+    ProfileResponseDTO, UpdateProfileRequestDTO, ChangePasswordRequestDTO
 )
+from werkzeug.security import generate_password_hash
+from werkzeug.utils import secure_filename
+import os
+import uuid
 from tuned.core.events import get_event_bus
 from tuned.repository.exceptions import NotFound, AlreadyExists
 from tuned.core.logging import get_logger
@@ -285,4 +290,127 @@ class UserService:
             logger.error(f"Database error while fetching user with email {email}.")
             raise DatabaseError(f"Database error while fetching user with email {email}.")
 
+    def get_profile(self, user_id: str) -> dict:
+        try:
+            user = self._repo.get_user_by_id(user_id)
+            user_dto = ProfileResponseDTO.from_model(user)
+            return asdict(user_dto)
+        except NotFound:
+            logger.error(f"User with id {user_id} not found.")
+            raise NotFound(f"User with id {user_id} not found.")
+        except DatabaseError:
+            logger.error(f"Database error while fetching user with id {user_id}.")
+            raise DatabaseError(f"Database error while fetching user with id {user_id}.")
 
+    def update_profile(self, user_id: str, data: UpdateProfileRequestDTO, locale: BaseRequestDTO) -> dict:
+        try:
+            user = self._repo.get_user_by_id(user_id)
+            update_dto = UpdateUserDTO(
+                user_id=user_id,
+                first_name=data.first_name,
+                last_name=data.last_name,
+                phone_number=data.phone_number,
+                gender=data.gender
+            )
+            updated_user = self._repo.update_user(update_dto, actor_id=user_id)
+            
+            self._log_user_activity(
+                before=user,
+                after=updated_user,
+                credentials=locale,
+                action=Variables.USER_UPDATE_ACTION if hasattr(Variables, 'USER_UPDATE_ACTION') else 'USER_PROFILE_UPDATE'
+            )
+            return asdict(ProfileResponseDTO.from_model(updated_user))
+        except NotFound:
+            logger.error(f"User with id {user_id} not found.")
+            raise NotFound(f"User with id {user_id} not found.")
+        except DatabaseError:
+            logger.error(f"Database error while updating user with id {user_id}.")
+            raise DatabaseError(f"Database error while updating user with id {user_id}.")
+
+    def change_password(self, user_id: str, data: ChangePasswordRequestDTO, locale: BaseRequestDTO) -> bool:
+        try:
+            user = self._repo.get_user_by_id(user_id)
+            if not user.check_password(data.current_password):
+                raise InvalidCredentials("Invalid current password.")
+                
+            new_hash = generate_password_hash(data.new_password)
+            update_dto = UpdateUserDTO(
+                user_id=user_id,
+                password_hash=new_hash
+            )
+            updated_user = self._repo.update_user(update_dto, actor_id=user_id)
+            logger.info(f"Password changed for user {user_id}")
+            self._log_user_activity(
+                before=user,
+                after=updated_user,
+                credentials=locale,
+                action=Variables.PASSWORD_CHANGE_ACTION if hasattr(Variables, 'PASSWORD_CHANGE_ACTION') else 'PASSWORD_CHANGE'
+            )
+            return True
+        except NotFound:
+            logger.error(f"User with id {user_id} not found.")
+            raise NotFound(f"User with id {user_id} not found.")
+        except DatabaseError:
+            logger.error(f"Database error while changing password for user {user_id}.")
+            raise DatabaseError(f"Database error while changing password for user {user_id}.")
+
+    def upload_avatar(self, user_id: str, file, locale: BaseRequestDTO) -> dict:
+        try:
+            user = self._repo.get_user_by_id(user_id)
+            
+            from flask import current_app
+            upload_folder = os.path.join(current_app.static_folder, 'client/assets/profile_pics')
+            os.makedirs(upload_folder, exist_ok=True)
+            
+            filename = secure_filename(file.filename)
+            ext = os.path.splitext(filename)[1]
+            unique_filename = f"{uuid.uuid4().hex}{ext}"
+            file_path = os.path.join(upload_folder, unique_filename)
+            file.save(file_path)
+            
+            update_dto = UpdateUserDTO(
+                user_id=user_id,
+                profile_pic=unique_filename
+            )
+            logger.info(f"Updating profile picture for user {user_id}")
+            updated_user = self._repo.update_user(update_dto, actor_id=user_id)
+            self._log_user_activity(
+                before=user,
+                after=updated_user,
+                credentials=locale,
+                action=Variables.AVATAR_UPDATE_ACTION if hasattr(Variables, 'AVATAR_UPDATE_ACTION') else 'AVATAR_UPLOAD'
+            )
+            
+            return {"profile_pic_url": updated_user.get_profile_pic_url()}
+        except NotFound:
+            logger.error(f"User with id {user_id} not found.")
+            raise NotFound(f"User with id {user_id} not found.")
+        except DatabaseError:
+            logger.error(f"Database error while updating profile picture for user {user_id}.")
+            raise DatabaseError(f"Database error while updating profile picture for user {user_id}.")
+
+    def delete_avatar(self, user_id: str, locale: BaseRequestDTO) -> dict:
+        try:
+            user = self._repo.get_user_by_id(user_id)
+            
+            update_dto = UpdateUserDTO(
+                user_id=user_id,
+                profile_pic="default.png"
+            )
+            logger.info(f"Deleting profile picture for user {user_id}")
+            updated_user = self._repo.update_user(update_dto, actor_id=user_id)
+            self._log_user_activity(
+                before=user,
+                after=updated_user,
+                credentials=locale,
+                action=Variables.AVATAR_DELETE_ACTION if hasattr(Variables, 'AVATAR_DELETE_ACTION') else 'AVATAR_DELETE'
+            )
+            
+            return {"profile_pic_url": updated_user.get_profile_pic_url()}
+        except NotFound:
+            logger.error(f"User with id {user_id} not found.")
+            raise NotFound(f"User with id {user_id} not found.")
+        except DatabaseError:
+            logger.error(f"Database error while deleting profile picture for user {user_id}.")
+            raise DatabaseError(f"Database error while deleting profile picture for user {user_id}.")

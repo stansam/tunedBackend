@@ -27,3 +27,12 @@ from tuned.dtos.audit import (
 from tuned.dtos.notification import (
     NotificationCreateDTO, NotificationResponseDTO
 )
+from tuned.dtos.order import (
+    OrderProgressDTO, UpcomingDeadlineDTO, ReorderResponseDTO,
+    derive_progress, derive_priority,
+)
+from tuned.dtos.dashboard import (
+    NavStatsDTO, DashboardKPIDTO, SpendingVelocityDTO, ChartDataDTO,
+    DashboardAnalyticsDTO, ActivityFeedEntryDTO, DashboardTrackingDTO,
+    ActionableAlertDTO, DashboardAlertsDTO,
+)

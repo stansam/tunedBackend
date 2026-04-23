@@ -47,4 +47,3 @@ def get_event_bus() -> EventBus:
         _event_bus = EventBus()
     return _event_bus
 
-# event_bus = get_event_bus()

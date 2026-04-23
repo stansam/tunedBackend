@@ -128,8 +128,6 @@ class ActivityLogFilterDTO:
     sort: str = "created_at"
     order: str = "desc"
 
-# --- Email Log ---
-
 @dataclass
 class EmailLogCreateDTO:
     recipient: str

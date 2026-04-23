@@ -34,6 +34,7 @@ celery_app = Celery(
         'tuned.tasks.email',
         'tuned.tasks.notifications',
         'tuned.tasks.order_tasks',
+        'tuned.tasks.dashboard_tasks',
     ],
 )
 
@@ -49,6 +50,7 @@ celery_app.conf.update(
         'tuned.tasks.email.*': {'queue': 'email'},
         'tuned.tasks.notifications.*': {'queue': 'notifications'},
         'tuned.tasks.order_tasks.*': {'queue': 'orders'},
+        'tuned.tasks.dashboard_tasks.*': {'queue': 'notifications'},
     },
     broker_transport_options={
         'visibility_timeout': 3600,  # 1 hour

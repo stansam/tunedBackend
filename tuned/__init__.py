@@ -68,15 +68,14 @@ def create_app(config_name=None):
         return is_token_blacklisted(jti)
     
     from tuned.apis import(
-        main_bp, auth_bp, notifications_bp
-        # ,  client_bp, admin_bp 
+        main_bp, auth_bp, notifications_bp, client_bp
     ) 
     from tuned.manage import manage_bp
     
     # app.register_blueprint(admin_bp, url_prefix='/api/admin')
     app.register_blueprint(auth_bp, url_prefix='/api')
     app.register_blueprint(notifications_bp, url_prefix='/api/notifications')
-    # app.register_blueprint(client_bp, url_prefix='/api/client')
+    app.register_blueprint(client_bp, url_prefix='/api/client')
     app.register_blueprint(manage_bp)
     
     # from tuned.apis.client.routes.settings.preferences import preferences_bp

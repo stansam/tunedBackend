@@ -185,3 +185,7 @@ class BlogReactionType(enum.Enum):
     LIKE = "like"
     DISLIKE = "dislike"
 
+class ActionableAlertType(enum.Enum):
+    EXTENSION_REQUEST = "EXTENSION_REQUEST"
+    PENDING_REVIEW    = "PENDING_REVIEW"
+

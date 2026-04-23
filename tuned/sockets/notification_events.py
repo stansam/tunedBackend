@@ -1,5 +1,5 @@
 from flask import request
-from flask_socketio import emit, join_room, leave_room
+from flask_socketio import emit, join_room # leave_room
 from flask_login import current_user
 from tuned.extensions import socketio
 from tuned.interface import notification as notification_interface

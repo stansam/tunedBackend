@@ -1,64 +1,42 @@
-from tuned.core.events import get_event_bus
-from tuned.models.enums import NotificationType
+from __future__ import annotations
+
 import logging
+from tuned.core.logging import get_logger
 
-logger = logging.getLogger(__name__)
+logger: logging.Logger = get_logger(__name__)
 
-event_bus = get_event_bus()
 
-def _on_user_registered(payload: dict) -> None:
-    from tuned.services.email_service import send_verification_email
-    from tuned.tasks.email import send_welcome_task
-    from tuned.repository.user.get import GetUserByID
-    from tuned.extensions import db
+class EventRegistry:
+    def __init__(self) -> None:
+        self._registered = False
 
-    user_id = payload.get('user_id')
-    raw_token = payload.get('raw_token')
+    def register_all(self) -> None:
+        if self._registered:
+            logger.debug("[EventRegistry] Already registered — skipping.")
+            return
 
-    try:
-        user = GetUserByID(db.session).execute(str(user_id))
-        send_verification_email(user, raw_token)
-        send_welcome_task.apply_async(args=[user_id], countdown=1800, queue='email')
-    except Exception as e:
-        logger.error(f"[_on_user_registered] Error: {e}")
+        from tuned.core.events import get_event_bus
+        bus = get_event_bus()
 
-def _on_resend_verification_email(payload: dict) -> None:
-    from tuned.services.email_service import send_verification_email
-    from tuned.repository.user.get import GetUserByID
-    from tuned.extensions import db
+        from tuned.interface.users.events import UserEventHandlers
+        from tuned.interface.order.events import OrderEventHandlers
 
-    user_id = payload.get('user_id')
-    raw_token = payload.get('raw_token')
+        UserEventHandlers(bus).register()
+        OrderEventHandlers(bus).register()
 
-    try:
-        user = GetUserByID(db.session).execute(str(user_id))
-        send_verification_email(user, raw_token)
-    except Exception as e:
-        logger.error(f"[_on_resend_verification_email] Error: {e}")
+        self._registered = True
+        logger.info("[EventRegistry] All domain handlers registered.")
 
-def _on_email_verified(payload: dict) -> None:
-    from tuned.tasks.notifications import create_in_app_notification
-    user_id = payload.get('user_id')
-    create_in_app_notification.delay(
-        user_id=user_id,
-        title='Email Verified',
-        message='Your email has been verified. Welcome to TunedEssays!',
-        notification_type=NotificationType.SUCCESS.value.upper(),
-    )
 
-def _on_password_changed(payload: dict) -> None:
-    from tuned.tasks.notifications import create_in_app_notification
-    user_id = payload.get('user_id')
-    create_in_app_notification.delay(
-        user_id=user_id,
-        title='Password Changed',
-        message="Your password has been successfully updated. If this wasn't you, please contact support immediately.",
-        notification_type=NotificationType.WARNING.value.upper(),
-    )
+_registry: EventRegistry | None = None
+
+
+def _get_registry() -> EventRegistry:
+    global _registry
+    if _registry is None:
+        _registry = EventRegistry()
+    return _registry
+
 
 def register_all_handlers() -> None:
-    event_bus.on('user.registered', _on_user_registered)
-    event_bus.on('user.resend_verification_email', _on_resend_verification_email)
-    event_bus.on('user.email_verified', _on_email_verified)
-    event_bus.on('user.password_changed', _on_password_changed)
-    logger.info("[EventBus] All event handlers registered")
+    _get_registry().register_all()

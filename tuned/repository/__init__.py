@@ -8,6 +8,7 @@ from tuned.repository.price import (
     PricingCategoryRepository, PriceRateRepository
 )
 from tuned.repository.audit import AuditRepository
+from tuned.repository.order import OrderRepository
 
 class Repository:
     def __init__(self):
@@ -23,6 +24,7 @@ class Repository:
         self._price = None
         self._pricing_category = None
         self._audit = None
+        self._order = None
 
     @property
     def user(self) -> UserRepository:
@@ -95,6 +97,12 @@ class Repository:
         if not self._audit:
             self._audit = AuditRepository()
         return self._audit
+
+    @property
+    def order(self) -> OrderRepository:
+        if not self._order:
+            self._order = OrderRepository()
+        return self._order
 
 
 repositories = Repository()

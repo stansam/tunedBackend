@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
-from tuned.models import Transaction, TransactionType
+from tuned.models import Transaction, TransactionType, PaymentStatus
 from tuned.dtos.payment import TransactionCreateDTO, TransactionResponseDTO
 from tuned.repository.exceptions import DatabaseError, AlreadyExists, NotFound
 from tuned.core.logging import get_logger
@@ -13,14 +13,20 @@ class CreateTransaction:
 
     def execute(self, data: TransactionCreateDTO) -> TransactionResponseDTO:
         try:
+            try:
+                type = TransactionType(data.type.lower()) if data.type else TransactionType.PAYMENT
+            except ValueError:
+                raise ValueError(f"Invalid transaction type: {data.type}")
+            try:
+                status = PaymentStatus(data.status.lower()) if data.status else PaymentStatus.PENDING
+            except ValueError:
+                raise ValueError(f"Invalid payment status: {data.status}")
             transaction = Transaction(
                 payment_id=data.payment_id,
                 transaction_id=data.transaction_id,
-                type=getattr(TransactionType, data.type.upper(), data.type),
+                type=type,
                 amount=data.amount,
-                status=data.status,
-                processor_id=data.processor_id,
-                processor_response=data.processor_response,
+                status=status,
             )
             self.db.add(transaction)
             self.db.commit()

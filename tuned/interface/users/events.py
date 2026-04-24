@@ -61,7 +61,7 @@ class UserEventHandlers:
             user_id=user_id,
             title="Email Verified",
             message="Your email has been verified. Welcome to TunedEssays!",
-            notification_type=NotificationType.SUCCESS.value.upper(),
+            notification_type=NotificationType.SUCCESS,
         )
 
     def _on_password_changed(self, payload: EventPayload) -> None:
@@ -76,5 +76,5 @@ class UserEventHandlers:
                 "Your password has been successfully updated. "
                 "If this wasn't you, please contact support immediately."
             ),
-            notification_type=NotificationType.WARNING.value.upper(),
+            notification_type=NotificationType.WARNING,
         )

@@ -17,6 +17,7 @@ class OrderStatus(str, Enum):
 
 class PaymentStatus(str, Enum):
     PENDING = "pending"
+    PENDING_VERIFICATION = "pending_verification"
     COMPLETED = "completed"
     FAILED = "failed"
     REFUNDED = "refunded"

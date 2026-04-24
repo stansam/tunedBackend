@@ -5,20 +5,62 @@ from datetime import datetime
 from tuned.dtos.base import BaseDTO
 
 @dataclass(kw_only=True)
+class AcceptedMethodCreateDTO:
+    name: str
+    category: str
+    details: Optional[str] = None
+    is_active: Optional[bool] = True
+
+@dataclass(kw_only=True)
+class AcceptedMethodUpdateDTO:
+    name: Optional[str] = None
+    category: Optional[str] = None
+    details: Optional[str] = None
+    is_active: Optional[bool] = None
+
+@dataclass(kw_only=True)
+class AcceptedMethodResponseDTO(BaseDTO):
+    id: str
+    name: str
+    category: str
+    details: Optional[str]
+    is_active: bool
+
+    @classmethod
+    def from_model(cls, model: object) -> 'AcceptedMethodResponseDTO':
+        return cls(
+            id=str(model.id),
+            name=model.name,
+            category=model.category.value if hasattr(model.category, 'value') else model.category,
+            details=model.details,
+            is_active=model.is_active,
+            created_at=model.created_at,
+            updated_at=model.updated_at,
+            is_deleted=getattr(model, 'is_deleted', False)
+        )
+
+@dataclass(kw_only=True)
 class PaymentCreateDTO:
     order_id: str
     user_id: str
     amount: float
-    method: str
+    accepted_method_id: int
     status: Optional[str] = "pending"
-    processor_id: Optional[str] = None
-    processor_response: Optional[str] = None
-    payer_id: Optional[str] = None
+
+@dataclass(kw_only=True)
+class PaymentClientMarkDTO:
+    client_proof_reference: str
+
+@dataclass(kw_only=True)
+class PaymentAdminVerifyDTO:
+    admin_notes: Optional[str] = None
 
 @dataclass(kw_only=True)
 class PaymentUpdateDTO:
     status: Optional[str] = None
-    processor_response: Optional[str] = None
+    client_proof_reference: Optional[str] = None
+    client_marked_paid_at: Optional[datetime] = None
+    admin_verified_at: Optional[datetime] = None
 
 @dataclass(kw_only=True)
 class PaymentResponseDTO(BaseDTO):
@@ -28,8 +70,11 @@ class PaymentResponseDTO(BaseDTO):
     user_id: str
     amount: float
     status: str
-    method: str
+    accepted_method_id: int
     currency: str
+    client_proof_reference: Optional[str]
+    client_marked_paid_at: Optional[datetime]
+    admin_verified_at: Optional[datetime]
     
     @classmethod
     def from_model(cls, model: object) -> 'PaymentResponseDTO':
@@ -40,8 +85,11 @@ class PaymentResponseDTO(BaseDTO):
             user_id=model.user_id,
             amount=model.amount,
             status=model.status.value if hasattr(model.status, 'value') else model.status,
-            method=model.method.value if hasattr(model.method, 'value') else model.method,
+            accepted_method_id=model.accepted_method_id,
             currency=model.currency.value if hasattr(model.currency, 'value') else model.currency,
+            client_proof_reference=model.client_proof_reference,
+            client_marked_paid_at=model.client_marked_paid_at,
+            admin_verified_at=model.admin_verified_at,
             created_at=model.created_at,
             updated_at=model.updated_at,
             is_deleted=getattr(model, 'is_deleted', False)
@@ -104,8 +152,6 @@ class TransactionCreateDTO:
     type: str
     amount: float
     status: str
-    processor_id: Optional[str] = None
-    processor_response: Optional[str] = None
 
 @dataclass(kw_only=True)
 class TransactionResponseDTO(BaseDTO):
@@ -191,7 +237,7 @@ class RefundCreateDTO:
     status: RefundStatus = RefundStatus.PENDING
     reason: Optional[str] = None
     processed_by: Optional[str] = None
-    processor_refund_id: Optional[str] = None
+    admin_reference_id: Optional[str] = None
     refund_date: Optional[datetime] = None
 
 @dataclass(kw_only=True)
@@ -206,7 +252,7 @@ class RefundResponseDTO(BaseDTO):
     reason: Optional[str]
     status: str
     processed_by: Optional[str]
-    processor_refund_id: Optional[str]
+    admin_reference_id: Optional[str]
     refund_date: Optional[datetime]
     
     @classmethod
@@ -218,7 +264,7 @@ class RefundResponseDTO(BaseDTO):
             reason=model.reason,
             status=model.status.value if hasattr(model.status, 'value') else model.status,
             processed_by=model.processed_by,
-            processor_refund_id=model.processor_refund_id,
+            admin_reference_id=model.admin_reference_id,
             refund_date=model.refund_date,
             created_at=model.created_at,
             updated_at=model.updated_at,

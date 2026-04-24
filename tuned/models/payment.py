@@ -3,27 +3,46 @@ from tuned.models.base import BaseModel
 from datetime import datetime, timezone
 import uuid
 from sqlalchemy.sql import func
-from tuned.models.enums import PaymentStatus, PaymentMethod, TransactionType, RefundStatus, DiscountType, Currency
+from tuned.models.enums import PaymentStatus, MethodCategory, TransactionType, RefundStatus, DiscountType, Currency
+
+class AcceptedPaymentMethod(BaseModel):
+    name = db.Column(db.String(100), nullable=False)
+    category = db.Column(db.Enum(MethodCategory), nullable=False)
+    details = db.Column(db.Text)
+    is_active = db.Column(db.Boolean, default=True)
+
+    def __init__(self, name, category, details=None, is_active=True):
+        self.name = name
+        self.category = category
+        self.details = details
+        self.is_active = is_active
+
+    def __repr__(self):
+        return f"<AcceptedPaymentMethod {self.name}>"
 
 class Payment(BaseModel):
     payment_id = db.Column(db.String(36), unique=True, nullable=False)
     order_id = db.Column(db.String(36), db.ForeignKey('order.id'), nullable=False)
     user_id = db.Column(db.String(36), db.ForeignKey('users.id'), nullable=False)
+    accepted_method_id = db.Column(db.Integer, db.ForeignKey('accepted_payment_method.id'), nullable=False)
     currency = db.Column(db.Enum(Currency), default=Currency.USD, nullable=False)
-    payment_method_token = db.Column(db.String(255))
+    # payment_method_token = db.Column(db.String(255))
     amount = db.Column(db.Float, nullable=False)
     status = db.Column(db.Enum(PaymentStatus), default=PaymentStatus.PENDING, nullable=False)
-    method = db.Column(db.Enum(PaymentMethod), nullable=False)
     
-    
-    processor_id = db.Column(db.String(255))
-    processor_response = db.Column(db.Text)
-    
-    payer_id = db.Column(db.String(255))  
-    approval_url = db.Column(db.String(500))
+    # method = db.Column(db.Enum(PaymentMethod), nullable=False)    
+    # processor_id = db.Column(db.String(255))
+    # processor_response = db.Column(db.Text)    
+    # payer_id = db.Column(db.String(255))  
+    # approval_url = db.Column(db.String(500))
+
+    client_proof_reference = db.Column(db.String(255))
+    client_marked_paid_at = db.Column(db.DateTime)
+    admin_verified_at = db.Column(db.DateTime)
     
     order = db.relationship('Order', foreign_keys=[order_id], back_populates='payments')
     user = db.relationship('User', foreign_keys=[user_id], backref=db.backref('payments', lazy=True))
+    accepted_method = db.relationship('AcceptedPaymentMethod', foreign_keys=[accepted_method_id])
     transactions = db.relationship('Transaction', foreign_keys='Transaction.payment_id', backref='payment', lazy=True)
     invoice = db.relationship('Invoice', foreign_keys='Invoice.payment_id', back_populates='payment', uselist=False)
     
@@ -31,17 +50,19 @@ class Payment(BaseModel):
         db.Index('ix_payment_order_status', 'order_id', 'status'),
         db.CheckConstraint('amount > 0', name='valid_payment_amount'),
     )
-    
-    def __init__(self, order_id, user_id, amount, method, status='pending', processor_id=None, processor_response=None, payer_id=None):
+
+    #def __init__(self, order_id, user_id, amount, method, status='pending', processor_id=None, processor_response=None, payer_id=None):
+    def __init__(self, order_id, user_id, amount, accepted_method_id, status=PaymentStatus.PENDING):
         self.payment_id = f"PAY-{uuid.uuid4().hex[:12].upper()}"
         self.order_id = order_id
         self.user_id = user_id
         self.amount = amount
+        self.accepted_method_id = accepted_method_id
         self.status = status
-        self.method = method
-        self.processor_id = processor_id
-        self.processor_response = processor_response
-        self.payer_id = payer_id
+        # self.method = method
+        # self.processor_id = processor_id
+        # self.processor_response = processor_response
+        # self.payer_id = payer_id
     
     def __repr__(self):
         return f"Payment {self.payment_id} for Order {self.order_id}"
@@ -91,22 +112,22 @@ class Transaction(BaseModel):
     type = db.Column(db.Enum(TransactionType), nullable=False)
     amount = db.Column(db.Float, nullable=False)
     status = db.Column(db.String(50), nullable=False)
-    
-    processor_id = db.Column(db.String(255))
-    processor_response = db.Column(db.Text)
 
+    # processor_id = db.Column(db.String(255))
+    # processor_response = db.Column(db.Text)
     __table_args__ = (
         db.CheckConstraint('amount > 0', name='valid_transaction_amount'),
     )
     
-    def __init__(self, payment_id, transaction_id, type, amount, status, processor_id=None, processor_response=None):
+    #def __init__(self, payment_id, transaction_id, type, amount, status, processor_id=None, processor_response=None):
+    def __init__(self, payment_id, transaction_id, type, amount, status):
         self.payment_id = payment_id
         self.transaction_id = transaction_id
         self.type = type
         self.amount = amount
         self.status = status
-        self.processor_id = processor_id
-        self.processor_response = processor_response
+        # self.processor_id = processor_id
+        # self.processor_response = processor_response
     
     def __repr__(self):
         return f"{self.type.title()} of {self.amount} for Payment #{self.payment_id}"
@@ -149,8 +170,10 @@ class Refund(BaseModel):
     status = db.Column(db.Enum(RefundStatus), default=RefundStatus.PENDING, nullable=False)
     processed_by = db.Column(db.String(36), db.ForeignKey('users.id'))
     refund_date = db.Column(db.DateTime)
+
+    # processor_refund_id = db.Column(db.String(255))
     
-    processor_refund_id = db.Column(db.String(255))
+    admin_reference_id = db.Column(db.String(255))
     
     payment = db.relationship('Payment', foreign_keys=[payment_id], backref='refunds')
     admin = db.relationship('User', foreign_keys=[processed_by], backref='processed_refunds')

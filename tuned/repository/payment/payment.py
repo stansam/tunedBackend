@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 from sqlalchemy import func, asc
-from tuned.models import Payment, PaymentStatus, PaymentMethod, Currency
+from tuned.models import Payment, PaymentStatus, MethodCategory, Currency
 from tuned.dtos.payment import PaymentCreateDTO, PaymentUpdateDTO, PaymentResponseDTO
 from tuned.repository.exceptions import DatabaseError, AlreadyExists, NotFound
 from tuned.core.logging import get_logger
@@ -18,15 +18,17 @@ class CreatePayment:
 
     def execute(self, data: PaymentCreateDTO) -> PaymentResponseDTO:
         try:
+            try:
+                # TODO: Implement TransactionStatus Enum
+                status = PaymentStatus(data.status.lower()) if data.status else PaymentStatus.PENDING
+            except ValueError:
+                raise ValueError(f"Invalid payment status: {data.status}")
             payment = Payment(
                 order_id=data.order_id,
                 user_id=data.user_id,
                 amount=data.amount,
-                method=getattr(PaymentMethod, data.method.upper(), data.method),
-                status=getattr(PaymentStatus, data.status.upper(), PaymentStatus.PENDING) if data.status else PaymentStatus.PENDING,
-                processor_id=data.processor_id,
-                processor_response=data.processor_response,
-                payer_id=data.payer_id,
+                accepted_method_id=data.accepted_method_id,
+                status=status,
             )
             self.db.add(payment)
             self.db.commit()
@@ -78,8 +80,12 @@ class UpdatePayment:
                 
             if data.status:
                 payment.status = getattr(PaymentStatus, data.status.upper(), data.status)
-            if data.processor_response:
-                payment.processor_response = data.processor_response
+            if data.client_proof_reference is not None:
+                payment.client_proof_reference = data.client_proof_reference
+            if data.client_marked_paid_at is not None:
+                payment.client_marked_paid_at = data.client_marked_paid_at
+            if data.admin_verified_at is not None:
+                payment.admin_verified_at = data.admin_verified_at
                 
             self.db.commit()
             return PaymentResponseDTO.from_model(payment)

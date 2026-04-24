@@ -6,6 +6,7 @@ from tuned.interface.payment.service import (
     DiscountServiceManager,
     RefundServiceManager,
     TransactionServiceManager,
+    AcceptedMethodServiceManager
 )
 
 class PaymentService:
@@ -15,6 +16,7 @@ class PaymentService:
         self._discount: DiscountServiceManager | None = None
         self._refund: RefundServiceManager | None = None
         self._transaction: TransactionServiceManager | None = None
+        self._accepted_method: AcceptedMethodServiceManager | None = None
 
     @property
     def payment(self) -> PaymentServiceManager:
@@ -45,5 +47,11 @@ class PaymentService:
         if not self._transaction:
             self._transaction = TransactionServiceManager()
         return self._transaction
+
+    @property
+    def accepted_method(self) -> AcceptedMethodServiceManager:
+        if not self._accepted_method:
+            self._accepted_method = AcceptedMethodServiceManager()
+        return self._accepted_method
 
 payment_service = PaymentService()

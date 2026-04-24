@@ -6,6 +6,7 @@ from tuned.repository.payment.repository import (
     TransactionManager,
     DiscountManager,
     RefundManager,
+    AcceptedMethodRepositoryManager
 )
 
 class PaymentRepository:
@@ -16,6 +17,7 @@ class PaymentRepository:
         self._transaction: Optional[TransactionManager] = None
         self._discount: Optional[DiscountManager] = None
         self._refund: Optional[RefundManager] = None
+        self._accepted_method: Optional[AcceptedMethodRepositoryManager] = None
 
     @property
     def payment(self) -> PaymentsManager:
@@ -46,3 +48,9 @@ class PaymentRepository:
         if not self._refund:
             self._refund = RefundManager(self._db.session)
         return self._refund
+
+    @property
+    def accepted_method(self) -> AcceptedMethodRepositoryManager:
+        if not self._accepted_method:
+            self._accepted_method = AcceptedMethodRepositoryManager(self._db.session)
+        return self._accepted_method

@@ -13,13 +13,17 @@ class CreateRefund:
 
     def execute(self, data: RefundCreateDTO) -> RefundResponseDTO:
         try:
+            try:
+                status = RefundStatus(data.status.lower()) if data.status else RefundStatus.PENDING
+            except ValueError:
+                raise ValueError(f"Invalid refund status: {data.status}")
             refund = Refund(
                 payment_id=data.payment_id,
                 amount=data.amount,
                 reason=data.reason,
-                status=getattr(RefundStatus, data.status.upper(), RefundStatus.PENDING) if data.status else RefundStatus.PENDING,
+                status=status,
                 processed_by=data.processed_by,
-                processor_refund_id=data.processor_refund_id,
+                admin_reference_id=data.admin_reference_id,
                 refund_date=data.refund_date,
             )
             self.db.add(refund)

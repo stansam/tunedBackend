@@ -19,6 +19,9 @@ class Variables:
     REFUND_UPDATE_ACTION = "refund_update"
     TRANSACTION_CREATE_ACTION = "transaction_create"
     
+    ACCEPTED_METHOD_CREATE_ACTION = "accepted_method_create"
+    ACCEPTED_METHOD_UPDATE_ACTION = "accepted_method_update"
+    
     PAYMENT_ENTITY_TYPE = "Payment"
     INVOICE_ENTITY_TYPE = "Invoice"
     DISCOUNT_ENTITY_TYPE = "Discount"

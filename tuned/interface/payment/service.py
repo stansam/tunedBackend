@@ -5,6 +5,7 @@ from tuned.interface.payment.invoice import GenerateInvoice, GetInvoiceDetails, 
 from tuned.interface.payment.discount import ApplyDiscount, CreateDiscount, GetDiscountDetails
 from tuned.interface.payment.refund import ProcessRefund, ApproveRefund
 from tuned.interface.payment.transaction import LogTransaction, GetTransactionHistory
+from tuned.interface.payment.accepted_method import AdminCreateAcceptedMethod, AdminUpdateAcceptedMethod, GetAcceptedMethods
 
 class PaymentServiceManager:
     def __init__(self) -> None:
@@ -20,6 +21,21 @@ class PaymentServiceManager:
 
     def update_status(self, payment_id: str, data, actor_id: str) -> object:
         return self._update.execute(payment_id, data, actor_id)
+
+class AcceptedMethodServiceManager:
+    def __init__(self) -> None:
+        self._create = AdminCreateAcceptedMethod()
+        self._update = AdminUpdateAcceptedMethod()
+        self._get_all = GetAcceptedMethods()
+
+    def create(self, data, admin_id: str) -> object:
+        return self._create.execute(data, admin_id)
+
+    def update(self, method_id: str, data, admin_id: str) -> object:
+        return self._update.execute(method_id, data, admin_id)
+
+    def get_all(self) -> list[object]:
+        return self._get_all.execute()
 
 class InvoiceServiceManager:
     def __init__(self) -> None:

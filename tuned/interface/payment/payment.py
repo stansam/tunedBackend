@@ -1,15 +1,16 @@
 from __future__ import annotations
 import logging
+from datetime import datetime, timezone
 from tuned.core.logging import get_logger
-from tuned.dtos.audit import ActivityLogCreateDTO
-from tuned.dtos.payment import PaymentCreateDTO, PaymentUpdateDTO, PaymentResponseDTO
+from tuned.dtos import ActivityLogCreateDTO, PaymentCreateDTO, PaymentUpdateDTO, PaymentResponseDTO
 from tuned.interface.audit import audit_service
 from tuned.repository import repositories
 from tuned.utils.variables import Variables
 from tuned.core.events import get_event_bus
+from tuned.models import PaymentStatus
 
 logger: logging.Logger = get_logger(__name__)
-
+event_bus = get_event_bus()
 class ProcessPayment:
     def __init__(self) -> None:
         self._repo = repositories.payment.payment
@@ -24,14 +25,14 @@ class ProcessPayment:
                     user_id=data.user_id,
                     entity_type=Variables.PAYMENT_ENTITY_TYPE,
                     entity_id=payment.id,
-                    after={"amount": data.amount, "status": payment.status, "method": payment.method},
+                    after=payment,
                     created_by=data.user_id,
                 ))
             except Exception as audit_exc:
                 logger.error(f"[ProcessPayment] Audit failed for payment {payment.id}: {audit_exc!r}")
 
             try:
-                get_event_bus().emit("payment.created", {
+                event_bus.emit("payment.created", {
                     "payment_id": payment.id,
                     "order_id": payment.order_id,
                     "user_id": payment.user_id,
@@ -57,38 +58,98 @@ class GetPaymentDetails:
             logger.error(f"[GetPaymentDetails] Failed to get payment {payment_id}: {exc!r}")
             raise
 
-class UpdatePaymentStatus:
+class ClientMarkAsPaid:
     def __init__(self) -> None:
         self._repo = repositories.payment.payment
         self._audit = audit_service
-    def execute(self, payment_id: str, data: PaymentUpdateDTO, actor_id: str) -> PaymentResponseDTO:
-        try:
-            payment = self._repo.update(payment_id, data)
+        
+    def execute(self, payment_id: str, client_proof_reference: str, client_id: str) -> PaymentResponseDTO:
+        try:  
+            payment = self._repo.get_by_id(payment_id)
+            if payment.status != PaymentStatus.PENDING:
+                raise ValueError(f"Payment is not in a pending state, current state: {payment.status}")
+                
+            data = PaymentUpdateDTO(
+                status=PaymentStatus.PENDING_VERIFICATION,
+                client_proof_reference=client_proof_reference,
+                client_marked_paid_at=datetime.now(timezone.utc)
+            )
+            updated_payment = self._repo.update(payment_id, data)
 
             try:
                 self._audit.activity_log.log(ActivityLogCreateDTO(
                     action=Variables.PAYMENT_UPDATE_ACTION,
-                    user_id=payment.user_id,
+                    user_id=updated_payment.user_id,
                     entity_type=Variables.PAYMENT_ENTITY_TYPE,
-                    entity_id=payment.id,
-                    after={"status": payment.status},
-                    created_by=actor_id,
+                    entity_id=updated_payment.id,
+                    before=payment,
+                    after=updated_payment,
+                    created_by=client_id,
                 ))
             except Exception as audit_exc:
-                logger.error(f"[UpdatePaymentStatus] Audit failed for payment {payment.id}: {audit_exc!r}")
+                logger.error(f"[ClientMarkAsPaid] Audit failed for payment {updated_payment.id}: {audit_exc!r}")
 
             try:
-                get_event_bus().emit("payment.updated", {
-                    "payment_id": payment.id,
-                    "order_id": payment.order_id,
-                    "user_id": payment.user_id,
-                    "status": payment.status
+                event_bus.emit("payment.client_marked_paid", {
+                    "payment_id": updated_payment.id,
+                    "order_id": updated_payment.order_id,
+                    "user_id": updated_payment.user_id,
+                    "status": updated_payment.status
                 })
             except Exception as event_exc:
-                logger.error(f"[UpdatePaymentStatus] Event emit failed for payment {payment.id}: {event_exc!r}")
+                logger.error(f"[ClientMarkAsPaid] Event emit failed for payment {updated_payment.id}: {event_exc!r}")
 
-            logger.info(f"[UpdatePaymentStatus] Payment {payment.id} status updated to {payment.status}")
-            return payment
+            logger.info(f"[ClientMarkAsPaid] Payment {updated_payment.id} marked as paid by client {client_id}")
+            return updated_payment
         except Exception as exc:
-            logger.error(f"[UpdatePaymentStatus] Failed to update payment {payment_id}: {exc!r}")
+            logger.error(f"[ClientMarkAsPaid] Failed to mark payment {payment_id} as paid: {exc!r}")
+            raise
+
+class AdminVerifyPayment:
+    def __init__(self) -> None:
+        self._repo = repositories.payment.payment
+        self._audit = audit_service
+        
+    def execute(self, payment_id: str, admin_id: str) -> PaymentResponseDTO:
+        try:
+            from tuned.models import PaymentStatus
+            from datetime import datetime, timezone
+            
+            payment = self._repo.get_by_id(payment_id)
+            if payment.status != PaymentStatus.PENDING_VERIFICATION.value and payment.status != PaymentStatus.PENDING_VERIFICATION:
+                raise ValueError(f"Payment is not awaiting verification, current state: {payment.status}")
+                
+            data = PaymentUpdateDTO(
+                status=PaymentStatus.COMPLETED,
+                admin_verified_at=datetime.now(timezone.utc)
+            )
+            updated_payment = self._repo.update(payment_id, data)
+
+            try:
+                self._audit.activity_log.log(ActivityLogCreateDTO(
+                    action=Variables.PAYMENT_UPDATE_ACTION,
+                    user_id=updated_payment.user_id,
+                    entity_type=Variables.PAYMENT_ENTITY_TYPE,
+                    entity_id=updated_payment.id,
+                    before=payment,
+                    after=updated_payment,
+                    created_by=admin_id,
+                ))
+            except Exception as audit_exc:
+                logger.error(f"[AdminVerifyPayment] Audit failed for payment {updated_payment.id}: {audit_exc!r}")
+
+            try:
+                event_bus.emit("payment.verified_by_admin", {
+                    "payment_id": updated_payment.id,
+                    "order_id": updated_payment.order_id,
+                    "user_id": updated_payment.user_id,
+                    "status": updated_payment.status
+                })
+            except Exception as event_exc:
+                logger.error(f"[AdminVerifyPayment] Event emit failed for payment {updated_payment.id}: {event_exc!r}")
+
+            logger.info(f"[AdminVerifyPayment] Payment {updated_payment.id} verified by admin {admin_id}")
+            return updated_payment
+        except Exception as exc:
+            logger.error(f"[AdminVerifyPayment] Failed to verify payment {payment_id}: {exc!r}")
             raise

@@ -22,6 +22,7 @@ from tuned.repository.payment.discount import (
 from tuned.repository.payment.refund import (
     CreateRefund, GetRefundByID, UpdateRefundStatus
 )
+from tuned.repository.payment.accepted_method import AcceptedPaymentMethodRepository
 
 class PaymentsManager:
     def __init__(self, db: Session) -> None:
@@ -102,3 +103,20 @@ class RefundManager:
 
     def update_status(self, refund_id: str, data: RefundUpdateDTO) -> RefundResponseDTO:
         return UpdateRefundStatus(self.db).execute(refund_id, data)
+
+class AcceptedMethodRepositoryManager:
+    def __init__(self, db: Session) -> None:
+        self.db = db
+        self._repo = AcceptedPaymentMethodRepository(self.db)
+
+    def create(self, data) -> object:
+        return self._repo.create(data)
+
+    def update(self, method_id: str, data) -> object:
+        return self._repo.update(method_id, data)
+
+    def get_by_id(self, method_id: str) -> object:
+        return self._repo.get_by_id(method_id)
+
+    def get_all_active(self) -> list:
+        return self._repo.get_all_active()

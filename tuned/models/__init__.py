@@ -13,11 +13,11 @@ from tuned.models.audit import PriceHistory, OrderStatusHistory, ActivityLog, Em
 from tuned.models.deadline_extension import OrderDeadlineExtensionRequest
 from tuned.models.revision_request import OrderRevisionRequest
 
-# Preference models
 from tuned.models.preferences import (
     UserNotificationPreferences, UserEmailPreferences, UserPrivacySettings,
     UserLocalizationSettings, UserAccessibilityPreferences, UserBillingPreferences
     )
+
 from tuned.models.enums import (
     OrderStatus, SupportTicketStatus, PaymentStatus, PaymentMethod,
     TransactionType, RefundStatus, NotificationType, ChatStatus,

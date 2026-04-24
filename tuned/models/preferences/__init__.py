@@ -1,10 +1,3 @@
-"""
-User preference models package.
-
-This package contains all user preference-related database models
-for storing user-specific settings across different categories.
-"""
-
 from tuned.models.preferences.notification import UserNotificationPreferences
 from tuned.models.preferences.email import UserEmailPreferences
 from tuned.models.preferences.privacy import UserPrivacySettings

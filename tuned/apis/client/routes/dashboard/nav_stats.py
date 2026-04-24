@@ -1,4 +1,4 @@
-from tuned.interface import order as _order_service
+from tuned.interface import analytics as _analytics_service
 import logging
 from tuned.core.logging import get_logger
 from tuned.utils.responses import success_response, error_response
@@ -13,7 +13,7 @@ class NavStats(MethodView):
 
     def get(self):
         try:
-            dto = _order_service.get_nav_stats(str(current_user.id))
+            dto = _analytics_service.get_nav_stats(str(current_user.id))
             return success_response(data=asdict(dto), message="Successfully loaded", status=200)
         except Exception as e:
             logger.error("Failed to load nav stats: %s", e)

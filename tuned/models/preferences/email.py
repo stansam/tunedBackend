@@ -1,45 +1,11 @@
-"""
-User email preferences model.
-
-This module defines the UserEmailPreferences model for storing
-user-specific email communication preferences.
-"""
-
-from datetime import datetime, timezone
 from tuned.extensions import db
 from tuned.models.enums import EmailFrequency
 from tuned.models.base import BaseModel
 
 
 class UserEmailPreferences(BaseModel):
-    """
-    User preferences for email communications.
-    
-    Stores user-specific settings for email categories and delivery frequency.
-    Critical emails (order confirmations, payment receipts, security alerts) 
-    cannot be disabled for security and compliance reasons.
-    One-to-one relationship with User model.
-    
-    Attributes:
-        user_id: Foreign key to User.id
-        newsletter: Enable newsletter subscription
-        promotional_emails: Enable promotional emails
-        product_updates: Enable product update emails
-        order_confirmations: Order confirmation emails (CANNOT BE DISABLED)
-        payment_receipts: Payment receipt emails (CANNOT BE DISABLED)
-        account_security: Account security emails (CANNOT BE DISABLED)
-        frequency: Email delivery frequency (instant, daily, weekly)
-        daily_digest_hour: Hour of day for daily digest (0-23, null if instant)
-        created_at: Timestamp of preference creation
-        updated_at: Timestamp of last update
-    
-    Relationships:
-        user: The User who owns these preferences
-    """
-    
     __tablename__ = 'user_email_preferences'
     
-    # Foreign Key (CASCADE delete, one-to-one)
     user_id = db.Column(
         db.String(36),
         db.ForeignKey('users.id', ondelete='CASCADE'),
@@ -48,12 +14,10 @@ class UserEmailPreferences(BaseModel):
         index=True
     )
     
-    # Email categories (can be disabled)
     newsletter = db.Column(db.Boolean, default=False, nullable=False)
     promotional_emails = db.Column(db.Boolean, default=False, nullable=False)
     product_updates = db.Column(db.Boolean, default=True, nullable=False)
     
-    # Critical emails (CANNOT be disabled - server_default ensures DB-level enforcement)
     order_confirmations = db.Column(
         db.Boolean,
         default=True,
@@ -73,30 +37,21 @@ class UserEmailPreferences(BaseModel):
         nullable=False
     )
     
-    # Frequency control
     frequency = db.Column(
         db.Enum(EmailFrequency),
         default=EmailFrequency.INSTANT,
         nullable=False
     )
     
-    # Digest options
     daily_digest_hour = db.Column(
         db.Integer,
         default=9,
         nullable=True
     )  # 0-23, null if instant
     
-    # Relationships
     user = db.relationship('User', foreign_keys=[user_id], backref=db.backref('email_preferences', uselist=False, lazy=True))
     
     def to_dict(self):
-        """
-        Serialize to dictionary for API responses.
-        
-        Returns:
-            dict: Dictionary representation of email preferences
-        """
         return {
             'newsletter': self.newsletter,
             'promotional_emails': self.promotional_emails,

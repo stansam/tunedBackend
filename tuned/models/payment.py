@@ -6,7 +6,6 @@ from sqlalchemy.sql import func
 from tuned.models.enums import PaymentStatus, PaymentMethod, TransactionType, RefundStatus, DiscountType, Currency
 
 class Payment(BaseModel):
-    """Model for tracking payments"""
     payment_id = db.Column(db.String(36), unique=True, nullable=False)
     order_id = db.Column(db.String(36), db.ForeignKey('order.id'), nullable=False)
     user_id = db.Column(db.String(36), db.ForeignKey('users.id'), nullable=False)
@@ -23,13 +22,11 @@ class Payment(BaseModel):
     payer_id = db.Column(db.String(255))  
     approval_url = db.Column(db.String(500))
     
-    # Relationships
     order = db.relationship('Order', foreign_keys=[order_id], back_populates='payments')
     user = db.relationship('User', foreign_keys=[user_id], backref=db.backref('payments', lazy=True))
     transactions = db.relationship('Transaction', foreign_keys='Transaction.payment_id', backref='payment', lazy=True)
     invoice = db.relationship('Invoice', foreign_keys='Invoice.payment_id', back_populates='payment', uselist=False)
     
-    # Table arguments for indexes and constraints
     __table_args__ = (
         db.Index('ix_payment_order_status', 'order_id', 'status'),
         db.CheckConstraint('amount > 0', name='valid_payment_amount'),
@@ -50,7 +47,6 @@ class Payment(BaseModel):
         return f"Payment {self.payment_id} for Order {self.order_id}"
 
 class Invoice(BaseModel):
-    """Model for invoices"""
     invoice_number = db.Column(db.String(20), unique=True, nullable=False)
     order_id = db.Column(db.String(36), db.ForeignKey('order.id'), nullable=False)
     user_id = db.Column(db.String(36), db.ForeignKey('users.id'), nullable=False)
@@ -63,7 +59,6 @@ class Invoice(BaseModel):
     due_date = db.Column(db.DateTime, nullable=False)
     paid = db.Column(db.Boolean, default=False)
     
-    # Relationships
     order = db.relationship('Order', foreign_keys=[order_id], back_populates='invoice')
     user = db.relationship('User', foreign_keys=[user_id], backref=db.backref('invoices', lazy=True))
     payment = db.relationship('Payment', foreign_keys=[payment_id], back_populates='invoice')
@@ -91,7 +86,6 @@ class Invoice(BaseModel):
         return f"Invoice {self.invoice_number}"
 
 class Transaction(BaseModel):
-    """Model for tracking payment transactions"""
     transaction_id = db.Column(db.String(100), unique=True, nullable=False)
     payment_id = db.Column(db.String(36), db.ForeignKey('payment.id'), nullable=False)
     type = db.Column(db.Enum(TransactionType), nullable=False)
@@ -101,7 +95,6 @@ class Transaction(BaseModel):
     processor_id = db.Column(db.String(255))
     processor_response = db.Column(db.Text)
 
-    # Table arguments for constraints
     __table_args__ = (
         db.CheckConstraint('amount > 0', name='valid_transaction_amount'),
     )
@@ -159,11 +152,9 @@ class Refund(BaseModel):
     
     processor_refund_id = db.Column(db.String(255))
     
-    # Relationships
     payment = db.relationship('Payment', foreign_keys=[payment_id], backref='refunds')
     admin = db.relationship('User', foreign_keys=[processed_by], backref='processed_refunds')
     
-    # Table arguments for constraints
     __table_args__ = (
         db.CheckConstraint('amount > 0', name='valid_refund_amount'),
     )

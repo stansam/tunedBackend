@@ -1,5 +1,5 @@
 from tuned.models import User
-from tuned.dtos import CreateUserDTO, UpdateUserDTO
+from tuned.dtos import CreateUserDTO, UpdateUserDTO, ActionableAlertDTO
 from tuned.repository.user.create import CreateUser
 from tuned.repository.user.get import GetUserByEmail, GetUserByID, GetAdminUser, GetUserByUsername
 from tuned.repository.user.update import UpdateUser
@@ -8,10 +8,13 @@ from tuned.repository.user.email_verification import (
     ConfirmEmailVerification,
     GetUserForResend,
 )
+from tuned.repository.user.referral import GetReferralGrowth
+from tuned.repository.user.alerts import GetActionableAlerts
 from tuned.extensions import db
 import string
+
 class UserRepository: 
-    def __init__(self):
+    def __init__(self) -> None:
         self.db = db  
     def create_user(self, user_data: CreateUserDTO) -> User:
         return CreateUser(self.db.session).execute(user_data)
@@ -36,3 +39,11 @@ class UserRepository:
 
     def get_user_for_resend(self, email: str) -> User | None:
         return GetUserForResend(self.db.session).execute(email)
+    
+    def get_referral_growth(
+        self, referrer_id: str, months: int = 6
+    ) -> list[tuple[str, float]]:
+        return GetReferralGrowth(self.db.session).execute(referrer_id, months)
+    
+    def get_actionable_alerts(self, client_id: str) -> list[ActionableAlertDTO]:
+        return GetActionableAlerts(self.db.session).execute(client_id)

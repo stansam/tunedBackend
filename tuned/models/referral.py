@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 from tuned.models.enums import ReferralStatus
 
 class Referral(BaseModel):
+    __tablename__ = 'referrals'
     referrer_id = db.Column(db.String(36), db.ForeignKey('users.id'))
     referred_id = db.Column(db.String(36), db.ForeignKey('users.id'))
     code = db.Column(db.String(10), unique=True, nullable=False)

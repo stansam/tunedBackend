@@ -1,0 +1,61 @@
+from sqlalchemy.orm import Session
+from sqlalchemy.exc import SQLAlchemyError, IntegrityError
+from tuned.models import Transaction, TransactionType
+from tuned.dtos.payment import TransactionCreateDTO, TransactionResponseDTO
+from tuned.repository.exceptions import DatabaseError, AlreadyExists, NotFound
+from tuned.core.logging import get_logger
+
+logger = get_logger(__name__)
+
+class CreateTransaction:
+    def __init__(self, db: Session) -> None:
+        self.db = db
+
+    def execute(self, data: TransactionCreateDTO) -> TransactionResponseDTO:
+        try:
+            transaction = Transaction(
+                payment_id=data.payment_id,
+                transaction_id=data.transaction_id,
+                type=getattr(TransactionType, data.type.upper(), data.type),
+                amount=data.amount,
+                status=data.status,
+                processor_id=data.processor_id,
+                processor_response=data.processor_response,
+            )
+            self.db.add(transaction)
+            self.db.commit()
+            return TransactionResponseDTO.from_model(transaction)
+        except IntegrityError as e:
+            self.db.rollback()
+            logger.error(f"[CreateTransaction] Integrity error: {e}")
+            raise AlreadyExists("Transaction could not be created due to an integrity conflict.") from e
+        except SQLAlchemyError as e:
+            self.db.rollback()
+            logger.error(f"[CreateTransaction] DB error: {e}")
+            raise DatabaseError("Database error while creating transaction.") from e
+
+class GetTransactionByID:
+    def __init__(self, db: Session) -> None:
+        self.db = db
+
+    def execute(self, transaction_id: str) -> TransactionResponseDTO:
+        try:
+            transaction = self.db.query(Transaction).filter(Transaction.id == transaction_id).first()
+            if not transaction:
+                raise NotFound("Transaction not found.")
+            return TransactionResponseDTO.from_model(transaction)
+        except SQLAlchemyError as e:
+            logger.error(f"[GetTransactionByID] DB error: {e}")
+            raise DatabaseError("Database error while fetching transaction.") from e
+
+class GetTransactionsByPaymentID:
+    def __init__(self, db: Session) -> None:
+        self.db = db
+
+    def execute(self, payment_id: str) -> list[TransactionResponseDTO]:
+        try:
+            transactions = self.db.query(Transaction).filter(Transaction.payment_id == payment_id).all()
+            return [TransactionResponseDTO.from_model(t) for t in transactions]
+        except SQLAlchemyError as e:
+            logger.error(f"[GetTransactionsByPaymentID] DB error: {e}")
+            raise DatabaseError("Database error while fetching transactions.") from e

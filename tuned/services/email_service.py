@@ -108,6 +108,27 @@ def send_welcome_email(user: User) -> None:
     
     logger.info(f"Welcome email sent to user {user.id}")
 
+def send_invoice_email(user: User, invoice) -> None:
+    from tuned.utils.email import send_async_email
+
+    frontend_url = current_app.config.get('FRONTEND_URL', 'http://localhost:3000')
+    invoice_url = f"{frontend_url}/client/billing/invoices/{invoice.id}"
+    
+    send_async_email(
+        to=user.email,
+        subject=f'New Invoice Generated - {invoice.invoice_number}',
+        template='client/invoice', # TODO: Implement invoice email template
+        recipient_name=user.get_name(),
+        invoice_number=invoice.invoice_number,
+        invoice_total=invoice.total,
+        invoice_due_date=invoice.due_date.strftime('%Y-%m-%d'),
+        invoice_url=invoice_url,
+        support_email=current_app.config.get('MAIL_DEFAULT_SENDER'),
+        current_year=datetime.now().year
+    )
+    
+    logger.info(f"Invoice email sent to user {user.id} for invoice {invoice.invoice_number}")
+
 
 def send_password_reset_email(user: User, reset_token: str) -> None:    
     from tuned.utils.email import send_async_email

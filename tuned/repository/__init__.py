@@ -10,6 +10,7 @@ from tuned.repository.price import (
 from tuned.repository.audit import AuditRepository
 from tuned.repository.order import OrderRepository
 from tuned.repository.preferences import PreferenceRepository
+from tuned.repository.payment import PaymentRepository
 
 class Repository:
     def __init__(self):
@@ -27,6 +28,7 @@ class Repository:
         self._audit = None
         self._order = None
         self._preferences = None
+        self._payment = None
 
     @property
     def user(self) -> UserRepository:
@@ -111,6 +113,12 @@ class Repository:
         if not self._preferences:
             self._preferences = PreferenceRepository()
         return self._preferences
+
+    @property
+    def payment(self) -> PaymentRepository:
+        if not self._payment:
+            self._payment = PaymentRepository()
+        return self._payment
 
 
 repositories = Repository()

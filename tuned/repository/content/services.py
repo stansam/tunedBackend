@@ -1,10 +1,14 @@
+import logging
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
-
+from sqlalchemy import func
 from tuned.extensions import db
-from tuned.models import Service
+from tuned.models import Service, ServiceCategory, Order
 from tuned.dtos.services import ServiceDTO, ServiceResponseDTO
 from tuned.repository.exceptions import AlreadyExists, DatabaseError, NotFound
+from tuned.core.logging import get_logger
+
+logger: logging.Logger = get_logger(__name__)
 
 class CreateService:
     def __init__(self, db: Session) -> None:
@@ -134,6 +138,26 @@ class GetServicesByCategory:
             return [ServiceResponseDTO.from_model(service) for service in services]
         except SQLAlchemyError as e:
             raise DatabaseError("Database error while fetching services by category.") from e
+    
+class GetServiceMix:
+    def __init__(self, db: Session) -> None:
+        self.db = db
+
+    def execute(self, client_id: str) -> list[tuple[str, int]]:
+
+        try:
+            rows = (
+                self.db.query(ServiceCategory.name, func.count(Order.id))
+                .join(Service, Order.service_id == Service.id)
+                .join(ServiceCategory, Service.category_id == ServiceCategory.id)
+                .filter(Order.client_id == client_id)
+                .group_by(ServiceCategory.name)
+                .all()
+            )
+            return [(name, count) for name, count in rows]
+        except SQLAlchemyError as exc:
+            logger.error("[GetServiceMix] DB error: %s", exc)
+            raise DatabaseError(str(exc)) from exc
 
 
 class ServiceRepository:
@@ -162,3 +186,6 @@ class ServiceRepository:
         return DeleteService(self.db).execute(service_id)
     def get_services_by_category(self, category_id: str) -> list[ServiceResponseDTO]:
         return GetServicesByCategory(self.db).execute(category_id)
+
+    def get_service_mix(self, client_id: str) -> list[tuple[str, int]]:
+        return GetServiceMix(self.db.session).execute(client_id)

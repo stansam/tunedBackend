@@ -8,6 +8,22 @@ class Variables:
     AVATAR_UPDATE_ACTION = "avatar_upload"
     AVATAR_DELETE_ACTION = "avatar_delete"
     
+    PAYMENT_CREATE_ACTION = "payment_create"
+    PAYMENT_UPDATE_ACTION = "payment_update"
+    INVOICE_CREATE_ACTION = "invoice_create"
+    INVOICE_UPDATE_ACTION = "invoice_update"
+    DISCOUNT_CREATE_ACTION = "discount_create"
+    DISCOUNT_UPDATE_ACTION = "discount_update"
+    DISCOUNT_APPLY_ACTION = "discount_apply"
+    REFUND_CREATE_ACTION = "refund_create"
+    REFUND_UPDATE_ACTION = "refund_update"
+    TRANSACTION_CREATE_ACTION = "transaction_create"
+    
+    PAYMENT_ENTITY_TYPE = "Payment"
+    INVOICE_ENTITY_TYPE = "Invoice"
+    DISCOUNT_ENTITY_TYPE = "Discount"
+    REFUND_ENTITY_TYPE = "Refund"
+    TRANSACTION_ENTITY_TYPE = "Transaction"
 
     OK = "ok"
     NOT_FOUND = "not_found"

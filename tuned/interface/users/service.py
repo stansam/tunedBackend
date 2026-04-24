@@ -119,7 +119,7 @@ class UserService:
                     last_failed_login=user.last_failed_login,
                 )
 
-                updated_user = self._repo.update_user(update_user_dto)
+                updated_user = self._repo.update_user(update_user_dto, actor_id=str(user.id))
 
                 self._log_user_activity(
                     before=user,
@@ -140,7 +140,7 @@ class UserService:
                 last_login_at=user.last_login_at,
             )
 
-            user = self._repo.update_user(update_user_dto)
+            user = self._repo.update_user(update_user_dto, actor_id=str(user.id))
             
             self._log_user_activity(
                     before=existing_user,

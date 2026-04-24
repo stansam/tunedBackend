@@ -12,6 +12,8 @@ from tuned.apis.client.routes.profile import (
     VerifyEmailView,
     ChangePasswordView
 )
+from tuned.apis.client.routes.settings import SettingsView, SettingsCategoryView
+
 
 CLIENT_ROUTES = [
     {
@@ -63,5 +65,15 @@ CLIENT_ROUTES = [
         "rule": "/profile/change-password",
         "view_func": ChangePasswordView.as_view("change_password_view"),
         "methods": ["POST"],
+    },
+    {
+        "rule": "/settings",
+        "view_func": SettingsView.as_view("settings_view"),
+        "methods": ["GET"],
+    },
+    {
+        "rule": "/settings/<string:category>",
+        "view_func": SettingsCategoryView.as_view("settings_category_view"),
+        "methods": ["PATCH"],
     },
 ]

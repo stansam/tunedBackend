@@ -12,6 +12,9 @@ class Variables:
     OK = "ok"
     NOT_FOUND = "not_found"
     ALREADY_VERIFIED = "already_verified"
+
+    PRODUCTION = "production"
+    DEVELOPMENT = "development"
     # ALREADY_EXISTS = "already_exists"
     # INVALID = "invalid"
     # NO_TOKEN = "no_token"

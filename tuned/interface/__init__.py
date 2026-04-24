@@ -12,6 +12,7 @@ from tuned.interface.blogs import(
 )
 from tuned.interface.notification import NotificationInterface
 from tuned.interface.order import OrderService
+from tuned.interface.preferences.service import PreferenceService
 
 
 class Services:
@@ -33,6 +34,7 @@ class Services:
         self._pricing_category = None
         self._notification = None
         self._order = None
+        self._preferences = None
 
     @property
     def user(self) -> UserService:
@@ -135,6 +137,12 @@ class Services:
             self._order = OrderService()
         return self._order
 
+    @property
+    def preferences(self) -> PreferenceService:
+        if not self._preferences:
+            self._preferences = PreferenceService()
+        return self._preferences
+
 
 interface = Services()
 # services = interface.service
@@ -155,3 +163,4 @@ price_rate = interface.price_rate
 pricing_category = interface.pricing_category
 notification = interface.notification
 order = interface.order
+preferences = interface.preferences

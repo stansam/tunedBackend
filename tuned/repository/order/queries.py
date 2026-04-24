@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime, timezone, timedelta
-from typing import Optional
+from dateutil.relativedelta import relativedelta
+from typing import Optional, Dict
+from flask import current_app
 
 from sqlalchemy import func, desc, asc
 from sqlalchemy.exc import SQLAlchemyError
@@ -17,6 +19,7 @@ from tuned.models.enums import (
 )
 from tuned.dtos.dashboard import ActionableAlertDTO
 from tuned.repository.exceptions import NotFound, DatabaseError
+from tuned.utils.variables import Variables
 from tuned.core.logging import get_logger
 
 logger: logging.Logger = get_logger(__name__)
@@ -84,13 +87,20 @@ class GetUpcomingDeadlines:
             logger.error("[GetUpcomingDeadlines] DB error: %s", exc)
             raise DatabaseError(str(exc)) from exc
 
+# TODO: implement decimal over float
+def build_month_window(now: datetime, months: int) -> Dict[str, float]:
+    window: Dict[str, float] = {}
+    for i in range(months - 1, -1, -1):
+        key = (now - relativedelta(months=i)).strftime("%Y-%m")
+        window[key] = 0.0
+    return window
+
 class GetSpendingVelocity:
     def __init__(self, db: Session) -> None:
         self.db = db
 
     def _month_label_expr(self, column: object) -> object:
-        dialect = self.db.bind.dialect.name
-        if dialect == "postgresql":
+        if current_app.config["FLASK_ENV"] == Variables.PRODUCTION:
             return func.to_char(column, "YYYY-MM")
         return func.strftime("%Y-%m", column)
 
@@ -108,10 +118,7 @@ class GetSpendingVelocity:
                 .all()
             )
             now = datetime.now(timezone.utc)
-            window: dict[str, float] = {}
-            for i in range(months - 1, -1, -1):
-                key = (now - timedelta(days=30 * i)).strftime("%Y-%m")
-                window[key] = 0.0
+            window: dict[str, float] = build_month_window(now, months)
             for label, total in rows:
                 if label in window:
                     window[label] = float(total or 0.0)
@@ -166,8 +173,7 @@ class GetReferralGrowth:
         self.db = db
 
     def _month_label_expr(self, column: object) -> object:
-        dialect = self.db.bind.dialect.name
-        if dialect == "postgresql":
+        if current_app.config["FLASK_ENV"] == Variables.PRODUCTION:
             return func.to_char(column, "YYYY-MM")
         return func.strftime("%Y-%m", column)
 
@@ -182,10 +188,7 @@ class GetReferralGrowth:
                 .all()
             )
             now = datetime.now(timezone.utc)
-            window: dict[str, float] = {}
-            for i in range(months - 1, -1, -1):
-                key = (now - timedelta(days=30 * i)).strftime("%Y-%m")
-                window[key] = 0.0
+            window: Dict[str, float] = build_month_window(now, months)
             for label, total in rows:
                 if label in window:
                     window[label] = float(total or 0.0)

@@ -28,6 +28,10 @@ class Variables:
     REFUND_ENTITY_TYPE = "Refund"
     TRANSACTION_ENTITY_TYPE = "Transaction"
 
+    ENTITY_TYPE_REFERRAL = "Referral"
+    REFERRAL_SIGNUP_ACTION = "referral_signup"
+    REFERRAL_POINTS_EARNED_ACTION = "referral_points_earned"
+
     OK = "ok"
     NOT_FOUND = "not_found"
     ALREADY_VERIFIED = "already_verified"

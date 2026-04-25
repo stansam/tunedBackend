@@ -44,3 +44,8 @@ from tuned.dtos.payment import (
     DiscountCreateDTO, DiscountUpdateDTO, DiscountResponseDTO,
     RefundCreateDTO, RefundUpdateDTO, RefundResponseDTO
 )
+
+from tuned.dtos.referral import(
+    ReferralCreateDTO, ReferralResponseDTO, RewardCalculationResultDTO,
+    ReferralUpdateDTO
+)

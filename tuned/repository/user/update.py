@@ -27,6 +27,7 @@ class UpdateUser:
                 "gender",
                 "phone_number",
                 "profile_pic",
+                "reward_points",
                 "language",
                 "timezone",
                 "password_hash",

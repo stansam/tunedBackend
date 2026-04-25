@@ -55,6 +55,7 @@ class UpdateUserDTO:
     phone_number: Optional[str] = None
     profile_pic: Optional[str] = None
     failed_login_attempts: Optional[int] = None
+    reward_points: Optional[int] = None
     last_failed_login: Optional[datetime] = None
     last_login_at: Optional[datetime] = None
     language: Optional[str] = None

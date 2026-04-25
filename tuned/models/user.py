@@ -6,7 +6,7 @@ from tuned.extensions import db
 from tuned.models.base import BaseModel
 from tuned.models.communication import ChatMessage, Chat
 from tuned.models.enums import GenderEnum
-import random
+import secrets
 import string
 
 class User(UserMixin, BaseModel):
@@ -53,10 +53,8 @@ class User(UserMixin, BaseModel):
         if not self.referral_code:
             self.referral_code = self.generate_referral_code()
 
-    # TODO: Implement robust referral code generation
     def generate_referral_code(self):
-        """Generate a unique referral code for the user."""
-        return ''.join(random.choices(string.ascii_uppercase + string.digits, k=10))
+        return ''.join(secrets.choice(string.ascii_uppercase + string.digits) for _ in range(10))
     
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)

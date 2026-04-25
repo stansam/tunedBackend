@@ -9,11 +9,11 @@ class Referral(BaseModel):
     referred_id = db.Column(db.String(36), db.ForeignKey('users.id'))
     code = db.Column(db.String(10), unique=True, nullable=False)
     status = db.Column(db.Enum(ReferralStatus), default=ReferralStatus.PENDING, nullable=False)
-    commission = db.Column(db.Float, default=0.0) #earnings
+    points_earned = db.Column(db.Integer, default=0)
     
     __table_args__ = (
         db.Index('ix_referral_referrer_status', 'referrer_id', 'status'),
-        db.CheckConstraint('commission >= 0 AND commission <= 1000', name='valid_commission'),
+        db.CheckConstraint('points_earned >= 0', name='valid_points'),
         db.CheckConstraint('referrer_id != referred_id', name='no_self_referral'),
     )
     

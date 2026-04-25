@@ -30,6 +30,14 @@ class PaymentMethod(str, Enum):
     GOOGLE_PAY = "google_pay"
 
 
+class MethodCategory(str, Enum):
+    BANK_TRANSFER = "bank_transfer"
+    DIGITAL_WALLET = "digital_wallet"
+    CRYPTO = "crypto"
+    CREDIT_CARD = "credit_card"
+    OTHER = "other"
+
+
 class TransactionType(str, Enum):
     PAYMENT = "payment"
     REFUND = "refund"

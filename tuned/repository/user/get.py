@@ -67,3 +67,14 @@ class GetUsers:
             return users
         except SQLAlchemyError as e:
             raise DatabaseError(f"Database error while fetching users: {str(e)}") from e
+
+class GetUserByReferralCode:
+    def __init__(self, db: Session) -> None:
+        self.db = db
+
+    def execute(self, referral_code: str) -> User:
+        try:
+            user = self.db.query(User).filter_by(referral_code=referral_code).first()
+            return user
+        except SQLAlchemyError as e:
+            raise DatabaseError(f"Database error while fetching user by referral code: {str(e)}") from e

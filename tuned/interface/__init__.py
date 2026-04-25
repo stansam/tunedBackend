@@ -1,4 +1,5 @@
 from tuned.interface.users import UserService
+from tuned.interface.referral import ReferralInterface
 from tuned.interface.content import (
     AcademicLevelService, DeadlineService, FAQService, SampleService,
     ServiceCategoryService, ServiceService, TestimonialService
@@ -19,6 +20,7 @@ from tuned.interface.analytics import AnalyticsService
 class Services:
     def __init__(self) -> None:
         self._user = None
+        self._referral = None
         self._academic_level = None
         self._deadline = None
         self._service = None
@@ -43,6 +45,12 @@ class Services:
         if not self._user:
             self._user = UserService()
         return self._user
+    
+    @property
+    def referral(self) -> ReferralInterface:
+        if not self._referral:
+            self._referral = ReferralInterface()
+        return self._referral
 
     @property
     def academic_level(self) -> AcademicLevelService:
@@ -155,6 +163,7 @@ class Services:
 interface = Services()
 # services = interface.service
 user = interface.user
+referral = interface.referral
 academic_level = interface.academic_level
 deadline = interface.deadline
 service = interface.service

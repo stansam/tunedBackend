@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from tuned.interface.payment.payment import ProcessPayment, GetPaymentDetails, UpdatePaymentStatus
+from tuned.interface.payment.payment import ProcessPayment, GetPaymentDetails, ClientMarkAsPaid, AdminVerifyPayment
 from tuned.interface.payment.invoice import GenerateInvoice, GetInvoiceDetails, MarkInvoicePaid
 from tuned.interface.payment.discount import ApplyDiscount, CreateDiscount, GetDiscountDetails
 from tuned.interface.payment.refund import ProcessRefund, ApproveRefund
@@ -11,7 +11,8 @@ class PaymentServiceManager:
     def __init__(self) -> None:
         self._process = ProcessPayment()
         self._get = GetPaymentDetails()
-        self._update = UpdatePaymentStatus()
+        self._mark_paid_client = ClientMarkAsPaid()
+        self._verify_payment = AdminVerifyPayment()
 
     def process(self, data) -> object:
         return self._process.execute(data)
@@ -19,8 +20,11 @@ class PaymentServiceManager:
     def get_details(self, payment_id: str) -> object:
         return self._get.execute(payment_id)
 
-    def update_status(self, payment_id: str, data, actor_id: str) -> object:
-        return self._update.execute(payment_id, data, actor_id)
+    def mark_as_paid_client(self, payment_id: str, client_proof_reference: str, client_id: str) -> object:
+        return self._mark_paid_client.execute(payment_id, client_proof_reference, client_id)
+
+    def verify_payment(self, payment_id: str, admin_id: str) -> object:
+        return self._verify_payment.execute(payment_id, admin_id)
 
 class AcceptedMethodServiceManager:
     def __init__(self) -> None:

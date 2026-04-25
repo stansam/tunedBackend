@@ -3,22 +3,15 @@ from __future__ import annotations
 from typing import Optional
 
 from tuned.extensions import db
-from tuned.models import Order, ActivityLog
-from tuned.dtos.dashboard import ActionableAlertDTO
+from tuned.models import Order
 from tuned.repository.order.queries import (
     GetActiveOrdersByClient,
     GetLatestActiveOrderByClient,
     GetUpcomingDeadlines,
-    GetSpendingVelocity,
     GetProjectLifecycle,
-    GetServiceMix,
-    GetReferralGrowth,
-    GetActivityFeed,
-    GetActionableAlerts,
     GetOrderForReorder,
     CreateOrderFromReorder,
 )
-
 
 class OrderRepository:
     def __init__(self) -> None:

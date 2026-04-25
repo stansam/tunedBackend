@@ -1,14 +1,14 @@
 from tuned.models import User
 from tuned.dtos import CreateUserDTO, UpdateUserDTO, ActionableAlertDTO
 from tuned.repository.user.create import CreateUser
-from tuned.repository.user.get import GetUserByEmail, GetUserByID, GetAdminUser, GetUserByUsername
+from tuned.repository.user.get import GetUserByEmail, GetUserByID, GetAdminUser, GetUserByUsername, GetUserByReferralCode
 from tuned.repository.user.update import UpdateUser
 from tuned.repository.user.email_verification import (
     GenerateAndStoreVerificationToken,
     ConfirmEmailVerification,
     GetUserForResend,
 )
-from tuned.repository.user.referral import GetReferralGrowth
+# from tuned.repository.user.referral import GetReferralGrowth
 from tuned.repository.user.alerts import GetActionableAlerts
 from tuned.extensions import db
 import string
@@ -24,6 +24,8 @@ class UserRepository:
         return GetUserByEmail(self.db.session).execute(email)
     def get_user_by_username(self, username: string) -> User:
         return GetUserByUsername(self.db.session).execute(username)
+    def get_by_referral_code(self, referral_code: string) -> User | None:
+        return GetUserByReferralCode(self.db.session).execute(referral_code)
     def get_admin_user(self) -> User:
         return GetAdminUser(self.db.session).execute()
     def update_user(self, updates: UpdateUserDTO, actor_id: string) -> User:
@@ -39,11 +41,6 @@ class UserRepository:
 
     def get_user_for_resend(self, email: str) -> User | None:
         return GetUserForResend(self.db.session).execute(email)
-    
-    def get_referral_growth(
-        self, referrer_id: str, months: int = 6
-    ) -> list[tuple[str, float]]:
-        return GetReferralGrowth(self.db.session).execute(referrer_id, months)
     
     def get_actionable_alerts(self, client_id: str) -> list[ActionableAlertDTO]:
         return GetActionableAlerts(self.db.session).execute(client_id)

@@ -19,7 +19,7 @@ from tuned.models.preferences import (
     )
 
 from tuned.models.enums import (
-    OrderStatus, SupportTicketStatus, PaymentStatus, PaymentMethod,
+    OrderStatus, SupportTicketStatus, PaymentStatus, PaymentMethod, MethodCategory,
     TransactionType, RefundStatus, NotificationType, ChatStatus,
     DeliveryStatus, FileType, ReferralStatus, DiscountType, Currency, GenderEnum, BlogReactionType
 )

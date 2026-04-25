@@ -34,6 +34,7 @@ class AnalyticsService:
         self._payment_repo = repositories.payment.payment
         self._service_repo = repositories.service
         self._audit_repo = repositories.audit.activity_log
+        self._referral_repo = repositories.referral
 
     def get_nav_stats(self, user_id: str) -> NavStatsDTO:
         """
@@ -79,7 +80,7 @@ class AnalyticsService:
             spending_raw   = self._payment_repo.get_spending_velocity(user_id)
             lifecycle_raw  = self._order_repo.get_project_lifecycle(user_id)
             service_mix_raw = self._service_repo.get_service_mix(user_id)
-            referral_raw   = self._user_repo.get_referral_growth(user_id)
+            referral_raw   = self._referral_repo.get_referral_growth(user_id)
 
             return DashboardAnalyticsDTO(
                 spending_velocity=[

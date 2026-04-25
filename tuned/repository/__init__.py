@@ -1,4 +1,5 @@
 from tuned.repository.user import UserRepository
+from tuned.repository.referral import ReferralRepository
 from tuned.repository.blogs import BlogRepository
 from tuned.repository.content import(
     AcademicLevelRepository, DeadlineRepository, ServiceRepository, ServiceCategoryRepository,
@@ -15,6 +16,7 @@ from tuned.repository.payment import PaymentRepository
 class Repository:
     def __init__(self):
         self._user = None
+        self._referral = None
         self._blog = None
         self._academic_level = None
         self._deadline = None
@@ -35,6 +37,12 @@ class Repository:
         if not self._user:
             self._user = UserRepository()
         return self._user
+    
+    @property
+    def referral(self) -> ReferralRepository:
+        if not self._referral:
+            self._referral = ReferralRepository()
+        return self._referral
 
     @property
     def blog(self) -> BlogRepository:

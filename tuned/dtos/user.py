@@ -134,3 +134,7 @@ class UpdateProfileRequestDTO:
 class ChangePasswordRequestDTO:
     current_password: str
     new_password: str
+
+@dataclass
+class UserRewardPointsUpdateDTO:
+    reward_points: int

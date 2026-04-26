@@ -1,3 +1,4 @@
+from typing import Any
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 from sqlalchemy import func, asc
@@ -13,8 +14,8 @@ from tuned.utils.variables import Variables
 logger = get_logger(__name__)
 
 class CreatePayment:
-    def __init__(self, db: Session) -> None:
-        self.db = db
+    def __init__(self, session: Session) -> None:
+        self.session = session
 
     def execute(self, data: PaymentCreateDTO) -> PaymentResponseDTO:
         try:
@@ -29,26 +30,26 @@ class CreatePayment:
                 amount=data.amount,
                 accepted_method_id=data.accepted_method_id,
                 status=status,
-            )
-            self.db.add(payment)
-            self.db.commit()
+            )  # type: ignore[no-untyped-call]
+            self.session.add(payment)
+            self.session.commit()
             return PaymentResponseDTO.from_model(payment)
         except IntegrityError as e:
-            self.db.rollback()
+            self.session.rollback()
             logger.error(f"[CreatePayment] Integrity error: {e}")
             raise AlreadyExists("Payment record could not be created due to an integrity conflict.") from e
         except SQLAlchemyError as e:
-            self.db.rollback()
+            self.session.rollback()
             logger.error(f"[CreatePayment] DB error: {e}")
             raise DatabaseError("Database error while creating payment.") from e
 
 class GetPaymentByID:
-    def __init__(self, db: Session) -> None:
-        self.db = db
+    def __init__(self, session: Session) -> None:
+        self.session = session
 
     def execute(self, payment_id: str) -> PaymentResponseDTO:
         try:
-            payment = self.db.query(Payment).filter(Payment.id == payment_id).first()
+            payment = self.session.query(Payment).filter(Payment.id == payment_id).first()
             if not payment:
                 raise NotFound("Payment not found.")
             return PaymentResponseDTO.from_model(payment)
@@ -57,24 +58,24 @@ class GetPaymentByID:
             raise DatabaseError("Database error while fetching payment.") from e
 
 class GetPaymentByOrderID:
-    def __init__(self, db: Session) -> None:
-        self.db = db
+    def __init__(self, session: Session) -> None:
+        self.session = session
 
     def execute(self, order_id: str) -> list[PaymentResponseDTO]:
         try:
-            payments = self.db.query(Payment).filter(Payment.order_id == order_id).all()
+            payments = self.session.query(Payment).filter(Payment.order_id == order_id).all()
             return [PaymentResponseDTO.from_model(p) for p in payments]
         except SQLAlchemyError as e:
             logger.error(f"[GetPaymentByOrderID] DB error: {e}")
             raise DatabaseError("Database error while fetching payments for order.") from e
 
 class UpdatePayment:
-    def __init__(self, db: Session) -> None:
-        self.db = db
+    def __init__(self, session: Session) -> None:
+        self.session = session
 
     def execute(self, payment_id: str, data: PaymentUpdateDTO) -> PaymentResponseDTO:
         try:
-            payment = self.db.query(Payment).filter(Payment.id == payment_id).first()
+            payment = self.session.query(Payment).filter(Payment.id == payment_id).first()
             if not payment:
                 raise NotFound("Payment not found.")
                 
@@ -87,22 +88,22 @@ class UpdatePayment:
             if data.admin_verified_at is not None:
                 payment.admin_verified_at = data.admin_verified_at
                 
-            self.db.commit()
+            self.session.commit()
             return PaymentResponseDTO.from_model(payment)
         except IntegrityError as e:
-            self.db.rollback()
+            self.session.rollback()
             logger.error(f"[UpdatePayment] Integrity error: {e}")
             raise DatabaseError("Conflict updating payment.") from e
         except SQLAlchemyError as e:
-            self.db.rollback()
+            self.session.rollback()
             logger.error(f"[UpdatePayment] DB error: {e}")
             raise DatabaseError("Database error while updating payment.") from e
 
 class GetSpendingVelocity:
-    def __init__(self, db: Session) -> None:
-        self.db = db
+    def __init__(self, session: Session) -> None:
+        self.session = session
 
-    def _month_label_expr(self, column: object) -> object:
+    def _month_label_expr(self, column: Any) -> Any: # TODO: Type Hint the data dict
         if current_app.config["FLASK_ENV"] == Variables.PRODUCTION:
             return func.to_char(column, "YYYY-MM")
         return func.strftime("%Y-%m", column)
@@ -111,7 +112,7 @@ class GetSpendingVelocity:
         try:
             month_expr = self._month_label_expr(Payment.created_at)
             rows = (
-                self.db.query(month_expr, func.sum(Payment.amount))
+                self.session.query(month_expr, func.sum(Payment.amount))
                 .filter(
                     Payment.user_id == client_id,
                     Payment.status == PaymentStatus.COMPLETED,

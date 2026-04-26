@@ -1,7 +1,11 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from tuned.models.audit import ActivityLog
+
 
 from tuned.dtos.order import OrderProgressDTO, UpcomingDeadlineDTO
 
@@ -43,7 +47,7 @@ class ActivityFeedEntryDTO:
     created_at:  str
 
     @classmethod
-    def from_model(cls, log: object) -> "ActivityFeedEntryDTO":
+    def from_model(cls, log: "ActivityLog") -> "ActivityFeedEntryDTO":
         return cls(
             id=str(log.id),
             action=log.action,

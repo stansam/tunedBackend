@@ -5,16 +5,18 @@ from tuned.models.enums import (
     EmailFrequency, ProfileVisibility, DateFormat, TimeFormat, NumberFormat, WeekStart, InvoiceDeliveryMethod
 )
 
-class UpdatePreferenceCategory:
-    def __init__(self, db: Session):
-        self.db = db
+from typing import Any
 
-    def execute(self, model, user_id: str, data: dict):
+class UpdatePreferenceCategory:
+    def __init__(self, session: Session) -> None:
+        self.session = session
+
+    def execute(self, model: type[Any], user_id: str, data: dict[str, Any]) -> Any: #TODO: Implement strict typing for this function
         try:
-            obj = self.db.query(model).filter_by(user_id=user_id).first()
+            obj = self.session.query(model).filter_by(user_id=user_id).first()
             if not obj:
                 obj = model(user_id=user_id)
-                self.db.add(obj)
+                self.session.add(obj)
             
             enum_mappings = {
                 'frequency': EmailFrequency,
@@ -36,7 +38,7 @@ class UpdatePreferenceCategory:
                     else:
                         setattr(obj, key, value)
             
-            self.db.flush()
+            self.session.flush()
             return obj
         except SQLAlchemyError as e:
             raise DatabaseError(f"Database error while updating preference category: {str(e)}")

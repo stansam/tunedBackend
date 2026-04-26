@@ -1,3 +1,4 @@
+from typing import Any
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 from tuned.extensions import db
@@ -7,8 +8,8 @@ from tuned.repository.exceptions import AlreadyExists, DatabaseError, NotFound
 
 
 class CreatePricingCategory:
-    def __init__(self, db: Session) -> None:
-        self.db = db
+    def __init__(self, session: Session) -> None:
+        self.session = session
 
     def execute(self, data: PricingCategoryDTO) -> PricingCategoryResponseDTO:
         try:
@@ -17,24 +18,24 @@ class CreatePricingCategory:
                 description=data.description,
                 display_order=data.display_order,
             )
-            self.db.session.add(category)
-            self.db.session.commit()
+            self.session.add(category)
+            self.session.commit()
             return PricingCategoryResponseDTO.from_model(category)
         except IntegrityError:
-            self.db.session.rollback()
+            self.session.rollback()
             raise AlreadyExists("A pricing category with this name already exists.")
         except SQLAlchemyError as e:
-            self.db.session.rollback()
+            self.session.rollback()
             raise DatabaseError("Database error while creating pricing category.") from e
 
 
 class GetPricingCategoryByID:
-    def __init__(self, db: Session) -> None:
-        self.db = db
+    def __init__(self, session: Session) -> None:
+        self.session = session
 
     def execute(self, category_id: str) -> PricingCategoryResponseDTO:
         try:
-            category = self.db.session.query(PricingCategory).filter_by(id=category_id).first()
+            category = self.session.query(PricingCategory).filter_by(id=category_id).first()
             if not category:
                 raise NotFound("Pricing category not found.")
             return PricingCategoryResponseDTO.from_model(category)
@@ -43,13 +44,13 @@ class GetPricingCategoryByID:
 
 
 class GetAllPricingCategories:
-    def __init__(self, db: Session) -> None:
-        self.db = db
+    def __init__(self, session: Session) -> None:
+        self.session = session
 
     def execute(self) -> list[PricingCategoryResponseDTO]:
         try:
             categories = (
-                self.db.session.query(PricingCategory)
+                self.session.query(PricingCategory)
                 .order_by(PricingCategory.display_order.asc())
                 .all()
             )
@@ -59,58 +60,58 @@ class GetAllPricingCategories:
 
 
 class UpdatePricingCategory:
-    def __init__(self, db: Session) -> None:
-        self.db = db
+    def __init__(self, session: Session) -> None:
+        self.session = session
 
-    def execute(self, category_id: str, updates: dict) -> PricingCategoryResponseDTO:
+    def execute(self, category_id: str, updates: dict[str, Any]) -> PricingCategoryResponseDTO:
         try:
-            category = self.db.session.query(PricingCategory).filter_by(id=category_id).first()
+            category = self.session.query(PricingCategory).filter_by(id=category_id).first()
             if not category:
                 raise NotFound("Pricing category not found.")
             for key, value in updates.items():
                 if hasattr(category, key):
                     setattr(category, key, value)
-            self.db.session.commit()
+            self.session.commit()
             return PricingCategoryResponseDTO.from_model(category)
         except IntegrityError:
-            self.db.session.rollback()
+            self.session.rollback()
             raise AlreadyExists("A pricing category with that name already exists.")
         except SQLAlchemyError as e:
-            self.db.session.rollback()
+            self.session.rollback()
             raise DatabaseError("Database error while updating pricing category.") from e
 
 
 class DeletePricingCategory:
-    def __init__(self, db: Session) -> None:
-        self.db = db
+    def __init__(self, session: Session) -> None:
+        self.session = session
 
     def execute(self, category_id: str) -> None:
         try:
-            category = self.db.session.query(PricingCategory).filter_by(id=category_id).first()
+            category = self.session.query(PricingCategory).filter_by(id=category_id).first()
             if not category:
                 raise NotFound("Pricing category not found.")
-            self.db.session.delete(category)
-            self.db.session.commit()
+            self.session.delete(category)
+            self.session.commit()
         except SQLAlchemyError as e:
-            self.db.session.rollback()
+            self.session.rollback()
             raise DatabaseError("Database error while deleting pricing category.") from e
 
 
 class PricingCategoryRepository:
-    def __init__(self) -> None:
-        self.db = db
+    def __init__(self, session: Session) -> None:
+        self.session = session
 
     def create(self, data: PricingCategoryDTO) -> PricingCategoryResponseDTO:
-        return CreatePricingCategory(self.db).execute(data)
+        return CreatePricingCategory(self.session).execute(data)
 
     def get_by_id(self, category_id: str) -> PricingCategoryResponseDTO:
-        return GetPricingCategoryByID(self.db).execute(category_id)
+        return GetPricingCategoryByID(self.session).execute(category_id)
 
     def get_all(self) -> list[PricingCategoryResponseDTO]:
-        return GetAllPricingCategories(self.db).execute()
+        return GetAllPricingCategories(self.session).execute()
 
-    def update(self, category_id: str, updates: dict) -> PricingCategoryResponseDTO:
-        return UpdatePricingCategory(self.db).execute(category_id, updates)
+    def update(self, category_id: str, updates: dict[str, Any]) -> PricingCategoryResponseDTO:
+        return UpdatePricingCategory(self.session).execute(category_id, updates)
 
     def delete(self, category_id: str) -> None:
-        return DeletePricingCategory(self.db).execute(category_id)
+        return DeletePricingCategory(self.session).execute(category_id)

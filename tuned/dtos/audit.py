@@ -1,6 +1,10 @@
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Optional, List, TypeVar, Generic
+from typing import Optional, List, TypeVar, Generic, TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from tuned.models.audit import PriceHistory, OrderStatusHistory, ActivityLog, EmailLog
+
 
 T = TypeVar("T")
 
@@ -30,7 +34,7 @@ class PriceHistoryResponseDTO:
     updated_at: datetime
 
     @classmethod
-    def from_model(cls, obj) -> "PriceHistoryResponseDTO":
+    def from_model(cls, obj: "PriceHistory") -> "PriceHistoryResponseDTO":
         return cls(
             id=obj.id,
             price_rate_id=obj.price_rate_id,
@@ -64,7 +68,7 @@ class OrderStatusHistoryResponseDTO:
     updated_at: datetime
 
     @classmethod
-    def from_model(cls, obj) -> "OrderStatusHistoryResponseDTO":
+    def from_model(cls, obj: "OrderStatusHistory") -> "OrderStatusHistoryResponseDTO":
         return cls(
             id=obj.id,
             order_id=obj.order_id,
@@ -83,8 +87,8 @@ class ActivityLogCreateDTO:
     user_id: Optional[str] = None
     entity_type: Optional[str] = None
     entity_id: Optional[str] = None
-    before: Optional[dict] = None
-    after: Optional[dict] = None
+    before: Optional[dict[str, Any]] = None
+    after: Optional[dict[str, Any]] = None
     ip_address: Optional[str] = None
     user_agent: Optional[str] = None
     created_by: Optional[str] = None
@@ -96,14 +100,14 @@ class ActivityLogResponseDTO:
     action: str
     entity_type: Optional[str]
     entity_id: Optional[str]
-    before: Optional[dict]
-    after: Optional[dict]
+    before: Optional[dict[str, Any]]
+    after: Optional[dict[str, Any]]
     ip_address: Optional[str]
     user_agent: Optional[str]
     created_at: datetime
 
     @classmethod
-    def from_model(cls, obj) -> "ActivityLogResponseDTO":
+    def from_model(cls, obj: "ActivityLog") -> "ActivityLogResponseDTO":
         return cls(
             id=obj.id,
             user_id=obj.user_id,
@@ -151,7 +155,7 @@ class EmailLogResponseDTO:
     created_at: datetime
 
     @classmethod
-    def from_model(cls, obj) -> "EmailLogResponseDTO":
+    def from_model(cls, obj: "EmailLog") -> "EmailLogResponseDTO":
         return cls(
             id=obj.id,
             recipient=obj.recipient,

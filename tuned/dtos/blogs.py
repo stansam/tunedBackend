@@ -1,10 +1,12 @@
-from dataclasses import dataclass
-from typing import Optional, List
+from dataclasses import dataclass, field
+from typing import Optional, List, TYPE_CHECKING, Any
 from datetime import datetime
 from tuned.dtos.content import TagResponseDTO
 from tuned.dtos.base import BaseDTO, PaginationDTO
-from tuned.models import BlogReactionType
-from dataclasses import field
+
+if TYPE_CHECKING:
+    from tuned.models.blog import BlogCategory, BlogPost, BlogComment, CommentReaction
+
 
 @dataclass
 class BlogCategoryDTO(BaseDTO):
@@ -20,7 +22,7 @@ class BlogCategoryResponseDTO(BaseDTO):
     description: str
 
     @classmethod
-    def from_model(cls, obj) -> "BlogCategoryResponseDTO":
+    def from_model(cls, obj: "BlogCategory") -> "BlogCategoryResponseDTO":
         return cls(
             id=str(obj.id),
             name=obj.name,
@@ -60,7 +62,7 @@ class BlogPostResponseDTO(BaseDTO):
     tags: List[TagResponseDTO]
 
     @classmethod
-    def from_model(cls, obj) -> "BlogPostResponseDTO":
+    def from_model(cls, obj: "BlogPost") -> "BlogPostResponseDTO":
         return cls(
             id=obj.id,
             title=obj.title,
@@ -74,8 +76,8 @@ class BlogPostResponseDTO(BaseDTO):
             is_published=obj.is_published,
             is_featured=obj.is_featured,
             published_at=obj.published_at.isoformat() if obj.published_at else "",
-            comments=[BlogCommentResponseDTO.from_model(comment) for comment in obj.comments],
-            tags=[TagResponseDTO.from_model(tag) for tag in obj.tag_list],
+            comments=[BlogCommentResponseDTO.from_model(comment) for comment in obj.comments.all()],
+            tags=[TagResponseDTO.from_model(tag) for tag in obj.tag_list.all()],
         )
 
 @dataclass
@@ -84,7 +86,7 @@ class BlogPostListResponseDTO(PaginationDTO):
     total: int
 
     @classmethod
-    def from_model(cls, obj) -> "BlogPostListResponseDTO":
+    def from_model(cls, obj: Any) -> "BlogPostListResponseDTO":
         return cls(
             blogs=[BlogPostResponseDTO.from_model(blog) for blog in obj.blogs],
             total=obj.total,
@@ -93,8 +95,6 @@ class BlogPostListResponseDTO(PaginationDTO):
             page=obj.page,
             per_page=obj.per_page,
         )
-
-    
 
 @dataclass
 class BlogPostListRequestDTO(PaginationDTO):
@@ -108,7 +108,7 @@ class BlogCommentDTO(BaseDTO):
     content: str
     name: str = ""
     email: str = ""
-    user_id: str = None
+    user_id: Optional[str] = None
     approved: bool = False
 
 @dataclass
@@ -118,20 +118,14 @@ class BlogCommentResponseDTO(BaseDTO):
     content: str
     name: str = ""
     email: str = ""
-    user_id: str = None
+    user_id: Optional[str] = None
     approved: bool = False
     reactions: List[CommentReactionResponseDTO] = field(default_factory=list)
-
-    @property
-    def total_likes(self) -> int:
-        return len([r for r in self.reactions if r.reaction_type == BlogReactionType.LIKE])
-
-    @property
-    def total_dislikes(self) -> int:
-        return len([r for r in self.reactions if r.reaction_type == BlogReactionType.DISLIKE])
+    total_likes: int = 0
+    total_dislikes: int = 0
 
     @classmethod
-    def from_model(cls, obj) -> "BlogCommentResponseDTO":
+    def from_model(cls, obj: "BlogComment") -> "BlogCommentResponseDTO":
         return cls(
             id=str(obj.id),
             post_id=str(obj.post_id),
@@ -145,25 +139,23 @@ class BlogCommentResponseDTO(BaseDTO):
             total_dislikes=obj.total_dislikes,
         )
 
-
 @dataclass
 class CommentReactionDTO(BaseDTO):
     comment_id: str
     reaction_type: str
     user_id: Optional[str] = None
-    ip_address: Optional[str] = None
-    
+    ip_address: Optional[str] = None  
 
 @dataclass
 class CommentReactionResponseDTO(BaseDTO):
     id: str
     comment_id: str
     reaction_type: str
-    user_id: str = None
+    user_id: Optional[str] = None
     ip_address: Optional[str] = None
 
     @classmethod
-    def from_model(cls, obj) -> "CommentReactionResponseDTO":
+    def from_model(cls, obj: "CommentReaction") -> "CommentReactionResponseDTO":
         return cls(
             id=str(obj.id),
             comment_id=str(obj.comment_id),

@@ -185,6 +185,12 @@ class UserService:
                     'email': created_user.email,
                     'name': created_user.get_name()
                 })
+                
+                if getattr(data, 'referred_by_code', None):
+                    event_bus.emit('user.registered_with_referral', {
+                        'new_user_id': str(created_user.id),
+                        'referral_code': data.referred_by_code
+                    })
             except Exception as token_exc:
                 logger.error(
                     f'[create_user] Token/email step failed for user {created_user.id}: {token_exc!r}'

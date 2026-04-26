@@ -8,8 +8,8 @@ from tuned.core.logging import get_logger
 logger = get_logger(__name__)
 
 class CreateDiscount:
-    def __init__(self, db: Session) -> None:
-        self.db = db
+    def __init__(self, session: Session) -> None:
+        self.session = session
 
     def execute(self, data: DiscountCreateDTO) -> DiscountResponseDTO:
         try:
@@ -25,25 +25,25 @@ class CreateDiscount:
                 usage_limit=data.usage_limit,
                 is_active=data.is_active,
             )
-            self.db.add(discount)
-            self.db.commit()
+            self.session.add(discount)
+            self.session.commit()
             return DiscountResponseDTO.from_model(discount)
         except IntegrityError as e:
-            self.db.rollback()
+            self.session.rollback()
             logger.error(f"[CreateDiscount] Integrity error: {e}")
             raise AlreadyExists("Discount code already exists.") from e
         except SQLAlchemyError as e:
-            self.db.rollback()
+            self.session.rollback()
             logger.error(f"[CreateDiscount] DB error: {e}")
             raise DatabaseError("Database error while creating discount.") from e
 
 class GetDiscountByID:
-    def __init__(self, db: Session) -> None:
-        self.db = db
+    def __init__(self, session: Session) -> None:
+        self.session = session
 
     def execute(self, discount_id: str) -> DiscountResponseDTO:
         try:
-            discount = self.db.query(Discount).filter(Discount.id == discount_id).first()
+            discount = self.session.query(Discount).filter(Discount.id == discount_id).first()
             if not discount:
                 raise NotFound("Discount not found.")
             return DiscountResponseDTO.from_model(discount)
@@ -52,12 +52,12 @@ class GetDiscountByID:
             raise DatabaseError("Database error while fetching discount.") from e
 
 class GetDiscountByCode:
-    def __init__(self, db: Session) -> None:
-        self.db = db
+    def __init__(self, session: Session) -> None:
+        self.session = session
 
     def execute(self, code: str) -> DiscountResponseDTO:
         try:
-            discount = self.db.query(Discount).filter(Discount.code == code).first()
+            discount = self.session.query(Discount).filter(Discount.code == code).first()
             if not discount:
                 raise NotFound("Discount not found.")
             return DiscountResponseDTO.from_model(discount)
@@ -66,12 +66,12 @@ class GetDiscountByCode:
             raise DatabaseError("Database error while fetching discount.") from e
 
 class UpdateDiscount:
-    def __init__(self, db: Session) -> None:
-        self.db = db
+    def __init__(self, session: Session) -> None:
+        self.session = session
 
     def execute(self, discount_id: str, data: DiscountUpdateDTO) -> DiscountResponseDTO:
         try:
-            discount = self.db.query(Discount).filter(Discount.id == discount_id).first()
+            discount = self.session.query(Discount).filter(Discount.id == discount_id).first()
             if not discount:
                 raise NotFound("Discount not found.")
                 
@@ -82,24 +82,24 @@ class UpdateDiscount:
             if data.valid_to is not None:
                 discount.valid_to = data.valid_to
                 
-            self.db.commit()
+            self.session.commit()
             return DiscountResponseDTO.from_model(discount)
         except IntegrityError as e:
-            self.db.rollback()
+            self.session.rollback()
             logger.error(f"[UpdateDiscount] Integrity error: {e}")
             raise DatabaseError("Conflict updating discount.") from e
         except SQLAlchemyError as e:
-            self.db.rollback()
+            self.session.rollback()
             logger.error(f"[UpdateDiscount] DB error: {e}")
             raise DatabaseError("Database error while updating discount.") from e
 
 class IncrementDiscountUsage:
-    def __init__(self, db: Session) -> None:
-        self.db = db
+    def __init__(self, session: Session) -> None:
+        self.session = session
 
     def execute(self, discount_id: str) -> DiscountResponseDTO:
         try:
-            discount = self.db.query(Discount).filter(Discount.id == discount_id).first()
+            discount = self.session.query(Discount).filter(Discount.id == discount_id).first()
             if not discount:
                 raise NotFound("Discount not found.")
             
@@ -107,9 +107,9 @@ class IncrementDiscountUsage:
             if discount.usage_limit and discount.times_used >= discount.usage_limit:
                 discount.is_active = False
                 
-            self.db.commit()
+            self.session.commit()
             return DiscountResponseDTO.from_model(discount)
         except SQLAlchemyError as e:
-            self.db.rollback()
+            self.session.rollback()
             logger.error(f"[IncrementDiscountUsage] DB error: {e}")
             raise DatabaseError("Database error while updating discount usage.") from e

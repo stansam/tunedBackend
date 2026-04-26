@@ -17,13 +17,13 @@ logger: logging.Logger = get_logger(__name__)
 _ACTIVE_STATUSES = (OrderStatus.ACTIVE, OrderStatus.REVISION)
 
 class GetActiveOrdersByClient:
-    def __init__(self, db: Session) -> None:
-        self.db = db
+    def __init__(self, session: Session) -> None:
+        self.session = session
 
     def execute(self, client_id: str) -> list[Order]:
         try:
             return (
-                self.db.query(Order)
+                self.session.query(Order)
                 .filter(
                     Order.client_id == client_id,
                     Order.status.in_(_ACTIVE_STATUSES),
@@ -35,13 +35,13 @@ class GetActiveOrdersByClient:
             raise DatabaseError(str(exc)) from exc
 
 class GetLatestActiveOrderByClient:
-    def __init__(self, db: Session) -> None:
-        self.db = db
+    def __init__(self, session: Session) -> None:
+        self.session = session
 
     def execute(self, client_id: str) -> Optional[Order]:
         try:
             return (
-                self.db.query(Order)
+                self.session.query(Order)
                 .filter(
                     Order.client_id == client_id,
                     Order.status.in_(_ACTIVE_STATUSES),
@@ -54,13 +54,13 @@ class GetLatestActiveOrderByClient:
             raise DatabaseError(str(exc)) from exc
 
 class GetUpcomingDeadlines:
-    def __init__(self, db: Session) -> None:
-        self.db = db
+    def __init__(self, session: Session) -> None:
+        self.session = session
 
     def execute(self, client_id: str, limit: int = 3) -> list[Order]:
         try:
             return (
-                self.db.query(Order)
+                self.session.query(Order)
                 .filter(
                     Order.client_id == client_id,
                     Order.status.in_(_ACTIVE_STATUSES),
@@ -75,13 +75,13 @@ class GetUpcomingDeadlines:
             raise DatabaseError(str(exc)) from exc
 
 class GetProjectLifecycle:
-    def __init__(self, db: Session) -> None:
-        self.db = db
+    def __init__(self, session: Session) -> None:
+        self.session = session
 
     def execute(self, client_id: str) -> list[tuple[str, int]]:
         try:
             rows = (
-                self.db.query(Order.status, func.count(Order.id))
+                self.session.query(Order.status, func.count(Order.id))
                 .filter(Order.client_id == client_id)
                 .group_by(Order.status)
                 .all()
@@ -92,13 +92,13 @@ class GetProjectLifecycle:
             raise DatabaseError(str(exc)) from exc
 
 class GetOrderForReorder:
-    def __init__(self, db: Session) -> None:
-        self.db = db
+    def __init__(self, session: Session) -> None:
+        self.session = session
 
     def execute(self, order_id: str, client_id: str) -> Order:
         try:
             order = (
-                self.db.query(Order)
+                self.session.query(Order)
                 .filter(
                     Order.id == order_id,
                     Order.client_id == client_id,
@@ -116,12 +116,12 @@ class GetOrderForReorder:
 
 
 class CreateOrderFromReorder:
-    def __init__(self, db: Session) -> None:
-        self.db = db
+    def __init__(self, session: Session) -> None:
+        self.session = session
 
     def execute(self, source: Order, client_id: str) -> Order:
         try:
-            new_order = Order(
+            new_order = Order(  # type: ignore[no-untyped-call]
                 client_id=client_id,
                 service_id=source.service_id,
                 academic_level_id=source.academic_level_id,
@@ -139,11 +139,11 @@ class CreateOrderFromReorder:
                 status=OrderStatus.PENDING,
                 paid=False,
             )
-            self.db.add(new_order)
-            self.db.commit()
-            self.db.refresh(new_order)
+            self.session.add(new_order)
+            self.session.commit()
+            self.session.refresh(new_order)
             return new_order
         except SQLAlchemyError as exc:
-            self.db.rollback()
+            self.session.rollback()
             logger.error("[CreateOrderFromReorder] DB error: %s", exc)
             raise DatabaseError(str(exc)) from exc

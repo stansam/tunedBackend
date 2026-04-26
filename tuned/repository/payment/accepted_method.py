@@ -14,7 +14,7 @@ class AcceptedPaymentMethodRepository:
                 category=data.category,
                 details=data.details,
                 is_active=data.is_active
-            )
+            )  # type: ignore[no-untyped-call]
             self._db.add(method)
             self._db.commit()
             return AcceptedMethodResponseDTO.from_model(method)

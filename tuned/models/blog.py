@@ -1,10 +1,14 @@
+from sqlalchemy.orm import Mapped
 from tuned.models.base import BaseModel
 from tuned.models.enums import BlogReactionType
 from tuned.models.utils import generate_slug
 from tuned.extensions import db
 from tuned.models.tag import blog_post_tags
 from datetime import datetime, timezone
-import re
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from tuned.models.user import User
 
 class BlogCategory(BaseModel):
     name = db.Column(db.String(100), nullable=False)
@@ -60,30 +64,26 @@ class BlogComment(BaseModel):
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     
     # Relationships
-    user = db.relationship('User', foreign_keys=[user_id], backref='blog_comments')
-    reactions = db.relationship('CommentReaction', foreign_keys="CommentReaction.comment_id", backref='comment', lazy='dynamic', cascade='all, delete-orphan')
+    user: Mapped["User"] = db.relationship('User', foreign_keys=[user_id], backref='blog_comments')
+    reactions: Mapped["CommentReaction"] = db.relationship('CommentReaction', foreign_keys="CommentReaction.comment_id", backref='comment', lazy='dynamic', cascade='all, delete-orphan')
     
     @property
-    def likes_count(self):
-        """Get count of 'like' reactions"""
-        return self.reactions.filter_by(reaction_type='like').count()
+    def total_likes(self) -> int:
+        # return self.reactions.filter_by(reaction_type='like').count()
+        return sum(
+            1 for r in self.reactions
+            if r.reaction_type == BlogReactionType.LIKE
+        )
     
     @property
-    def dislikes_count(self):
-        """Get count of 'dislike' reactions"""
-        return self.reactions.filter_by(reaction_type='dislike').count()
+    def total_dislikes(self) -> int:
+        # return self.reactions.filter_by(reaction_type='dislike').count()
+        return sum(
+            1 for r in self.reactions
+            if r.reaction_type == BlogReactionType.DISLIKE
+        )
     
-    def user_reaction(self, user_id=None, ip_address=None):
-        """
-        Get user's reaction if any.
-        
-        Args:
-            user_id: User ID for authenticated users
-            ip_address: IP address for guest users
-            
-        Returns:
-            CommentReaction instance or None
-        """
+    def user_reaction(self, user_id=None, ip_address=None) -> "CommentReaction" | None:
         if user_id:
             return self.reactions.filter_by(user_id=user_id).first()
         elif ip_address:
@@ -91,14 +91,13 @@ class BlogComment(BaseModel):
         return None
     
     def to_dict(self):
-        """Serialize comment to dictionary"""
         return {
             'id': self.id,
             'content': self.content,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'approved': self.approved,
-            'likes_count': self.likes_count,
-            'dislikes_count': self.dislikes_count,
+            'total_likes': self.total_likes,
+            'total_dislikes': self.total_dislikes,
             'user': {
                 'id': self.user.id,
                 'name': self.user.get_name(),
@@ -114,12 +113,6 @@ class BlogComment(BaseModel):
 
 
 class CommentReaction(BaseModel):
-    """
-    Track user reactions (like/dislike) on blog comments.
-    
-    Supports both authenticated users (via user_id) and guests (via ip_address).
-    Ensures one reaction per user/IP per comment via unique constraints.
-    """
     __tablename__ = 'comment_reaction'
     
     user_id = db.Column(db.String(36), db.ForeignKey('users.id', ondelete='CASCADE'), nullable=True)
@@ -127,7 +120,6 @@ class CommentReaction(BaseModel):
     reaction_type = db.Column(db.Enum(BlogReactionType), nullable=False)  # 'like' or 'dislike'
     ip_address = db.Column(db.String(45), nullable=True)  # For guest users (IPv4/IPv6)
     
-    # Table arguments for constraints and indexes
     __table_args__ = (
         db.Index('ix_reaction_user_comment', 'user_id', 'comment_id'),
         db.Index('ix_reaction_ip_comment', 'ip_address', 'comment_id'),
@@ -135,10 +127,9 @@ class CommentReaction(BaseModel):
     )
     
     # Relationship
-    user = db.relationship('User', foreign_keys=[user_id], backref='comment_reactions')
+    user: Mapped["User"]  = db.relationship('User', foreign_keys=[user_id], backref='comment_reactions')
     
     def to_dict(self):
-        """Serialize reaction to dictionary"""
         return {
             'id': self.id,
             'reaction_type': self.reaction_type,

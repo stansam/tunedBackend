@@ -1,3 +1,4 @@
+from typing import Any
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 
@@ -8,8 +9,8 @@ from tuned.repository.exceptions import AlreadyExists, DatabaseError, NotFound
 
 
 class CreatePriceRate:
-    def __init__(self, db: Session) -> None:
-        self.db = db
+    def __init__(self, session: Session) -> None:
+        self.session = session
 
     def execute(self, data: PriceRateDTO) -> PriceRateResponseDTO:
         try:
@@ -20,26 +21,26 @@ class CreatePriceRate:
                 price_per_page=data.price_per_page,
                 is_active=data.is_active if data.is_active is not None else True,
             )
-            self.db.session.add(rate)
-            self.db.session.commit()
+            self.session.add(rate)
+            self.session.commit()
             return PriceRateResponseDTO.from_model(rate)
         except IntegrityError:
-            self.db.session.rollback()
+            self.session.rollback()
             raise AlreadyExists(
                 "A price rate for this category/academic level/deadline combination already exists."
             )
         except SQLAlchemyError as e:
-            self.db.session.rollback()
+            self.session.rollback()
             raise DatabaseError("Database error while creating price rate.") from e
 
 
 class GetPriceRateByID:
-    def __init__(self, db: Session) -> None:
-        self.db = db
+    def __init__(self, session: Session) -> None:
+        self.session = session
 
     def execute(self, rate_id: str) -> PriceRateResponseDTO:
         try:
-            rate = self.db.session.query(PriceRate).filter_by(id=rate_id).first()
+            rate = self.session.query(PriceRate).filter_by(id=rate_id).first()
             if not rate:
                 raise NotFound("Price rate not found.")
             return PriceRateResponseDTO.from_model(rate)
@@ -50,13 +51,13 @@ class GetPriceRateByID:
 class GetPriceRateByDimensions:
     """Look up the unique rate for a given category + level + deadline triple."""
 
-    def __init__(self, db: Session) -> None:
-        self.db = db
+    def __init__(self, session: Session) -> None:
+        self.session = session
 
     def execute(self, lookup: PriceRateLookupDTO) -> PriceRateResponseDTO:
         try:
             rate = (
-                self.db.session.query(PriceRate)
+                self.session.query(PriceRate)
                 .filter_by(
                     pricing_category_id=lookup.pricing_category_id,
                     academic_level_id=lookup.academic_level_id,
@@ -73,12 +74,12 @@ class GetPriceRateByDimensions:
 
 
 class GetPriceRatesByCategory:
-    def __init__(self, db: Session) -> None:
-        self.db = db
+    def __init__(self, session: Session) -> None:
+        self.session = session
 
     def execute(self, pricing_category_id: str, active_only: bool = True) -> list[PriceRateResponseDTO]:
         try:
-            query = self.db.session.query(PriceRate).filter_by(
+            query = self.session.query(PriceRate).filter_by(
                 pricing_category_id=pricing_category_id
             )
             if active_only:
@@ -90,65 +91,65 @@ class GetPriceRatesByCategory:
 
 
 class UpdatePriceRate:
-    def __init__(self, db: Session) -> None:
-        self.db = db
+    def __init__(self, session: Session) -> None:
+        self.session = session
 
-    def execute(self, rate_id: str, updates: dict) -> PriceRateResponseDTO:
+    def execute(self, rate_id: str, updates: dict[str, Any]) -> PriceRateResponseDTO:
         try:
-            rate = self.db.session.query(PriceRate).filter_by(id=rate_id).first()
+            rate = self.session.query(PriceRate).filter_by(id=rate_id).first()
             if not rate:
                 raise NotFound("Price rate not found.")
             for key, value in updates.items():
                 if hasattr(rate, key):
                     setattr(rate, key, value)
-            self.db.session.commit()
+            self.session.commit()
             return PriceRateResponseDTO.from_model(rate)
         except IntegrityError:
-            self.db.session.rollback()
+            self.session.rollback()
             raise AlreadyExists(
                 "A price rate for this category/academic level/deadline combination already exists."
             )
         except SQLAlchemyError as e:
-            self.db.session.rollback()
+            self.session.rollback()
             raise DatabaseError("Database error while updating price rate.") from e
 
 
 class DeletePriceRate:
-    def __init__(self, db: Session) -> None:
-        self.db = db
+    def __init__(self, session: Session) -> None:
+        self.session = session
 
     def execute(self, rate_id: str) -> None:
         try:
-            rate = self.db.session.query(PriceRate).filter_by(id=rate_id).first()
+            rate = self.session.query(PriceRate).filter_by(id=rate_id).first()
             if not rate:
                 raise NotFound("Price rate not found.")
-            self.db.session.delete(rate)
-            self.db.session.commit()
+            self.session.delete(rate)
+            self.session.commit()
         except SQLAlchemyError as e:
-            self.db.session.rollback()
+            self.session.rollback()
             raise DatabaseError("Database error while deleting price rate.") from e
 
 
 class PriceRateRepository:
-    def __init__(self) -> None:
-        self.db = db
+    def __init__(self, session: Session) -> None:
+        self.session = session
 
     def create(self, data: PriceRateDTO) -> PriceRateResponseDTO:
-        return CreatePriceRate(self.db).execute(data)
+        return CreatePriceRate(self.session).execute(data)
 
     def get_by_id(self, rate_id: str) -> PriceRateResponseDTO:
-        return GetPriceRateByID(self.db).execute(rate_id)
+        return GetPriceRateByID(self.session).execute(rate_id)
 
     def get_by_dimensions(self, lookup: PriceRateLookupDTO) -> PriceRateResponseDTO:
-        return GetPriceRateByDimensions(self.db).execute(lookup)
+        return GetPriceRateByDimensions(self.session).execute(lookup)
 
     def get_by_category(
         self, pricing_category_id: str, active_only: bool = True
     ) -> list[PriceRateResponseDTO]:
-        return GetPriceRatesByCategory(self.db).execute(pricing_category_id, active_only)
+        return GetPriceRatesByCategory(self.session).execute(pricing_category_id, active_only)
 
-    def update(self, rate_id: str, updates: dict) -> PriceRateResponseDTO:
-        return UpdatePriceRate(self.db).execute(rate_id, updates)
+    def update(self, rate_id: str, updates: dict[str, Any]) -> PriceRateResponseDTO:
+        return UpdatePriceRate(self.session).execute(rate_id, updates)
 
     def delete(self, rate_id: str) -> None:
-        return DeletePriceRate(self.db).execute(rate_id)
+        return DeletePriceRate(self.session).execute(rate_id)

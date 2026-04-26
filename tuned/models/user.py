@@ -48,29 +48,29 @@ class User(UserMixin, BaseModel):
     notifications = db.relationship('Notification', foreign_keys="Notification.user_id", backref='user', lazy=True)
     testimonials = db.relationship('Testimonial', foreign_keys="Testimonial.user_id", backref='author', lazy=True, cascade='all, delete-orphan')
 
-    def __init__(self, **kwargs):
+    def __init__(self: 'User', **kwargs) -> None:
         super(User, self).__init__(**kwargs)
         if not self.referral_code:
             self.referral_code = self.generate_referral_code()
 
-    def generate_referral_code(self):
+    def generate_referral_code(self: 'User') -> str:
         return ''.join(secrets.choice(string.ascii_uppercase + string.digits) for _ in range(10))
     
-    def set_password(self, password):
+    def set_password(self: 'User', password: str) -> None:
         self.password_hash = generate_password_hash(password)
 
-    def check_password(self, password):
+    def check_password(self: 'User', password: str) -> bool:
         return check_password_hash(self.password_hash, password)
 
-    def get_name(self):
+    def get_name(self: 'User') -> str:
         if self.first_name and self.last_name:
             return f"{self.first_name} {self.last_name}"
         return self.username
     
-    def get_unread_notification_count(self):
+    def get_unread_notification_count(self: 'User') -> int:
         return self.notifications.filter_by(is_read=False).count()
     
-    def get_unread_message_count(self):
+    def get_unread_message_count(self: 'User') -> int:
         from sqlalchemy import and_, or_
         return db.session.query(ChatMessage).join(Chat).filter(
             and_(
@@ -80,7 +80,7 @@ class User(UserMixin, BaseModel):
             )
         ).count()
     
-    def get_profile_pic_url(self):
+    def get_profile_pic_url(self: 'User') -> str:
         if self.profile_pic and self.profile_pic != 'default.png':
             return url_for('static', filename=f'client/assets/profile_pics/{self.profile_pic}', _external=True)
             
@@ -88,6 +88,6 @@ class User(UserMixin, BaseModel):
             return url_for('static', filename='ladyDefault.png', _external=True)
         return url_for('static', filename='manDefault.png', _external=True)
     
-    def __repr__(self):
+    def __repr__(self: 'User') -> str:
         return f'<User {self.username}>'
     

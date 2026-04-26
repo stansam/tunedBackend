@@ -8,38 +8,38 @@ from datetime import datetime, timezone
 from tuned.repository.blogs.helper import handle_tags
 
 class CreateBlog:
-    def __init__(self, db:Session):
-        self.db = db
+    def __init__(self, session: Session):
+        self.session = session
     def execute(self, data: BlogPostDTO)-> BlogPostResponseDTO:
         try:
             data_dict = data.__dict__.copy()
             tags_list = data_dict.pop("tags", [])
-            post = BlogPost(**data_dict)
+            post = BlogPost(**data_dict)  # type: ignore[no-untyped-call]
 
-            self.db.add(post)
-            self.db.flush()
+            self.session.add(post)
+            self.session.flush()
 
-            tags_obj = handle_tags(tags_list, self.db)
+            tags_obj = handle_tags(tags_list, self.session)
             post.tags = tags_obj
 
-            self.db.commit()
-            self.db.refresh(post)
+            self.session.commit()
+            self.session.refresh(post)
             return BlogPostResponseDTO.from_model(post)
 
         except IntegrityError as e:
-            self.db.rollback()
+            self.session.rollback()
             raise AlreadyExists("Post already exists")
         except SQLAlchemyError as e:
-            self.db.rollback()
+            self.session.rollback()
             raise DatabaseError(f"Database error while creating post:\n {str(e)}")
 
 class GetBlogPostBySlug:
-    def __init__(self, db: Session) -> None:
-        self.db = db
+    def __init__(self, session: Session) -> None:
+        self.session = session
 
     def execute(self, slug: str) -> BlogPostResponseDTO:
         try:
-            post = self.db.query(BlogPost).filter_by(slug=slug).first()
+            post = self.session.query(BlogPost).filter_by(slug=slug).first()
             if not post:
                 raise NotFound("post not found")
 
@@ -49,12 +49,12 @@ class GetBlogPostBySlug:
             raise DatabaseError(f"Database error while fetching post: {str(e)}")
 
 class GetBlogPostByID:
-    def __init__(self, db: Session) -> None:
-        self.db = db
+    def __init__(self, session: Session) -> None:
+        self.session = session
 
     def execute(self, id: str) -> BlogPostResponseDTO:
         try:
-            post = self.db.query(BlogPost).filter_by(id=id).first()
+            post = self.session.query(BlogPost).filter_by(id=id).first()
             if not post:
                 raise NotFound("post not found")
 
@@ -64,12 +64,12 @@ class GetBlogPostByID:
             raise DatabaseError(f"Database error while fetching post: {str(e)}")
 
 class GetFeaturedBlogPosts:
-    def __init__(self, db: Session) -> None:
-        self.db = db
+    def __init__(self, session: Session) -> None:
+        self.session = session
 
     def execute(self) -> list[BlogPostResponseDTO]:
         try:
-            posts = self.db.query(BlogPost).filter_by(is_featured=True, is_published=True).order_by(BlogPost.published_at.desc()).all()
+            posts = self.session.query(BlogPost).filter_by(is_featured=True, is_published=True).order_by(BlogPost.published_at.desc()).all()
             if not posts:
                 raise NotFound("posts not found")
 
@@ -79,13 +79,13 @@ class GetFeaturedBlogPosts:
             raise DatabaseError(f"Database error while fetching posts: {str(e)}")
 
 class GetPublishedBlogPosts:
-    def __init__(self, db: Session, req: BlogPostListRequestDTO) -> None:
-        self.db = db
+    def __init__(self, session: Session, req: BlogPostListRequestDTO) -> None:
+        self.session = session
         self.req = req
     
-    def execute(self) -> list[BlogPostListResponseDTO]:
+    def execute(self) -> BlogPostListResponseDTO:
         try:
-            query = self.db.query(BlogPost).filter_by(is_published=True) #.order_by(BlogPost.published_at.desc()).all()
+            query = self.session.query(BlogPost).filter_by(is_published=True) #.order_by(BlogPost.published_at.desc()).all()
             post = getBlogPostListResponse(query, self.req)
             if not post:
                 post = []
@@ -96,12 +96,12 @@ class GetPublishedBlogPosts:
             raise DatabaseError(f"Database error while fetching posts: {str(e)}")
 
 class UpdateOrDeleteBlogPost:
-    def __init__(self, db: Session) -> None:
-        self.db = db
+    def __init__(self, session: Session) -> None:
+        self.session = session
 
     def execute(self, id: str, data: BlogPostDTO) -> BlogPostResponseDTO:
         try:
-            post = self.db.query(BlogPost).filter_by(id=id).first()
+            post = self.session.query(BlogPost).filter_by(id=id).first()
             if not post:
                 raise NotFound("post not found")
             
@@ -135,24 +135,24 @@ class UpdateOrDeleteBlogPost:
                 if data.updated_by:
                     post.updated_by = data.updated_by
             
-            self.db.add(post)
-            self.db.flush()
-            if data.tags:
-                tags_obj = handle_tags(data.tags, self.db)
+            self.session.add(post)
+            self.session.flush()
+            if hasattr(data, "tags") and getattr(data, "tags"):
+                tags_obj = handle_tags(getattr(data, "tags"), self.session)
                 post.tags = tags_obj
                 
-            self.db.commit()
-            self.db.refresh(post)
+            self.session.commit()
+            self.session.refresh(post)
 
             return BlogPostResponseDTO.from_model(post)
 
         except SQLAlchemyError as e:
-            self.db.rollback()
+            self.session.rollback()
             raise DatabaseError(f"Database error while updating post: {str(e)}")   
 
 def getBlogPostListResponse(
     query: Query[BlogPost], req: BlogPostListRequestDTO
-) -> list[BlogPostListResponseDTO]:
+) -> BlogPostListResponseDTO:
     if req.category_id:
         query = query.filter_by(category_id=req.category_id)
         
@@ -172,7 +172,7 @@ def getBlogPostListResponse(
         "title": BlogPost.title,
     }
 
-    sort_field = sort_map.get(req.sort, BlogPost.created_at)
+    sort_field = sort_map.get(req.sort or "created_at", BlogPost.created_at)
     order_func = asc if req.order == "asc" else desc
 
     query = query.order_by(order_func(sort_field))
@@ -194,14 +194,14 @@ def getBlogPostListResponse(
     )
 
 class GetBlogsByCategory:
-    def __init__(self, db: Session, req: PostByCategoryRequestDTO) -> None:
-        self.db = db
+    def __init__(self, session: Session, req: PostByCategoryRequestDTO) -> None:
+        self.session = session
         self.req = req
     
     def execute(self) -> list[BlogPostResponseDTO]:
         try:
 
-            query = self.db.query(BlogPost).filter_by(is_published=True, category_id=self.req.category_id).filter(BlogPost.slug != self.req.exclude).limit(self.req.per_page)
+            query = self.session.query(BlogPost).filter_by(is_published=True, category_id=self.req.category_id).filter(BlogPost.slug != self.req.exclude).limit(self.req.per_page)
             post = [BlogPostResponseDTO.from_model(s) for s in query]
             
             return post

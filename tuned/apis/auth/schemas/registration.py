@@ -12,12 +12,12 @@ class RegistrationSchema(Schema):
     last_name = fields.String(required=True)
     gender = fields.Str(required=True)
     phone_number = fields.Str(required=False, allow_none=True)
+    referred_by_code = fields.Str(required=False, allow_none=True)
 
     @pre_load
     def handle_name_and_gender(self, data, **kwargs):
         # if "confirmPassword" in data:
         #     data["confirm_password"] = data.pop("confirmPassword")
-
         if "name" in data and not data.get("first_name"):
             name_parts = data.pop("name")
             parts = name_parts.strip().split(maxsplit=1)

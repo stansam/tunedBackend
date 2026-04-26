@@ -1,6 +1,9 @@
 from dataclasses import dataclass
-from typing import Optional
+from typing import Optional, List, TYPE_CHECKING
 from tuned.models import Service
+
+if TYPE_CHECKING:
+    from tuned.models.service import ServiceCategory
 from tuned.utils.enums import PricingCategoryEnum
 from tuned.dtos.price import PricingCategoryResponseDTO
 from tuned.dtos.content import TagResponseDTO
@@ -46,7 +49,7 @@ class ServiceResponseDTO:
     pricing_category: Optional[PricingCategoryResponseDTO] = None
 
     @classmethod
-    def from_model(cls, model: Service) -> "ServiceResponseDTO":
+    def from_model(cls, model: "Service") -> "ServiceResponseDTO":
         return cls(
             id=model.id,
             name=model.name,
@@ -69,7 +72,7 @@ class ServiceCategoryResponseDTO:
     order: int
 
     @classmethod
-    def from_model(cls, model: ServiceCategory) -> "ServiceCategoryResponseDTO":
+    def from_model(cls, model: "ServiceCategory") -> "ServiceCategoryResponseDTO":
         return cls(
             id=model.id,
             name=model.name,

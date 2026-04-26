@@ -7,6 +7,8 @@ class Variables:
     PASSWORD_CHANGE_ACTION = "password_change"
     AVATAR_UPDATE_ACTION = "avatar_upload"
     AVATAR_DELETE_ACTION = "avatar_delete"
+
+    ORDER_ENTITY_TYPE = "Order"
     
     PAYMENT_CREATE_ACTION = "payment_create"
     PAYMENT_UPDATE_ACTION = "payment_update"
@@ -31,6 +33,7 @@ class Variables:
     ENTITY_TYPE_REFERRAL = "Referral"
     REFERRAL_SIGNUP_ACTION = "referral_signup"
     REFERRAL_POINTS_EARNED_ACTION = "referral_points_earned"
+    REFERRAL_POINTS_REDEEMED_ACTION = "referral_points_redeemed"
 
     OK = "ok"
     NOT_FOUND = "not_found"

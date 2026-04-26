@@ -1,6 +1,12 @@
 from dataclasses import dataclass
-from typing import Optional
+from typing import Optional, Protocol
 from datetime import datetime
+
+# class PaginationModel(Protocol):
+#     sort: Optional[str]
+#     order: Optional[str]
+#     page: Optional[int]
+#     per_page: Optional[int]
 
 @dataclass(kw_only=True)
 class BaseDTO:
@@ -12,7 +18,6 @@ class BaseDTO:
     created_by: Optional[str] = None
     created_at: Optional[datetime] = None
 
-
 @dataclass(kw_only=True)
 class PaginationDTO:
     sort: Optional[str] = "created_at"
@@ -20,14 +25,14 @@ class PaginationDTO:
     page: Optional[int] = 1
     per_page: Optional[int] = 12
     
-    @classmethod
-    def from_model(cls, model: Any) -> 'PaginationDTO':
-        return cls(
-            sort=model.sort,
-            order=model.order,
-            page=model.page,
-            per_page=model.per_page,
-        )
+    # @classmethod
+    # def from_model(cls, model: PaginationModel) -> 'PaginationDTO':
+    #     return cls(
+    #         sort=model.sort,
+    #         order=model.order,
+    #         page=model.page,
+    #         per_page=model.per_page,
+    #     )
 
 @dataclass(kw_only=True)
 class BaseRequestDTO:

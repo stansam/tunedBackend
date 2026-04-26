@@ -21,14 +21,7 @@ class PreferenceService:
     def get_user_preferences(self, user_id: str) -> AllPreferencesResponseDTO:
         try:
             prefs = self._repo.get_all_preferences(user_id)
-            return AllPreferencesResponseDTO(
-                localization=LocalizationDTO.from_model(prefs["localization"]),
-                notification=NotificationDTO.from_model(prefs["notification"]),
-                email=EmailPreferenceDTO.from_model(prefs["email"]),
-                privacy=PrivacyDTO.from_model(prefs["privacy"]),
-                accessibility=AccessibilityDTO.from_model(prefs["accessibility"]),
-                billing=BillingPreferenceDTO.from_model(prefs["billing"])
-            )
+            return prefs
         except Exception as e:
             logger.error(f"Error fetching preferences for user {user_id}: {str(e)}")
             raise
@@ -36,7 +29,7 @@ class PreferenceService:
     def update_category(self, category: str, user_id: str, data: dict, locale: Any = None) -> bool:
         try:
             all_prefs = self._repo.get_all_preferences(user_id)
-            old_obj = all_prefs.get(category)
+            old_obj = getattr(all_prefs, category)
             before_snapshot = self._get_snapshot(old_obj) if old_obj else {}
 
             updated_obj = self._repo.update_category(category, user_id, data)

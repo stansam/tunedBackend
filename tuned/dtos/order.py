@@ -2,7 +2,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime, timezone, timedelta
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from tuned.models.order import Order
 
 from tuned.models.enums import OrderStatus, Priority
 
@@ -51,7 +54,7 @@ class OrderProgressDTO:
     delivered_at: Optional[str]
 
     @classmethod
-    def from_model(cls, order: object) -> "OrderProgressDTO":
+    def from_model(cls, order: "Order") -> "OrderProgressDTO":
         return cls(
             id=str(order.id),
             order_number=order.order_number,
@@ -73,7 +76,7 @@ class UpcomingDeadlineDTO:
     priority:     str
 
     @classmethod
-    def from_model(cls, order: object) -> "UpcomingDeadlineDTO":
+    def from_model(cls, order: "Order") -> "UpcomingDeadlineDTO":
         due_date_dt: Optional[datetime] = order.due_date
         return cls(
             id=str(order.id),

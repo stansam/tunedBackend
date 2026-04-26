@@ -1,8 +1,12 @@
 from tuned.models import RefundStatus
 from dataclasses import dataclass
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 from datetime import datetime
 from tuned.dtos.base import BaseDTO
+
+if TYPE_CHECKING:
+    from tuned.models.payment import AcceptedPaymentMethod, Payment, Invoice, Transaction, Discount, Refund
+
 
 @dataclass(kw_only=True)
 class AcceptedMethodCreateDTO:
@@ -27,7 +31,7 @@ class AcceptedMethodResponseDTO(BaseDTO):
     is_active: bool
 
     @classmethod
-    def from_model(cls, model: object) -> 'AcceptedMethodResponseDTO':
+    def from_model(cls, model: "AcceptedPaymentMethod") -> 'AcceptedMethodResponseDTO':
         return cls(
             id=str(model.id),
             name=model.name,
@@ -77,7 +81,7 @@ class PaymentResponseDTO(BaseDTO):
     admin_verified_at: Optional[datetime]
     
     @classmethod
-    def from_model(cls, model: object) -> 'PaymentResponseDTO':
+    def from_model(cls, model: "Payment") -> 'PaymentResponseDTO':
         return cls(
             id=str(model.id),
             payment_id=model.payment_id,
@@ -127,7 +131,7 @@ class InvoiceResponseDTO(BaseDTO):
     paid: bool
     
     @classmethod
-    def from_model(cls, model: object) -> 'InvoiceResponseDTO':
+    def from_model(cls, model: "Invoice") -> 'InvoiceResponseDTO':
         return cls(
             id=str(model.id),
             invoice_number=model.invoice_number,
@@ -163,7 +167,7 @@ class TransactionResponseDTO(BaseDTO):
     status: str
     
     @classmethod
-    def from_model(cls, model: object) -> 'TransactionResponseDTO':
+    def from_model(cls, model: "Transaction") -> 'TransactionResponseDTO':
         return cls(
             id=str(model.id),
             payment_id=model.payment_id,
@@ -211,7 +215,7 @@ class DiscountResponseDTO(BaseDTO):
     is_active: bool
     
     @classmethod
-    def from_model(cls, model: object) -> 'DiscountResponseDTO':
+    def from_model(cls, model: "Discount") -> 'DiscountResponseDTO':
         return cls(
             id=str(model.id),
             code=model.code,
@@ -256,7 +260,7 @@ class RefundResponseDTO(BaseDTO):
     refund_date: Optional[datetime]
     
     @classmethod
-    def from_model(cls, model: object) -> 'RefundResponseDTO':
+    def from_model(cls, model: "Refund") -> 'RefundResponseDTO':
         return cls(
             id=str(model.id),
             payment_id=model.payment_id,

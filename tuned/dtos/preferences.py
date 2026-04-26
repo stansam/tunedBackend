@@ -1,6 +1,14 @@
 from dataclasses import dataclass, asdict
-from typing import Optional, Dict, Any
-from datetime import datetime
+from typing import Optional, Dict, TYPE_CHECKING
+# from datetime import datetime
+
+if TYPE_CHECKING:
+    from tuned.models.preferences import (
+        UserLocalizationSettings, UserNotificationPreferences,
+        UserEmailPreferences, UserPrivacySettings,
+        UserAccessibilityPreferences, UserBillingPreferences
+    )
+
 
 @dataclass
 class LocalizationDTO:
@@ -14,7 +22,7 @@ class LocalizationDTO:
     week_start: str
 
     @classmethod
-    def from_model(cls, obj) -> "LocalizationDTO":
+    def from_model(cls, obj: "UserLocalizationSettings") -> "LocalizationDTO":
         return cls(
             language=obj.language,
             country_code=obj.country_code,
@@ -42,7 +50,7 @@ class NotificationDTO:
     weekly_summary: bool
 
     @classmethod
-    def from_model(cls, obj) -> "NotificationDTO":
+    def from_model(cls, obj: "UserNotificationPreferences") -> "NotificationDTO":
         return cls(
             email_notifications=obj.email_notifications,
             sms_notifications=obj.sms_notifications,
@@ -70,7 +78,7 @@ class EmailPreferenceDTO:
     daily_digest_hour: Optional[int]
 
     @classmethod
-    def from_model(cls, obj) -> "EmailPreferenceDTO":
+    def from_model(cls, obj: "UserEmailPreferences") -> "EmailPreferenceDTO":
         return cls(
             newsletter=obj.newsletter,
             promotional_emails=obj.promotional_emails,
@@ -96,7 +104,7 @@ class PrivacyDTO:
     allow_search_engine_indexing: bool
 
     @classmethod
-    def from_model(cls, obj) -> "PrivacyDTO":
+    def from_model(cls, obj: "UserPrivacySettings") -> "PrivacyDTO":
         return cls(
             profile_visibility=obj.profile_visibility.value if hasattr(obj.profile_visibility, 'value') else obj.profile_visibility,
             show_email=obj.show_email,
@@ -122,7 +130,7 @@ class AccessibilityDTO:
     focus_indicators_enhanced: bool
 
     @classmethod
-    def from_model(cls, obj) -> "AccessibilityDTO":
+    def from_model(cls, obj: "UserAccessibilityPreferences") -> "AccessibilityDTO":
         return cls(
             font_size_multiplier=float(obj.font_size_multiplier),
             text_spacing_increased=obj.text_spacing_increased,
@@ -144,7 +152,7 @@ class BillingPreferenceDTO:
     auto_reload_threshold: Optional[float]
 
     @classmethod
-    def from_model(cls, obj) -> "BillingPreferenceDTO":
+    def from_model(cls, obj: "UserBillingPreferences") -> "BillingPreferenceDTO":
         return cls(
             invoice_email=obj.invoice_email,
             invoice_delivery=obj.invoice_delivery.value if hasattr(obj.invoice_delivery, 'value') else obj.invoice_delivery,
@@ -163,7 +171,7 @@ class AllPreferencesResponseDTO:
     accessibility: AccessibilityDTO
     billing: BillingPreferenceDTO
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> Dict[str, Dict[str, str | int | float | bool | None]]:
         return {
             "localization": asdict(self.localization),
             "notification": asdict(self.notification),

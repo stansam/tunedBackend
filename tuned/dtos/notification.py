@@ -1,6 +1,11 @@
 from dataclasses import dataclass
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 from tuned.models import NotificationType
+
+if TYPE_CHECKING:
+    from tuned.models.communication import Notification
+
+
 @dataclass
 class NotificationCreateDTO:
     user_id: str
@@ -22,7 +27,7 @@ class NotificationResponseDTO:
     created_at: str
 
     @classmethod
-    def from_model(cls, model) -> 'NotificationResponseDTO':
+    def from_model(cls, model: "Notification") -> 'NotificationResponseDTO':
         return cls(
             id=str(model.id),
             user_id=str(model.user_id),

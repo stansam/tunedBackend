@@ -10,6 +10,9 @@ class Referral(BaseModel):
     code = db.Column(db.String(10), unique=True, nullable=False)
     status = db.Column(db.Enum(ReferralStatus), default=ReferralStatus.PENDING, nullable=False)
     points_earned = db.Column(db.Integer, default=0)
+    points_used = db.Column(db.Integer, default=0)
+    completed_at = db.Column(db.DateTime(timezone=True), nullable=True)
+    expires_at = db.Column(db.DateTime(timezone=True), nullable=True)
     
     __table_args__ = (
         db.Index('ix_referral_referrer_status', 'referrer_id', 'status'),

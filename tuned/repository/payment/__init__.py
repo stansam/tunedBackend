@@ -1,5 +1,4 @@
 from typing import Optional
-from tuned.extensions import db
 from tuned.repository.payment.repository import (
     PaymentsManager,
     InvoiceManager,
@@ -9,9 +8,11 @@ from tuned.repository.payment.repository import (
     AcceptedMethodRepositoryManager
 )
 
+from sqlalchemy.orm import Session
+
 class PaymentRepository:
-    def __init__(self):
-        self._db = db
+    def __init__(self, session: Session) -> None:
+        self.session = session
         self._payment: Optional[PaymentsManager] = None
         self._invoice: Optional[InvoiceManager] = None
         self._transaction: Optional[TransactionManager] = None
@@ -22,35 +23,35 @@ class PaymentRepository:
     @property
     def payment(self) -> PaymentsManager:
         if not self._payment:
-            self._payment = PaymentsManager(self._db.session)
+            self._payment = PaymentsManager(self.session)
         return self._payment
 
     @property
     def invoice(self) -> InvoiceManager:
         if not self._invoice:
-            self._invoice = InvoiceManager(self._db.session)
+            self._invoice = InvoiceManager(self.session)
         return self._invoice
 
     @property
     def transaction(self) -> TransactionManager:
         if not self._transaction:
-            self._transaction = TransactionManager(self._db.session)
+            self._transaction = TransactionManager(self.session)
         return self._transaction
 
     @property
     def discount(self) -> DiscountManager:
         if not self._discount:
-            self._discount = DiscountManager(self._db.session)
+            self._discount = DiscountManager(self.session)
         return self._discount
 
     @property
     def refund(self) -> RefundManager:
         if not self._refund:
-            self._refund = RefundManager(self._db.session)
+            self._refund = RefundManager(self.session)
         return self._refund
 
     @property
     def accepted_method(self) -> AcceptedMethodRepositoryManager:
         if not self._accepted_method:
-            self._accepted_method = AcceptedMethodRepositoryManager(self._db.session)
+            self._accepted_method = AcceptedMethodRepositoryManager(self.session)
         return self._accepted_method

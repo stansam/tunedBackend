@@ -1,4 +1,5 @@
 from tuned.models import User
+from tuned.models.enums import GenderEnum
 from tuned.extensions import db
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
@@ -8,8 +9,8 @@ from google.auth.transport import requests
 import os
 
 class GoogleOAuth:
-    def __init__(self, db: Session) -> None:
-        self.db = db
+    def __init__(self, session: Session) -> None:
+        self.session = session
         self.GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID", "mock-client-id") 
 
     def execute(self, token: str) -> User:
@@ -46,12 +47,12 @@ class GoogleOAuth:
             if not email:
                  raise AuthenticationError("Google token valid but no email found.")
 
-            user = self.db.query(User).filter_by(email=email).first()
+            user = self.session.query(User).filter_by(email=email).first()
             
             if user:
                 if not user.avatar_url and id_info.get("picture"):
                     user.avatar_url = id_info.get("picture")
-                    self.db.commit()
+                    self.session.commit()
                 return user
             
             new_user = User(
@@ -62,16 +63,16 @@ class GoogleOAuth:
                 gender=gender,
                 avatar_url=id_info.get("picture"),
                 email_verified=id_info.get("email_verified", False)
-            )
-            new_user.set_password(os.urandom(24).hex()) 
+            )  # type: ignore[no-untyped-call]
+            new_user.set_password(os.urandom(24).hex())  # type: ignore[no-untyped-call]
             
-            self.db.add(new_user)
-            self.db.commit()
-            self.db.refresh(new_user)
+            self.session.add(new_user)
+            self.session.commit()
+            self.session.refresh(new_user)
             return new_user
 
         except ValueError as e:
              raise AuthenticationError(f"Invalid Google Token: {str(e)}")
         except SQLAlchemyError as e:
-            self.db.rollback()
+            self.session.rollback()
             raise DatabaseError(f"Database error during Google OAuth: {str(e)}") from e

@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+from typing import Optional
 from sqlalchemy import update
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
@@ -8,12 +9,12 @@ from tuned.repository.user.get import GetUserByID
 from tuned.repository.exceptions import NotFound, DatabaseError
 
 class UpdateUser:
-    def __init__(self, db:Session) -> None:
-        self.db = db
+    def __init__(self, session: Session) -> None:
+        self.session = session
 
-    def execute(self, req: UpdateUserDTO, actor_id: str = None) -> User:
+    def execute(self, req: UpdateUserDTO, actor_id: Optional[str] = None) -> User:
         try:
-            get_user_op = GetUserByID(self.db)
+            get_user_op = GetUserByID(self.session)
             try:
                 user = get_user_op.execute(req.user_id)
             except NotFound as e:
@@ -48,13 +49,13 @@ class UpdateUser:
             if actor_id:
                 user.updated_by = actor_id
                 
-            self.db.flush()
-            self.db.commit()
-            self.db.refresh(user)
+            self.session.flush()
+            self.session.commit()
+            self.session.refresh(user)
             return user
 
         except SQLAlchemyError as e:
-            self.db.rollback()
+            self.session.rollback()
             raise DatabaseError(f"Database error while updating user: {str(e)}") from e
     
     def increment_failed_login_attempts(self, user_id: str) -> int:
@@ -68,9 +69,9 @@ class UpdateUser:
                 .returning(User.failed_login_attempts)
             )
 
-            new_count = self.db.execute(stmt).scalar_one()
-            self.db.commit()
-            return new_count
+            new_count = self.session.execute(stmt).scalar_one()
+            self.session.commit()
+            return int(new_count)
         except SQLAlchemyError as e:
-            self.db.rollback()
+            self.session.rollback()
             raise DatabaseError(f"Database error while updating user: {str(e)}") from e

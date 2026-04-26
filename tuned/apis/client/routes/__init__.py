@@ -13,6 +13,12 @@ from tuned.apis.client.routes.profile import (
     ChangePasswordView
 )
 from tuned.apis.client.routes.settings import SettingsView, SettingsCategoryView
+from tuned.apis.client.routes.referrals import (
+    ReferralListView,
+    ReferralStatsView,
+    ReferralShareView,
+    ReferralRedeemView
+)
 
 
 CLIENT_ROUTES = [
@@ -75,5 +81,25 @@ CLIENT_ROUTES = [
         "rule": "/settings/<string:category>",
         "view_func": SettingsCategoryView.as_view("settings_category_view"),
         "methods": ["PATCH"],
+    },
+    {
+        "rule": "/referrals",
+        "view_func": ReferralListView.as_view("referral_list_view"),
+        "methods": ["GET"],
+    },
+    {
+        "rule": "/referrals/stats",
+        "view_func": ReferralStatsView.as_view("referral_stats_view"),
+        "methods": ["GET"],
+    },
+    {
+        "rule": "/referrals/share",
+        "view_func": ReferralShareView.as_view("referral_share_view"),
+        "methods": ["POST"],
+    },
+    {
+        "rule": "/referrals/redeem",
+        "view_func": ReferralRedeemView.as_view("referral_redeem_view"),
+        "methods": ["POST"],
     },
 ]

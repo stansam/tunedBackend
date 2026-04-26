@@ -1,7 +1,11 @@
 from dataclasses import dataclass, field
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 from tuned.dtos.content import DeadlineResponseDTO
 from datetime import datetime
+
+if TYPE_CHECKING:
+    from tuned.models.price import PricingCategory, PriceRate
+
 
 @dataclass
 class PricingCategoryDTO:
@@ -26,7 +30,7 @@ class PricingCategoryResponseDTO:
     display_order: int
 
     @classmethod
-    def from_model(cls, obj) -> "PricingCategoryResponseDTO":
+    def from_model(cls, obj: "PricingCategory") -> "PricingCategoryResponseDTO":
         return cls(
             id=obj.id,
             name=obj.name,
@@ -45,7 +49,7 @@ class PriceRateResponseDTO:
     is_active: bool
 
     @classmethod
-    def from_model(cls, obj) -> "PriceRateResponseDTO":
+    def from_model(cls, obj: "PriceRate") -> "PriceRateResponseDTO":
         return cls(
             id=obj.id,
             pricing_category_id=obj.pricing_category_id,

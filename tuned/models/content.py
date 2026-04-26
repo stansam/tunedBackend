@@ -1,9 +1,13 @@
 from tuned.extensions import db
+from sqlalchemy.orm import Mapped, Query
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from tuned.models.tag import Tag
 from tuned.models.base import BaseModel
 from tuned.models.tag import sample_tags
 from tuned.models.utils import generate_slug
-from datetime import datetime, timezone
-import re
+# from datetime import datetime, timezone
+# import re
 
 class Sample(BaseModel):
     title = db.Column(db.String(200), nullable=False)
@@ -19,7 +23,7 @@ class Sample(BaseModel):
         db.Index('ix_sample_service_featured', 'service_id', 'featured'),
     )
     
-    tag_list = db.relationship('Tag', secondary=sample_tags, lazy='dynamic', back_populates='samples')
+    tag_list: Mapped[Query["Tag"]] = db.relationship('Tag', secondary=sample_tags, lazy='dynamic', back_populates='samples')
     
     def __init__(self, **kwargs):
         super(Sample, self).__init__(**kwargs)

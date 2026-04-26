@@ -1,7 +1,11 @@
 from datetime import timezone, datetime
 from dataclasses import dataclass, field
-from typing import Optional
+from typing import Optional, TYPE_CHECKING, Union
 from tuned.models.enums import GenderEnum
+
+if TYPE_CHECKING:
+    from tuned.models.user import User
+
 from tuned.dtos.base import BaseRequestDTO
 
 @dataclass
@@ -17,6 +21,7 @@ class CreateUserDTO:
     language: str = "en"
     timezone: str = "UTC"
     phone_number: Optional[str] = None
+    referred_by_code: Optional[str] = None
 
 @dataclass
 class LoginRequestDTO(BaseRequestDTO):
@@ -34,7 +39,7 @@ class UserResponseDTO:
     session_created_at: Optional[str] = None
 
     @classmethod
-    def from_model(cls, obj) -> "UserResponseDTO":
+    def from_model(cls, obj: "User") -> "UserResponseDTO":
         return cls(
             id=str(obj.id),
             name=" ".join(filter(None, [obj.first_name, obj.last_name])),
@@ -43,6 +48,7 @@ class UserResponseDTO:
             # role=obj.role,
             session_created_at=datetime.now(timezone.utc).isoformat(),
         )
+UserUpdateValue = Union[str, int, bool, datetime]
 
 @dataclass
 class UpdateUserDTO:
@@ -63,7 +69,7 @@ class UpdateUserDTO:
     password_hash: Optional[str] = None
     is_admin: Optional[bool] = field(default=None, repr=False)
 
-    def to_dict(self):
+    def to_dict(self) -> dict[str, UserUpdateValue]:
         return {
             k: v for k, v in self.__dict__.items()
             if k != "user_id" and v is not None
@@ -96,10 +102,10 @@ class ProfileResponseDTO:
     last_login_at: Optional[str]
     failed_login_attempts: int
     last_failed_login: Optional[str]
-    created_at: str
+    created_at: Optional[str]
 
     @classmethod
-    def from_model(cls, obj) -> "ProfileResponseDTO":
+    def from_model(cls, obj: "User") -> "ProfileResponseDTO":
         gender_val = obj.gender.value if obj.gender else None
         
         last_login = obj.last_login_at.isoformat() if obj.last_login_at else None

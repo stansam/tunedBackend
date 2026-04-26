@@ -11,7 +11,7 @@ from tuned.repository.utils import build_month_window
 from datetime import datetime, timezone
 from sqlalchemy import func, asc
 from sqlalchemy.orm import Session
-from typing import Dict
+from typing import Dict, Any
 from flask import current_app
 import logging
 
@@ -19,10 +19,10 @@ import logging
 logger: logging.Logger = get_logger(__name__)
 
 class GetReferralGrowth:
-    def __init__(self, db: Session) -> None:
-        self.db = db
+    def __init__(self, session: Session) -> None:
+        self.session = session
 
-    def _month_label_expr(self, column: object) -> object:
+    def _month_label_expr(self, column: Any) -> Any:
         if current_app.config["FLASK_ENV"] == Variables.PRODUCTION:
             return func.to_char(column, "YYYY-MM")
         return func.strftime("%Y-%m", column)
@@ -31,7 +31,7 @@ class GetReferralGrowth:
         try:
             month_expr = self._month_label_expr(Referral.created_at)
             rows = (
-                self.db.query(month_expr, func.sum(Referral.points_earned))
+                self.session.query(month_expr, func.sum(Referral.points_earned))
                 .filter(Referral.referrer_id == referrer_id)
                 .group_by(month_expr)
                 .order_by(asc(month_expr))
@@ -48,8 +48,8 @@ class GetReferralGrowth:
             raise DatabaseError(str(exc)) from exc
 
 class ReferralRepository:
-    def __init__(self):
-        self.session = db.session
+    def __init__(self, session: Session) -> None:
+        self.session = session
 
     def create(self, referrer_id: str, referred_id: str, code: str, points_earned: int = 0) -> ReferralResponseDTO:
         try:
@@ -91,7 +91,14 @@ class ReferralRepository:
         ).all()
         return [ReferralResponseDTO.from_model(m) for m in models]
 
-    def update_points_and_status(self, id: str, added_points: int, status: ReferralStatus) -> Optional[ReferralResponseDTO]:
+    def update_points_and_status(
+        self, 
+        id: str, 
+        added_points: int, 
+        status: ReferralStatus,
+        completed_at: Optional[datetime] = None,
+        expires_at: Optional[datetime] = None
+    ) -> Optional[ReferralResponseDTO]:
         try:
             referral = self._get_model_by_id(id)
             if not referral:
@@ -99,6 +106,10 @@ class ReferralRepository:
             
             referral.points_earned = referral.points_earned + added_points
             referral.status = status
+            if completed_at:
+                referral.completed_at = completed_at
+            if expires_at:
+                referral.expires_at = expires_at
             self.session.flush()
             self.session.commit()
             return ReferralResponseDTO.from_model(referral)
@@ -106,28 +117,21 @@ class ReferralRepository:
             self.session.rollback()
             logger.error(f"[ReferralRepository] Error updating points: {e}")
             raise
+    def count_monthly_completed_referrals(self, referrer_id: str, year: int, month: int) -> int:
+        from sqlalchemy import extract
+        count = self.session.query(func.count(Referral.id)).filter(
+            Referral.referrer_id == referrer_id,
+            Referral.status == ReferralStatus.COMPLETED,
+            extract('year', Referral.completed_at) == year,
+            extract('month', Referral.completed_at) == month
+        ).scalar()
+        return count or 0
 
     
     def get_referral_growth(
         self, referrer_id: str, months: int = 6
     ) -> list[tuple[str, float]]:
         return GetReferralGrowth(self.session).execute(referrer_id, months)
-
-
-
-# import logging
-# from sqlalchemy.orm import Session
-# from sqlalchemy import func, asc
-# from sqlalchemy.exc import SQLAlchemyError
-# from datetime import datetime, timezone
-# from tuned.extensions import current_app
-# from tuned.models.enums import Variables
-# from tuned.repository.utils import build_month_window
-# from tuned.repository.exceptions import DatabaseError
-# from typing import Dict
-# from tuned.core.logging import get_logger
-# from tuned.models import Referral
-# from tuned.utils.variables import Variables
 
 
 

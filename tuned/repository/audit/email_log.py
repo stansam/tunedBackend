@@ -6,8 +6,8 @@ from tuned.dtos import EmailLogCreateDTO, EmailLogResponseDTO, EmailLogFilterDTO
 from tuned.repository.exceptions import DatabaseError, NotFound
 
 class CreateEmailLog:
-    def __init__(self, db: Session) -> None:
-        self.db = db
+    def __init__(self, session: Session) -> None:
+        self.session = session
 
     def execute(self, data: EmailLogCreateDTO) -> EmailLogResponseDTO:
         try:
@@ -19,21 +19,21 @@ class CreateEmailLog:
                 order_id=data.order_id,
                 status="pending"
             )
-            self.db.add(log)
-            self.db.commit()
-            self.db.refresh(log)
+            self.session.add(log)
+            self.session.commit()
+            self.session.refresh(log)
             return EmailLogResponseDTO.from_model(log)
         except SQLAlchemyError as e:
-            self.db.rollback()
+            self.session.rollback()
             raise DatabaseError(f"Database error while creating email log: {str(e)}") from e
 
 class GetEmailLogByID:
-    def __init__(self, db: Session) -> None:
-        self.db = db
+    def __init__(self, session: Session) -> None:
+        self.session = session
 
     def execute(self, log_id: str) -> EmailLogResponseDTO:
         try:
-            log = self.db.query(EmailLog).filter_by(id=log_id).first()
+            log = self.session.query(EmailLog).filter_by(id=log_id).first()
             if not log:
                 raise NotFound("Email log record not found.")
             return EmailLogResponseDTO.from_model(log)
@@ -41,12 +41,12 @@ class GetEmailLogByID:
             raise DatabaseError(f"Database error while fetching email log: {str(e)}") from e
 
 class GetEmailLogsFiltered:
-    def __init__(self, db: Session) -> None:
-        self.db = db
+    def __init__(self, session: Session) -> None:
+        self.session = session
 
     def execute(self, filters: EmailLogFilterDTO) -> tuple[list[EmailLogResponseDTO], int]:
         try:
-            query = self.db.query(EmailLog)
+            query = self.session.query(EmailLog)
             
             if filters.recipient:
                 query = query.filter(EmailLog.recipient.ilike(f"%{filters.recipient}%"))
@@ -64,12 +64,12 @@ class GetEmailLogsFiltered:
             raise DatabaseError(f"Database error while fetching email logs: {str(e)}") from e
 
 class UpdateEmailLogStatus:
-    def __init__(self, db: Session) -> None:
-        self.db = db
+    def __init__(self, session: Session) -> None:
+        self.session = session
 
     def execute(self, log_id: str, data: EmailLogUpdateDTO) -> EmailLogResponseDTO:
         try:
-            log = self.db.query(EmailLog).filter_by(id=log_id).first()
+            log = self.session.query(EmailLog).filter_by(id=log_id).first()
             if not log:
                 raise NotFound("Email log record not found.")
             
@@ -81,12 +81,12 @@ class UpdateEmailLogStatus:
             elif data.status == "sent":
                 log.sent_at = datetime.now(timezone.utc)
                 
-            self.db.add(log)
-            self.db.commit()
-            self.db.refresh(log)
+            self.session.add(log)
+            self.session.commit()
+            self.session.refresh(log)
             return EmailLogResponseDTO.from_model(log)
         except SQLAlchemyError as e:
-            self.db.rollback()
+            self.session.rollback()
             raise DatabaseError(f"Database error while updating email log status: {str(e)}") from e
 
 class EmailLogRepository:

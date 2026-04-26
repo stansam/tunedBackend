@@ -12,15 +12,15 @@ from tuned.core.logging import get_logger
 logger: logging.Logger = get_logger(__name__)
 
 class GetActionableAlerts:
-    def __init__(self, db: Session) -> None:
-        self.db = db
+    def __init__(self, session: Session) -> None:
+        self.session = session
 
     def execute(self, client_id: str) -> list[ActionableAlertDTO]:
         try:
             alerts: list[ActionableAlertDTO] = []
 
             ext_requests = (
-                self.db.query(OrderDeadlineExtensionRequest)
+                self.session.query(OrderDeadlineExtensionRequest)
                 .join(Order, OrderDeadlineExtensionRequest.order_id == Order.id)
                 .filter(
                     Order.client_id == client_id,
@@ -46,7 +46,7 @@ class GetActionableAlerts:
                 ))
 
             pending_review_orders = (
-                self.db.query(Order)
+                self.session.query(Order)
                 .filter(
                     Order.client_id == client_id,
                     Order.status == OrderStatus.COMPLETED_PENDING_REVIEW,

@@ -1,75 +1,78 @@
-from sqlalchemy.orm import Mapped
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from tuned.models.base import BaseModel
 from tuned.models.enums import BlogReactionType
 from tuned.models.utils import generate_slug
 from tuned.extensions import db
 from tuned.models.tag import blog_post_tags
-from datetime import datetime, timezone
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional, Any
+from datetime import datetime
 
 if TYPE_CHECKING:
     from tuned.models.user import User
+    from tuned.models.tag import Tag
 
 class BlogCategory(BaseModel):
-    name = db.Column(db.String(100), nullable=False)
-    slug = db.Column(db.String(120), unique=True, nullable=False)
-    description = db.Column(db.Text)
+    __tablename__ = 'blog_category'
+    name: Mapped[str] = mapped_column(db.String(100), nullable=False)
+    slug: Mapped[str] = mapped_column(db.String(120), unique=True, nullable=False)
+    description: Mapped[Optional[str]] = mapped_column(db.Text, nullable=True)
     
     # Relationships
-    posts = db.relationship('BlogPost', backref='category', lazy=True)
+    posts: Mapped[list["BlogPost"]] = relationship('BlogPost', back_populates='category', lazy=True)
     
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f'<BlogCategory {self.name}>'
 
 class BlogPost(BaseModel):
-    title = db.Column(db.String(200), nullable=False)
-    slug = db.Column(db.String(220), unique=True, nullable=False)
-    content = db.Column(db.Text, nullable=False)
-    excerpt = db.Column(db.Text)
-    featured_image = db.Column(db.String(255))
-    author = db.Column(db.String(100), nullable=False)
-    category_id = db.Column(db.Integer, db.ForeignKey('blog_category.id'))
-    meta_description = db.Column(db.String(220))
-    is_published = db.Column(db.Boolean, default=False)
-    is_featured = db.Column(db.Boolean, default=False)
-    published_at = db.Column(db.DateTime)
+    __tablename__ = 'blog_post'
+    title: Mapped[str] = mapped_column(db.String(200), nullable=False)
+    slug: Mapped[str] = mapped_column(db.String(220), unique=True, nullable=False)
+    content: Mapped[str] = mapped_column(db.Text, nullable=False)
+    excerpt: Mapped[Optional[str]] = mapped_column(db.Text, nullable=True)
+    featured_image: Mapped[Optional[str]] = mapped_column(db.String(255), nullable=True)
+    author: Mapped[str] = mapped_column(db.String(100), nullable=False)
+    category_id: Mapped[Optional[str]] = mapped_column(db.String(36), db.ForeignKey('blog_category.id'), nullable=True)
+    meta_description: Mapped[Optional[str]] = mapped_column(db.String(220), nullable=True)
+    is_published: Mapped[bool] = mapped_column(db.Boolean, default=False, nullable=False)
+    is_featured: Mapped[bool] = mapped_column(db.Boolean, default=False, nullable=False)
+    published_at: Mapped[Optional[datetime]] = mapped_column(db.DateTime, nullable=True)
     
-    # Table arguments for indexes
     __table_args__ = (
         db.Index('ix_blog_post_published_date', 'is_published', 'published_at'),
     )
     
-    # Relationships
-    comments = db.relationship('BlogComment', foreign_keys="BlogComment.post_id", backref='post', lazy=True, cascade='all, delete-orphan')
-    tag_list = db.relationship('Tag', secondary=blog_post_tags, lazy='dynamic', back_populates='blog_posts')
+    category: Mapped[Optional["BlogCategory"]] = relationship("BlogCategory", back_populates="posts")
+    comments: Mapped[list["BlogComment"]] = relationship('BlogComment', foreign_keys="BlogComment.post_id", back_populates='post', lazy=True, cascade='all, delete-orphan')
+    tag_list: Mapped[list["Tag"]] = relationship('Tag', secondary=blog_post_tags, lazy='selectin', back_populates='blog_posts')
     
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Any) -> None:
         super(BlogPost, self).__init__(**kwargs)
         if not self.slug and self.title:
             self.slug = self.generate_slug(self.title)
     
     @staticmethod
-    def generate_slug(title):
+    def generate_slug(title: str) -> str:
         return generate_slug(title, BlogPost, db.session)
     
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f'<BlogPost {self.title}>'
 
 class BlogComment(BaseModel):
-    post_id = db.Column(db.String(36), db.ForeignKey('blog_post.id'))
-    name = db.Column(db.String(100))
-    email = db.Column(db.String(100))
-    content = db.Column(db.Text, nullable=False)
-    approved = db.Column(db.Boolean, default=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    __tablename__ = 'blog_comment'
+    post_id: Mapped[Optional[str]] = mapped_column(db.String(36), db.ForeignKey('blog_post.id'), nullable=True)
+    name: Mapped[Optional[str]] = mapped_column(db.String(100), nullable=True)
+    email: Mapped[Optional[str]] = mapped_column(db.String(100), nullable=True)
+    content: Mapped[str] = mapped_column(db.Text, nullable=False)
+    approved: Mapped[bool] = mapped_column(db.Boolean, default=False, nullable=False)
+    user_id: Mapped[Optional[str]] = mapped_column(db.String(36), db.ForeignKey('users.id'), nullable=True)
     
     # Relationships
-    user: Mapped["User"] = db.relationship('User', foreign_keys=[user_id], backref='blog_comments')
-    reactions: Mapped["CommentReaction"] = db.relationship('CommentReaction', foreign_keys="CommentReaction.comment_id", backref='comment', lazy='dynamic', cascade='all, delete-orphan')
+    post: Mapped[Optional["BlogPost"]] = relationship('BlogPost', foreign_keys=[post_id], back_populates='comments')
+    user: Mapped[Optional["User"]] = relationship('User', foreign_keys=[user_id], back_populates='blog_comments')
+    reactions: Mapped[list["CommentReaction"]] = relationship('CommentReaction', foreign_keys="CommentReaction.comment_id", back_populates='comment', lazy='selectin', cascade='all, delete-orphan')
     
     @property
     def total_likes(self) -> int:
-        # return self.reactions.filter_by(reaction_type='like').count()
         return sum(
             1 for r in self.reactions
             if r.reaction_type == BlogReactionType.LIKE
@@ -77,20 +80,12 @@ class BlogComment(BaseModel):
     
     @property
     def total_dislikes(self) -> int:
-        # return self.reactions.filter_by(reaction_type='dislike').count()
         return sum(
             1 for r in self.reactions
             if r.reaction_type == BlogReactionType.DISLIKE
         )
     
-    def user_reaction(self, user_id=None, ip_address=None) -> "CommentReaction" | None:
-        if user_id:
-            return self.reactions.filter_by(user_id=user_id).first()
-        elif ip_address:
-            return self.reactions.filter_by(ip_address=ip_address).first()
-        return None
-    
-    def to_dict(self):
+    def to_dict(self) -> dict[str, Any]:
         return {
             'id': self.id,
             'content': self.content,
@@ -108,17 +103,17 @@ class BlogComment(BaseModel):
             }
         }
     
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f'<BlogComment {self.id}>'
 
 
 class CommentReaction(BaseModel):
     __tablename__ = 'comment_reaction'
     
-    user_id = db.Column(db.String(36), db.ForeignKey('users.id', ondelete='CASCADE'), nullable=True)
-    comment_id = db.Column(db.String(36), db.ForeignKey('blog_comment.id', ondelete='CASCADE'), nullable=False, index=True)
-    reaction_type = db.Column(db.Enum(BlogReactionType), nullable=False)  # 'like' or 'dislike'
-    ip_address = db.Column(db.String(45), nullable=True)  # For guest users (IPv4/IPv6)
+    user_id: Mapped[Optional[str]] = mapped_column(db.String(36), db.ForeignKey('users.id', ondelete='CASCADE'), nullable=True)
+    comment_id: Mapped[str] = mapped_column(db.String(36), db.ForeignKey('blog_comment.id', ondelete='CASCADE'), nullable=False, index=True)
+    reaction_type: Mapped[BlogReactionType] = mapped_column(db.Enum(BlogReactionType), nullable=False)  # 'like' or 'dislike'
+    ip_address: Mapped[Optional[str]] = mapped_column(db.String(45), nullable=True)  # For guest users (IPv4/IPv6)
     
     __table_args__ = (
         db.Index('ix_reaction_user_comment', 'user_id', 'comment_id'),
@@ -127,15 +122,16 @@ class CommentReaction(BaseModel):
     )
     
     # Relationship
-    user: Mapped["User"]  = db.relationship('User', foreign_keys=[user_id], backref='comment_reactions')
+    comment: Mapped["BlogComment"] = relationship("BlogComment", foreign_keys=[comment_id], back_populates="reactions")
+    user: Mapped[Optional["User"]] = relationship('User', foreign_keys=[user_id], back_populates='comment_reactions')
     
-    def to_dict(self):
+    def to_dict(self) -> dict[str, Any]:
         return {
             'id': self.id,
-            'reaction_type': self.reaction_type,
+            'reaction_type': self.reaction_type.value,
             'created_at': self.created_at.isoformat(),
             'user_id': self.user_id
         }
     
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f'<CommentReaction {self.id} {self.reaction_type}>'

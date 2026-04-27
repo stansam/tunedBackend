@@ -1,10 +1,10 @@
 from flask.cli import with_appcontext
-from tuned.models import User
-from tuned.models.enums import GenderEnum
+# from tuned.models import User
+# from tuned.models.enums import GenderEnum
 import click 
 from tuned.interface import Services
 from tuned.dtos import CreateUserDTO
-from tuned.extensions import db
+# from tuned.extensions import db
 
 @click.command("createsuperuser")
 @click.option("--username", prompt=True)

@@ -1,11 +1,3 @@
-"""
-create_testimonials — seed approved client testimonials.
-
-Requires users and services to already exist.
-
-Usage:
-    flask create-testimonials
-"""
 import logging
 import click
 from flask.cli import with_appcontext
@@ -15,9 +7,10 @@ from tuned.interface import Services
 from tuned.manage.data import testimonials_dict
 from tuned.models import Service, User
 from tuned.extensions import db
-from tuned.repository.exceptions import AlreadyExists, DatabaseError
+# from tuned.repository.exceptions import AlreadyExists, DatabaseError
+from tuned.core.logging import get_logger
 
-logger = logging.getLogger(__name__)
+logger: logging.Logger = get_logger(__name__)
 
 
 def _build_service_map() -> dict[str, str]:
@@ -25,14 +18,12 @@ def _build_service_map() -> dict[str, str]:
 
 
 def _build_user_map() -> dict[str, str]:
-    """Return {username: user_id} for all users."""
     return {u.username: u.id for u in db.session.query(User).all()}
 
 
 @click.command("create-testimonials")
 @with_appcontext
 def create_testimonials() -> None:
-    """Seed approved client testimonials."""
     services = Services()
     service_map = _build_service_map()
     user_map = _build_user_map()

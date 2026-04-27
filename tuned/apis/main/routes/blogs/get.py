@@ -24,23 +24,7 @@ logger = logging.getLogger(__name__)
 
 @main_bp.route('/api/blogs', methods=['GET'])
 def list_blogs():
-    """
-    List published blog posts with filtering, search, and pagination.
-    
-    Query parameters:
-        - category_id: Filter by category
-        - is_published: Filter by published status (default: true)
-        - q: Search query (searches title, excerpt, content)
-        - sort: Sort field (published_at, created_at, title)
-        - order: Sort order (asc, desc)
-        - page: Page number
-        - per_page: Items per page
-    
-    Returns:
-        JSON response with paginated blog posts
-    """
     try:
-        # Validate query parameters
         schema = BlogFilterSchema()
         params = schema.load(request.args)
         
@@ -48,18 +32,14 @@ def list_blogs():
         return validation_error_response(err.messages)
     
     try:
-        # Build query
         query = BlogPost.query
         
-        # Filter by published status (default: true for public API)
         is_published = params.get('is_published', True)
         query = query.filter_by(is_published=is_published)
         
-        # Filter by category
         if params.get('category_id'):
             query = query.filter_by(category_id=params['category_id'])
         
-        # Search by title/excerpt/content
         if params.get('q'):
             search_pattern = f"%{params['q']}%"
             query = query.filter(
@@ -70,7 +50,6 @@ def list_blogs():
                 )
             )
         
-        # Sorting
         sort_field = params.get('sort', 'published_at')
         sort_order = params.get('order', 'desc')
         
@@ -87,10 +66,8 @@ def list_blogs():
                 asc(BlogPost.title) if sort_order == 'asc' else desc(BlogPost.title)
             )
         
-        # Get total count
         total = query.count()
         
-        # Paginate
         page = params.get('page', 1)
         per_page = params.get('per_page', 20)
         
@@ -100,7 +77,6 @@ def list_blogs():
             error_out=False
         )
         
-        # Serialize data
         items = [
             {
                 'id': b.id,
@@ -109,7 +85,7 @@ def list_blogs():
                 'slug': b.slug,
                 'featured_image': b.featured_image,
                 'author': b.author,
-                'tags': [tag.name for tag in b.tag_list.all()],
+                'tags': [tag.name for tag in b.tag_list],
                 'meta_description': b.meta_description,
                 'published_at': b.published_at.isoformat() if b.published_at else None,
                 'created_at': b.created_at.isoformat() if b.created_at else None,
@@ -199,7 +175,7 @@ def get_blog_details(slug):
             'slug': blog.slug,
             'featured_image': blog.featured_image,
             'author': blog.author,
-            'tags': [tag.name for tag in blog.tag_list.all()],
+            'tags': [tag.name for tag in blog.tag_list],
             'meta_description': blog.meta_description,
             'published_at': blog.published_at.isoformat() if blog.published_at else None,
             'created_at': blog.created_at.isoformat() if blog.created_at else None,

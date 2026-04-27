@@ -126,7 +126,7 @@ class SampleResponseDTO(BaseDTO):
             word_count=obj.word_count or 0,
             featured=obj.featured,
             image=obj.image or "",
-            tags=[TagResponseDTO.from_model(tag) for tag in obj.tag_list.all()],
+            tags=[TagResponseDTO.from_model(tag) for tag in obj.tag_list],
             service=SampleServiceResponseDTO.from_model(obj.service),
         )
 

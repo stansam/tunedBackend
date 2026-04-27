@@ -198,3 +198,13 @@ class ActionableAlertType(str, Enum):
     EXTENSION_REQUEST = "EXTENSION_REQUEST"
     PENDING_REVIEW    = "PENDING_REVIEW"
 
+
+class EmailStatus(str, Enum):
+    PENDING = "pending"
+    SENT = "sent"
+    FAILED = "failed"
+
+class TransactionStatus(str, Enum):
+    PENDING = "pending"
+    COMPLETED = "completed"
+    FAILED = "failed"

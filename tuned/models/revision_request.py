@@ -1,111 +1,54 @@
-"""
-Order Revision Request model.
-
-Tracks client requests for revisions after order delivery.
-"""
 from tuned.extensions import db
 from tuned.models.base import BaseModel
 from datetime import datetime, timezone
 from tuned.models.enums import RevisionRequestStatus, Priority
-from sqlalchemy.orm import validates
+from sqlalchemy.orm import validates, Mapped, mapped_column, relationship
+from typing import Optional, TYPE_CHECKING, Any
 
+if TYPE_CHECKING:
+    from tuned.models.order import Order
+    from tuned.models.user import User
+    from tuned.models.order_delivery import OrderDelivery
 
 class OrderRevisionRequest(BaseModel):
-    """
-    Track client revision requests for delivered orders.
-    
-    This model maintains a complete audit trail of revision requests,
-    including who requested it, when, what was requested, and the outcome.
-    """
-    
     __tablename__ = 'order_revision_requests'
 
     # Foreign Keys
-    order_id = db.Column(
-        db.String(36),
-        db.ForeignKey('order.id', ondelete='CASCADE'),
-        nullable=False,
-        index=True
-    )
-    delivery_id = db.Column(
-        db.String(36),
-        db.ForeignKey('order_delivery.id', ondelete='CASCADE'),
-        nullable=False
-    )
-    requested_by = db.Column(
-        db.String(36),
-        db.ForeignKey('users.id'),
-        nullable=False
-    )
-    reviewed_by = db.Column(
-        db.String(36),
-        db.ForeignKey('users.id'),
-        nullable=True
-    )
+    order_id: Mapped[str] = mapped_column(db.String(36), db.ForeignKey('order.id', ondelete='CASCADE'), nullable=False, index=True)
+    delivery_id: Mapped[str] = mapped_column(db.String(36), db.ForeignKey('order_delivery.id', ondelete='CASCADE'), nullable=False)
+    requested_by: Mapped[str] = mapped_column(db.String(36), db.ForeignKey('users.id'), nullable=False)
+    reviewed_by: Mapped[Optional[str]] = mapped_column(db.String(36), db.ForeignKey('users.id'), nullable=True)
     
-    # Request Details
-    revision_notes = db.Column(db.Text, nullable=False)  # Client's revision requirements
-    internal_notes = db.Column(db.Text, nullable=True)   # Admin notes (not shown to client)
+    revision_notes: Mapped[str] = mapped_column(db.Text, nullable=False)
+    internal_notes: Mapped[Optional[str]] = mapped_column(db.Text, nullable=True)
     
-    # Status & Tracking
-    status = db.Column(
-        db.Enum(RevisionRequestStatus),
-        default=RevisionRequestStatus.PENDING,
-        nullable=False,
-        index=True
-    )
-    priority = db.Column(
-        db.Enum(Priority),
-        default=Priority.NORMAL,
-        nullable=False
-    )
+    status: Mapped[RevisionRequestStatus] = mapped_column(db.Enum(RevisionRequestStatus), default=RevisionRequestStatus.PENDING, nullable=False, index=True)
+    priority: Mapped[Priority] = mapped_column(db.Enum(Priority), default=Priority.NORMAL, nullable=False)
     
-    # Timestamps
-    requested_at = db.Column(
-        db.DateTime(timezone=True),
-        default=lambda: datetime.now(timezone.utc),
-        nullable=False
-    )
-    reviewed_at = db.Column(db.DateTime(timezone=True), nullable=True)
-    resolved_at = db.Column(db.DateTime(timezone=True), nullable=True)
+
+    requested_at: Mapped[datetime] = mapped_column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
+    reviewed_at: Mapped[Optional[datetime]] = mapped_column(db.DateTime(timezone=True), nullable=True)
+    resolved_at: Mapped[Optional[datetime]] = mapped_column(db.DateTime(timezone=True), nullable=True)
     
-    # Metadata
-    revision_count = db.Column(db.Integer, default=1, nullable=False)  # 1st, 2nd, 3rd revision, etc.
-    estimated_completion = db.Column(db.DateTime(timezone=True), nullable=True)
+    revision_count: Mapped[int] = mapped_column(db.Integer, default=1, nullable=False)
+    estimated_completion: Mapped[Optional[datetime]] = mapped_column(db.DateTime(timezone=True), nullable=True)
     
-    # Relationships
-    order = db.relationship(
-        'Order',
-        backref=db.backref('revision_requests', lazy='dynamic', cascade='all, delete-orphan')
-    )
-    delivery = db.relationship(
-        'OrderDelivery',
-        backref=db.backref('revision_requests', lazy='dynamic')
-    )
-    requester = db.relationship('User', foreign_keys=[requested_by])
-    reviewer = db.relationship('User', foreign_keys=[reviewed_by])
+    order: Mapped["Order"] = relationship('Order', back_populates='revision_requests')
+    delivery: Mapped["OrderDelivery"] = relationship('OrderDelivery', back_populates='revision_requests')
+    requester: Mapped["User"] = relationship('User', foreign_keys=[requested_by])
+    reviewer: Mapped[Optional["User"]] = relationship('User', foreign_keys=[reviewed_by])
     
-    # Indexes for performance
     __table_args__ = (
         db.Index('ix_revision_request_order_status', 'order_id', 'status'),
         db.Index('ix_revision_request_created', 'requested_at'),
     )
     
     @validates('status')
-    def validate_status_transition(self, key, new_status):
-        """
-        Validate revision request status transitions.
-        
-        Valid transitions:
-        - PENDING → IN_PROGRESS, REJECTED, CANCELLED
-        - IN_PROGRESS → COMPLETED, CANCELLED
-        - COMPLETED, REJECTED, CANCELLED → [terminal states, no transitions]
-        """
+    def validate_status_transition(self, new_status: RevisionRequestStatus) -> RevisionRequestStatus: #key: str, 
         if not self.id or not hasattr(self, '_sa_instance_state') or self._sa_instance_state.key is None:
             return new_status
         
         current_status = self.status
-        
         if current_status == new_status:
             return new_status
         
@@ -125,25 +68,20 @@ class OrderRevisionRequest(BaseModel):
         }
         
         allowed = valid_transitions.get(current_status, [])
-        
         if new_status not in allowed:
-            raise ValueError(
-                f'Invalid revision request status transition from {current_status.value} to {new_status.value}'
-            )
+            raise ValueError(f'Invalid revision request status transition from {current_status.value} to {new_status.value}')
         
         return new_status
     
     @property
-    def is_active(self):
-        """Check if revision request is still active (not in terminal state)."""
+    def is_active(self) -> bool:
         return self.status in [
             RevisionRequestStatus.PENDING,
             RevisionRequestStatus.IN_PROGRESS
         ]
     
     @property
-    def status_color(self):
-        """Get color for status display in UI."""
+    def status_color(self) -> str:
         colors = {
             RevisionRequestStatus.PENDING: 'warning',
             RevisionRequestStatus.IN_PROGRESS: 'primary',
@@ -153,13 +91,7 @@ class OrderRevisionRequest(BaseModel):
         }
         return colors.get(self.status, 'secondary')
     
-    def to_dict(self, include_internal=False):
-        """
-        Convert revision request to dictionary.
-        
-        Args:
-            include_internal: If True, include internal_notes (admin only)
-        """
+    def to_dict(self, include_internal: bool = False) -> dict[str, Any]:
         data = {
             'id': self.id,
             'order_id': self.order_id,
@@ -191,5 +123,5 @@ class OrderRevisionRequest(BaseModel):
         
         return data
     
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f'<OrderRevisionRequest {self.id} for Order {self.order_id}>'

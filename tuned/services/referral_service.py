@@ -13,8 +13,6 @@ logger: logging.Logger = get_logger(__name__)
 
 class ReferralService:
     def __init__(self):
-        self.COMMISSION_PERCENTAGE = 0.10 # 10% of order value
-        self.POINT_USD_VALUE = 0.4 # 1 point = $0.4
         self._user_repo = repositories.user
         self._referral_repo = repositories.referral
         self._log = audit_service.activity_log

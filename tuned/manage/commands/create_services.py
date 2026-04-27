@@ -1,11 +1,3 @@
-"""
-create_services — seed service categories and individual services.
-
-Requires pricing categories to already exist (run create-prices first).
-
-Usage:
-    flask create-services
-"""
 import logging
 import click
 from flask.cli import with_appcontext
@@ -19,9 +11,10 @@ from tuned.manage.data import (
 )
 from tuned.models import PricingCategory, ServiceCategory
 from tuned.extensions import db
-from tuned.repository.exceptions import AlreadyExists, DatabaseError
+from tuned.repository.exceptions import AlreadyExists #, DatabaseError
+from tuned.core.logging import get_logger
 
-logger = logging.getLogger(__name__)
+logger: logging.Logger = get_logger(__name__)
 
 
 def _build_pricing_cat_map() -> dict[str, str]:
@@ -37,7 +30,6 @@ def _build_service_cat_map() -> dict[str, str]:
 @click.command("create-services")
 @with_appcontext
 def create_services() -> None:
-    """Seed service categories and services."""
     services = Services()
 
     pricing_cat_map = _build_pricing_cat_map()

@@ -1,33 +1,26 @@
-"""
-create_users — seed sample client accounts.
-
-Usage:
-    flask create-users
-"""
 import logging
 import click
 from flask.cli import with_appcontext
 
 from tuned.dtos import CreateUserDTO
+from tuned.dtos.base import BaseRequestDTO
 from tuned.interface import Services
 from tuned.manage.data import users_dict
-from tuned.repository.exceptions import AlreadyExists, DatabaseError
 from tuned.models.enums import GenderEnum
+# from tuned.repository.exceptions import AlreadyExists, DatabaseError
+from tuned.core.logging import get_logger
 
-logger = logging.getLogger(__name__)
-
+logger: logging.Logger = get_logger(__name__)
 
 @click.command("create-users")
 @with_appcontext
 def create_users() -> None:
-    """Seed sample client user accounts."""
     services = Services()
     created = skipped = failed = 0
 
     for entry in users_dict:
         email = entry.get("email", "")
         try:
-            # Resolve gender enum if provided as string
             gender_raw = entry.get("gender")
             gender = GenderEnum[gender_raw] if gender_raw else GenderEnum.UNKOWN
 
@@ -40,7 +33,11 @@ def create_users() -> None:
                 gender=gender,
                 email_verified=entry.get("email_verified", False),
             )
-            services.user.create_user(dto)
+            locale = BaseRequestDTO(
+                ip_address="127.0.0.1",
+                user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+            )
+            services.user.create_user(dto, locale)
             click.echo(f"  ✓ Created user: {email}")
             created += 1
         except ValueError:

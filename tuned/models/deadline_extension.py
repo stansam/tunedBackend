@@ -1,82 +1,38 @@
-"""
-Order Deadline Extension Request model.
-
-Tracks admin requests for deadline extensions on active orders.
-When the admin needs more time to complete work, they request an extension from the client.
-"""
 from tuned.extensions import db
 from tuned.models.base import BaseModel
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone
 from tuned.models.enums import ExtensionRequestStatus, Priority
-from sqlalchemy.orm import validates
+from sqlalchemy.orm import validates, Mapped, mapped_column, relationship
+from typing import Optional, TYPE_CHECKING, Any
 
+if TYPE_CHECKING:
+    from tuned.models.order import Order
+    from tuned.models.user import User
 
-class OrderDeadlineExtensionRequest(BaseModel):
-    """
-    Track admin deadline extension requests for active orders.
-    
-    When the admin/service provider needs more time to complete an order,
-    they submit an extension request which the client can approve or reject.
-    This maintains a complete audit trail of extension requests and decisions.
-    """
-    
+class OrderDeadlineExtensionRequest(BaseModel):    
     __tablename__ = 'order_deadline_extension_requests'
     
-    # Foreign Keys
-    order_id = db.Column(
-        db.String(36),
-        db.ForeignKey('order.id', ondelete='CASCADE'),
-        nullable=False,
-        index=True
-    )
-    requested_by = db.Column(
-        db.Integer,
-        db.ForeignKey('users.id'),
-        nullable=False
-    )
-    reviewed_by = db.Column(
-        db.Integer,
-        db.ForeignKey('users.id'),
-        nullable=True
-    )
+    order_id: Mapped[str] = mapped_column(db.String(36), db.ForeignKey('order.id', ondelete='CASCADE'), nullable=False, index=True)
+    requested_by: Mapped[str] = mapped_column(db.String(36), db.ForeignKey('users.id'), nullable=False)
+    reviewed_by: Mapped[Optional[str]] = mapped_column(db.String(36), db.ForeignKey('users.id'), nullable=True)
     
-    # Request Details
-    requested_hours = db.Column(db.Integer, nullable=False)  # Hours of extension requested by admin
-    reason = db.Column(db.Text, nullable=False)  # Admin's reason for needing more time
-    client_notes = db.Column(db.Text, nullable=True)  # Client notes when approving/rejecting
+    requested_hours: Mapped[int] = mapped_column(db.Integer, nullable=False)  # Hours of extension requested by admin
+    reason: Mapped[str] = mapped_column(db.Text, nullable=False)  # Admin's reason for needing more time
+    client_notes: Mapped[Optional[str]] = mapped_column(db.Text, nullable=True)  # Client notes when approving/rejecting
     
-    # Deadline Information
-    original_due_date = db.Column(db.DateTime(timezone=True), nullable=False)
-    new_due_date = db.Column(db.DateTime(timezone=True), nullable=True)  # Set when approved by client
+    original_due_date: Mapped[datetime] = mapped_column(db.DateTime(timezone=True), nullable=False)
+    new_due_date: Mapped[Optional[datetime]] = mapped_column(db.DateTime(timezone=True), nullable=True)  # Set when approved by client
+
+    status: Mapped[ExtensionRequestStatus] = mapped_column(db.Enum(ExtensionRequestStatus), default=ExtensionRequestStatus.PENDING, nullable=False, index=True)
+    priority: Mapped[Priority] = mapped_column(db.Enum(Priority), default=Priority.NORMAL, nullable=False)
+
+    requested_at: Mapped[datetime] = mapped_column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
+    reviewed_at: Mapped[Optional[datetime]] = mapped_column(db.DateTime(timezone=True), nullable=True)
+    rejection_reason: Mapped[Optional[str]] = mapped_column(db.Text, nullable=True)  
     
-    # Status & Tracking
-    status = db.Column(
-        db.Enum(ExtensionRequestStatus),
-        default=ExtensionRequestStatus.PENDING,
-        nullable=False,
-        index=True
-    )
-    priority = db.Column(
-        db.Enum(Priority),
-        default=Priority.NORMAL,
-        nullable=False
-    )
-    
-    # Timestamps
-    requested_at = db.Column(
-        db.DateTime(timezone=True),
-        default=lambda: datetime.now(timezone.utc),
-        nullable=False
-    )
-    reviewed_at = db.Column(db.DateTime(timezone=True), nullable=True)
-    rejection_reason = db.Column(db.Text, nullable=True)  
-    
-    order = db.relationship(
-        'Order',
-        backref=db.backref('deadline_extension_requests', lazy='dynamic', cascade='all, delete-orphan')
-    )
-    requester = db.relationship('User', foreign_keys=[requested_by])  # Admin who requested
-    reviewer = db.relationship('User', foreign_keys=[reviewed_by])  # Client who approved/rejected
+    order: Mapped["Order"] = relationship('Order', back_populates='deadline_extension_requests')
+    requester: Mapped["User"] = relationship('User', foreign_keys=[requested_by])
+    reviewer: Mapped[Optional["User"]] = relationship('User', foreign_keys=[reviewed_by])
     
     __table_args__ = (
         db.Index('ix_extension_request_order_status', 'order_id', 'status'),
@@ -84,19 +40,11 @@ class OrderDeadlineExtensionRequest(BaseModel):
     )
     
     @validates('status')
-    def validate_status_transition(self, key, new_status):
-        """
-        Validate deadline extension request status transitions.
-        
-        Valid transitions:
-        - PENDING → APPROVED, REJECTED, CANCELLED
-        - APPROVED, REJECTED, CANCELLED → [terminal states, no transitions]
-        """
+    def validate_status_transition(self, key: str, new_status: ExtensionRequestStatus) -> ExtensionRequestStatus:
         if not self.id or not hasattr(self, '_sa_instance_state') or self._sa_instance_state.key is None:
             return new_status
         
         current_status = self.status
-        
         if current_status == new_status:
             return new_status
         
@@ -112,22 +60,17 @@ class OrderDeadlineExtensionRequest(BaseModel):
         }
         
         allowed = valid_transitions.get(current_status, [])
-        
         if new_status not in allowed:
-            raise ValueError(
-                f'Invalid extension request status transition from {current_status.value} to {new_status.value}'
-            )
+            raise ValueError(f'Invalid extension request status transition from {current_status.value} to {new_status.value}')
         
         return new_status
     
     @property
-    def is_pending(self):
-        """Check if extension request is still pending."""
+    def is_pending(self) -> bool:
         return self.status == ExtensionRequestStatus.PENDING
     
     @property
-    def status_color(self):
-        """Get color for status display in UI."""
+    def status_color(self) -> str:
         colors = {
             ExtensionRequestStatus.PENDING: 'warning',
             ExtensionRequestStatus.APPROVED: 'success',
@@ -137,20 +80,13 @@ class OrderDeadlineExtensionRequest(BaseModel):
         return colors.get(self.status, 'secondary')
     
     @property
-    def hours_difference(self):
-        """Calculate actual hours granted (for approved requests)."""
+    def hours_difference(self) -> Optional[int]:
         if self.new_due_date and self.original_due_date:
             delta = self.new_due_date - self.original_due_date
             return int(delta.total_seconds() / 3600)
         return None
     
-    def to_dict(self, include_client_notes=False):
-        """
-        Convert deadline extension request to dictionary.
-        
-        Args:
-            include_client_notes: If True, include client_notes (for client/admin)
-        """
+    def to_dict(self, include_client_notes: bool = False) -> dict[str, Any]:
         data = {
             'id': self.id,
             'order_id': self.order_id,
@@ -185,5 +121,5 @@ class OrderDeadlineExtensionRequest(BaseModel):
         
         return data
     
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f'<OrderDeadlineExtensionRequest {self.id} for Order {self.order_id}>'

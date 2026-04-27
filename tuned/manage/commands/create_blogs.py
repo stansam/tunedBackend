@@ -1,9 +1,3 @@
-"""
-create_blogs — seed blog categories and blog posts with tags.
-
-Usage:
-    flask create-blogs
-"""
 import logging
 import click
 from flask.cli import with_appcontext
@@ -19,7 +13,6 @@ logger = logging.getLogger(__name__)
 
 
 def _build_blog_category_map() -> dict[str, str]:
-    """Return {slug: category_id} for all seeded blog categories."""
     cats = db.session.query(BlogCategory).all()
     return {cat.slug: cat.id for cat in cats}
 
@@ -27,10 +20,8 @@ def _build_blog_category_map() -> dict[str, str]:
 @click.command("create-blogs")
 @with_appcontext
 def create_blogs() -> None:
-    """Seed blog categories and blog posts with tags."""
     services = Services()
 
-    # --- Blog Categories ---
     bc_created = bc_skipped = 0
     click.echo("Seeding blog categories…")
 
@@ -55,10 +46,8 @@ def create_blogs() -> None:
         f"Blog Categories — created: {bc_created}, skipped: {bc_skipped}"
     )
 
-    # Refresh category map
     category_map = _build_blog_category_map()
 
-    # --- Blog Posts ---
     bp_created = bp_skipped = bp_failed = 0
     click.echo("\nSeeding blog posts…")
 
@@ -75,11 +64,6 @@ def create_blogs() -> None:
             continue
 
         try:
-            # Handle published_at — could be a datetime object
-            # published_at = entry.get("published_at")
-            # if published_at and hasattr(published_at, "isoformat"):
-            #     published_at = published_at.isoformat()
-
             dto = BlogPostDTO(
                 title=entry["title"],
                 content=entry["content"],
@@ -96,7 +80,6 @@ def create_blogs() -> None:
             click.echo(f"  ✓ Created blog post: {entry['title'][:60]}")
             bp_created += 1
 
-            # Attach tags via Tag.parse_tags
             tag_string = entry.get("tags", "")
             if tag_string:
                 from tuned.models import BlogPost as BlogPostModel
@@ -106,7 +89,7 @@ def create_blogs() -> None:
                 if post_record:
                     tag_objects = Tag.parse_tags(tag_string)
                     for tag in tag_objects:
-                        if tag not in post_record.tag_list.all():
+                        if tag not in post_record.tag_list:
                             post_record.tag_list.append(tag)
                             tag.usage_count += 1
                     db.session.commit()

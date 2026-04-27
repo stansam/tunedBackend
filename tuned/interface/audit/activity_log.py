@@ -16,7 +16,6 @@ class ActivityLogService:
         try:
             logger.info("Logging activity: %s", data.action)
             
-            # Sanitize inputs before passing to repository
             data.before = sanitize_json_snapshot(data.before)
             data.after = sanitize_json_snapshot(data.after)
             data.ip_address = sanitize_ip(data.ip_address)

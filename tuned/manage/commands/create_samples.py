@@ -1,11 +1,3 @@
-"""
-create_samples — seed writing work samples.
-
-Requires services to already exist (run create-services first).
-
-Usage:
-    flask create-samples
-"""
 import logging
 import click
 from flask.cli import with_appcontext
@@ -28,7 +20,6 @@ def _build_service_map() -> dict[str, str]:
 @click.command("create-samples")
 @with_appcontext
 def create_samples() -> None:
-    """Seed sample writing pieces with tags."""
     services = Services()
     service_map = _build_service_map()
 
@@ -63,10 +54,8 @@ def create_samples() -> None:
             click.echo(f"  ✓ Created sample: {entry['title']}")
             created += 1
 
-            # Attach tags via Tag.parse_tags  (uses get_or_create internally)
             tag_string = entry.get("tags", "")
             if tag_string:
-                # Fetch the actual Sample model instance to attach tags
                 from tuned.models import Sample as SampleModel
                 sample_record = db.session.query(SampleModel).filter_by(
                     id=sample_obj.id
@@ -74,7 +63,7 @@ def create_samples() -> None:
                 if sample_record:
                     tag_objects = Tag.parse_tags(tag_string)
                     for tag in tag_objects:
-                        if tag not in sample_record.tag_list.all():
+                        if tag not in sample_record.tag_list:
                             sample_record.tag_list.append(tag)
                             tag.usage_count += 1
                     db.session.commit()

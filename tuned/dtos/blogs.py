@@ -77,7 +77,7 @@ class BlogPostResponseDTO(BaseDTO):
             is_featured=obj.is_featured,
             published_at=obj.published_at.isoformat() if obj.published_at else "",
             comments=[BlogCommentResponseDTO.from_model(comment) for comment in obj.comments.all()],
-            tags=[TagResponseDTO.from_model(tag) for tag in obj.tag_list.all()],
+            tags=[TagResponseDTO.from_model(tag) for tag in obj.tag_list],
         )
 
 @dataclass

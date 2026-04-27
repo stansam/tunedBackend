@@ -1,9 +1,3 @@
-"""
-seed_db — run all seed commands in dependency order.
-
-Usage:
-    flask seed-db
-"""
 import logging
 import click
 from flask.cli import with_appcontext
@@ -16,12 +10,12 @@ from tuned.manage.commands.create_samples import create_samples as _create_sampl
 from tuned.manage.commands.create_testimonials import create_testimonials as _create_testimonials
 from tuned.manage.commands.create_faqs import create_faqs as _create_faqs
 from tuned.manage.commands.create_blogs import create_blogs as _create_blogs
+from tuned.core.logging import get_logger
 
-logger = logging.getLogger(__name__)
+logger: logging.Logger = get_logger(__name__)
 
 
 def _run_step(ctx: click.Context, cmd: click.BaseCommand, label: str) -> None:
-    """Invoke a Click command as a sub-command within the application context."""
     click.echo(f"\n{'─' * 60}")
     click.echo(f"  STEP: {label}")
     click.echo(f"{'─' * 60}")
@@ -32,18 +26,6 @@ def _run_step(ctx: click.Context, cmd: click.BaseCommand, label: str) -> None:
 @click.pass_context
 @with_appcontext
 def seed_db(ctx: click.Context) -> None:
-    """Run all seed commands in the correct dependency order.
-
-    Order:
-      1. Users
-      2. Content (academic levels + deadlines)
-      3. Prices  (pricing categories + price rates)
-      4. Services (service categories + services)
-      5. Samples
-      6. Testimonials
-      7. FAQs
-      8. Blogs (categories + posts)
-    """
     click.echo("=" * 60)
     click.echo("  TUNED DATABASE SEEDER")
     click.echo("=" * 60)
@@ -63,7 +45,6 @@ def seed_db(ctx: click.Context) -> None:
         try:
             _run_step(ctx, cmd, label)
         except SystemExit:
-            # click commands call sys.exit(0) on success — catch and continue
             pass
         except Exception as exc:
             logger.exception("Seeder step '%s' failed", label)

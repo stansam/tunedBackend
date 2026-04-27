@@ -97,7 +97,15 @@ class UserService:
             if not user:
                 logger.error(f"User not found.")
                 raise InvalidCredentials("Invalid email or username.")
+        except Exception as exc:
+            logger.error(f"Error while fetching user with email/username: {exc!r}")
+            raise InvalidCredentials(f"Error while fetching user with email/username: {exc!r}")
             
+        except DatabaseError:
+            logger.error(f"Database error while fetching user with email/username.")
+            raise DatabaseError(f"Database error while fetching user with email/username.")
+        
+        try:
             existing_user = user
 
             if is_email_verified_required():
@@ -153,16 +161,12 @@ class UserService:
 
             logger.info(f"User login successful.")
             return True, asdict(user_dto)
-        except NotFound:
-            logger.error(f"User with email/username not found.")
-            raise NotFound(f"User with email/username not found.")
-        except DatabaseError:
-            logger.error(f"Database error while fetching user with email/username.")
-            raise DatabaseError(f"Database error while fetching user with email/username.")
+        except Exception as exc:
+            logger.error(f"Error during user login: {exc!r}")
+            raise DatabaseError(f"Error during user login: {exc!r}")
 
-    def create_user(self, data: CreateUserDTO, locale: BaseRequestDTO ) -> dict:
-        try:
-
+    def create_user(self, data: CreateUserDTO, locale: BaseRequestDTO, referred_by_code: Optional[str] = None ) -> dict:
+        try:                
             created_user = self._repo.create_user(data)
 
             audit_dto = ActivityLogCreateDTO(
@@ -185,11 +189,11 @@ class UserService:
                     'email': created_user.email,
                     'name': created_user.get_name()
                 })
-                
-                if getattr(data, 'referred_by_code', None):
+
+                if referred_by_code is not None:
                     event_bus.emit('user.registered_with_referral', {
                         'new_user_id': str(created_user.id),
-                        'referral_code': data.referred_by_code
+                        'referral_code': referred_by_code
                     })
             except Exception as token_exc:
                 logger.error(

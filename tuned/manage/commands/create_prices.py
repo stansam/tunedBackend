@@ -1,11 +1,3 @@
-"""
-create_prices — seed pricing categories and price rates.
-
-Requires academic levels and deadlines to already exist (run create-content first).
-
-Usage:
-    flask create-prices
-"""
 import logging
 import click
 from flask.cli import with_appcontext
@@ -15,25 +7,23 @@ from tuned.interface import Services
 from tuned.manage.data import pricing_categories_dict, price_rates_dict, pricing_level_names
 from tuned.models import AcademicLevel, Deadline, PricingCategory
 from tuned.extensions import db
-from tuned.repository.exceptions import AlreadyExists, DatabaseError
+from tuned.repository.exceptions import AlreadyExists #, DatabaseError
+from tuned.core.logging import get_logger
 
-logger = logging.getLogger(__name__)
+logger: logging.Logger = get_logger(__name__)
 
 
 def _build_level_map() -> dict[str, str]:
-    """Return {level_name: level_id} for all seeded academic levels."""
     levels = db.session.query(AcademicLevel).all()
     return {lvl.name: lvl.id for lvl in levels}
 
 
 def _build_deadline_map() -> dict[str, str]:
-    """Return {deadline_name: deadline_id} for all seeded deadlines."""
     deadlines = db.session.query(Deadline).all()
     return {d.name: d.id for d in deadlines}
 
 
 def _build_category_map() -> dict[str, str]:
-    """Return {category_name: category_id} for seeded pricing categories."""
     cats = db.session.query(PricingCategory).all()
     return {c.name: c.id for c in cats}
 
@@ -41,10 +31,8 @@ def _build_category_map() -> dict[str, str]:
 @click.command("create-prices")
 @with_appcontext
 def create_prices() -> None:
-    """Seed pricing categories and per-page price rates."""
     services = Services()
 
-    # --- Pricing Categories ---
     pc_created = pc_skipped = 0
     click.echo("Seeding pricing categories…")
     for entry in pricing_categories_dict:
@@ -66,7 +54,6 @@ def create_prices() -> None:
 
     click.echo(f"Pricing Categories — created: {pc_created}, skipped: {pc_skipped}")
 
-    # --- Price Rates ---
     level_map = _build_level_map()
     deadline_map = _build_deadline_map()
     category_map = _build_category_map()

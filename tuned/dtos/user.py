@@ -21,7 +21,7 @@ class CreateUserDTO:
     language: str = "en"
     timezone: str = "UTC"
     phone_number: Optional[str] = None
-    referred_by_code: Optional[str] = None
+    # referred_by_code: Optional[str] = None
 
 @dataclass
 class LoginRequestDTO(BaseRequestDTO):

@@ -5,15 +5,15 @@ from flask.cli import with_appcontext
 from tuned.dtos import FaqDTO
 from tuned.interface import Services
 from tuned.manage.data import faqs_dict
-from tuned.repository.exceptions import AlreadyExists, DatabaseError
+from tuned.repository.exceptions import AlreadyExists #, DatabaseError
+from tuned.core.logging import get_logger
 
-logger = logging.getLogger(__name__)
+logger: logging.Logger = get_logger(__name__)
 
 
 @click.command("create-faqs")
 @with_appcontext
 def create_faqs() -> None:
-    """Seed FAQ entries."""
     services = Services()
 
     created = skipped = failed = 0

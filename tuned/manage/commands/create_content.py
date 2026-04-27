@@ -1,9 +1,3 @@
-"""
-create_content — seed academic levels and deadlines.
-
-Usage:
-    flask create-content
-"""
 import logging
 import click
 from flask.cli import with_appcontext
@@ -11,18 +5,17 @@ from flask.cli import with_appcontext
 from tuned.dtos import AcademicLevelDTO, DeadlineDTO
 from tuned.interface import Services
 from tuned.manage.data import academic_levels_dict, deadlines_dict
-from tuned.repository.exceptions import AlreadyExists, DatabaseError
+from tuned.repository.exceptions import AlreadyExists #, DatabaseError
+from tuned.core.logging import get_logger
 
-logger = logging.getLogger(__name__)
+logger: logging.Logger = get_logger(__name__)
 
 
 @click.command("create-content")
 @with_appcontext
 def create_content() -> None:
-    """Seed academic levels and deadline options."""
     services = Services()
 
-    # --- Academic Levels ---
     al_created = al_skipped = al_failed = 0
     click.echo("Seeding academic levels…")
     for entry in academic_levels_dict:
@@ -43,7 +36,6 @@ def create_content() -> None:
         f"Academic Levels — created: {al_created}, skipped: {al_skipped}, failed: {al_failed}"
     )
 
-    # --- Deadlines ---
     dl_created = dl_skipped = dl_failed = 0
     click.echo("\nSeeding deadlines…")
     for entry in deadlines_dict:

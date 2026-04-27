@@ -1,9 +1,11 @@
 import re
 import unicodedata
+from typing import Any, Union
 from sqlalchemy.orm import Session
+from sqlalchemy.orm.scoping import scoped_session
 from sqlalchemy import select
 
-def generate_slug(title: str, model, session: Session, max_length: int = 100)-> str:
+def generate_slug(title: str, model: Any, session: Union[Session, scoped_session[Any]], max_length: int = 100) -> str:
     normalized = unicodedata.normalize("NFKD", title)
     ascii_title = normalized.encode("ascii", "ignore").decode("ascii")
 

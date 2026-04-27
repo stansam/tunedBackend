@@ -1,8 +1,8 @@
 from typing import Any
 from sqlalchemy.orm import Session
+from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 
-from tuned.extensions import db
 from tuned.models import FAQ
 from tuned.dtos.content import FaqDTO, FaqResponseDTO
 from tuned.repository.exceptions import AlreadyExists, DatabaseError, NotFound
@@ -21,13 +21,11 @@ class CreateFAQ:
                 order=data.order,
             )
             self.session.add(faq)
-            self.session.commit()
+            self.session.flush()
             return FaqResponseDTO.from_model(faq)
         except IntegrityError:
-            self.session.rollback()
             raise AlreadyExists("A FAQ with this question already exists.")
         except SQLAlchemyError as e:
-            self.session.rollback()
             raise DatabaseError("Database error while creating FAQ.") from e
 
 
@@ -37,7 +35,8 @@ class GetFAQByID:
 
     def execute(self, faq_id: str) -> FaqResponseDTO:
         try:
-            faq = self.session.query(FAQ).filter_by(id=faq_id).first()
+            stmt = select(FAQ).where(FAQ.id == faq_id)
+            faq = self.session.scalar(stmt)
             if not faq:
                 raise NotFound("FAQ not found.")
             return FaqResponseDTO.from_model(faq)
@@ -51,10 +50,11 @@ class GetAllFAQs:
 
     def execute(self, category: str | None = None) -> list[FaqResponseDTO]:
         try:
-            query = self.session.query(FAQ)
+            stmt = select(FAQ)
             if category:
-                query = query.filter_by(category=category)
-            faqs = query.order_by(FAQ.category.asc(), FAQ.order.asc()).all()
+                stmt = stmt.where(FAQ.category == category)
+            stmt = stmt.order_by(FAQ.category.asc(), FAQ.order.asc())
+            faqs = self.session.scalars(stmt).all()
             return [FaqResponseDTO.from_model(f) for f in faqs]
         except SQLAlchemyError as e:
             raise DatabaseError(f"Database error while fetching FAQs: {str(e)}") from e
@@ -68,12 +68,12 @@ class GetFAQCategories:
 
     def execute(self) -> list[str]:
         try:
-            rows = (
-                self.session.query(FAQ.category)
+            stmt = (
+                select(FAQ.category)
                 .distinct()
                 .order_by(FAQ.category.asc())
-                .all()
             )
+            rows = self.session.execute(stmt).all()
             return [row[0] for row in rows]
         except SQLAlchemyError as e:
             raise DatabaseError(f"Database error while fetching FAQ categories: {str(e)}") from e
@@ -85,19 +85,18 @@ class UpdateFAQ:
 
     def execute(self, faq_id: str, updates: dict[str, Any]) -> FaqResponseDTO:
         try:
-            faq = self.session.query(FAQ).filter_by(id=faq_id).first()
+            stmt = select(FAQ).where(FAQ.id == faq_id)
+            faq = self.session.scalar(stmt)
             if not faq:
                 raise NotFound("FAQ not found.")
             for key, value in updates.items():
                 if hasattr(faq, key):
                     setattr(faq, key, value)
-            self.session.commit()
+            self.session.flush()
             return FaqResponseDTO.from_model(faq)
         except IntegrityError:
-            self.session.rollback()
             raise AlreadyExists("A FAQ with that question already exists.")
         except SQLAlchemyError as e:
-            self.session.rollback()
             raise DatabaseError("Database error while updating FAQ.") from e
 
 
@@ -107,13 +106,13 @@ class DeleteFAQ:
 
     def execute(self, faq_id: str) -> None:
         try:
-            faq = self.session.query(FAQ).filter_by(id=faq_id).first()
+            stmt = select(FAQ).where(FAQ.id == faq_id)
+            faq = self.session.scalar(stmt)
             if not faq:
                 raise NotFound("FAQ not found.")
             self.session.delete(faq)
-            self.session.commit()
+            self.session.flush()
         except SQLAlchemyError as e:
-            self.session.rollback()
             raise DatabaseError("Database error while deleting FAQ.") from e
 
 

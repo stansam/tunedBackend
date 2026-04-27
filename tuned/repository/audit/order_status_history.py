@@ -1,4 +1,5 @@
 from sqlalchemy.orm import Session
+from sqlalchemy import select, func
 from sqlalchemy.exc import SQLAlchemyError
 from tuned.models import OrderStatusHistory
 from tuned.dtos import OrderStatusHistoryCreateDTO, OrderStatusHistoryResponseDTO
@@ -19,11 +20,9 @@ class CreateOrderStatusHistory:
                 ip_address=data.ip_address
             )
             self.session.add(history)
-            self.session.commit()
-            self.session.refresh(history)
+            self.session.flush()
             return OrderStatusHistoryResponseDTO.from_model(history)
         except SQLAlchemyError as e:
-            self.session.rollback()
             raise DatabaseError(f"Database error while creating order status history: {str(e)}") from e
 
 class GetOrderStatusHistoryByID:
@@ -32,7 +31,8 @@ class GetOrderStatusHistoryByID:
 
     def execute(self, history_id: str) -> OrderStatusHistoryResponseDTO:
         try:
-            history = self.session.query(OrderStatusHistory).filter_by(id=history_id).first()
+            stmt = select(OrderStatusHistory).where(OrderStatusHistory.id == history_id)
+            history = self.session.scalar(stmt)
             if not history:
                 raise NotFound("Order status history record not found.")
             return OrderStatusHistoryResponseDTO.from_model(history)
@@ -45,9 +45,15 @@ class GetOrderStatusHistoryByOrder:
 
     def execute(self, order_id: str, page: int = 1, per_page: int = 20) -> tuple[list[OrderStatusHistoryResponseDTO], int]:
         try:
-            query = self.session.query(OrderStatusHistory).filter_by(order_id=order_id).order_by(OrderStatusHistory.created_at.desc())
-            total = query.count()
-            items = query.offset((page - 1) * per_page).limit(per_page).all()
+            stmt = select(OrderStatusHistory).where(OrderStatusHistory.order_id == order_id)
+            
+            # Count total
+            count_stmt = select(func.count()).select_from(stmt.subquery())
+            total = self.session.scalar(count_stmt) or 0
+            
+            stmt = stmt.order_by(OrderStatusHistory.created_at.desc()).offset((page - 1) * per_page).limit(per_page)
+            items = self.session.scalars(stmt).all()
+            
             return [OrderStatusHistoryResponseDTO.from_model(i) for i in items], total
         except SQLAlchemyError as e:
             raise DatabaseError(f"Database error while fetching history for order: {str(e)}") from e

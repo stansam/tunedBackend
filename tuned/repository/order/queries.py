@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 from typing import Optional
 
-from sqlalchemy import func, desc, asc
+from sqlalchemy import func, select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
@@ -22,14 +22,14 @@ class GetActiveOrdersByClient:
 
     def execute(self, client_id: str) -> list[Order]:
         try:
-            return (
-                self.session.query(Order)
-                .filter(
+            stmt = (
+                select(Order)
+                .where(
                     Order.client_id == client_id,
                     Order.status.in_(_ACTIVE_STATUSES),
                 )
-                .all()
             )
+            return list(self.session.scalars(stmt).all())
         except SQLAlchemyError as exc:
             logger.error("[GetActiveOrdersByClient] DB error: %s", exc)
             raise DatabaseError(str(exc)) from exc
@@ -40,15 +40,15 @@ class GetLatestActiveOrderByClient:
 
     def execute(self, client_id: str) -> Optional[Order]:
         try:
-            return (
-                self.session.query(Order)
-                .filter(
+            stmt = (
+                select(Order)
+                .where(
                     Order.client_id == client_id,
                     Order.status.in_(_ACTIVE_STATUSES),
                 )
-                .order_by(desc(Order.updated_at))
-                .first()
+                .order_by(Order.updated_at.desc())
             )
+            return self.session.scalar(stmt)
         except SQLAlchemyError as exc:
             logger.error("[GetLatestActiveOrderByClient] DB error: %s", exc)
             raise DatabaseError(str(exc)) from exc
@@ -59,17 +59,17 @@ class GetUpcomingDeadlines:
 
     def execute(self, client_id: str, limit: int = 3) -> list[Order]:
         try:
-            return (
-                self.session.query(Order)
-                .filter(
+            stmt = (
+                select(Order)
+                .where(
                     Order.client_id == client_id,
                     Order.status.in_(_ACTIVE_STATUSES),
                     Order.due_date.isnot(None),
                 )
-                .order_by(asc(Order.due_date))
+                .order_by(Order.due_date.asc())
                 .limit(limit)
-                .all()
             )
+            return list(self.session.scalars(stmt).all())
         except SQLAlchemyError as exc:
             logger.error("[GetUpcomingDeadlines] DB error: %s", exc)
             raise DatabaseError(str(exc)) from exc
@@ -80,12 +80,12 @@ class GetProjectLifecycle:
 
     def execute(self, client_id: str) -> list[tuple[str, int]]:
         try:
-            rows = (
-                self.session.query(Order.status, func.count(Order.id))
-                .filter(Order.client_id == client_id)
+            stmt = (
+                select(Order.status, func.count(Order.id))
+                .where(Order.client_id == client_id)
                 .group_by(Order.status)
-                .all()
             )
+            rows = self.session.execute(stmt).all()
             return [(status.name, count) for status, count in rows]
         except SQLAlchemyError as exc:
             logger.error("[GetProjectLifecycle] DB error: %s", exc)
@@ -97,14 +97,14 @@ class GetOrderForReorder:
 
     def execute(self, order_id: str, client_id: str) -> Order:
         try:
-            order = (
-                self.session.query(Order)
-                .filter(
+            stmt = (
+                select(Order)
+                .where(
                     Order.id == order_id,
                     Order.client_id == client_id,
                 )
-                .first()
             )
+            order = self.session.scalar(stmt)
             if not order:
                 raise NotFound(f"Order {order_id} not found for client {client_id}")
             return order
@@ -121,7 +121,7 @@ class CreateOrderFromReorder:
 
     def execute(self, source: Order, client_id: str) -> Order:
         try:
-            new_order = Order(  # type: ignore[no-untyped-call]
+            new_order = Order(
                 client_id=client_id,
                 service_id=source.service_id,
                 academic_level_id=source.academic_level_id,
@@ -140,10 +140,8 @@ class CreateOrderFromReorder:
                 paid=False,
             )
             self.session.add(new_order)
-            self.session.commit()
-            self.session.refresh(new_order)
+            self.session.flush()
             return new_order
         except SQLAlchemyError as exc:
-            self.session.rollback()
             logger.error("[CreateOrderFromReorder] DB error: %s", exc)
             raise DatabaseError(str(exc)) from exc

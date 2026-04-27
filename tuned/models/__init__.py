@@ -20,7 +20,7 @@ from tuned.models.preferences import (
 
 from tuned.models.enums import (
     OrderStatus, SupportTicketStatus, PaymentStatus, PaymentMethod, MethodCategory,
-    TransactionType, RefundStatus, NotificationType, ChatStatus,
+    TransactionType, TransactionStatus, RefundStatus, NotificationType, ChatStatus, EmailStatus,
     DeliveryStatus, FileType, ReferralStatus, DiscountType, Currency, GenderEnum, BlogReactionType
 )
 
@@ -42,6 +42,6 @@ __all__ = [
     "UserNotificationPreferences", "UserEmailPreferences", "UserPrivacySettings",
     "UserLocalizationSettings", "UserAccessibilityPreferences", "UserBillingPreferences",
     "OrderStatus", "SupportTicketStatus", "PaymentStatus", "PaymentMethod", "MethodCategory",
-    "TransactionType", "RefundStatus", "NotificationType", "ChatStatus",
+    "TransactionType", "TransactionStatus", "RefundStatus", "NotificationType", "ChatStatus", "EmailStatus",
     "DeliveryStatus", "FileType", "ReferralStatus", "DiscountType", "Currency", "GenderEnum", "BlogReactionType"
 ]

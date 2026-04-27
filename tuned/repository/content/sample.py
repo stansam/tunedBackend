@@ -1,9 +1,8 @@
-from typing import Any
-from sqlalchemy.orm import Session, Query
+from typing import Any, Sequence
+from sqlalchemy.orm import Session
+from sqlalchemy import select, or_, asc, desc, func
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 
-from sqlalchemy import or_, asc, desc
-from tuned.extensions import db
 from tuned.models import Sample
 from tuned.dtos.content import(
     SampleDTO, SampleResponseDTO,
@@ -26,15 +25,13 @@ class CreateSample:
                 featured=data.featured,
                 image=data.image,
                 slug=data.slug or None,
-            )  # type: ignore[no-untyped-call]
+            )
             self.session.add(sample)
-            self.session.commit()
+            self.session.flush()
             return SampleResponseDTO.from_model(sample)
         except IntegrityError:
-            self.session.rollback()
             raise AlreadyExists("A sample with this title or slug already exists.")
         except SQLAlchemyError as e:
-            self.session.rollback()
             raise DatabaseError("Database error while creating sample.") from e
 
 
@@ -44,7 +41,8 @@ class GetSampleByID:
 
     def execute(self, sample_id: str) -> SampleResponseDTO:
         try:
-            sample = self.session.query(Sample).filter_by(id=sample_id).first()
+            stmt = select(Sample).where(Sample.id == sample_id)
+            sample = self.session.scalar(stmt)
             if not sample:
                 raise NotFound("Sample not found.")
             return SampleResponseDTO.from_model(sample)
@@ -58,7 +56,8 @@ class GetSampleBySlug:
 
     def execute(self, slug: str) -> SampleResponseDTO:
         try:
-            sample = self.session.query(Sample).filter_by(slug=slug).first()
+            stmt = select(Sample).where(Sample.slug == slug)
+            sample = self.session.scalar(stmt)
             if not sample:
                 raise NotFound("Sample not found.")
             return SampleResponseDTO.from_model(sample)
@@ -66,15 +65,15 @@ class GetSampleBySlug:
             raise DatabaseError(f"Database error while fetching sample: {str(e)}") from e
 
 def getSampleListResponse(
-    query: Query[Sample], req: SampleListRequestDTO
+    session: Session, stmt: Any, req: SampleListRequestDTO
 ) -> SampleListResponseDTO:
     if req.featured:
-        query = query.filter_by(featured=req.featured)
+        stmt = stmt.where(Sample.featured == req.featured)
     if req.service_id:
-        query = query.filter_by(service_id=req.service_id)
+        stmt = stmt.where(Sample.service_id == req.service_id)
     if req.q:
         search_pattern = f"%{req.q}%"
-        query = query.filter(
+        stmt = stmt.where(
             or_(
                 Sample.title.ilike(search_pattern),
                 Sample.excerpt.ilike(search_pattern),
@@ -90,14 +89,17 @@ def getSampleListResponse(
     sort_field = sort_map.get(req.sort or "created_at", Sample.created_at)
     order_func = asc if req.order == "asc" else desc
 
-    query = query.order_by(order_func(sort_field))
+    stmt = stmt.order_by(order_func(sort_field))
 
-    total = query.order_by(None).count()
+    # Count total
+    count_stmt = select(func.count()).select_from(stmt.subquery())
+    total = session.execute(count_stmt).scalar() or 0
 
     page = max(req.page or 1, 1)
     per_page = min(req.per_page or 10, 100)
 
-    items = query.offset((page - 1) * per_page).limit(per_page).all()
+    stmt = stmt.offset((page - 1) * per_page).limit(per_page)
+    items: Sequence[Sample] = session.scalars(stmt).all()
 
     return SampleListResponseDTO(
         samples=[SampleResponseDTO.from_model(s) for s in items],
@@ -114,10 +116,8 @@ class GetAllSamples:
 
     def execute(self) -> list[SampleResponseDTO]:
         try:
-            samples = self.session.query(Sample).all()
-            if not samples:
-                samples = []
-            
+            stmt = select(Sample)
+            samples = self.session.scalars(stmt).all()
             return [SampleResponseDTO.from_model(s) for s in samples]
         except SQLAlchemyError as e:
             raise DatabaseError(f"Database error while fetching samples: {str(e)}") from e
@@ -128,21 +128,23 @@ class ListAllSamples:
 
     def execute(self, req: SampleListRequestDTO) -> SampleListResponseDTO:
         try:
-            query = self.session.query(Sample)
-            samples = getSampleListResponse(query, req)
-            if not samples:
-                samples = []
-            
-            return samples
+            stmt = select(Sample)
+            return getSampleListResponse(self.session, stmt, req)
         except SQLAlchemyError as e:
             raise DatabaseError(f"Database error while fetching samples: {str(e)}") from e
+
 class GetFeaturedSamples:
     def __init__(self, session: Session) -> None:
         self.session = session
     
     def execute(self) -> list[SampleResponseDTO]:
         try:
-            samples = self.session.query(Sample).filter_by(featured=True).order_by(Sample.created_at.desc()).all()
+            stmt = (
+                select(Sample)
+                .where(Sample.featured == True)
+                .order_by(Sample.created_at.desc())
+            )
+            samples = self.session.scalars(stmt).all()
             return [SampleResponseDTO.from_model(s) for s in samples]
         except SQLAlchemyError as e:
             raise DatabaseError(f"Database error while fetching featured samples: {str(e)}") from e
@@ -151,21 +153,20 @@ class UpdateSample:
     def __init__(self, session: Session) -> None:
         self.session = session
 
-    def execute(self, sample_id: str, updates: dict[str, Any]) -> SampleResponseDTO: # TODO: Type Hint the data dict
+    def execute(self, sample_id: str, updates: dict[str, Any]) -> SampleResponseDTO:
         try:
-            sample = self.session.query(Sample).filter_by(id=sample_id).first()
+            stmt = select(Sample).where(Sample.id == sample_id)
+            sample = self.session.scalar(stmt)
             if not sample:
                 raise NotFound("Sample not found.")
             for key, value in updates.items():
                 if hasattr(sample, key):
                     setattr(sample, key, value)
-            self.session.commit()
+            self.session.flush()
             return SampleResponseDTO.from_model(sample)
         except IntegrityError:
-            self.session.rollback()
             raise AlreadyExists("A sample with that title or slug already exists.")
         except SQLAlchemyError as e:
-            self.session.rollback()
             raise DatabaseError("Database error while updating sample.") from e
 
 
@@ -175,13 +176,13 @@ class DeleteSample:
 
     def execute(self, sample_id: str) -> None:
         try:
-            sample = self.session.query(Sample).filter_by(id=sample_id).first()
+            stmt = select(Sample).where(Sample.id == sample_id)
+            sample = self.session.scalar(stmt)
             if not sample:
                 raise NotFound("Sample not found.")
             self.session.delete(sample)
-            self.session.commit()
+            self.session.flush()
         except SQLAlchemyError as e:
-            self.session.rollback()
             raise DatabaseError("Database error while deleting sample.") from e
 
 class GetSamplesByServiceId:
@@ -190,7 +191,8 @@ class GetSamplesByServiceId:
 
     def execute(self, service_id: str) -> list[SampleResponseDTO]:
         try:
-            samples = self.session.query(Sample).filter_by(service_id=service_id).all()
+            stmt = select(Sample).where(Sample.service_id == service_id)
+            samples = self.session.scalars(stmt).all()
             return [SampleResponseDTO.from_model(s) for s in samples]
         except SQLAlchemyError as e:
             raise DatabaseError(f"Database error while fetching samples: {str(e)}") from e
@@ -223,7 +225,7 @@ class SampleRepository:
     ) -> SampleListResponseDTO:
         return ListAllSamples(self.session).execute(req)
 
-    def update(self, sample_id: str, updates: dict[str, Any]) -> SampleResponseDTO: # TODO: Type Hint the data dict
+    def update(self, sample_id: str, updates: dict[str, Any]) -> SampleResponseDTO:
         return UpdateSample(self.session).execute(sample_id, updates)
 
     def delete(self, sample_id: str) -> None:

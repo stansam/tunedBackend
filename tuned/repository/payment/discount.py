@@ -1,4 +1,5 @@
 from sqlalchemy.orm import Session
+from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 from tuned.models import Discount, DiscountType
 from tuned.dtos.payment import DiscountCreateDTO, DiscountUpdateDTO, DiscountResponseDTO
@@ -26,14 +27,12 @@ class CreateDiscount:
                 is_active=data.is_active,
             )
             self.session.add(discount)
-            self.session.commit()
+            self.session.flush()
             return DiscountResponseDTO.from_model(discount)
         except IntegrityError as e:
-            self.session.rollback()
             logger.error(f"[CreateDiscount] Integrity error: {e}")
             raise AlreadyExists("Discount code already exists.") from e
         except SQLAlchemyError as e:
-            self.session.rollback()
             logger.error(f"[CreateDiscount] DB error: {e}")
             raise DatabaseError("Database error while creating discount.") from e
 
@@ -43,7 +42,8 @@ class GetDiscountByID:
 
     def execute(self, discount_id: str) -> DiscountResponseDTO:
         try:
-            discount = self.session.query(Discount).filter(Discount.id == discount_id).first()
+            stmt = select(Discount).where(Discount.id == discount_id)
+            discount = self.session.scalar(stmt)
             if not discount:
                 raise NotFound("Discount not found.")
             return DiscountResponseDTO.from_model(discount)
@@ -57,7 +57,8 @@ class GetDiscountByCode:
 
     def execute(self, code: str) -> DiscountResponseDTO:
         try:
-            discount = self.session.query(Discount).filter(Discount.code == code).first()
+            stmt = select(Discount).where(Discount.code == code)
+            discount = self.session.scalar(stmt)
             if not discount:
                 raise NotFound("Discount not found.")
             return DiscountResponseDTO.from_model(discount)
@@ -71,7 +72,8 @@ class UpdateDiscount:
 
     def execute(self, discount_id: str, data: DiscountUpdateDTO) -> DiscountResponseDTO:
         try:
-            discount = self.session.query(Discount).filter(Discount.id == discount_id).first()
+            stmt = select(Discount).where(Discount.id == discount_id)
+            discount = self.session.scalar(stmt)
             if not discount:
                 raise NotFound("Discount not found.")
                 
@@ -82,14 +84,12 @@ class UpdateDiscount:
             if data.valid_to is not None:
                 discount.valid_to = data.valid_to
                 
-            self.session.commit()
+            self.session.flush()
             return DiscountResponseDTO.from_model(discount)
         except IntegrityError as e:
-            self.session.rollback()
             logger.error(f"[UpdateDiscount] Integrity error: {e}")
             raise DatabaseError("Conflict updating discount.") from e
         except SQLAlchemyError as e:
-            self.session.rollback()
             logger.error(f"[UpdateDiscount] DB error: {e}")
             raise DatabaseError("Database error while updating discount.") from e
 
@@ -99,7 +99,8 @@ class IncrementDiscountUsage:
 
     def execute(self, discount_id: str) -> DiscountResponseDTO:
         try:
-            discount = self.session.query(Discount).filter(Discount.id == discount_id).first()
+            stmt = select(Discount).where(Discount.id == discount_id)
+            discount = self.session.scalar(stmt)
             if not discount:
                 raise NotFound("Discount not found.")
             
@@ -107,9 +108,8 @@ class IncrementDiscountUsage:
             if discount.usage_limit and discount.times_used >= discount.usage_limit:
                 discount.is_active = False
                 
-            self.session.commit()
+            self.session.flush()
             return DiscountResponseDTO.from_model(discount)
         except SQLAlchemyError as e:
-            self.session.rollback()
             logger.error(f"[IncrementDiscountUsage] DB error: {e}")
             raise DatabaseError("Database error while updating discount usage.") from e

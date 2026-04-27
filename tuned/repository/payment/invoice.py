@@ -1,4 +1,5 @@
 from sqlalchemy.orm import Session
+from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 from tuned.models import Invoice
 from tuned.dtos.payment import InvoiceCreateDTO, InvoiceUpdateDTO, InvoiceResponseDTO
@@ -20,19 +21,17 @@ class CreateInvoice:
                 total=data.total,
                 due_date=data.due_date,
                 payment_id=data.payment_id,
-                discount=data.discount,
-                tax=data.tax,
-                paid=data.paid,
-            )  # type: ignore[no-untyped-call]
+                discount=data.discount if data.discount is not None else 0.0,
+                tax=data.tax if data.tax is not None else 0.0,
+                paid=data.paid if data.paid is not None else False,
+            )
             self.session.add(invoice)
-            self.session.commit()
+            self.session.flush()
             return InvoiceResponseDTO.from_model(invoice)
         except IntegrityError as e:
-            self.session.rollback()
             logger.error(f"[CreateInvoice] Integrity error: {e}")
             raise AlreadyExists("Invoice could not be created due to an integrity conflict.") from e
         except SQLAlchemyError as e:
-            self.session.rollback()
             logger.error(f"[CreateInvoice] DB error: {e}")
             raise DatabaseError("Database error while creating invoice.") from e
 
@@ -42,7 +41,8 @@ class GetInvoiceByID:
 
     def execute(self, invoice_id: str) -> InvoiceResponseDTO:
         try:
-            invoice = self.session.query(Invoice).filter(Invoice.id == invoice_id).first()
+            stmt = select(Invoice).where(Invoice.id == invoice_id)
+            invoice = self.session.scalar(stmt)
             if not invoice:
                 raise NotFound("Invoice not found.")
             return InvoiceResponseDTO.from_model(invoice)
@@ -56,7 +56,8 @@ class GetInvoiceByNumber:
 
     def execute(self, invoice_number: str) -> InvoiceResponseDTO:
         try:
-            invoice = self.session.query(Invoice).filter(Invoice.invoice_number == invoice_number).first()
+            stmt = select(Invoice).where(Invoice.invoice_number == invoice_number)
+            invoice = self.session.scalar(stmt)
             if not invoice:
                 raise NotFound("Invoice not found.")
             return InvoiceResponseDTO.from_model(invoice)
@@ -70,7 +71,8 @@ class UpdateInvoice:
 
     def execute(self, invoice_id: str, data: InvoiceUpdateDTO) -> InvoiceResponseDTO:
         try:
-            invoice = self.session.query(Invoice).filter(Invoice.id == invoice_id).first()
+            stmt = select(Invoice).where(Invoice.id == invoice_id)
+            invoice = self.session.scalar(stmt)
             if not invoice:
                 raise NotFound("Invoice not found.")
                 
@@ -79,13 +81,11 @@ class UpdateInvoice:
             if data.payment_id is not None:
                 invoice.payment_id = data.payment_id
                 
-            self.session.commit()
+            self.session.flush()
             return InvoiceResponseDTO.from_model(invoice)
         except IntegrityError as e:
-            self.session.rollback()
             logger.error(f"[UpdateInvoice] Integrity error: {e}")
             raise DatabaseError("Conflict updating invoice.") from e
         except SQLAlchemyError as e:
-            self.session.rollback()
             logger.error(f"[UpdateInvoice] DB error: {e}")
             raise DatabaseError("Database error while updating invoice.") from e

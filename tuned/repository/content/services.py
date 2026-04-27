@@ -1,9 +1,9 @@
 import logging
 from typing import Any
 from sqlalchemy.orm import Session
+from sqlalchemy import select, func
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
-from sqlalchemy import func
-from tuned.extensions import db
+
 from tuned.models import Service, ServiceCategory, Order
 from tuned.dtos.services import ServiceDTO, ServiceResponseDTO
 from tuned.repository.exceptions import AlreadyExists, DatabaseError, NotFound
@@ -25,15 +25,13 @@ class CreateService:
                 pricing_category_id=data.pricing_category_id,
                 slug=data.slug or None,
                 is_active=data.is_active if data.is_active is not None else True,
-            )  # type: ignore[no-untyped-call]
+            )
             self.session.add(service)
-            self.session.commit()
+            self.session.flush()
             return ServiceResponseDTO.from_model(service)
         except IntegrityError:
-            self.session.rollback()
             raise AlreadyExists("A service with this name or slug already exists.")
         except SQLAlchemyError as e:
-            self.session.rollback()
             raise DatabaseError("Database error while creating service.") from e
 
 class GetServiceByID:
@@ -42,7 +40,8 @@ class GetServiceByID:
 
     def execute(self, service_id: str) -> ServiceResponseDTO:
         try:
-            service = self.session.query(Service).filter_by(id=service_id).first()
+            stmt = select(Service).where(Service.id == service_id)
+            service = self.session.scalar(stmt)
             if not service:
                 raise NotFound("Service not found.")
             return ServiceResponseDTO.from_model(service)
@@ -55,7 +54,8 @@ class GetServiceBySlug:
 
     def execute(self, slug: str) -> ServiceResponseDTO:
         try:
-            service = self.session.query(Service).filter_by(slug=slug).first()
+            stmt = select(Service).where(Service.slug == slug)
+            service = self.session.scalar(stmt)
             if not service:
                 raise NotFound("Service not found.")
             return ServiceResponseDTO.from_model(service)
@@ -68,10 +68,12 @@ class GetAllServices:
 
     def execute(self, active_only: bool = True) -> list[ServiceResponseDTO]:
         try:
-            query = self.session.query(Service)
+            stmt = select(Service)
             if active_only:
-                query = query.filter_by(is_active=True)
-            return [ServiceResponseDTO.from_model(service) for service in query.order_by(Service.name.asc()).all()]
+                stmt = stmt.where(Service.is_active == True)
+            stmt = stmt.order_by(Service.name.asc())
+            services = self.session.scalars(stmt).all()
+            return [ServiceResponseDTO.from_model(service) for service in services]
         except SQLAlchemyError as e:
             raise DatabaseError(f"Database error while fetching services: {str(e)}") from e
 
@@ -81,12 +83,12 @@ class GetFeaturedServices:
 
     def execute(self) -> list[ServiceResponseDTO]:
         try:
-            services = (
-                self.session.query(Service)
-                .filter_by(featured=True, is_active=True)
+            stmt = (
+                select(Service)
+                .where(Service.featured == True, Service.is_active == True)
                 .order_by(Service.name.asc())
-                .all()
             )
+            services = self.session.scalars(stmt).all()
             return [ServiceResponseDTO.from_model(service) for service in services]
         except SQLAlchemyError as e:
             raise DatabaseError(f"Database error while fetching featured services: {str(e)}") from e
@@ -95,21 +97,20 @@ class UpdateService:
     def __init__(self, session: Session) -> None:
         self.session = session
         
-    def execute(self, service_id: str, updates: dict[str, Any]) -> ServiceResponseDTO: # TODO: Type Hint the data dict
+    def execute(self, service_id: str, updates: dict[str, Any]) -> ServiceResponseDTO:
         try:
-            service = self.session.query(Service).filter_by(id=service_id).first()
+            stmt = select(Service).where(Service.id == service_id)
+            service = self.session.scalar(stmt)
             if not service:
                 raise NotFound("Service not found.")
             for key, value in updates.items():
                 if hasattr(service, key):
                     setattr(service, key, value)
-            self.session.commit()
+            self.session.flush()
             return ServiceResponseDTO.from_model(service)
         except IntegrityError:
-            self.session.rollback()
             raise AlreadyExists("A service with that name or slug already exists.")
         except SQLAlchemyError as e:
-            self.session.rollback()
             raise DatabaseError("Database error while updating service.") from e
 
 class DeleteService:
@@ -118,13 +119,13 @@ class DeleteService:
 
     def execute(self, service_id: str) -> None:
         try:
-            service = self.session.query(Service).filter_by(id=service_id).first()
+            stmt = select(Service).where(Service.id == service_id)
+            service = self.session.scalar(stmt)
             if not service:
                 raise NotFound("Service not found.")
             self.session.delete(service)
-            self.session.commit()
+            self.session.flush()
         except SQLAlchemyError as e:
-            self.session.rollback()
             raise DatabaseError("Database error while deleting service.") from e
     
 class GetServicesByCategory:
@@ -133,7 +134,8 @@ class GetServicesByCategory:
 
     def execute(self, category_id: str) -> list[ServiceResponseDTO]:
         try:
-            services = self.session.query(Service).filter_by(category_id=category_id).all()
+            stmt = select(Service).where(Service.category_id == category_id)
+            services = self.session.scalars(stmt).all()
             if not services:
                 raise NotFound("No services found in this category.")
             return [ServiceResponseDTO.from_model(service) for service in services]
@@ -145,16 +147,15 @@ class GetServiceMix:
         self.session = session
 
     def execute(self, client_id: str) -> list[tuple[str, int]]:
-
         try:
-            rows = (
-                self.session.query(ServiceCategory.name, func.count(Order.id))
+            stmt = (
+                select(ServiceCategory.name, func.count(Order.id))
                 .join(Service, Order.service_id == Service.id)
                 .join(ServiceCategory, Service.category_id == ServiceCategory.id)
-                .filter(Order.client_id == client_id)
+                .where(Order.client_id == client_id)
                 .group_by(ServiceCategory.name)
-                .all()
             )
+            rows = self.session.execute(stmt).all()
             return [(name, count) for name, count in rows]
         except SQLAlchemyError as exc:
             logger.error("[GetServiceMix] DB error: %s", exc)
@@ -180,11 +181,12 @@ class ServiceRepository:
     def get_featured(self) -> list[ServiceResponseDTO]:
         return GetFeaturedServices(self.session).execute()
 
-    def update(self, service_id: str, updates: dict[str, Any]) -> ServiceResponseDTO: # TODO: Type Hint the data dict
+    def update(self, service_id: str, updates: dict[str, Any]) -> ServiceResponseDTO:
         return UpdateService(self.session).execute(service_id, updates)
 
     def delete(self, service_id: str) -> None:
         return DeleteService(self.session).execute(service_id)
+
     def get_services_by_category(self, category_id: str) -> list[ServiceResponseDTO]:
         return GetServicesByCategory(self.session).execute(category_id)
 

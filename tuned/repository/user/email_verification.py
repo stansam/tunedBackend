@@ -42,10 +42,8 @@ class GenerateAndStoreVerificationToken:
             user.email_verification_token = hashed
             user.email_verification_token_expires_at = expires_at
             self.session.add(user)
-            self.session.commit()
-            self.session.refresh(user)
+            self.session.flush()
         except SQLAlchemyError as exc:
-            self.session.rollback()
             raise DatabaseError(
                 f"DB error while generating verification token for user {user_id}: {exc}"
             ) from exc
@@ -86,10 +84,8 @@ class ConfirmEmailVerification:
             user.email_verification_token = None
             user.email_verification_token_expires_at = None
             self.session.add(user)
-            self.session.commit()
-            self.session.refresh(user)
+            self.session.flush()
         except SQLAlchemyError as exc:
-            self.session.rollback()
             raise DatabaseError(
                 f"DB error while confirming verification for user {user_id}: {exc}"
             ) from exc

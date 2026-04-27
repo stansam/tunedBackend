@@ -16,7 +16,8 @@ from tuned.extensions import db
 from sqlalchemy.orm import Session
 
 class Repository:
-    def __init__(self) -> None:
+    def __init__(self, session: Session) -> None:
+        self.session = session
         self._user: UserRepository | None = None
         self._referral: ReferralRepository | None = None
         self._blog: BlogRepository | None = None
@@ -37,98 +38,100 @@ class Repository:
     @property
     def user(self) -> UserRepository:
         if not self._user:
-            self._user = UserRepository(db.session)  # type: ignore[arg-type]
+            self._user = UserRepository(self.session)
         return self._user
     
     @property
     def referral(self) -> ReferralRepository:
         if not self._referral:
-            self._referral = ReferralRepository(db.session)  # type: ignore[arg-type]
+            self._referral = ReferralRepository(self.session)
         return self._referral
 
     @property
     def blog(self) -> BlogRepository:
         if not self._blog:
-            self._blog = BlogRepository(db.session)  # type: ignore[arg-type]
+            self._blog = BlogRepository(self.session)
         return self._blog
     
     @property
     def academic_level(self) -> AcademicLevelRepository:
         if not self._academic_level:
-            self._academic_level = AcademicLevelRepository(db.session)  # type: ignore[arg-type]
+            self._academic_level = AcademicLevelRepository(self.session)
         return self._academic_level
     
     @property
     def deadline(self) -> DeadlineRepository:
         if not self._deadline:
-            self._deadline = DeadlineRepository(db.session)  # type: ignore[arg-type]
+            self._deadline = DeadlineRepository(self.session)
         return self._deadline
     
     @property
     def service(self) -> ServiceRepository:
         if not self._service:
-            self._service = ServiceRepository(db.session)  # type: ignore[arg-type]
+            self._service = ServiceRepository(self.session)
         return self._service
     
     @property
     def service_category(self) -> ServiceCategoryRepository:
         if not self._service_category:
-            self._service_category = ServiceCategoryRepository(db.session)  # type: ignore[arg-type]
+            self._service_category = ServiceCategoryRepository(self.session)
         return self._service_category
     
     @property
     def sample(self) -> SampleRepository:
         if not self._sample:
-            self._sample = SampleRepository(db.session)  # type: ignore[arg-type]
+            self._sample = SampleRepository(self.session)
         return self._sample
     
     @property
     def testimonial(self) -> TestimonialRepository:
         if not self._testimonial:
-            self._testimonial = TestimonialRepository(db.session)  # type: ignore[arg-type]
+            self._testimonial = TestimonialRepository(self.session)
         return self._testimonial
     
     @property
     def faq(self) -> FAQRepository:
         if not self._faq:
-            self._faq = FAQRepository(db.session)  # type: ignore[arg-type]
+            self._faq = FAQRepository(self.session)
         return self._faq
     
     @property
     def price_rate(self) -> PriceRateRepository:
         if not self._price:
-            self._price = PriceRateRepository(db.session)  # type: ignore[arg-type]
+            self._price = PriceRateRepository(self.session)
         return self._price
 
     @property
     def pricing_category(self) -> PricingCategoryRepository:
         if not self._pricing_category:
-            self._pricing_category = PricingCategoryRepository(db.session)  # type: ignore[arg-type]
+            self._pricing_category = PricingCategoryRepository(self.session)
         return self._pricing_category
 
     @property
     def audit(self) -> AuditRepository:
         if not self._audit:
-            self._audit = AuditRepository(db.session)  # type: ignore[arg-type]
+            self._audit = AuditRepository(self.session)
         return self._audit
 
     @property
     def order(self) -> OrderRepository:
         if not self._order:
-            self._order = OrderRepository(db.session)  # type: ignore[arg-type]
+            self._order = OrderRepository(self.session)
         return self._order
 
     @property
     def preferences(self) -> PreferenceRepository:
         if not self._preferences:
-            self._preferences = PreferenceRepository(db.session)  # type: ignore[arg-type]
+            self._preferences = PreferenceRepository(self.session)
         return self._preferences
 
     @property
     def payment(self) -> PaymentRepository:
         if not self._payment:
-            self._payment = PaymentRepository(db.session)  # type: ignore[arg-type]
+            self._payment = PaymentRepository(self.session)
         return self._payment
 
-
-repositories = Repository()
+# Global instance for legacy support, but should be avoided in new code
+# For strict compliance, this should be initialized within a request context
+# or passed as a dependency.
+repositories = Repository(db.session) # type: ignore[arg-type]

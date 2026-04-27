@@ -3,25 +3,25 @@ from tuned.models import BlogCategory
 from tuned.dtos import BlogCategoryDTO, BlogCategoryResponseDTO
 from tuned.repository.exceptions import NotFound, DatabaseError, AlreadyExists
 from sqlalchemy.orm import Session
+from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 
 class CreateBlogCategory:
     def __init__(self, session: Session):
         self.session = session
-    def execute(self, data: BlogCategoryDTO)-> BlogCategoryResponseDTO:
+
+    def execute(self, data: BlogCategoryDTO) -> BlogCategoryResponseDTO:
         try:
             data_dict = data.__dict__.copy()
             category = BlogCategory(**data_dict)
 
             self.session.add(category)
-            self.session.commit()
+            self.session.flush()
             return BlogCategoryResponseDTO.from_model(category)
 
         except IntegrityError as e:
-            self.session.rollback()
             raise AlreadyExists("category already exists")
         except SQLAlchemyError as e:
-            self.session.rollback()
             raise DatabaseError(f"Database error while creating category:\n {str(e)}")
 
 class GetBlogCategoryBySlug:
@@ -30,7 +30,8 @@ class GetBlogCategoryBySlug:
 
     def execute(self, slug: str) -> BlogCategoryResponseDTO:
         try:
-            category = self.session.query(BlogCategory).filter_by(slug=slug).first()
+            stmt = select(BlogCategory).where(BlogCategory.slug == slug)
+            category = self.session.scalar(stmt)
             if not category:
                 raise NotFound("post not found")
 
@@ -45,7 +46,8 @@ class ListBlogCategories:
     
     def execute(self) -> list[BlogCategoryResponseDTO]:
         try:
-            categories = self.session.query(BlogCategory).all()
+            stmt = select(BlogCategory)
+            categories = self.session.scalars(stmt).all()
             return [BlogCategoryResponseDTO.from_model(category) for category in categories]
         except SQLAlchemyError as e:
             raise DatabaseError(f"Database error while fetching categories: {str(e)}") from e
@@ -56,28 +58,27 @@ class UpdateOrDeleteBlogCategory:
 
     def execute(self, id: str, data: BlogCategoryDTO) -> BlogCategoryResponseDTO:
         try:
-            comment_reaction = self.session.query(BlogCategory).filter_by(id=id).first()
-            if not comment_reaction:
-                raise NotFound("reaction not found")
+            stmt = select(BlogCategory).where(BlogCategory.id == id)
+            category = self.session.scalar(stmt)
+            if not category:
+                raise NotFound("category not found")
             
             if data.is_deleted:
-                comment_reaction.is_deleted = data.is_deleted
-                comment_reaction.deleted_at = datetime.now(timezone.utc)
-                comment_reaction.deleted_by = data.deleted_by
+                category.is_deleted = data.is_deleted
+                category.deleted_at = datetime.now(timezone.utc)
+                category.deleted_by = data.deleted_by
             else:
                 if data.name:
-                    comment_reaction.name = data.name
+                    category.name = data.name
                 if data.description:
-                    comment_reaction.description = data.description
+                    category.description = data.description
                 if data.updated_by:
-                    comment_reaction.updated_by = data.updated_by
-                    comment_reaction.updated_at = datetime.now(timezone.utc)
+                    category.updated_by = data.updated_by
+                    category.updated_at = datetime.now(timezone.utc)
 
-            self.session.add(comment_reaction)            
-            self.session.commit()
-            self.session.refresh(comment_reaction)
-            return BlogCategoryResponseDTO.from_model(comment_reaction)
+            self.session.add(category)            
+            self.session.flush()
+            return BlogCategoryResponseDTO.from_model(category)
 
         except SQLAlchemyError as e:
-            self.session.rollback()
-            raise DatabaseError(f"Database error while updating reaction: {str(e)}") from e
+            raise DatabaseError(f"Database error while updating category: {str(e)}") from e

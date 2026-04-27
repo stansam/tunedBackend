@@ -50,12 +50,9 @@ class UpdateUser:
                 user.updated_by = actor_id
                 
             self.session.flush()
-            self.session.commit()
-            self.session.refresh(user)
             return user
 
         except SQLAlchemyError as e:
-            self.session.rollback()
             raise DatabaseError(f"Database error while updating user: {str(e)}") from e
     
     def increment_failed_login_attempts(self, user_id: str) -> int:
@@ -70,8 +67,6 @@ class UpdateUser:
             )
 
             new_count = self.session.execute(stmt).scalar_one()
-            self.session.commit()
             return int(new_count)
         except SQLAlchemyError as e:
-            self.session.rollback()
             raise DatabaseError(f"Database error while updating user: {str(e)}") from e

@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
+from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
-from tuned.models import Transaction, TransactionType, PaymentStatus
+from tuned.models import Transaction, TransactionType, TransactionStatus
 from tuned.dtos.payment import TransactionCreateDTO, TransactionResponseDTO
 from tuned.repository.exceptions import DatabaseError, AlreadyExists, NotFound
 from tuned.core.logging import get_logger
@@ -18,25 +19,23 @@ class CreateTransaction:
             except ValueError:
                 raise ValueError(f"Invalid transaction type: {data.type}")
             try:
-                status = PaymentStatus(data.status.lower()) if data.status else PaymentStatus.PENDING
+                status = TransactionStatus(data.status.lower()) if data.status else TransactionStatus.PENDING
             except ValueError:
-                raise ValueError(f"Invalid payment status: {data.status}")
+                raise ValueError(f"Invalid transaction status: {data.status}")
             transaction = Transaction(
                 payment_id=data.payment_id,
                 transaction_id=data.transaction_id,
                 type=type,
                 amount=data.amount,
                 status=status,
-            )  # type: ignore[no-untyped-call]
+            )
             self.session.add(transaction)
-            self.session.commit()
+            self.session.flush()
             return TransactionResponseDTO.from_model(transaction)
         except IntegrityError as e:
-            self.session.rollback()
             logger.error(f"[CreateTransaction] Integrity error: {e}")
             raise AlreadyExists("Transaction could not be created due to an integrity conflict.") from e
         except SQLAlchemyError as e:
-            self.session.rollback()
             logger.error(f"[CreateTransaction] DB error: {e}")
             raise DatabaseError("Database error while creating transaction.") from e
 
@@ -46,7 +45,8 @@ class GetTransactionByID:
 
     def execute(self, transaction_id: str) -> TransactionResponseDTO:
         try:
-            transaction = self.session.query(Transaction).filter(Transaction.id == transaction_id).first()
+            stmt = select(Transaction).where(Transaction.id == transaction_id)
+            transaction = self.session.scalar(stmt)
             if not transaction:
                 raise NotFound("Transaction not found.")
             return TransactionResponseDTO.from_model(transaction)
@@ -60,7 +60,8 @@ class GetTransactionsByPaymentID:
 
     def execute(self, payment_id: str) -> list[TransactionResponseDTO]:
         try:
-            transactions = self.session.query(Transaction).filter(Transaction.payment_id == payment_id).all()
+            stmt = select(Transaction).where(Transaction.payment_id == payment_id)
+            transactions = self.session.scalars(stmt).all()
             return [TransactionResponseDTO.from_model(t) for t in transactions]
         except SQLAlchemyError as e:
             logger.error(f"[GetTransactionsByPaymentID] DB error: {e}")

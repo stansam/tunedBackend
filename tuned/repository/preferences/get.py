@@ -1,14 +1,14 @@
+from sqlalchemy.orm import Session
+from sqlalchemy import select
+from sqlalchemy.exc import SQLAlchemyError
 from tuned.models import (
     UserNotificationPreferences, UserEmailPreferences, UserPrivacySettings,
     UserLocalizationSettings, UserAccessibilityPreferences, UserBillingPreferences
 )
 from tuned.repository.exceptions import DatabaseError
 from tuned.dtos import AllPreferencesResponseDTO, LocalizationDTO, NotificationDTO, EmailPreferenceDTO, PrivacyDTO, AccessibilityDTO, BillingPreferenceDTO
-from sqlalchemy.orm import Session
-from sqlalchemy.exc import SQLAlchemyError
 
-from typing import Any
-from typing import TypeVar, Type
+from typing import TypeVar
 
 T = TypeVar("T")
 
@@ -35,13 +35,13 @@ class GetUserPreferences:
             )
             return response
         except SQLAlchemyError as e:
-            raise DatabaseError(f"Database error while fetching preferences: {str(e)}")
+            raise DatabaseError(f"Database error while fetching preferences: {str(e)}") from e
 
     def _get_or_create(self, model: type[T], user_id: str) -> T:
-        obj = self.session.query(model).filter_by(user_id=user_id).first()
+        stmt = select(model).where(getattr(model, "user_id") == user_id)
+        obj = self.session.scalar(stmt)
         if not obj:
-            obj = model(user_id=user_id)
+            obj = model(user_id=user_id) # type: ignore[call-arg]
             self.session.add(obj)
             self.session.flush()
-            self.session.commit()
         return obj

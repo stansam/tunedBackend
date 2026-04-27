@@ -1,11 +1,16 @@
 from tuned.extensions import db
 from tuned.models.enums import DateFormat, TimeFormat, NumberFormat, WeekStart
 from tuned.models.base import BaseModel
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+from typing import TYPE_CHECKING, Optional, Any
+
+if TYPE_CHECKING:
+    from tuned.models.user import User
 
 class UserLocalizationSettings(BaseModel):
     __tablename__ = 'user_localization_settings'
     
-    user_id = db.Column(
+    user_id: Mapped[str] = mapped_column(
         db.String(36),
         db.ForeignKey('users.id', ondelete='CASCADE'),
         unique=True,
@@ -13,38 +18,38 @@ class UserLocalizationSettings(BaseModel):
         index=True
     )
     
-    language = db.Column(db.String(10), default='en', nullable=False)  # ISO 639-1
-    country_code = db.Column(db.String(2), default='US', nullable=True)  # ISO 3166-1 alpha-2
+    language: Mapped[str] = mapped_column(db.String(10), default='en', nullable=False)  # ISO 639-1
+    country_code: Mapped[Optional[str]] = mapped_column(db.String(2), default='US', nullable=True)  # ISO 3166-1 alpha-2
     
-    timezone = db.Column(db.String(50), default='UTC', nullable=False)  # IANA timezone
+    timezone: Mapped[str] = mapped_column(db.String(50), default='UTC', nullable=False)  # IANA timezone
     
-    date_format = db.Column(
+    date_format: Mapped[DateFormat] = mapped_column(
         db.Enum(DateFormat),
         default=DateFormat.MM_DD_YYYY,
         nullable=False
     )
-    time_format = db.Column(
+    time_format: Mapped[TimeFormat] = mapped_column(
         db.Enum(TimeFormat),
         default=TimeFormat.TWELVE_HOUR,
         nullable=False
     )
     
-    currency = db.Column(db.String(3), default='USD', nullable=False)  # ISO 4217
-    number_format = db.Column(
+    currency: Mapped[str] = mapped_column(db.String(3), default='USD', nullable=False)  # ISO 4217
+    number_format: Mapped[NumberFormat] = mapped_column(
         db.Enum(NumberFormat),
         default=NumberFormat.COMMA_DOT,
         nullable=False
     )
     
-    week_start = db.Column(
+    week_start: Mapped[WeekStart] = mapped_column(
         db.Enum(WeekStart),
         default=WeekStart.SUNDAY,
         nullable=False
     )
         
-    user = db.relationship('User', foreign_keys=[user_id], backref=db.backref('localization_settings', uselist=False, lazy=True))
+    user: Mapped["User"] = relationship('User', foreign_keys=[user_id], back_populates='localization_settings')
     
-    def to_dict(self):
+    def to_dict(self) -> dict[str, Any]:
         return {
             'language': self.language,
             'country_code': self.country_code,
@@ -58,5 +63,5 @@ class UserLocalizationSettings(BaseModel):
             'updated_at': self.updated_at.isoformat() if self.updated_at else None
         }
     
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f'<UserLocalizationSettings user_id={self.user_id} language={self.language} timezone={self.timezone}>'

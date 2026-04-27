@@ -1,8 +1,8 @@
 from typing import Any
 from sqlalchemy.orm import Session
+from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 
-from tuned.extensions import db
 from tuned.models import Testimonial
 from tuned.dtos.content import TestimonialDTO, TestimonialResponseDTO
 from tuned.repository.exceptions import DatabaseError, NotFound
@@ -28,10 +28,9 @@ class CreateTestimonial:
                 is_approved=data.is_approved,
             )
             self.session.add(testimonial)
-            self.session.commit()
+            self.session.flush()
             return TestimonialResponseDTO.from_model(testimonial)
         except SQLAlchemyError as e:
-            self.session.rollback()
             raise DatabaseError("Database error while creating testimonial.") from e
 
 
@@ -41,7 +40,8 @@ class GetTestimonialByID:
 
     def execute(self, testimonial_id: str) -> TestimonialResponseDTO:
         try:
-            t = self.session.query(Testimonial).filter_by(id=testimonial_id).first()
+            stmt = select(Testimonial).where(Testimonial.id == testimonial_id)
+            t = self.session.scalar(stmt)
             if not t:
                 raise NotFound("Testimonial not found.")
             return TestimonialResponseDTO.from_model(t)
@@ -55,10 +55,11 @@ class GetApprovedTestimonials:
 
     def execute(self, service_id: str | None = None) -> list[TestimonialResponseDTO]:
         try:
-            query = self.session.query(Testimonial).filter_by(is_approved=True)
+            stmt = select(Testimonial).where(Testimonial.is_approved == True)
             if service_id:
-                query = query.filter_by(service_id=service_id)
-            testimonials = query.order_by(Testimonial.created_at.desc()).all()
+                stmt = stmt.where(Testimonial.service_id == service_id)
+            stmt = stmt.order_by(Testimonial.created_at.desc())
+            testimonials = self.session.scalars(stmt).all()
             return [TestimonialResponseDTO.from_model(t) for t in testimonials]
         except SQLAlchemyError as e:
             raise DatabaseError(f"Database error while fetching testimonials: {str(e)}") from e
@@ -70,12 +71,12 @@ class GetPendingTestimonials:
 
     def execute(self) -> list[TestimonialResponseDTO]:
         try:
-            testimonials = (
-                self.session.query(Testimonial)
-                .filter_by(is_approved=False)
+            stmt = (
+                select(Testimonial)
+                .where(Testimonial.is_approved == False)
                 .order_by(Testimonial.created_at.asc())
-                .all()
             )
+            testimonials = self.session.scalars(stmt).all()
             return [TestimonialResponseDTO.from_model(t) for t in testimonials]
         except SQLAlchemyError as e:
             raise DatabaseError(f"Database error while fetching pending testimonials: {str(e)}") from e
@@ -87,14 +88,14 @@ class ApproveTestimonial:
 
     def execute(self, testimonial_id: str) -> TestimonialResponseDTO:
         try:
-            t = self.session.query(Testimonial).filter_by(id=testimonial_id).first()
+            stmt = select(Testimonial).where(Testimonial.id == testimonial_id)
+            t = self.session.scalar(stmt)
             if not t:
                 raise NotFound("Testimonial not found.")
             t.is_approved = True
-            self.session.commit()
+            self.session.flush()
             return TestimonialResponseDTO.from_model(t)
         except SQLAlchemyError as e:
-            self.session.rollback()
             raise DatabaseError("Database error while approving testimonial.") from e
 
 
@@ -106,16 +107,16 @@ class UpdateTestimonial:
         if "rating" in updates and updates["rating"] not in _VALID_RATINGS:
             raise ValueError(f"Rating must be between 1 and 5, got {updates['rating']}.")
         try:
-            t = self.session.query(Testimonial).filter_by(id=testimonial_id).first()
+            stmt = select(Testimonial).where(Testimonial.id == testimonial_id)
+            t = self.session.scalar(stmt)
             if not t:
                 raise NotFound("Testimonial not found.")
             for key, value in updates.items():
                 if hasattr(t, key):
                     setattr(t, key, value)
-            self.session.commit()
+            self.session.flush()
             return TestimonialResponseDTO.from_model(t)
         except SQLAlchemyError as e:
-            self.session.rollback()
             raise DatabaseError("Database error while updating testimonial.") from e
 
 
@@ -125,13 +126,13 @@ class DeleteTestimonial:
 
     def execute(self, testimonial_id: str) -> None:
         try:
-            t = self.session.query(Testimonial).filter_by(id=testimonial_id).first()
+            stmt = select(Testimonial).where(Testimonial.id == testimonial_id)
+            t = self.session.scalar(stmt)
             if not t:
                 raise NotFound("Testimonial not found.")
             self.session.delete(t)
-            self.session.commit()
+            self.session.flush()
         except SQLAlchemyError as e:
-            self.session.rollback()
             raise DatabaseError("Database error while deleting testimonial.") from e
 
 

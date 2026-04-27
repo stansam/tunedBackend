@@ -1,6 +1,6 @@
 from tuned.models import User
 from tuned.models.enums import GenderEnum
-from tuned.extensions import db
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 from tuned.repository.user.exceptions import DatabaseError, AuthenticationError
@@ -27,15 +27,14 @@ class GoogleOAuth:
                     "iss": "accounts.google.com"
                 }
                 username = "mock"
+                gender = GenderEnum.MALE
             else:
                  id_info = id_token.verify_oauth2_token(
                     token, requests.Request(), self.GOOGLE_CLIENT_ID
                 )
-                 username = id_info.get("email").split("@")[0]
-                 gender = id_info.get("gender") 
-                 if gender == "male":
-                     gender = GenderEnum.MALE
-                 elif gender == "female":
+                 username = id_info.get("email", "").split("@")[0]
+                 raw_gender = id_info.get("gender") 
+                 if raw_gender == "female":
                      gender = GenderEnum.FEMALE
                  else:
                      gender = GenderEnum.MALE
@@ -47,12 +46,13 @@ class GoogleOAuth:
             if not email:
                  raise AuthenticationError("Google token valid but no email found.")
 
-            user = self.session.query(User).filter_by(email=email).first()
+            stmt = select(User).where(User.email == email)
+            user = self.session.scalar(stmt)
             
             if user:
                 if not user.avatar_url and id_info.get("picture"):
                     user.avatar_url = id_info.get("picture")
-                    self.session.commit()
+                    self.session.flush()
                 return user
             
             new_user = User(
@@ -63,16 +63,14 @@ class GoogleOAuth:
                 gender=gender,
                 avatar_url=id_info.get("picture"),
                 email_verified=id_info.get("email_verified", False)
-            )  # type: ignore[no-untyped-call]
-            new_user.set_password(os.urandom(24).hex())  # type: ignore[no-untyped-call]
+            )
+            new_user.set_password(os.urandom(24).hex())
             
             self.session.add(new_user)
-            self.session.commit()
-            self.session.refresh(new_user)
+            self.session.flush()
             return new_user
 
         except ValueError as e:
-             raise AuthenticationError(f"Invalid Google Token: {str(e)}")
+             raise AuthenticationError(f"Invalid Google Token: {str(e)}") from e
         except SQLAlchemyError as e:
-            self.session.rollback()
             raise DatabaseError(f"Database error during Google OAuth: {str(e)}") from e

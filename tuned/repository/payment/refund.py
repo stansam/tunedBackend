@@ -1,4 +1,5 @@
 from sqlalchemy.orm import Session
+from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 from tuned.models import Refund, RefundStatus
 from tuned.dtos.payment import RefundCreateDTO, RefundUpdateDTO, RefundResponseDTO
@@ -27,14 +28,12 @@ class CreateRefund:
                 refund_date=data.refund_date,
             )
             self.session.add(refund)
-            self.session.commit()
+            self.session.flush()
             return RefundResponseDTO.from_model(refund)
         except IntegrityError as e:
-            self.session.rollback()
             logger.error(f"[CreateRefund] Integrity error: {e}")
             raise AlreadyExists("Refund could not be created due to an integrity conflict.") from e
         except SQLAlchemyError as e:
-            self.session.rollback()
             logger.error(f"[CreateRefund] DB error: {e}")
             raise DatabaseError("Database error while creating refund.") from e
 
@@ -44,7 +43,8 @@ class GetRefundByID:
 
     def execute(self, refund_id: str) -> RefundResponseDTO:
         try:
-            refund = self.session.query(Refund).filter(Refund.id == refund_id).first()
+            stmt = select(Refund).where(Refund.id == refund_id)
+            refund = self.session.scalar(stmt)
             if not refund:
                 raise NotFound("Refund not found.")
             return RefundResponseDTO.from_model(refund)
@@ -58,20 +58,25 @@ class UpdateRefundStatus:
 
     def execute(self, refund_id: str, data: RefundUpdateDTO) -> RefundResponseDTO:
         try:
-            refund = self.session.query(Refund).filter(Refund.id == refund_id).first()
+            stmt = select(Refund).where(Refund.id == refund_id)
+            refund = self.session.scalar(stmt)
             if not refund:
                 raise NotFound("Refund not found.")
                 
             if data.status:
-                refund.status = getattr(RefundStatus, data.status.upper(), data.status)
+                try:
+                    refund.status = RefundStatus(data.status.lower())
+                except ValueError:
+                    try:
+                        refund.status = RefundStatus[data.status.upper()]
+                    except KeyError:
+                        raise ValueError(f"Invalid refund status: {data.status}")
                 
-            self.session.commit()
+            self.session.flush()
             return RefundResponseDTO.from_model(refund)
         except IntegrityError as e:
-            self.session.rollback()
             logger.error(f"[UpdateRefundStatus] Integrity error: {e}")
             raise DatabaseError("Conflict updating refund.") from e
         except SQLAlchemyError as e:
-            self.session.rollback()
             logger.error(f"[UpdateRefundStatus] DB error: {e}")
             raise DatabaseError("Database error while updating refund.") from e

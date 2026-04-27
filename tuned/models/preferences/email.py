@@ -1,12 +1,16 @@
 from tuned.extensions import db
 from tuned.models.enums import EmailFrequency
 from tuned.models.base import BaseModel
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+from typing import TYPE_CHECKING, Optional, Any
 
+if TYPE_CHECKING:
+    from tuned.models.user import User
 
 class UserEmailPreferences(BaseModel):
     __tablename__ = 'user_email_preferences'
     
-    user_id = db.Column(
+    user_id: Mapped[str] = mapped_column(
         db.String(36),
         db.ForeignKey('users.id', ondelete='CASCADE'),
         unique=True,
@@ -14,44 +18,44 @@ class UserEmailPreferences(BaseModel):
         index=True
     )
     
-    newsletter = db.Column(db.Boolean, default=False, nullable=False)
-    promotional_emails = db.Column(db.Boolean, default=False, nullable=False)
-    product_updates = db.Column(db.Boolean, default=True, nullable=False)
+    newsletter: Mapped[bool] = mapped_column(db.Boolean, default=False, nullable=False)
+    promotional_emails: Mapped[bool] = mapped_column(db.Boolean, default=False, nullable=False)
+    product_updates: Mapped[bool] = mapped_column(db.Boolean, default=True, nullable=False)
     
-    order_confirmations = db.Column(
+    order_confirmations: Mapped[bool] = mapped_column(
         db.Boolean,
         default=True,
         server_default='true',
         nullable=False
     )
-    payment_receipts = db.Column(
+    payment_receipts: Mapped[bool] = mapped_column(
         db.Boolean,
         default=True,
         server_default='true',
         nullable=False
     )
-    account_security = db.Column(
+    account_security: Mapped[bool] = mapped_column(
         db.Boolean,
         default=True,
         server_default='true',
         nullable=False
     )
     
-    frequency = db.Column(
+    frequency: Mapped[EmailFrequency] = mapped_column(
         db.Enum(EmailFrequency),
         default=EmailFrequency.INSTANT,
         nullable=False
     )
     
-    daily_digest_hour = db.Column(
+    daily_digest_hour: Mapped[Optional[int]] = mapped_column(
         db.Integer,
         default=9,
         nullable=True
     )  # 0-23, null if instant
     
-    user = db.relationship('User', foreign_keys=[user_id], backref=db.backref('email_preferences', uselist=False, lazy=True))
+    user: Mapped["User"] = relationship('User', foreign_keys=[user_id], back_populates='email_preferences')
     
-    def to_dict(self):
+    def to_dict(self) -> dict[str, Any]:
         return {
             'newsletter': self.newsletter,
             'promotional_emails': self.promotional_emails,
@@ -65,5 +69,5 @@ class UserEmailPreferences(BaseModel):
             'updated_at': self.updated_at.isoformat() if self.updated_at else None
         }
     
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f'<UserEmailPreferences user_id={self.user_id}>'

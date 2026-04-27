@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
-from tuned.repository.exceptions import DatabaseError
+from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
+from tuned.repository.exceptions import DatabaseError
 from tuned.models.enums import (
     EmailFrequency, ProfileVisibility, DateFormat, TimeFormat, NumberFormat, WeekStart, InvoiceDeliveryMethod
 )
@@ -11,9 +12,10 @@ class UpdatePreferenceCategory:
     def __init__(self, session: Session) -> None:
         self.session = session
 
-    def execute(self, model: type[Any], user_id: str, data: dict[str, Any]) -> Any: #TODO: Implement strict typing for this function
+    def execute(self, model: type[Any], user_id: str, data: dict[str, Any]) -> Any:
         try:
-            obj = self.session.query(model).filter_by(user_id=user_id).first()
+            stmt = select(model).where(getattr(model, "user_id") == user_id)
+            obj = self.session.scalar(stmt)
             if not obj:
                 obj = model(user_id=user_id)
                 self.session.add(obj)
@@ -41,4 +43,4 @@ class UpdatePreferenceCategory:
             self.session.flush()
             return obj
         except SQLAlchemyError as e:
-            raise DatabaseError(f"Database error while updating preference category: {str(e)}")
+            raise DatabaseError(f"Database error while updating preference category: {str(e)}") from e

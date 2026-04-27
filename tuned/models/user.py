@@ -20,8 +20,12 @@ if TYPE_CHECKING:
     from tuned.models.payment import Payment, Invoice, Refund
     from tuned.models.blog import BlogComment, CommentReaction
     from tuned.models.order import OrderComment, SupportTicket
-    # from tuned.models.revision_request import OrderRevisionRequest
-    # from tuned.models.deadline_extension import OrderDeadlineExtensionRequest
+    from tuned.models.preferences.privacy import UserPrivacySettings
+    from tuned.models.preferences.notification import UserNotificationPreferences
+    from tuned.models.preferences.localization import UserLocalizationSettings
+    from tuned.models.preferences.email import UserEmailPreferences
+    from tuned.models.preferences.billing import UserBillingPreferences
+    from tuned.models.preferences.accessibility import UserAccessibilityPreferences
 
 class User(UserMixin, BaseModel):  # type: ignore[misc]
     __tablename__ = 'users'
@@ -78,6 +82,13 @@ class User(UserMixin, BaseModel):  # type: ignore[misc]
     
     order_comments: Mapped[list["OrderComment"]] = relationship('OrderComment', foreign_keys="OrderComment.user_id", back_populates='user', lazy=True)
     support_tickets: Mapped[list["SupportTicket"]] = relationship('SupportTicket', foreign_keys="SupportTicket.user_id", back_populates='user', lazy=True)
+
+    privacy_settings: Mapped["UserPrivacySettings"] = relationship("UserPrivacySettings", back_populates="user", uselist=False, cascade="all, delete-orphan")
+    notification_preferences: Mapped["UserNotificationPreferences"] = relationship("UserNotificationPreferences", back_populates="user", uselist=False, cascade="all, delete-orphan")
+    localization_settings: Mapped["UserLocalizationSettings"] = relationship("UserLocalizationSettings", back_populates="user", uselist=False, cascade="all, delete-orphan")
+    email_preferences: Mapped["UserEmailPreferences"] = relationship("UserEmailPreferences", back_populates="user", uselist=False, cascade="all, delete-orphan")
+    billing_preferences: Mapped["UserBillingPreferences"] = relationship("UserBillingPreferences", back_populates="user", uselist=False, cascade="all, delete-orphan")
+    accessibility_preferences: Mapped["UserAccessibilityPreferences"] = relationship("UserAccessibilityPreferences", back_populates="user", uselist=False, cascade="all, delete-orphan")
 
     def __init__(self: 'User', **kwargs: Any) -> None:
         super(User, self).__init__(**kwargs)

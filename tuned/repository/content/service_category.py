@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session
 from typing import Any
+from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 
 from tuned.models.service import ServiceCategory
@@ -16,15 +17,13 @@ class CreateServiceCategory:
                 name=data.name,
                 description=data.description,
                 order=data.order,
-            )  # type: ignore[no-untyped-call]
+            )
             self.session.add(category)
-            self.session.commit()
+            self.session.flush()
             return ServiceCategoryResponseDTO.from_model(category)
         except IntegrityError:
-            self.session.rollback()
             raise AlreadyExists("A service category with this name already exists.")
         except SQLAlchemyError as e:
-            self.session.rollback()
             raise DatabaseError("Database error while creating service category.") from e
 
 class GetServiceCategoryByID:
@@ -33,7 +32,8 @@ class GetServiceCategoryByID:
 
     def execute(self, category_id: str) -> ServiceCategoryResponseDTO:
         try:
-            category = self.session.query(ServiceCategory).filter_by(id=category_id).first()
+            stmt = select(ServiceCategory).where(ServiceCategory.id == category_id)
+            category = self.session.scalar(stmt)
             if not category:
                 raise NotFound("Service category not found.")
             return ServiceCategoryResponseDTO.from_model(category)
@@ -46,11 +46,8 @@ class GetAllServiceCategories:
 
     def execute(self) -> list[ServiceCategoryResponseDTO]:
         try:
-            categories = (
-                self.session.query(ServiceCategory)
-                .order_by(ServiceCategory.order.asc())
-                .all()
-            )
+            stmt = select(ServiceCategory).order_by(ServiceCategory.order.asc())
+            categories = self.session.scalars(stmt).all()
             return [ServiceCategoryResponseDTO.from_model(category) for category in categories]
         except SQLAlchemyError as e:
             raise DatabaseError(f"Database error while fetching service categories: {str(e)}") from e
@@ -59,21 +56,20 @@ class UpdateServiceCategory:
     def __init__(self, session: Session) -> None:
         self.session = session
 
-    def execute(self, category_id: str, updates: dict[str, Any]) -> ServiceCategoryResponseDTO: # TODO: Type Hint the data dict
+    def execute(self, category_id: str, updates: dict[str, Any]) -> ServiceCategoryResponseDTO:
         try:
-            category = self.session.query(ServiceCategory).filter_by(id=category_id).first()
+            stmt = select(ServiceCategory).where(ServiceCategory.id == category_id)
+            category = self.session.scalar(stmt)
             if not category:
                 raise NotFound("Service category not found.")
             for key, value in updates.items():
                 if hasattr(category, key):
                     setattr(category, key, value)
-            self.session.commit()
+            self.session.flush()
             return ServiceCategoryResponseDTO.from_model(category)
         except IntegrityError:
-            self.session.rollback()
             raise AlreadyExists("A service category with that name already exists.")
         except SQLAlchemyError as e:
-            self.session.rollback()
             raise DatabaseError("Database error while updating service category.") from e
 
 class DeleteServiceCategory:
@@ -82,13 +78,13 @@ class DeleteServiceCategory:
 
     def execute(self, category_id: str) -> None:
         try:
-            category = self.session.query(ServiceCategory).filter_by(id=category_id).first()
+            stmt = select(ServiceCategory).where(ServiceCategory.id == category_id)
+            category = self.session.scalar(stmt)
             if not category:
                 raise NotFound("Service category not found.")
             self.session.delete(category)
-            self.session.commit()
+            self.session.flush()
         except SQLAlchemyError as e:
-            self.session.rollback()
             raise DatabaseError("Database error while deleting service category.") from e
 
 class ServiceCategoryRepository:
@@ -104,7 +100,7 @@ class ServiceCategoryRepository:
     def get_all(self) -> list[ServiceCategoryResponseDTO]:
         return GetAllServiceCategories(self.session).execute()
 
-    def update(self, category_id: str, updates: dict[str, Any]) -> ServiceCategoryResponseDTO: # TODO: Type Hint the data dict
+    def update(self, category_id: str, updates: dict[str, Any]) -> ServiceCategoryResponseDTO:
         return UpdateServiceCategory(self.session).execute(category_id, updates)
 
     def delete(self, category_id: str) -> None:

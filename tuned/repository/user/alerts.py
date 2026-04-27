@@ -1,6 +1,6 @@
 import logging
 from sqlalchemy.orm import Session
-from sqlalchemy import desc
+from sqlalchemy import desc, select
 from sqlalchemy.exc import SQLAlchemyError
 from tuned.models import Order, OrderDeadlineExtensionRequest
 from tuned.models.enums import OrderStatus, ExtensionRequestStatus, ActionableAlertType
@@ -19,16 +19,17 @@ class GetActionableAlerts:
         try:
             alerts: list[ActionableAlertDTO] = []
 
-            ext_requests = (
-                self.session.query(OrderDeadlineExtensionRequest)
+            stmt_ext = (
+                select(OrderDeadlineExtensionRequest)
                 .join(Order, OrderDeadlineExtensionRequest.order_id == Order.id)
-                .filter(
+                .where(
                     Order.client_id == client_id,
                     OrderDeadlineExtensionRequest.status == ExtensionRequestStatus.PENDING,
                 )
                 .order_by(desc(OrderDeadlineExtensionRequest.requested_at))
-                .all()
             )
+            ext_requests = self.session.scalars(stmt_ext).all()
+            
             for req in ext_requests:
                 order_num = req.order.order_number if req.order else "Unknown"
                 alerts.append(ActionableAlertDTO(
@@ -45,15 +46,16 @@ class GetActionableAlerts:
                     created_at=req.requested_at.isoformat(),
                 ))
 
-            pending_review_orders = (
-                self.session.query(Order)
-                .filter(
+            stmt_orders = (
+                select(Order)
+                .where(
                     Order.client_id == client_id,
                     Order.status == OrderStatus.COMPLETED_PENDING_REVIEW,
                 )
                 .order_by(desc(Order.updated_at))
-                .all()
             )
+            pending_review_orders = self.session.scalars(stmt_orders).all()
+            
             for order in pending_review_orders:
                 alerts.append(ActionableAlertDTO(
                     id=f"review_{order.id}",

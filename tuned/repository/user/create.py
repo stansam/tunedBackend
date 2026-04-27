@@ -13,10 +13,10 @@ class CreateUser:
             data = user_data.__dict__.copy()
             password = data.pop('password', None)
             
-            new_user = User(**data)  # type: ignore[no-untyped-call]
+            new_user = User(**data)
             
             if password:
-                new_user.set_password(password)  # type: ignore[no-untyped-call]
+                new_user.set_password(password)
             
             self.session.add(new_user)
             self.session.flush()
@@ -24,13 +24,8 @@ class CreateUser:
             new_user.created_at = datetime.now(timezone.utc)
             new_user.created_by = new_user.id
 
-            self.session.commit()
-            self.session.refresh(new_user)
-
             return new_user
         except IntegrityError as e:
-            self.session.rollback()
             raise AlreadyExists("User already exists")
         except SQLAlchemyError as e:
-            self.session.rollback()
             raise DatabaseError("Database error while creating user") from e

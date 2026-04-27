@@ -42,7 +42,8 @@ from tuned.dtos.payment import (
     InvoiceCreateDTO, InvoiceUpdateDTO, InvoiceResponseDTO,
     TransactionCreateDTO, TransactionResponseDTO,
     DiscountCreateDTO, DiscountUpdateDTO, DiscountResponseDTO,
-    RefundCreateDTO, RefundUpdateDTO, RefundResponseDTO
+    RefundCreateDTO, RefundUpdateDTO, RefundResponseDTO,
+    AcceptedMethodCreateDTO, AcceptedMethodUpdateDTO, AcceptedMethodResponseDTO
 )
 
 from tuned.dtos.referral import(
@@ -82,6 +83,7 @@ __all__ = [
     "TransactionCreateDTO", "TransactionResponseDTO",
     "DiscountCreateDTO", "DiscountUpdateDTO", "DiscountResponseDTO",
     "RefundCreateDTO", "RefundUpdateDTO", "RefundResponseDTO",
+    "AcceptedMethodCreateDTO", "AcceptedMethodUpdateDTO", "AcceptedMethodResponseDTO",
     "ReferralCreateDTO", "ReferralResponseDTO", "RewardCalculationResultDTO",
     "ReferralUpdateDTO",
     "LocalizationDTO", "NotificationDTO", "EmailPreferenceDTO", "PrivacyDTO", 

@@ -1,10 +1,11 @@
 from tuned.models.communication import Notification
 from tuned.models.enums import NotificationType
 from tuned.models.user import User
-from typing import Optional
+from typing import Optional, cast
 from tuned.interface import notification
 from tuned.dtos.notification import NotificationCreateDTO, NotificationResponseDTO
 import logging
+from sqlalchemy.orm import Session
 
 logger = logging.getLogger(__name__)
 
@@ -13,7 +14,7 @@ def should_send_notification(user_id: str, notification_category: str = 'general
     from tuned.extensions import db
 
     try:
-        user = GetUserByID(db.session).execute(user_id)
+        user = GetUserByID(cast(Session, db.session)).execute(user_id)
     except Exception:
         logger.debug(f"User {user_id} not found, defaulting to send notification")
         return True
@@ -102,8 +103,8 @@ def create_password_changed_notification(user: User) -> None:
 def emit_notification_via_socket(user_id: int, notification: Notification) -> None:
     pass
 
-def mark_notification_as_read(notification_id: str) -> bool:
-    return notification.mark_read(notification_id)
+def mark_notification_as_read(user_id: str, notification_id: str) -> NotificationResponseDTO:
+    return notification.mark_read(notification_id, user_id)
 
 def mark_all_as_read(user_id: str) -> int:
     return notification.mark_all_read(user_id)

@@ -11,6 +11,8 @@ from tuned.repository.user.email_verification import (
 # from tuned.repository.user.referral import GetReferralGrowth
 from tuned.repository.user.alerts import GetActionableAlerts
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import SQLAlchemyError
+from tuned.repository.exceptions import DatabaseError
 
 class UserRepository: 
     def __init__(self, session: Session) -> None:
@@ -43,3 +45,13 @@ class UserRepository:
     
     def get_actionable_alerts(self, client_id: str) -> list[ActionableAlertDTO]:
         return GetActionableAlerts(self.session).execute(client_id)
+
+    def save(self) -> None:
+        try:
+            self.session.commit()
+        except SQLAlchemyError as exc:
+            self.session.rollback()
+            raise DatabaseError(f"Database error while saving user changes: {exc}") from exc
+
+    def rollback(self) -> None:
+        self.session.rollback()

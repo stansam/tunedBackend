@@ -1,16 +1,19 @@
+# mypy: disable-error-code=untyped-decorator
+
 from flask import request
 from flask_socketio import emit, join_room # leave_room
 from flask_login import current_user
 from tuned.extensions import socketio
 from tuned.interface import notification as notification_interface
 import logging
+from typing import Any
 
 
 logger = logging.getLogger(__name__)
 
 
 @socketio.on('connect')
-def handle_connect():
+def handle_connect() -> bool:
     try:
         if not current_user.is_authenticated:
             logger.warning("WebSocket connection attempt without authentication")
@@ -33,26 +36,29 @@ def handle_connect():
 
 
 @socketio.on('disconnect')
-def handle_disconnect():
+def handle_disconnect() -> None:
     logger.debug("Client disconnected from WebSocket")
 
 
 @socketio.on('notification:mark_read')
-def handle_mark_notification_read(data):
+def handle_mark_notification_read(data: dict[str, Any]) -> None:
     try:
+        if not current_user.is_authenticated:
+            emit('error', {'message': 'Unauthorized'})
+            return
+
         notification_id = data.get('notification_id')
         
         if not notification_id:
             emit('error', {'message': 'Notification ID is required'})
             return
         
-        success = notification_interface.mark_read(str(notification_id))
-        
-        if success:
-            emit('notification:read', {'notification_id': notification_id})
-            logger.debug(f"Notification {notification_id} marked as read via WebSocket")
-        else:
-            emit('error', {'message': 'Notification not found'})
+        notification = notification_interface.mark_read(
+            str(notification_id),
+            str(current_user.id),
+        )
+        emit('notification:read', {'notification_id': notification.id})
+        logger.debug(f"Notification {notification_id} marked as read via WebSocket")
             
     except Exception as e:
         logger.error(f"Error marking notification as read: {str(e)}")
@@ -60,7 +66,7 @@ def handle_mark_notification_read(data):
 
 
 @socketio.on('notification:get_unread_count')
-def handle_get_unread_count():
+def handle_get_unread_count() -> None:
     try:
         if not current_user.is_authenticated:
             emit('error', {'message': 'Unauthorized'})

@@ -1,9 +1,12 @@
+from dataclasses import asdict
 from flask import Blueprint, request
 from flask.views import MethodView
 from flask_login import login_required, current_user
 from tuned.interface import notification as notification_interface
+from tuned.repository.exceptions import DatabaseError, NotFound
 from tuned.utils.responses import success_response, error_response
 import logging
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -12,14 +15,20 @@ bp = Blueprint('notifications', __name__, url_prefix='/notifications')
 class NotificationListAPI(MethodView):
     decorators = [login_required]
 
-    def get(self):
+    def get(self) -> tuple[Any, int]:
         try:
             user_id = current_user.id
             limit = int(request.args.get('limit', 20))
             offset = int(request.args.get('offset', 0))
             
             notifications = notification_interface.get_user_notifications(str(user_id), limit, offset)
-            return success_response(notifications)
+            return success_response([asdict(item) for item in notifications])
+        except ValueError as e:
+            logger.error(f"Invalid notification pagination request: {e}")
+            return error_response("Invalid pagination parameters", status=400)
+        except DatabaseError as e:
+            logger.error(f"Error fetching notifications: {e}")
+            return error_response("Failed to fetch notifications", status=500)
         except Exception as e:
             logger.error(f"Error fetching notifications: {e}")
             return error_response("Failed to fetch notifications", status=500)
@@ -27,14 +36,16 @@ class NotificationListAPI(MethodView):
 class NotificationReadAPI(MethodView):
     decorators = [login_required]
 
-    def post(self, notification_id):
+    def post(self, notification_id: str) -> tuple[Any, int]:
         try:
             user_id = current_user.id
-            # Security verification inside interface to ensure user owns it
-            success = notification_interface.mark_read(str(notification_id))
-            if success:
-                return success_response({"message": "Notification marked as read"})
+            notification = notification_interface.mark_read(str(notification_id), str(user_id))
+            return success_response({"notification": asdict(notification)})
+        except NotFound:
             return error_response("Notification not found", status=404)
+        except DatabaseError as e:
+            logger.error(f"Error marking notification read: {e}")
+            return error_response("Failed to mark read", status=500)
         except Exception as e:
             logger.error(f"Error marking notification read: {e}")
             return error_response("Failed to mark read", status=500)
@@ -42,11 +53,14 @@ class NotificationReadAPI(MethodView):
 class NotificationReadAllAPI(MethodView):
     decorators = [login_required]
 
-    def post(self):
+    def post(self) -> tuple[Any, int]:
         try:
             user_id = current_user.id
-            success = notification_interface.mark_all_read(str(user_id))
-            return success_response({"message": "All notifications marked as read"})
+            updated_count = notification_interface.mark_all_read(str(user_id))
+            return success_response({"updated_count": updated_count})
+        except DatabaseError as e:
+            logger.error(f"Error marking all notifications read: {e}")
+            return error_response("Failed to mark all read", status=500)
         except Exception as e:
             logger.error(f"Error marking all notifications read: {e}")
             return error_response("Failed to mark all read", status=500)

@@ -48,12 +48,16 @@ from tuned.dtos.payment import (
 
 from tuned.dtos.referral import(
     ReferralCreateDTO, ReferralResponseDTO, RewardCalculationResultDTO,
+    ReferralRedemptionResultDTO,
     ReferralUpdateDTO
 )
 
 from tuned.dtos.preferences import(
     LocalizationDTO, NotificationDTO, EmailPreferenceDTO, PrivacyDTO, 
-    AccessibilityDTO, BillingPreferenceDTO, AllPreferencesResponseDTO
+    AccessibilityDTO, BillingPreferenceDTO, AllPreferencesResponseDTO,
+    LocalizationUpdateDTO, NotificationPreferenceUpdateDTO, EmailPreferenceUpdateDTO,
+    PrivacyUpdateDTO, AccessibilityUpdateDTO, BillingPreferenceUpdateDTO,
+    PreferenceUpdateDTO, PreferenceResponseDTO, build_preference_update_dto
 )
 
 __all__ = [
@@ -85,7 +89,11 @@ __all__ = [
     "RefundCreateDTO", "RefundUpdateDTO", "RefundResponseDTO",
     "AcceptedMethodCreateDTO", "AcceptedMethodUpdateDTO", "AcceptedMethodResponseDTO",
     "ReferralCreateDTO", "ReferralResponseDTO", "RewardCalculationResultDTO",
+    "ReferralRedemptionResultDTO",
     "ReferralUpdateDTO",
     "LocalizationDTO", "NotificationDTO", "EmailPreferenceDTO", "PrivacyDTO", 
-    "AccessibilityDTO", "BillingPreferenceDTO", "AllPreferencesResponseDTO"
+    "AccessibilityDTO", "BillingPreferenceDTO", "AllPreferencesResponseDTO",
+    "LocalizationUpdateDTO", "NotificationPreferenceUpdateDTO", "EmailPreferenceUpdateDTO",
+    "PrivacyUpdateDTO", "AccessibilityUpdateDTO", "BillingPreferenceUpdateDTO",
+    "PreferenceUpdateDTO", "PreferenceResponseDTO", "build_preference_update_dto"
 ]

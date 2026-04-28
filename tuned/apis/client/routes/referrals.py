@@ -9,29 +9,36 @@ from tuned.utils.responses import success_response, error_response, validation_e
 from tuned.apis.client.schemas.referrals import ReferralFilterSchema, RedeemRewardSchema, ReferralShareSchema
 from tuned.interface import referral
 from dataclasses import asdict
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
 _interface = referral
 
+
+def _validation_error_payload(message: str) -> dict[str, list[str]]:
+    return {"non_field_errors": [message]}
+
 class ReferralListView(MethodView):
     decorators = [login_required]
-    def get(self):
+    def get(self) -> tuple[Any, int]:
         try:
             schema = ReferralFilterSchema()
-            data = schema.load(request.args.to_dict())
+            schema.load(request.args.to_dict())
             referrals = _interface.get_active_by_referrer(str(current_user.id))
             return success_response({"referrals": [asdict(r) for r in referrals]})
         except ValidationError as err:
             logger.error(f"Error listing referrals: {err}")
-            return validation_error_response("Error listing referrals, invalid params provided")
+            return validation_error_response(
+                _validation_error_payload("Error listing referrals, invalid params provided")
+            )
         except Exception as e:
             logger.error(f"Error listing referrals: {e}")
             return error_response("Failed to fetch referrals", status=500)
 
 class ReferralStatsView(MethodView):
     decorators = [login_required]
-    def get(self):
+    def get(self) -> tuple[Any, int]:
         try:
             referrals = _interface.get_active_by_referrer(str(current_user.id))
             total_earned = sum(r.points_earned for r in referrals if r.status == 'COMPLETED')
@@ -53,7 +60,7 @@ class ReferralStatsView(MethodView):
 
 class ReferralShareView(MethodView):
     decorators = [login_required]
-    def post(self):
+    def post(self) -> tuple[Any, int]:
         try:
             schema = ReferralShareSchema()
             data = schema.load(request.get_json())
@@ -70,14 +77,16 @@ class ReferralShareView(MethodView):
             })
         except ValidationError as err:
             logger.error(f"Error sharing referral: {err}")
-            return validation_error_response("Error sharing referral, invalid params provided")
+            return validation_error_response(
+                _validation_error_payload("Error sharing referral, invalid params provided")
+            )
         except Exception as e:
             logger.error(f"Error sharing referral: {e}")
             return error_response("Failed to process share request", status=500)
 
 class ReferralRedeemView(MethodView):
     decorators = [login_required]
-    def post(self):
+    def post(self) -> tuple[Any, int]:
         try:
             schema = RedeemRewardSchema()
             data = schema.load(request.get_json())
@@ -88,13 +97,18 @@ class ReferralRedeemView(MethodView):
                 points_to_redeem=data['points']
             )
             
-            return success_response(result, message=f"Successfully redeemed {result['redeemed_points']} points.")
+            return success_response(
+                asdict(result),
+                message=f"Successfully redeemed {result.redeemed_points} points.",
+            )
         except ValueError as err:
             logger.error(f"Error redeeming points: {err}")
             return error_response("Error redeeming points", status=500)
         except ValidationError as err:
             logger.error(f"Error redeeming points: {err}")
-            return validation_error_response("Error reedeming points, invalid params provided")
+            return validation_error_response(
+                _validation_error_payload("Error redeeming points, invalid params provided")
+            )
         except Exception as e:
             logger.error(f"Error redeeming points: {e}")
             return error_response("Failed to redeem points", status=500)

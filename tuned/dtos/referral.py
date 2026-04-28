@@ -38,6 +38,8 @@ class ReferralResponseDTO(BaseDTO):
 
     @classmethod
     def from_model(cls, model: "Referral") -> 'ReferralResponseDTO':
+        if model.referrer_id is None or model.referred_id is None:
+            raise ValueError("Referral model is missing required user identifiers")
         return cls(
             id=str(model.id),
             referrer_id=model.referrer_id,
@@ -60,3 +62,12 @@ class RewardCalculationResultDTO:
     referred_id: str
     points_earned: int
     new_status: str
+
+
+@dataclass(kw_only=True)
+class ReferralRedemptionResultDTO:
+    redeemed_points: int
+    discount_amount: float
+    new_balance: int
+    order_id: str
+    updated_total_price: float

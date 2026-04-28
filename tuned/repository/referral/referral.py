@@ -134,5 +134,14 @@ class ReferralRepository(ReferralRepositoryProtocol):
     ) -> list[tuple[str, float]]:
         return GetReferralGrowth(self.session).execute(referrer_id, months)
 
+    def save(self) -> None:
+        try:
+            self.session.commit()
+        except SQLAlchemyError as exc:
+            self.session.rollback()
+            raise DatabaseError(f"Database error while saving referral changes: {exc}") from exc
+
+    def rollback(self) -> None:
+        self.session.rollback()
 
 

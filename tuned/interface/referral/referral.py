@@ -4,16 +4,24 @@ from tuned.services.referral_service import referral_service
 from tuned.core.events import get_event_bus
 from tuned.repository import repositories
 from tuned.core.logging import get_logger
-from tuned.dtos import ReferralResponseDTO
+from tuned.dtos import ReferralResponseDTO, ReferralRedemptionResultDTO
+from tuned.repository.protocols import ReferralRepositoryProtocol, UserRepositoryProtocol
+from tuned.services.referral_service import ReferralService
 
 logger: logging.Logger = get_logger(__name__)
 
 from tuned.interface.protocols import ReferralInterfaceProtocol
 
 class ReferralInterface(ReferralInterfaceProtocol):
-    def __init__(self) -> None: 
-        self._user_repo = repositories.user
-        self._referral_repo = repositories.referral
+    def __init__(
+        self,
+        service: Optional[ReferralService] = None,
+        user_repo: Optional[UserRepositoryProtocol] = None,
+        referral_repo: Optional[ReferralRepositoryProtocol] = None,
+    ) -> None:
+        self._service = service or referral_service
+        self._user_repo = user_repo or repositories.user
+        self._referral_repo = referral_repo or repositories.referral
     
     def get_by_id(self, id: str) -> Optional[ReferralResponseDTO]:
         return self._referral_repo.get_by_id(id)
@@ -34,10 +42,10 @@ class ReferralInterface(ReferralInterfaceProtocol):
         return self._referral_repo.count_monthly_completed_referrals(referrer_id, year, month)
             
     def process_signup(self, new_user_id: str, referral_code: str) -> None:
-        referral_service.process_signup_with_referral(new_user_id, referral_code)
+        self._service.process_signup_with_referral(new_user_id, referral_code)
 
     def reward_referrer(self, referred_id: str, order_value: float) -> None:
-        reward_result = referral_service.calculate_and_reward_commission(referred_id, order_value)
+        reward_result = self._service.calculate_and_reward_commission(referred_id, order_value)
         if not reward_result:
             return
 
@@ -52,5 +60,10 @@ class ReferralInterface(ReferralInterfaceProtocol):
         get_event_bus().emit("ReferralCommissionEarned", payload)
         logger.info(f"[ReferralInterface] Successfully rewarded {reward_result.points_earned} points to user {reward_result.referrer_id}")
 
-    def redeem_points(self, user_id: str, order_id: str, points_to_redeem: int) -> dict:
-        return referral_service.redeem_points(user_id, order_id, points_to_redeem)
+    def redeem_points(
+        self,
+        user_id: str,
+        order_id: str,
+        points_to_redeem: int,
+    ) -> ReferralRedemptionResultDTO:
+        return self._service.redeem_points(user_id, order_id, points_to_redeem)

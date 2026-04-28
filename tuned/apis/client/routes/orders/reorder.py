@@ -5,13 +5,14 @@ from tuned.utils.responses import success_response, error_response
 from flask_login import login_required, current_user
 from flask.views import MethodView
 from dataclasses import asdict
+from typing import Any
 
 logger: logging.Logger = get_logger(__name__)
 
 class ReorderOrder(MethodView):
     decorators = [login_required]
 
-    def post(self, order_id: str):
+    def post(self, order_id: str) -> tuple[Any, int]:
         try:
             dto = _order_service.reorder(order_id, str(current_user.id))
             return success_response(data=asdict(dto), message="Successfully created", status=201)

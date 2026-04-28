@@ -1,6 +1,17 @@
 from dataclasses import dataclass, asdict
-from typing import Optional, Dict, TYPE_CHECKING
+from enum import Enum
+from typing import Mapping, Optional, Dict, TYPE_CHECKING, TypeAlias, TypeVar, cast
 # from datetime import datetime
+
+from tuned.models.enums import (
+    DateFormat,
+    EmailFrequency,
+    InvoiceDeliveryMethod,
+    NumberFormat,
+    ProfileVisibility,
+    TimeFormat,
+    WeekStart,
+)
 
 if TYPE_CHECKING:
     from tuned.models.preferences import (
@@ -180,3 +191,208 @@ class AllPreferencesResponseDTO:
             "accessibility": asdict(self.accessibility),
             "billing": asdict(self.billing)
         }
+
+
+PreferenceCategory: TypeAlias = str
+
+
+@dataclass(kw_only=True)
+class PreferenceUpdateDTOBase:
+    def to_update_dict(self) -> dict[str, object]:
+        return {
+            key: value
+            for key, value in self.__dict__.items()
+            if value is not None
+        }
+
+
+@dataclass(kw_only=True)
+class LocalizationUpdateDTO(PreferenceUpdateDTOBase):
+    language: Optional[str] = None
+    country_code: Optional[str] = None
+    timezone: Optional[str] = None
+    date_format: Optional[DateFormat] = None
+    time_format: Optional[TimeFormat] = None
+    currency: Optional[str] = None
+    number_format: Optional[NumberFormat] = None
+    week_start: Optional[WeekStart] = None
+
+
+@dataclass(kw_only=True)
+class NotificationPreferenceUpdateDTO(PreferenceUpdateDTOBase):
+    email_notifications: Optional[bool] = None
+    sms_notifications: Optional[bool] = None
+    push_notifications: Optional[bool] = None
+    order_updates: Optional[bool] = None
+    payment_notifications: Optional[bool] = None
+    delivery_notifications: Optional[bool] = None
+    revision_updates: Optional[bool] = None
+    extension_updates: Optional[bool] = None
+    comment_notifications: Optional[bool] = None
+    support_ticket_updates: Optional[bool] = None
+    marketing_emails: Optional[bool] = None
+    weekly_summary: Optional[bool] = None
+
+
+@dataclass(kw_only=True)
+class EmailPreferenceUpdateDTO(PreferenceUpdateDTOBase):
+    newsletter: Optional[bool] = None
+    promotional_emails: Optional[bool] = None
+    product_updates: Optional[bool] = None
+    frequency: Optional[EmailFrequency] = None
+    daily_digest_hour: Optional[int] = None
+
+
+@dataclass(kw_only=True)
+class PrivacyUpdateDTO(PreferenceUpdateDTOBase):
+    profile_visibility: Optional[ProfileVisibility] = None
+    show_email: Optional[bool] = None
+    show_phone: Optional[bool] = None
+    show_name: Optional[bool] = None
+    allow_messages: Optional[bool] = None
+    allow_comments: Optional[bool] = None
+    data_sharing: Optional[bool] = None
+    analytics_tracking: Optional[bool] = None
+    third_party_cookies: Optional[bool] = None
+    allow_search_engine_indexing: Optional[bool] = None
+
+
+@dataclass(kw_only=True)
+class AccessibilityUpdateDTO(PreferenceUpdateDTOBase):
+    font_size_multiplier: Optional[float] = None
+    text_spacing_increased: Optional[bool] = None
+    high_contrast_mode: Optional[bool] = None
+    color_blind_mode: Optional[bool] = None
+    reduced_motion: Optional[bool] = None
+    screen_reader_optimized: Optional[bool] = None
+    keyboard_navigation_enhanced: Optional[bool] = None
+    focus_indicators_enhanced: Optional[bool] = None
+
+
+@dataclass(kw_only=True)
+class BillingPreferenceUpdateDTO(PreferenceUpdateDTOBase):
+    invoice_email: Optional[str] = None
+    invoice_delivery: Optional[InvoiceDeliveryMethod] = None
+    payment_reminders: Optional[bool] = None
+    reminder_days_before: Optional[int] = None
+    auto_reload_enabled: Optional[bool] = None
+    auto_reload_threshold: Optional[float] = None
+
+
+PreferenceUpdateDTO: TypeAlias = (
+    LocalizationUpdateDTO
+    | NotificationPreferenceUpdateDTO
+    | EmailPreferenceUpdateDTO
+    | PrivacyUpdateDTO
+    | AccessibilityUpdateDTO
+    | BillingPreferenceUpdateDTO
+)
+
+PreferenceResponseDTO: TypeAlias = (
+    LocalizationDTO
+    | NotificationDTO
+    | EmailPreferenceDTO
+    | PrivacyDTO
+    | AccessibilityDTO
+    | BillingPreferenceDTO
+)
+
+EnumT = TypeVar("EnumT", bound=Enum)
+
+
+def _optional_enum(value: object, enum_cls: type[EnumT]) -> EnumT | None:
+    if value is None:
+        return None
+    if isinstance(value, enum_cls):
+        return value
+    return enum_cls(value)
+
+
+def _optional_str(value: object) -> str | None:
+    return cast(str | None, value)
+
+
+def _optional_bool(value: object) -> bool | None:
+    return cast(bool | None, value)
+
+
+def _optional_int(value: object) -> int | None:
+    return cast(int | None, value)
+
+
+def _optional_float(value: object) -> float | None:
+    return cast(float | None, value)
+
+
+def build_preference_update_dto(
+    category: str,
+    data: Mapping[str, object],
+) -> PreferenceUpdateDTO:
+    if category == "localization":
+        return LocalizationUpdateDTO(
+            language=_optional_str(data.get("language")),
+            country_code=_optional_str(data.get("country_code")),
+            timezone=_optional_str(data.get("timezone")),
+            date_format=_optional_enum(data.get("date_format"), DateFormat),
+            time_format=_optional_enum(data.get("time_format"), TimeFormat),
+            currency=_optional_str(data.get("currency")),
+            number_format=_optional_enum(data.get("number_format"), NumberFormat),
+            week_start=_optional_enum(data.get("week_start"), WeekStart),
+        )
+    if category == "notification":
+        return NotificationPreferenceUpdateDTO(
+            email_notifications=_optional_bool(data.get("email_notifications")),
+            sms_notifications=_optional_bool(data.get("sms_notifications")),
+            push_notifications=_optional_bool(data.get("push_notifications")),
+            order_updates=_optional_bool(data.get("order_updates")),
+            payment_notifications=_optional_bool(data.get("payment_notifications")),
+            delivery_notifications=_optional_bool(data.get("delivery_notifications")),
+            revision_updates=_optional_bool(data.get("revision_updates")),
+            extension_updates=_optional_bool(data.get("extension_updates")),
+            comment_notifications=_optional_bool(data.get("comment_notifications")),
+            support_ticket_updates=_optional_bool(data.get("support_ticket_updates")),
+            marketing_emails=_optional_bool(data.get("marketing_emails")),
+            weekly_summary=_optional_bool(data.get("weekly_summary")),
+        )
+    if category == "email":
+        return EmailPreferenceUpdateDTO(
+            newsletter=_optional_bool(data.get("newsletter")),
+            promotional_emails=_optional_bool(data.get("promotional_emails")),
+            product_updates=_optional_bool(data.get("product_updates")),
+            frequency=_optional_enum(data.get("frequency"), EmailFrequency),
+            daily_digest_hour=_optional_int(data.get("daily_digest_hour")),
+        )
+    if category == "privacy":
+        return PrivacyUpdateDTO(
+            profile_visibility=_optional_enum(data.get("profile_visibility"), ProfileVisibility),
+            show_email=_optional_bool(data.get("show_email")),
+            show_phone=_optional_bool(data.get("show_phone")),
+            show_name=_optional_bool(data.get("show_name")),
+            allow_messages=_optional_bool(data.get("allow_messages")),
+            allow_comments=_optional_bool(data.get("allow_comments")),
+            data_sharing=_optional_bool(data.get("data_sharing")),
+            analytics_tracking=_optional_bool(data.get("analytics_tracking")),
+            third_party_cookies=_optional_bool(data.get("third_party_cookies")),
+            allow_search_engine_indexing=_optional_bool(data.get("allow_search_engine_indexing")),
+        )
+    if category == "accessibility":
+        return AccessibilityUpdateDTO(
+            font_size_multiplier=_optional_float(data.get("font_size_multiplier")),
+            text_spacing_increased=_optional_bool(data.get("text_spacing_increased")),
+            high_contrast_mode=_optional_bool(data.get("high_contrast_mode")),
+            color_blind_mode=_optional_bool(data.get("color_blind_mode")),
+            reduced_motion=_optional_bool(data.get("reduced_motion")),
+            screen_reader_optimized=_optional_bool(data.get("screen_reader_optimized")),
+            keyboard_navigation_enhanced=_optional_bool(data.get("keyboard_navigation_enhanced")),
+            focus_indicators_enhanced=_optional_bool(data.get("focus_indicators_enhanced")),
+        )
+    if category == "billing":
+        return BillingPreferenceUpdateDTO(
+            invoice_email=_optional_str(data.get("invoice_email")),
+            invoice_delivery=_optional_enum(data.get("invoice_delivery"), InvoiceDeliveryMethod),
+            payment_reminders=_optional_bool(data.get("payment_reminders")),
+            reminder_days_before=_optional_int(data.get("reminder_days_before")),
+            auto_reload_enabled=_optional_bool(data.get("auto_reload_enabled")),
+            auto_reload_threshold=_optional_float(data.get("auto_reload_threshold")),
+        )
+    raise ValueError(f"Invalid preference category: {category}")

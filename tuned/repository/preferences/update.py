@@ -2,43 +2,52 @@ from sqlalchemy.orm import Session
 from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
 from tuned.repository.exceptions import DatabaseError
-from tuned.models.enums import (
-    EmailFrequency, ProfileVisibility, DateFormat, TimeFormat, NumberFormat, WeekStart, InvoiceDeliveryMethod
+from tuned.models.preferences import (
+    UserAccessibilityPreferences,
+    UserBillingPreferences,
+    UserEmailPreferences,
+    UserLocalizationSettings,
+    UserNotificationPreferences,
+    UserPrivacySettings,
 )
 
-from typing import Any
+PreferenceModel = (
+    UserNotificationPreferences
+    | UserEmailPreferences
+    | UserPrivacySettings
+    | UserLocalizationSettings
+    | UserAccessibilityPreferences
+    | UserBillingPreferences
+)
+PreferenceModelType = (
+    type[UserNotificationPreferences]
+    | type[UserEmailPreferences]
+    | type[UserPrivacySettings]
+    | type[UserLocalizationSettings]
+    | type[UserAccessibilityPreferences]
+    | type[UserBillingPreferences]
+)
 
 class UpdatePreferenceCategory:
     def __init__(self, session: Session) -> None:
         self.session = session
 
-    def execute(self, model: type[Any], user_id: str, data: dict[str, Any]) -> Any:
+    def execute(
+        self,
+        model: PreferenceModelType,
+        user_id: str,
+        data: dict[str, object],
+    ) -> PreferenceModel:
         try:
             stmt = select(model).where(getattr(model, "user_id") == user_id)
             obj = self.session.scalar(stmt)
             if not obj:
                 obj = model(user_id=user_id)
                 self.session.add(obj)
-            
-            enum_mappings = {
-                'frequency': EmailFrequency,
-                'profile_visibility': ProfileVisibility,
-                'date_format': DateFormat,
-                'time_format': TimeFormat,
-                'number_format': NumberFormat,
-                'week_start': WeekStart,
-                'invoice_delivery': InvoiceDeliveryMethod
-            }
 
             for key, value in data.items():
                 if hasattr(obj, key):
-                    if key in enum_mappings and isinstance(value, str):
-                        try:
-                            setattr(obj, key, enum_mappings[key](value))
-                        except ValueError:
-                            pass
-                    else:
-                        setattr(obj, key, value)
+                    setattr(obj, key, value)
             
             self.session.flush()
             return obj

@@ -1,15 +1,16 @@
 from __future__ import annotations
 
 import logging
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 from tuned.core.logging import get_logger
 from tuned.dtos.audit import ActivityLogCreateDTO
 from tuned.dtos.order import ReorderResponseDTO
-from tuned.interface.audit import audit_service
-from tuned.repository import repositories
 from tuned.repository.exceptions import DatabaseError, NotFound
 from tuned.repository.protocols import OrderRepositoryProtocol
-from tuned.interface.audit.activity_log import ActivityLogService
+
+if TYPE_CHECKING:
+    from tuned.repository import Repository
+    from tuned.interface.protocols import ActivityLogServiceProtocol
 
 logger: logging.Logger = get_logger(__name__)
 
@@ -17,11 +18,21 @@ logger: logging.Logger = get_logger(__name__)
 class OrderService:
     def __init__(
         self,
+        repos: Optional["Repository"] = None,
         repo: Optional[OrderRepositoryProtocol] = None,
-        audit_service_dependency: Optional[ActivityLogService] = None,
+        audit_service: Optional["ActivityLogServiceProtocol"] = None,
     ) -> None:
-        self._repo = repo or repositories.order
-        self._audit = audit_service_dependency or audit_service.activity_log
+        if repos:
+            self._repo = repo or repos.order
+            from tuned.interface.audit import AuditService
+            self._audit = AuditService(repos=repos)
+            self._audit_service = audit_service or self._audit.activity_log
+        else:
+            from tuned.repository import repositories
+            self._repo = repo or repositories.order
+            from tuned.interface.audit import audit_service
+            self._audit = audit_service
+            self._audit_service = audit_service or self._audit.activity_log
 
     def reorder(self, order_id: str, user_id: str) -> ReorderResponseDTO:
         try:
@@ -29,13 +40,15 @@ class OrderService:
             new_order = self._repo.create_reorder(source, user_id)
 
             try:
-                self._audit.log(ActivityLogCreateDTO(
+                self._audit_service.log(ActivityLogCreateDTO(
                     action="order_reordered",
                     user_id=user_id,
                     entity_type="Order",
                     entity_id=str(new_order.id),
                     after={"source_order_id": order_id},
                     created_by=user_id,
+                    ip_address="system",
+                    user_agent="system"
                 ))
             except Exception as audit_exc:
                 logger.error(

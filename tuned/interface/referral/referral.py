@@ -24,13 +24,13 @@ class ReferralInterface(ReferralInterfaceProtocol):
         if service:
             self._service = service
         elif repos:
-            from tuned.interface.audit import audit_service
-            self._audit = audit_service
+            from tuned.interface.audit import AuditService
+            self._audit = AuditService(repos=repos)
             self._service = ReferralService(
                 user_repo=repos.user,
                 referral_repo=repos.referral,
                 order_repo=repos.order,
-                audit_service=audit_service
+                audit_service=self._audit.activity_log
             )
         else:
             from tuned.repository import repositories
@@ -40,7 +40,7 @@ class ReferralInterface(ReferralInterfaceProtocol):
                 user_repo=repositories.user,
                 referral_repo=repositories.referral,
                 order_repo=repositories.order,
-                audit_service=audit_service
+                audit_service=self._audit.activity_log
             )
         
         self._user_repo = repos.user if repos else repositories.user

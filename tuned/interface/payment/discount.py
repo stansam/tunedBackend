@@ -1,19 +1,29 @@
 from __future__ import annotations
 import logging
-from flask_login import current_user
+from typing import Optional, TYPE_CHECKING
 from tuned.core.logging import get_logger
 from tuned.dtos.audit import ActivityLogCreateDTO
-from tuned.dtos.payment import DiscountCreateDTO, DiscountUpdateDTO, DiscountResponseDTO
-from tuned.interface.audit import audit_service
-from tuned.repository import repositories
+from tuned.dtos.payment import DiscountCreateDTO, DiscountResponseDTO
 from tuned.utils.variables import Variables
+
+if TYPE_CHECKING:
+    from tuned.repository import Repository
 
 logger: logging.Logger = get_logger(__name__)
 
 class ApplyDiscount:
-    def __init__(self) -> None:
-        self._repo = repositories.payment.discount
-    def execute(self, code: str, order_value: float) -> DiscountResponseDTO:
+    def __init__(self, repos: Optional[Repository] = None) -> None:
+        if repos:
+            self._repo = repos.payment.discount
+            from tuned.interface.audit import AuditService
+            self._audit = AuditService(repos=repos)
+        else:
+            from tuned.repository import repositories
+            self._repo = repositories.payment.discount
+            from tuned.interface.audit import audit_service
+            self._audit = audit_service
+
+    def execute(self, code: str, order_value: float, user_id: str) -> DiscountResponseDTO:
         try:
             discount = self._repo.get_by_code(code)
             
@@ -29,12 +39,14 @@ class ApplyDiscount:
             try:
                 self._audit.activity_log.log(ActivityLogCreateDTO(
                     action=Variables.DISCOUNT_APPLY_ACTION,
-                    user_id=current_user.id, # admin id
+                    user_id=user_id,
                     entity_type=Variables.DISCOUNT_ENTITY_TYPE,
                     entity_id=discount.id,
                     before=discount,
                     after=updated_discount,
-                    created_by=current_user.id,
+                    created_by=user_id,
+                    ip_address="system",
+                    user_agent="system"
                 ))
                 logger.info(f"[ApplyDiscount] Audit successfully applied for discount {code}")
             except Exception as audit_exc:
@@ -47,9 +59,17 @@ class ApplyDiscount:
             raise
 
 class CreateDiscount:
-    def __init__(self) -> None:
-        self._repo = repositories.payment.discount
-        self._audit = audit_service
+    def __init__(self, repos: Optional[Repository] = None) -> None:
+        if repos:
+            self._repo = repos.payment.discount
+            from tuned.interface.audit import AuditService
+            self._audit = AuditService(repos=repos)
+        else:
+            from tuned.repository import repositories
+            self._repo = repositories.payment.discount
+            from tuned.interface.audit import audit_service
+            self._audit = audit_service
+
     def execute(self, data: DiscountCreateDTO, actor_id: str) -> DiscountResponseDTO:
         try:
             discount = self._repo.create(data)
@@ -62,6 +82,8 @@ class CreateDiscount:
                     entity_id=discount.id,
                     after=discount,
                     created_by=actor_id,
+                    ip_address="system",
+                    user_agent="system"
                 ))
                 logger.info(f"[CreateDiscount] Audit successfully applied for discount {discount.code}")
             except Exception as audit_exc:
@@ -74,8 +96,13 @@ class CreateDiscount:
             raise
 
 class GetDiscountDetails:
-    def __init__(self) -> None:
-        self._repo = repositories.payment.discount
+    def __init__(self, repos: Optional[Repository] = None) -> None:
+        if repos:
+            self._repo = repos.payment.discount
+        else:
+            from tuned.repository import repositories
+            self._repo = repositories.payment.discount
+
     def execute(self, discount_id: str) -> DiscountResponseDTO:
         try:
             return self._repo.get_by_id(discount_id)

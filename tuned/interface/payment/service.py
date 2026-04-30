@@ -1,4 +1,5 @@
 from __future__ import annotations
+from typing import Optional, TYPE_CHECKING
 
 from tuned.interface.payment.payment import ProcessPayment, GetPaymentDetails, ClientMarkAsPaid, AdminVerifyPayment
 from tuned.interface.payment.invoice import GenerateInvoice, GetInvoiceDetails, MarkInvoicePaid
@@ -7,12 +8,15 @@ from tuned.interface.payment.refund import ProcessRefund, ApproveRefund
 from tuned.interface.payment.transaction import LogTransaction, GetTransactionHistory
 from tuned.interface.payment.accepted_method import AdminCreateAcceptedMethod, AdminUpdateAcceptedMethod, GetAcceptedMethods
 
+if TYPE_CHECKING:
+    from tuned.repository import Repository
+
 class PaymentServiceManager:
-    def __init__(self) -> None:
-        self._process = ProcessPayment()
-        self._get = GetPaymentDetails()
-        self._mark_paid_client = ClientMarkAsPaid()
-        self._verify_payment = AdminVerifyPayment()
+    def __init__(self, repos: Optional[Repository] = None) -> None:
+        self._process = ProcessPayment(repos=repos)
+        self._get = GetPaymentDetails(repos=repos)
+        self._mark_paid_client = ClientMarkAsPaid(repos=repos)
+        self._verify_payment = AdminVerifyPayment(repos=repos)
 
     def process(self, data) -> object:
         return self._process.execute(data)
@@ -27,10 +31,10 @@ class PaymentServiceManager:
         return self._verify_payment.execute(payment_id, admin_id)
 
 class AcceptedMethodServiceManager:
-    def __init__(self) -> None:
-        self._create = AdminCreateAcceptedMethod()
-        self._update = AdminUpdateAcceptedMethod()
-        self._get_all = GetAcceptedMethods()
+    def __init__(self, repos: Optional[Repository] = None) -> None:
+        self._create = AdminCreateAcceptedMethod(repos=repos)
+        self._update = AdminUpdateAcceptedMethod(repos=repos)
+        self._get_all = GetAcceptedMethods(repos=repos)
 
     def create(self, data, admin_id: str) -> object:
         return self._create.execute(data, admin_id)
@@ -42,10 +46,10 @@ class AcceptedMethodServiceManager:
         return self._get_all.execute()
 
 class InvoiceServiceManager:
-    def __init__(self) -> None:
-        self._generate = GenerateInvoice()
-        self._get = GetInvoiceDetails()
-        self._mark_paid = MarkInvoicePaid()
+    def __init__(self, repos: Optional[Repository] = None) -> None:
+        self._generate = GenerateInvoice(repos=repos)
+        self._get = GetInvoiceDetails(repos=repos)
+        self._mark_paid = MarkInvoicePaid(repos=repos)
 
     def generate(self, data) -> object:
         return self._generate.execute(data)
@@ -57,13 +61,13 @@ class InvoiceServiceManager:
         return self._mark_paid.execute(invoice_id, payment_id, actor_id)
 
 class DiscountServiceManager:
-    def __init__(self) -> None:
-        self._apply = ApplyDiscount()
-        self._create = CreateDiscount()
-        self._get = GetDiscountDetails()
+    def __init__(self, repos: Optional[Repository] = None) -> None:
+        self._apply = ApplyDiscount(repos=repos)
+        self._create = CreateDiscount(repos=repos)
+        self._get = GetDiscountDetails(repos=repos)
 
-    def apply(self, code: str, order_value: float) -> object:
-        return self._apply.execute(code, order_value)
+    def apply(self, code: str, order_value: float, user_id: str) -> object:
+        return self._apply.execute(code, order_value, user_id)
 
     def create(self, data, actor_id: str) -> object:
         return self._create.execute(data, actor_id)
@@ -72,9 +76,9 @@ class DiscountServiceManager:
         return self._get.execute(discount_id)
 
 class RefundServiceManager:
-    def __init__(self) -> None:
-        self._process = ProcessRefund()
-        self._approve = ApproveRefund()
+    def __init__(self, repos: Optional[Repository] = None) -> None:
+        self._process = ProcessRefund(repos=repos)
+        self._approve = ApproveRefund(repos=repos)
 
     def process(self, data) -> object:
         return self._process.execute(data)
@@ -83,9 +87,9 @@ class RefundServiceManager:
         return self._approve.execute(refund_id, admin_id)
 
 class TransactionServiceManager:
-    def __init__(self) -> None:
-        self._log = LogTransaction()
-        self._get_history = GetTransactionHistory()
+    def __init__(self, repos: Optional[Repository] = None) -> None:
+        self._log = LogTransaction(repos=repos)
+        self._get_history = GetTransactionHistory(repos=repos)
 
     def log(self, data, actor_id: str) -> object:
         return self._log.execute(data, actor_id)

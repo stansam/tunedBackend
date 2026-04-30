@@ -1,19 +1,28 @@
 from __future__ import annotations
 import logging
+from typing import Optional, TYPE_CHECKING
 from tuned.core.logging import get_logger
 from tuned.dtos.audit import ActivityLogCreateDTO
 from tuned.core.exceptions import NotFound
 from tuned.dtos.payment import AcceptedMethodCreateDTO, AcceptedMethodUpdateDTO, AcceptedMethodResponseDTO
-from tuned.interface.audit import audit_service
-from tuned.repository import repositories
 from tuned.utils.variables import Variables
+
+if TYPE_CHECKING:
+    from tuned.repository import Repository
 
 logger: logging.Logger = get_logger(__name__)
 
 class AdminCreateAcceptedMethod:
-    def __init__(self) -> None:
-        self._repo = repositories.payment.accepted_method
-        self._audit = audit_service
+    def __init__(self, repos: Optional[Repository] = None) -> None:
+        if repos:
+            self._repo = repos.payment.accepted_method
+            from tuned.interface.audit import AuditService
+            self._audit = AuditService(repos=repos)
+        else:
+            from tuned.repository import repositories
+            self._repo = repositories.payment.accepted_method
+            from tuned.interface.audit import audit_service
+            self._audit = audit_service
 
     def execute(self, data: AcceptedMethodCreateDTO, admin_id: str) -> AcceptedMethodResponseDTO:
         try:
@@ -27,6 +36,8 @@ class AdminCreateAcceptedMethod:
                     entity_id=method.id,
                     after=method,
                     created_by=admin_id,
+                    ip_address="system",
+                    user_agent="system"
                 ))
             except Exception as audit_exc:
                 logger.error(f"[AdminCreateAcceptedMethod] Audit failed for method {method.id}: {audit_exc!r}")
@@ -38,9 +49,16 @@ class AdminCreateAcceptedMethod:
             raise
 
 class AdminUpdateAcceptedMethod:
-    def __init__(self) -> None:
-        self._repo = repositories.payment.accepted_method
-        self._audit = audit_service
+    def __init__(self, repos: Optional[Repository] = None) -> None:
+        if repos:
+            self._repo = repos.payment.accepted_method
+            from tuned.interface.audit import AuditService
+            self._audit = AuditService(repos=repos)
+        else:
+            from tuned.repository import repositories
+            self._repo = repositories.payment.accepted_method
+            from tuned.interface.audit import audit_service
+            self._audit = audit_service
 
     def execute(self, method_id: str, data: AcceptedMethodUpdateDTO, admin_id: str) -> AcceptedMethodResponseDTO:
         try:
@@ -60,6 +78,8 @@ class AdminUpdateAcceptedMethod:
                     before=existing,
                     after=method,
                     created_by=admin_id,
+                    ip_address="system",
+                    user_agent="system"
                 ))
             except Exception as audit_exc:
                 logger.error(f"[AdminUpdateAcceptedMethod] Audit failed for method {method.id}: {audit_exc!r}")
@@ -71,8 +91,12 @@ class AdminUpdateAcceptedMethod:
             raise
 
 class GetAcceptedMethods:
-    def __init__(self) -> None:
-        self._repo = repositories.payment.accepted_method
+    def __init__(self, repos: Optional[Repository] = None) -> None:
+        if repos:
+            self._repo = repos.payment.accepted_method
+        else:
+            from tuned.repository import repositories
+            self._repo = repositories.payment.accepted_method
 
     def execute(self) -> list[AcceptedMethodResponseDTO]:
         try:

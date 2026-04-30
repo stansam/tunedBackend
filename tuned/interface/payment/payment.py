@@ -1,20 +1,31 @@
 from __future__ import annotations
 import logging
 from datetime import datetime, timezone
+from typing import Optional, TYPE_CHECKING
 from tuned.core.logging import get_logger
 from tuned.dtos import ActivityLogCreateDTO, PaymentCreateDTO, PaymentUpdateDTO, PaymentResponseDTO
-from tuned.interface.audit import audit_service
-from tuned.repository import repositories
 from tuned.utils.variables import Variables
 from tuned.core.events import get_event_bus
 from tuned.models import PaymentStatus
 
+if TYPE_CHECKING:
+    from tuned.repository import Repository
+
 logger: logging.Logger = get_logger(__name__)
 event_bus = get_event_bus()
+
 class ProcessPayment:
-    def __init__(self) -> None:
-        self._repo = repositories.payment.payment
-        self._audit = audit_service
+    def __init__(self, repos: Optional[Repository] = None) -> None:
+        if repos:
+            self._repo = repos.payment.payment
+            from tuned.interface.audit import AuditService
+            self._audit = AuditService(repos=repos)
+        else:
+            from tuned.repository import repositories
+            self._repo = repositories.payment.payment
+            from tuned.interface.audit import audit_service
+            self._audit = audit_service
+
     def execute(self, data: PaymentCreateDTO) -> PaymentResponseDTO:
         try:
             payment = self._repo.create(data)
@@ -27,6 +38,8 @@ class ProcessPayment:
                     entity_id=payment.id,
                     after=payment,
                     created_by=data.user_id,
+                    ip_address="system",
+                    user_agent="system"
                 ))
             except Exception as audit_exc:
                 logger.error(f"[ProcessPayment] Audit failed for payment {payment.id}: {audit_exc!r}")
@@ -49,8 +62,13 @@ class ProcessPayment:
             raise
 
 class GetPaymentDetails:
-    def __init__(self) -> None:
-        self._repo = repositories.payment.payment
+    def __init__(self, repos: Optional[Repository] = None) -> None:
+        if repos:
+            self._repo = repos.payment.payment
+        else:
+            from tuned.repository import repositories
+            self._repo = repositories.payment.payment
+
     def execute(self, payment_id: str) -> PaymentResponseDTO:
         try:
             return self._repo.get_by_id(payment_id)
@@ -59,9 +77,16 @@ class GetPaymentDetails:
             raise
 
 class ClientMarkAsPaid:
-    def __init__(self) -> None:
-        self._repo = repositories.payment.payment
-        self._audit = audit_service
+    def __init__(self, repos: Optional[Repository] = None) -> None:
+        if repos:
+            self._repo = repos.payment.payment
+            from tuned.interface.audit import AuditService
+            self._audit = AuditService(repos=repos)
+        else:
+            from tuned.repository import repositories
+            self._repo = repositories.payment.payment
+            from tuned.interface.audit import audit_service
+            self._audit = audit_service
         
     def execute(self, payment_id: str, client_proof_reference: str, client_id: str) -> PaymentResponseDTO:
         try:  
@@ -85,6 +110,8 @@ class ClientMarkAsPaid:
                     before=payment,
                     after=updated_payment,
                     created_by=client_id,
+                    ip_address="system",
+                    user_agent="system"
                 ))
             except Exception as audit_exc:
                 logger.error(f"[ClientMarkAsPaid] Audit failed for payment {updated_payment.id}: {audit_exc!r}")
@@ -106,9 +133,16 @@ class ClientMarkAsPaid:
             raise
 
 class AdminVerifyPayment:
-    def __init__(self) -> None:
-        self._repo = repositories.payment.payment
-        self._audit = audit_service
+    def __init__(self, repos: Optional[Repository] = None) -> None:
+        if repos:
+            self._repo = repos.payment.payment
+            from tuned.interface.audit import AuditService
+            self._audit = AuditService(repos=repos)
+        else:
+            from tuned.repository import repositories
+            self._repo = repositories.payment.payment
+            from tuned.interface.audit import audit_service
+            self._audit = audit_service
         
     def execute(self, payment_id: str, admin_id: str) -> PaymentResponseDTO:
         try:
@@ -134,6 +168,8 @@ class AdminVerifyPayment:
                     before=payment,
                     after=updated_payment,
                     created_by=admin_id,
+                    ip_address="system",
+                    user_agent="system"
                 ))
             except Exception as audit_exc:
                 logger.error(f"[AdminVerifyPayment] Audit failed for payment {updated_payment.id}: {audit_exc!r}")

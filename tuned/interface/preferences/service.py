@@ -1,33 +1,45 @@
 import logging
 from dataclasses import asdict, is_dataclass
 from enum import Enum
-from typing import Any, Optional, cast
+from typing import Any, Optional, cast, TYPE_CHECKING
 from tuned.dtos.preferences import AllPreferencesResponseDTO, PreferenceResponseDTO, PreferenceUpdateDTO
-from tuned.repository import repositories
 from tuned.core.logging import get_logger
-from tuned.interface.audit.activity_log import ActivityLogService
 from tuned.dtos.audit import ActivityLogCreateDTO
 from tuned.core.events import EventBus, get_event_bus
 from tuned.dtos.base import BaseRequestDTO
 from tuned.repository.protocols import PreferenceRepositoryProtocol
+
+if TYPE_CHECKING:
+    from tuned.repository import Repository
+    from tuned.interface.protocols import ActivityLogServiceProtocol
 
 logger: logging.Logger = get_logger(__name__)
 
 class PreferenceService:
     def __init__(
         self,
+        repos: Optional["Repository"] = None,
         repo: Optional[PreferenceRepositoryProtocol] = None,
-        audit_service: Optional[ActivityLogService] = None,
+        audit_service: Optional["ActivityLogServiceProtocol"] = None,
         event_bus: Optional[EventBus] = None,
     ) -> None:
-        self._repo = repo or repositories.preferences
-        self._audit_service = audit_service or ActivityLogService()
+        if repos:
+            self._repo = repo or repos.preferences
+            from tuned.interface.audit import AuditService
+            self._audit = AuditService(repos=repos)
+            self._audit_service = audit_service or self._audit.activity_log
+        else:
+            from tuned.repository import repositories
+            self._repo = repo or repositories.preferences
+            from tuned.interface.audit import audit_service
+            self._audit = audit_service
+            self._audit_service = audit_service or self._audit.activity_log
+            
         self._event_bus = event_bus or get_event_bus()
 
     def get_user_preferences(self, user_id: str) -> AllPreferencesResponseDTO:
         try:
-            prefs = self._repo.get_all_preferences(user_id)
-            return prefs
+            return self._repo.get_all_preferences(user_id)
         except Exception as e:
             logger.error(f"Error fetching preferences for user {user_id}: {str(e)}")
             raise
@@ -54,8 +66,9 @@ class PreferenceService:
                 entity_id=user_id,
                 before=before_snapshot,
                 after=after_snapshot,
-                ip_address=locale.ip_address if locale else None,
-                user_agent=locale.user_agent if locale else None
+                ip_address=locale.ip_address if locale else "unknown",
+                user_agent=locale.user_agent if locale else "unknown",
+                created_by=user_id
             )
             self._audit_service.log(audit_data)
 

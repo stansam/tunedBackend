@@ -13,12 +13,8 @@ logger: logging.Logger = get_logger(__name__)
 
 
 class AcademicLevelService:
-    def __init__(self, repos: Optional[Repository] = None) -> None:
-        if repos:
-            self._repo = repos.academic_level
-        else:
-            from tuned.repository import repositories
-            self._repo = repositories.academic_level
+    def __init__(self, repos: Repository) -> None:
+        self._repo = repos.academic_level
 
     def create_academic_level(self, data: AcademicLevelDTO) -> AcademicLevelResponseDTO:
         try:

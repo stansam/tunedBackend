@@ -22,8 +22,8 @@ class ReferralEventHandlers:
         if new_user_id and referral_code:
             logger.info(f"[ReferralEventHandlers] Processing referral for new user {new_user_id} with code {referral_code}")
             try:
-                from tuned.interface import referral as referral_interface
-                referral_interface.process_signup(str(new_user_id), str(referral_code))
+                from tuned.utils.dependencies import get_services
+                get_services().referral.process_signup(str(new_user_id), str(referral_code))
             except Exception as e:
                 logger.error(f"[ReferralEventHandlers] Failed to process referral signup: {e}")
 

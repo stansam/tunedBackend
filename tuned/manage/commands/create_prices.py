@@ -3,7 +3,7 @@ import click
 from flask.cli import with_appcontext
 
 from tuned.dtos import PricingCategoryDTO, PriceRateDTO
-from tuned.interface import Services
+from tuned.utils.dependencies import get_services
 from tuned.manage.data import pricing_categories_dict, price_rates_dict, pricing_level_names
 from tuned.models import AcademicLevel, Deadline, PricingCategory
 from tuned.extensions import db
@@ -31,7 +31,7 @@ def _build_category_map() -> dict[str, str]:
 @click.command("create-prices")
 @with_appcontext
 def create_prices() -> None:
-    services = Services()
+    services = get_services()
 
     pc_created = pc_skipped = 0
     click.echo("Seeding pricing categories…")

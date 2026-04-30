@@ -12,13 +12,8 @@ if TYPE_CHECKING:
 logger: logging.Logger = get_logger(__name__)
 
 class OrderStatusHistoryService:
-    def __init__(self, repos: Optional[Repository] = None) -> None:
-        self._repo: OrderStatusHistoryRepositoryProtocol
-        if repos:
-            self._repo = repos.audit.order_status_history
-        else:
-            from tuned.repository import repositories
-            self._repo = repositories.audit.order_status_history
+    def __init__(self, repos: Repository) -> None:
+        self._repo = repos.audit.order_status_history
 
     def log_status_change(self, data: OrderStatusHistoryCreateDTO) -> OrderStatusHistoryResponseDTO:
         try:

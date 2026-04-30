@@ -64,11 +64,12 @@ class PaymentEventHandlers:
     def _on_invoice_created(self, event_data: Dict[str, Any]) -> None:
         try:
             logger.info(f"[PaymentEventHandlers] Processing invoice.created: {event_data['invoice_id']}")
-            from tuned.repository import repositories
+            from tuned.utils.dependencies import get_services
             from tuned.services.email_service import send_invoice_email
             
-            invoice = repositories.payment.invoice.get_by_id(event_data['invoice_id'])
-            user = repositories.user.get_user_by_id(event_data['user_id'])
+            services = get_services()
+            invoice = services.payment.invoice.get_details(event_data['invoice_id'])
+            user = services._repos.user.get_user_by_id(event_data['user_id'])
             send_invoice_email(user, invoice)
         except Exception as exc:
             logger.error(f"[PaymentEventHandlers] Error in invoice.created handler: {exc!r}")

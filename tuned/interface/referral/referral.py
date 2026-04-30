@@ -18,12 +18,12 @@ logger: logging.Logger = get_logger(__name__)
 class ReferralInterface(ReferralInterfaceProtocol):
     def __init__(
         self,
-        repos: Optional["Repository"] = None,
+        repos: "Repository",
         service: Optional[ReferralService] = None,
     ) -> None:
         if service:
             self._service = service
-        elif repos:
+        else:
             from tuned.interface.audit import AuditService
             self._audit = AuditService(repos=repos)
             self._service = ReferralService(
@@ -32,19 +32,9 @@ class ReferralInterface(ReferralInterfaceProtocol):
                 order_repo=repos.order,
                 audit_service=self._audit.activity_log
             )
-        else:
-            from tuned.repository import repositories
-            from tuned.interface.audit import audit_service
-            self._audit = audit_service
-            self._service = ReferralService(
-                user_repo=repositories.user,
-                referral_repo=repositories.referral,
-                order_repo=repositories.order,
-                audit_service=self._audit.activity_log
-            )
         
-        self._user_repo = repos.user if repos else repositories.user
-        self._referral_repo = repos.referral if repos else repositories.referral
+        self._user_repo = repos.user
+        self._referral_repo = repos.referral
     
     def get_by_id(self, id: str) -> Optional[ReferralResponseDTO]:
         return self._referral_repo.get_by_id(id)

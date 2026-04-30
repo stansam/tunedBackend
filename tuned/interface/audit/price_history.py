@@ -12,13 +12,8 @@ if TYPE_CHECKING:
 logger: logging.Logger = get_logger(__name__)
 
 class PriceHistoryService:
-    def __init__(self, repos: Optional[Repository] = None) -> None:
-        self._repo: PriceHistoryRepositoryProtocol
-        if repos:
-            self._repo = repos.audit.price_history
-        else:
-            from tuned.repository import repositories
-            self._repo = repositories.audit.price_history
+    def __init__(self, repos: Repository) -> None:
+        self._repo = repos.audit.price_history
 
     def log_price_change(self, data: PriceHistoryCreateDTO) -> PriceHistoryResponseDTO:
         try:

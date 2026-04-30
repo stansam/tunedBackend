@@ -15,12 +15,8 @@ if TYPE_CHECKING:
 logger: logging.Logger = get_logger(__name__)
 
 class PricingCategoryService:
-    def __init__(self, repos: Optional[Repository] = None) -> None:
-        if repos:
-            self._repo = repos.pricing_category
-        else:
-            from tuned.repository import repositories
-            self._repo = repositories.pricing_category
+    def __init__(self, repos: Repository) -> None:
+        self._repo = repos.pricing_category
 
     def create_category(self, data: PricingCategoryDTO) -> PricingCategoryResponseDTO:
         try:

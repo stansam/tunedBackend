@@ -18,7 +18,7 @@ if TYPE_CHECKING:
     from tuned.repository import Repository
 
 class Services:
-    def __init__(self, repos: Optional["Repository"] = None) -> None:
+    def __init__(self, repos: "Repository") -> None:
         self._repos = repos
         self._user: Optional[UserService] = None
         self._referral: Optional[ReferralInterface] = None
@@ -168,29 +168,3 @@ class Services:
         return self._payment
 
 
-# Global instance for legacy support.
-# DEPRECATED: Do not use in new code. Use dependency injection instead.
-from tuned.repository import repositories
-interface = Services(repos=repositories)
-user = interface.user
-referral = interface.referral
-academic_level = interface.academic_level
-deadline = interface.deadline
-service = interface.service
-service_category = interface.service_category
-sample = interface.sample
-testimonial = interface.testimonial
-faq = interface.faq
-blogs_agg = interface.blogs
-blog_category = interface.blog_category
-blog_post = interface.blog_post
-blog_comment = interface.blog_comment
-comment_reaction = interface.comment_reaction
-price_rate = interface.price_rate
-pricing_category = interface.pricing_category
-notification = interface.notification
-order = interface.order
-preferences = interface.preferences
-analytics = interface.analytics
-payment = interface.payment
-audit = interface.audit

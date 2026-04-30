@@ -56,9 +56,10 @@ class OrderEventHandlers:
             )
 
         try:
-            from tuned.interface.audit import audit_service
+            from tuned.utils.dependencies import get_services
             from tuned.dtos.audit import OrderStatusHistoryCreateDTO
-            audit_service.order_status_history.log_status_change(OrderStatusHistoryCreateDTO(
+            services = get_services()
+            services.audit.order_status_history.log_status_change(OrderStatusHistoryCreateDTO(
                 order_id=str(order_id),
                 user_id=str(client_id),
                 old_status=payload.get("old_status"),

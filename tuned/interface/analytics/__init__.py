@@ -6,7 +6,7 @@ if TYPE_CHECKING:
     from tuned.repository import Repository
 
 class Analytics:
-    def __init__(self, repos: Optional[Repository] = None) -> None:
+    def __init__(self, repos: Repository) -> None:
         self._repos = repos
         self._client: AnalyticsService | None = None
 
@@ -16,12 +16,7 @@ class Analytics:
             self._client = AnalyticsService(repos=self._repos)
         return self._client
 
-# Legacy support
-from tuned.repository import repositories
-analytics = Analytics(repos=repositories)
-
 __all__ = [
     'Analytics',
-    'analytics',
     'AnalyticsService',
 ]

@@ -3,7 +3,7 @@ import click
 from flask.cli import with_appcontext
 
 from tuned.dtos import ServiceCategoryDTO, ServiceDTO
-from tuned.interface import Services
+from tuned.utils.dependencies import get_services
 from tuned.manage.data import (
     service_categories_dict,
     service_category_descriptions_dict,
@@ -30,7 +30,7 @@ def _build_service_cat_map() -> dict[str, str]:
 @click.command("create-services")
 @with_appcontext
 def create_services() -> None:
-    services = Services()
+    services = get_services()
 
     pricing_cat_map = _build_pricing_cat_map()
     if not pricing_cat_map:

@@ -5,12 +5,13 @@ import logging
 from flask import request
 from flask.views import MethodView
 from marshmallow import ValidationError
+from typing import Any
 
 from tuned.apis.auth.schemas import EmailVerifyResendSchema, EmailVerifyConfirmSchema
 from tuned.core.exceptions import NotFound
 from tuned.core.logging import get_logger
 from tuned.dtos import EmailVerificationResendDTO, EmailVerifyConfirmDTO
-from tuned.interface import user as _interface
+from tuned.utils.dependencies import get_services
 from tuned.utils.auth import get_user_ip, get_user_agent
 from tuned.utils.decorators import rate_limit
 from tuned.utils.responses import (
@@ -25,7 +26,7 @@ logger: logging.Logger = get_logger(__name__)
 class EmailVerificationResend(MethodView):
     decorators = [rate_limit(max_requests=3, window=900)]
 
-    def post(self) -> tuple:
+    def post(self) -> tuple[Any, int]:
         try:
             schema = EmailVerifyResendSchema()
             data = schema.load(request.get_json(silent=True) or {})
@@ -39,7 +40,7 @@ class EmailVerificationResend(MethodView):
                 ip_address=get_user_ip(),
                 user_agent=get_user_agent(),
             )
-            _interface.resend_verification_email(dto)
+            get_services().user.resend_verification_email(dto)
             return success_response({'message': 'If that address is registered, a new verification email has been sent.'})
 
         except ValueError as exc:
@@ -59,7 +60,7 @@ class EmailVerificationResend(MethodView):
 
 
 class EmailVerifyConfirm(MethodView):
-    def get(self) -> tuple:
+    def get(self) -> tuple[Any, int]:
         try:
             schema = EmailVerifyConfirmSchema()
             data = schema.load(request.args.to_dict())
@@ -74,7 +75,7 @@ class EmailVerifyConfirm(MethodView):
                 ip_address=get_user_ip(),
                 user_agent=get_user_agent(),
             )
-            success, reason = _interface.confirm_email_verification(dto)
+            success, reason = get_services().user.confirm_email_verification(dto)
 
             if success:
                 logger.info(f'[confirm] Email verified for uid={dto.uid}')

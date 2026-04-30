@@ -21,15 +21,8 @@ if TYPE_CHECKING:
 logger: logging.Logger = get_logger(__name__)
 
 class PriceRateService:
-    def __init__(self, interfaces: Optional[Services] = None, repos: Optional[Repository] = None) -> None:
-        if repos:
-            self._repo: PriceRateRepositoryProtocol = repos.price_rate
-        elif interfaces and hasattr(interfaces, "_repos") and interfaces._repos:
-            self._repo = interfaces._repos.price_rate
-        else:
-            from tuned.repository import repositories
-            self._repo = repositories.price_rate
-            
+    def __init__(self, interfaces: Services, repos: Repository) -> None:
+        self._repo = repos.price_rate
         self._interfaces = interfaces
 
     def create_rate(self, data: PriceRateDTO) -> PriceRateResponseDTO:
@@ -108,9 +101,6 @@ class PriceRateService:
     def calculate_price(self, data: CalculatePriceRequestDTO) -> CalculatePriceResponseDTO:
         try:
             logger.info("Calculating price for data=%s", data)
-            if not self._interfaces:
-                from tuned.interface import interface
-                return CalculatePriceService(interface).execute(data)
             return CalculatePriceService(self._interfaces).execute(data)
         except NotFound:
             logger.error("Price rate not found: %s", data)

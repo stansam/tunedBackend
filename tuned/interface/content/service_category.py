@@ -13,12 +13,8 @@ logger: logging.Logger = get_logger(__name__)
 
 
 class ServiceCategoryService:
-    def __init__(self, repos: Optional[Repository] = None) -> None:
-        if repos:
-            self._repo = repos.service_category
-        else:
-            from tuned.repository import repositories
-            self._repo = repositories.service_category
+    def __init__(self, repos: Repository) -> None:
+        self._repo = repos.service_category
 
     def create_category(self, data: ServiceCategoryDTO) -> ServiceCategoryResponseDTO:
         try:

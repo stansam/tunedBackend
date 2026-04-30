@@ -12,16 +12,10 @@ if TYPE_CHECKING:
 logger: logging.Logger = get_logger(__name__)
 
 class ApplyDiscount:
-    def __init__(self, repos: Optional[Repository] = None) -> None:
-        if repos:
-            self._repo = repos.payment.discount
-            from tuned.interface.audit import AuditService
-            self._audit = AuditService(repos=repos)
-        else:
-            from tuned.repository import repositories
-            self._repo = repositories.payment.discount
-            from tuned.interface.audit import audit_service
-            self._audit = audit_service
+    def __init__(self, repos: Repository) -> None:
+        self._repo = repos.payment.discount
+        from tuned.interface.audit import AuditService
+        self._audit = AuditService(repos=repos)
 
     def execute(self, code: str, order_value: float, user_id: str) -> DiscountResponseDTO:
         try:
@@ -59,16 +53,10 @@ class ApplyDiscount:
             raise
 
 class CreateDiscount:
-    def __init__(self, repos: Optional[Repository] = None) -> None:
-        if repos:
-            self._repo = repos.payment.discount
-            from tuned.interface.audit import AuditService
-            self._audit = AuditService(repos=repos)
-        else:
-            from tuned.repository import repositories
-            self._repo = repositories.payment.discount
-            from tuned.interface.audit import audit_service
-            self._audit = audit_service
+    def __init__(self, repos: Repository) -> None:
+        self._repo = repos.payment.discount
+        from tuned.interface.audit import AuditService
+        self._audit = AuditService(repos=repos)
 
     def execute(self, data: DiscountCreateDTO, actor_id: str) -> DiscountResponseDTO:
         try:
@@ -96,12 +84,8 @@ class CreateDiscount:
             raise
 
 class GetDiscountDetails:
-    def __init__(self, repos: Optional[Repository] = None) -> None:
-        if repos:
-            self._repo = repos.payment.discount
-        else:
-            from tuned.repository import repositories
-            self._repo = repositories.payment.discount
+    def __init__(self, repos: Repository) -> None:
+        self._repo = repos.payment.discount
 
     def execute(self, discount_id: str) -> DiscountResponseDTO:
         try:

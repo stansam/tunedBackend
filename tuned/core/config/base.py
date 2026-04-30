@@ -30,7 +30,7 @@ class BaseConfig:
     REMEMBER_COOKIE_HTTPONLY: bool = True
     REMEMBER_COOKIE_DURATION: timedelta = timedelta(days=30)
     
-    JWT_SECRET_KEY: str = os.environ.get('JWT_SECRET_KEY') or os.environ.get('SECRET_KEY')
+    JWT_SECRET_KEY: str = os.environ.get('JWT_SECRET_KEY') or os.environ.get('SECRET_KEY') or "dev_jwt_secret"
     JWT_ACCESS_TOKEN_EXPIRES: timedelta = timedelta(hours=1)
     JWT_REFRESH_TOKEN_EXPIRES: timedelta = timedelta(days=30)
     JWT_TOKEN_LOCATION: list[str] = ['headers', 'cookies']
@@ -45,8 +45,8 @@ class BaseConfig:
     MAIL_PORT: int = int(os.environ.get('EMAIL_PORT', 587))
     MAIL_USE_TLS: bool = os.environ.get('EMAIL_USE_TLS', 'True').lower() == 'true'
     MAIL_USE_SSL: bool = os.environ.get('EMAIL_USE_SSL', 'False').lower() == 'true'
-    MAIL_USERNAME: str = os.environ.get('MAIL_USERNAME')
-    MAIL_PASSWORD: str = os.environ.get('MAIL_PASSWORD')
+    MAIL_USERNAME: str = os.environ.get('MAIL_USERNAME') or ""
+    MAIL_PASSWORD: str = os.environ.get('MAIL_PASSWORD') or ""
     MAIL_DEFAULT_SENDER: str = os.environ.get('MAIL_DEFAULT_SENDER', 'info@tunedessays.com')
     
     MAX_CONTENT_LENGTH: int = 16 * 1024 * 1024  # 16 MB max file size

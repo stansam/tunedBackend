@@ -13,12 +13,8 @@ logger: logging.Logger = get_logger(__name__)
 
 
 class ServiceService:
-    def __init__(self, repos: Optional[Repository] = None) -> None:
-        if repos:
-            self._repo = repos.service
-        else:
-            from tuned.repository import repositories
-            self._repo = repositories.service
+    def __init__(self, repos: Repository) -> None:
+        self._repo = repos.service
 
     def create_service(self, data: ServiceDTO) -> ServiceResponseDTO:
         try:

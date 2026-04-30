@@ -4,7 +4,7 @@ from flask import request
 from flask_socketio import emit, join_room # leave_room
 from flask_login import current_user
 from tuned.extensions import socketio
-from tuned.interface import notification as notification_interface
+from tuned.utils.dependencies import get_services
 import logging
 from typing import Any
 
@@ -25,7 +25,7 @@ def handle_connect() -> bool:
         
         logger.info(f"User {user_id} connected to WebSocket, joined room: {room}")
         
-        unread = notification_interface.get_unread_count(str(user_id))
+        unread = get_services().notification.get_unread_count(str(user_id))
         emit('notification:count', {'unread_count': unread})
         
         return True
@@ -53,7 +53,7 @@ def handle_mark_notification_read(data: dict[str, Any]) -> None:
             emit('error', {'message': 'Notification ID is required'})
             return
         
-        notification = notification_interface.mark_read(
+        notification = get_services().notification.mark_read(
             str(notification_id),
             str(current_user.id),
         )
@@ -74,7 +74,7 @@ def handle_get_unread_count() -> None:
 
         user_id = current_user.id
 
-        unread = notification_interface.get_unread_count(str(user_id))
+        unread = get_services().notification.get_unread_count(str(user_id))
         emit('notification:count', {'unread_count': unread})
         
     except Exception as e:

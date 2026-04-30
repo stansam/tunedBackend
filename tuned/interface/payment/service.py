@@ -20,7 +20,7 @@ if TYPE_CHECKING:
     )
 
 class PaymentServiceManager:
-    def __init__(self, repos: Optional[Repository] = None) -> None:
+    def __init__(self, repos: Repository) -> None:
         self._process = ProcessPayment(repos=repos)
         self._get = GetPaymentDetails(repos=repos)
         self._mark_paid_client = ClientMarkAsPaid(repos=repos)
@@ -39,7 +39,7 @@ class PaymentServiceManager:
         return self._verify_payment.execute(payment_id, admin_id)
 
 class AcceptedMethodServiceManager:
-    def __init__(self, repos: Optional[Repository] = None) -> None:
+    def __init__(self, repos: Repository) -> None:
         self._create = AdminCreateAcceptedMethod(repos=repos)
         self._update = AdminUpdateAcceptedMethod(repos=repos)
         self._get_all = GetAcceptedMethods(repos=repos)
@@ -54,7 +54,7 @@ class AcceptedMethodServiceManager:
         return self._get_all.execute()
 
 class InvoiceServiceManager:
-    def __init__(self, repos: Optional[Repository] = None) -> None:
+    def __init__(self, repos: Repository) -> None:
         self._generate = GenerateInvoice(repos=repos)
         self._get = GetInvoiceDetails(repos=repos)
         self._mark_paid = MarkInvoicePaid(repos=repos)
@@ -69,7 +69,7 @@ class InvoiceServiceManager:
         return self._mark_paid.execute(invoice_id, payment_id, actor_id)
 
 class DiscountServiceManager:
-    def __init__(self, repos: Optional[Repository] = None) -> None:
+    def __init__(self, repos: Repository) -> None:
         self._apply = ApplyDiscount(repos=repos)
         self._create = CreateDiscount(repos=repos)
         self._get = GetDiscountDetails(repos=repos)
@@ -84,7 +84,7 @@ class DiscountServiceManager:
         return self._get.execute(discount_id)
 
 class RefundServiceManager:
-    def __init__(self, repos: Optional[Repository] = None) -> None:
+    def __init__(self, repos: Repository) -> None:
         self._process = ProcessRefund(repos=repos)
         self._approve = ApproveRefund(repos=repos)
 
@@ -95,7 +95,7 @@ class RefundServiceManager:
         return self._approve.execute(refund_id, admin_id)
 
 class TransactionServiceManager:
-    def __init__(self, repos: Optional[Repository] = None) -> None:
+    def __init__(self, repos: Repository) -> None:
         self._log = LogTransaction(repos=repos)
         self._get_history = GetTransactionHistory(repos=repos)
 

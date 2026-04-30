@@ -13,14 +13,8 @@ logger: logging.Logger = get_logger(__name__)
 
 
 class FAQService:
-    """Service layer for FAQ business logic."""
-
-    def __init__(self, repos: Optional[Repository] = None) -> None:
-        if repos:
-            self._repo = repos.faq
-        else:
-            from tuned.repository import repositories
-            self._repo = repositories.faq
+    def __init__(self, repos: Repository) -> None:
+        self._repo = repos.faq
 
     def create_faq(self, data: FaqDTO) -> FaqResponseDTO:
         try:

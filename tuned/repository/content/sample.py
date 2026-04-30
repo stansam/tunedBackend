@@ -202,8 +202,6 @@ class GetSamplesByServiceId:
 from tuned.repository.protocols import SampleRepositoryProtocol
 
 class SampleRepository(SampleRepositoryProtocol):
-    """Facade composing all Sample command objects."""
-
     def __init__(self, session: Session) -> None:
         self.session = session
 

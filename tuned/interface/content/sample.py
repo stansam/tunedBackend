@@ -13,12 +13,8 @@ logger: logging.Logger = get_logger(__name__)
 
 
 class SampleService:
-    def __init__(self, repos: Optional[Repository] = None) -> None:
-        if repos:
-            self._repo = repos.sample
-        else:
-            from tuned.repository import repositories
-            self._repo = repositories.sample
+    def __init__(self, repos: Repository) -> None:
+        self._repo = repos.sample
 
     def create_sample(self, data: SampleDTO) -> SampleResponseDTO:
         try:
@@ -91,3 +87,11 @@ class SampleService:
         except DatabaseError:
             logger.error("Database error while deleting sample")
             raise DatabaseError("Database error while deleting sample")
+
+
+    def list_featured_samples(self) -> list[SampleResponseDTO]:
+        try:
+            return self._repo.get_featured()
+        except DatabaseError:
+            logger.error("Database error while fetching featured samples")
+            raise DatabaseError("Database error while fetching featured samples")

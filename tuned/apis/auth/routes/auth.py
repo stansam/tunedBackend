@@ -1,9 +1,9 @@
 from tuned.models import GenderEnum
 from tuned.dtos.base import BaseRequestDTO
-from flask import request, current_app, session, make_response
+from flask import request, current_app, session, make_response, Response
 from flask_login import current_user, login_required, logout_user
 from flask.views import MethodView
-from tuned.interface import user as _interface
+from tuned.utils.dependencies import get_services
 from tuned.utils.responses import error_response, success_response, validation_error_response, unauthorized_response
 from tuned.utils.auth import (
     get_user_ip,
@@ -19,12 +19,13 @@ from tuned.dtos import UserResponseDTO, LoginRequestDTO, CreateUserDTO
 from dataclasses import asdict
 from marshmallow import ValidationError
 import logging
+from typing import Any
 
 logger: logging.Logger = get_logger(__name__)
 
 
 class AuthCheck(MethodView):
-    def get(self):
+    def get(self) -> tuple[Any, int]:
         if current_user.is_authenticated:
             data = UserResponseDTO.from_model(current_user)
             logger.debug(f'User {current_user.email} is authenticated')
@@ -37,7 +38,7 @@ class AuthCheck(MethodView):
 class Login(MethodView):
     decorators = [rate_limit(max_requests=5, window=60)]
 
-    def post(self):
+    def post(self) -> tuple[Any, int]:
         try:
             if current_user.is_authenticated:
                 logger.debug(f'User {current_user.email} is already authenticated')
@@ -53,7 +54,7 @@ class Login(MethodView):
 
         try:
             dto_data = LoginRequestDTO(**data, ip_address=get_user_ip(), user_agent=get_user_agent())
-            success, user_dict = _interface.login_user(dto_data)
+            success, user_dict = get_services().user.login_user(dto_data)
 
             if not success:
                 return error_response('Login failed. Please try again.', status=500)
@@ -73,7 +74,7 @@ class Login(MethodView):
 class Logout(MethodView):
     decorators = [login_required]
 
-    def post(self):
+    def post(self) -> Response | tuple[Any, int]:
         try:
             user_id = current_user.id if current_user.is_authenticated else None
             ip = get_user_ip()
@@ -102,7 +103,7 @@ class Logout(MethodView):
 class Register(MethodView):
     decorators = [rate_limit(max_requests=3, window=300)]
 
-    def post(self):
+    def post(self) -> tuple[Any, int]:
         try:
             if current_user.is_authenticated:
                 logger.debug(f'User {current_user.email} is already authenticated')
@@ -131,7 +132,7 @@ class Register(MethodView):
 
             user_dto = CreateUserDTO(**data)
             locale = BaseRequestDTO(ip_address=get_user_ip(), user_agent=get_user_agent())
-            result = _interface.create_user(user_dto, locale, referred_by_code=referred_by_code)
+            result = get_services().user.create_user(user_dto, locale, referred_by_code=referred_by_code)
 
             logger.info(f'User {result.get("email")} registered successfully')
             return success_response(result)

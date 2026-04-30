@@ -12,16 +12,10 @@ if TYPE_CHECKING:
 logger: logging.Logger = get_logger(__name__)
 
 class LogTransaction:
-    def __init__(self, repos: Optional[Repository] = None) -> None:
-        if repos:
-            self._repo = repos.payment.transaction
-            from tuned.interface.audit import AuditService
-            self._audit = AuditService(repos=repos)
-        else:
-            from tuned.repository import repositories
-            self._repo = repositories.payment.transaction
-            from tuned.interface.audit import audit_service
-            self._audit = audit_service
+    def __init__(self, repos: Repository) -> None:
+        self._repo = repos.payment.transaction
+        from tuned.interface.audit import AuditService
+        self._audit = AuditService(repos=repos)
 
     def execute(self, data: TransactionCreateDTO, actor_id: str) -> TransactionResponseDTO:
         try:
@@ -49,12 +43,8 @@ class LogTransaction:
             raise
 
 class GetTransactionHistory:
-    def __init__(self, repos: Optional[Repository] = None) -> None:
-        if repos:
-            self._repo = repos.payment.transaction
-        else:
-            from tuned.repository import repositories
-            self._repo = repositories.payment.transaction
+    def __init__(self, repos: Repository) -> None:
+        self._repo = repos.payment.transaction
 
     def execute(self, payment_id: str) -> list[TransactionResponseDTO]:
         try:

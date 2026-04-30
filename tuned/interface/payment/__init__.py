@@ -14,7 +14,7 @@ if TYPE_CHECKING:
     from tuned.repository import Repository
 
 class PaymentService:
-    def __init__(self, repos: Optional[Repository] = None) -> None:
+    def __init__(self, repos: Repository) -> None:
         self._repos = repos
         self._payment: PaymentServiceManager | None = None
         self._invoice: InvoiceServiceManager | None = None
@@ -59,6 +59,3 @@ class PaymentService:
             self._accepted_method = AcceptedMethodServiceManager(repos=self._repos)
         return self._accepted_method
 
-# Legacy support
-from tuned.repository import repositories
-payment_service = PaymentService(repos=repositories)

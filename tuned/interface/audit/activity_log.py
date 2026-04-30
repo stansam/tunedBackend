@@ -13,13 +13,8 @@ if TYPE_CHECKING:
 logger: logging.Logger = get_logger(__name__)
 
 class ActivityLogService:
-    def __init__(self, repos: Optional[Repository] = None) -> None:
-        self._repo: ActivityLogRepositoryProtocol
-        if repos:
-            self._repo = repos.audit.activity_log
-        else:
-            from tuned.repository import repositories
-            self._repo = repositories.audit.activity_log
+    def __init__(self, repos: Repository) -> None:
+        self._repo = repos.audit.activity_log
 
     def log(self, data: ActivityLogCreateDTO) -> ActivityLogResponseDTO:
         try:

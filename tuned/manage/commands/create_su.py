@@ -2,7 +2,7 @@ from flask.cli import with_appcontext
 # from tuned.models import User
 # from tuned.models.enums import GenderEnum
 import click 
-from tuned.interface import Services
+from tuned.utils.dependencies import get_services
 from tuned.dtos import CreateUserDTO
 # from tuned.extensions import db
 
@@ -15,7 +15,7 @@ from tuned.dtos import CreateUserDTO
 @with_appcontext
 def create_superuser(username, first_name, last_name, email, password) -> str:
     try:
-        user_service = Services.user
+        user_service = get_services().user
         user = user_service.get_user_by_email(email)
 
         if user:

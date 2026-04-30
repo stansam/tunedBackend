@@ -3,7 +3,7 @@ import click
 from flask.cli import with_appcontext
 
 from tuned.dtos import FaqDTO
-from tuned.interface import Services
+from tuned.utils.dependencies import get_services
 from tuned.manage.data import faqs_dict
 from tuned.repository.exceptions import AlreadyExists #, DatabaseError
 from tuned.core.logging import get_logger
@@ -14,7 +14,7 @@ logger: logging.Logger = get_logger(__name__)
 @click.command("create-faqs")
 @with_appcontext
 def create_faqs() -> None:
-    services = Services()
+    services = get_services()
 
     created = skipped = failed = 0
     click.echo("Seeding FAQs…")

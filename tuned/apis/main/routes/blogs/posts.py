@@ -1,7 +1,7 @@
 # from tuned.apis.main.schemas.blogs import PostByCategorySchema
 from flask import request
 from flask.views import MethodView
-from tuned.interface import blog_post as _interface
+from tuned.utils.dependencies import get_services
 from tuned.utils.responses import paginated_response, error_response, validation_error_response, success_response
 from tuned.redis_client import redis_client
 from tuned.apis.main.schemas import BlogFilterSchema
@@ -12,6 +12,7 @@ from marshmallow import ValidationError
 from dataclasses import asdict
 import json
 import logging
+from typing import Any
 
 logger: logging.Logger = get_logger(__name__)
 
@@ -19,10 +20,10 @@ CACHE_KEY = 'blogs:all'
 CACHE_TTL = 300
 
 class ListBlogPosts(MethodView):
-    def __init__(self):
+    def __init__(self) -> None:
         self._schema = BlogFilterSchema()
 
-    def get(self):
+    def get(self) -> tuple[Any, int]:
         try:
             params = {}
             if request.args:
@@ -45,7 +46,7 @@ class ListBlogPosts(MethodView):
                     total=data.get("total")
                     )
             req = BlogPostListRequestDTO(**params)
-            blogs = _interface.list_published(req)
+            blogs = get_services().blogs.post.list_published(req)
             data = asdict(blogs)
 
             redis_client.setex(
@@ -69,14 +70,14 @@ class ListBlogPosts(MethodView):
 
 class GetBlogPost(MethodView):
 
-    def get(self, slug):
+    def get(self, slug: str) -> tuple[Any, int]:
         try:
             cached_data = redis_client.get(f'blog:{slug}')
             if cached_data:
                 logger.debug('Returning blog from cache')
                 return success_response(json.loads(cached_data))
             
-            blog = _interface.get_by_slug(slug)
+            blog = get_services().blogs.post.get_by_slug(slug)
             data = asdict(blog)
 
             redis_client.setex(
@@ -95,14 +96,14 @@ class GetBlogPost(MethodView):
 
 class GetRelatedBlogPosts(MethodView):
 
-    def get(self, slug):
+    def get(self, slug: str) -> tuple[Any, int]:
         try:
             cached_data = redis_client.get(f'blog:{slug}:related')
             if cached_data:
                 logger.debug('Returning blogs from cache')
                 return success_response(json.loads(cached_data))
 
-            blog = _interface.get_related(slug)
+            blog = get_services().blogs.post.get_related(slug)
             data = [asdict(b) for b in blog]
 
             redis_client.setex(

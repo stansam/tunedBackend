@@ -33,7 +33,7 @@ def mask_sensitive_fields(data: Any) -> Any:
         return [mask_sensitive_fields(item) for item in data]
     return data
 
-def sanitize_json_snapshot(data: Any) -> Optional[dict]:
+def sanitize_json_snapshot(data: Any) -> Optional[dict[str, Any]]:
     if data is None:
         return None
     

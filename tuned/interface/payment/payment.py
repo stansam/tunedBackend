@@ -15,16 +15,10 @@ logger: logging.Logger = get_logger(__name__)
 event_bus = get_event_bus()
 
 class ProcessPayment:
-    def __init__(self, repos: Optional[Repository] = None) -> None:
-        if repos:
-            self._repo = repos.payment.payment
-            from tuned.interface.audit import AuditService
-            self._audit = AuditService(repos=repos)
-        else:
-            from tuned.repository import repositories
-            self._repo = repositories.payment.payment
-            from tuned.interface.audit import audit_service
-            self._audit = audit_service
+    def __init__(self, repos: Repository) -> None:
+        self._repo = repos.payment.payment
+        from tuned.interface.audit import AuditService
+        self._audit = AuditService(repos=repos)
 
     def execute(self, data: PaymentCreateDTO) -> PaymentResponseDTO:
         try:
@@ -62,12 +56,8 @@ class ProcessPayment:
             raise
 
 class GetPaymentDetails:
-    def __init__(self, repos: Optional[Repository] = None) -> None:
-        if repos:
-            self._repo = repos.payment.payment
-        else:
-            from tuned.repository import repositories
-            self._repo = repositories.payment.payment
+    def __init__(self, repos: Repository) -> None:
+        self._repo = repos.payment.payment
 
     def execute(self, payment_id: str) -> PaymentResponseDTO:
         try:
@@ -77,16 +67,10 @@ class GetPaymentDetails:
             raise
 
 class ClientMarkAsPaid:
-    def __init__(self, repos: Optional[Repository] = None) -> None:
-        if repos:
-            self._repo = repos.payment.payment
-            from tuned.interface.audit import AuditService
-            self._audit = AuditService(repos=repos)
-        else:
-            from tuned.repository import repositories
-            self._repo = repositories.payment.payment
-            from tuned.interface.audit import audit_service
-            self._audit = audit_service
+    def __init__(self, repos: Repository) -> None:
+        self._repo = repos.payment.payment
+        from tuned.interface.audit import AuditService
+        self._audit = AuditService(repos=repos)
         
     def execute(self, payment_id: str, client_proof_reference: str, client_id: str) -> PaymentResponseDTO:
         try:  
@@ -133,16 +117,10 @@ class ClientMarkAsPaid:
             raise
 
 class AdminVerifyPayment:
-    def __init__(self, repos: Optional[Repository] = None) -> None:
-        if repos:
-            self._repo = repos.payment.payment
-            from tuned.interface.audit import AuditService
-            self._audit = AuditService(repos=repos)
-        else:
-            from tuned.repository import repositories
-            self._repo = repositories.payment.payment
-            from tuned.interface.audit import audit_service
-            self._audit = audit_service
+    def __init__(self, repos: Repository) -> None:
+        self._repo = repos.payment.payment
+        from tuned.interface.audit import AuditService
+        self._audit = AuditService(repos=repos)
         
     def execute(self, payment_id: str, admin_id: str) -> PaymentResponseDTO:
         try:

@@ -22,7 +22,7 @@ def create_in_app_notification(
     category: str = 'general',
 ) -> None:
     try:
-        from tuned.interface import notification
+        from tuned.utils.dependencies import get_services
         from tuned.dtos.notification import NotificationCreateDTO
         from tuned.extensions import socketio
 
@@ -34,7 +34,7 @@ def create_in_app_notification(
             link=action_url,
             category=category
         )
-        notif = notification.create_notification(dto)
+        notif = get_services().notification.create_notification(dto)
 
         socketio.emit(
             'notification:new',

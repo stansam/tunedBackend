@@ -13,16 +13,10 @@ if TYPE_CHECKING:
 logger: logging.Logger = get_logger(__name__)
 
 class AdminCreateAcceptedMethod:
-    def __init__(self, repos: Optional[Repository] = None) -> None:
-        if repos:
-            self._repo = repos.payment.accepted_method
-            from tuned.interface.audit import AuditService
-            self._audit = AuditService(repos=repos)
-        else:
-            from tuned.repository import repositories
-            self._repo = repositories.payment.accepted_method
-            from tuned.interface.audit import audit_service
-            self._audit = audit_service
+    def __init__(self, repos: Repository) -> None:
+        self._repo = repos.payment.accepted_method
+        from tuned.interface.audit import AuditService
+        self._audit = AuditService(repos=repos)
 
     def execute(self, data: AcceptedMethodCreateDTO, admin_id: str) -> AcceptedMethodResponseDTO:
         try:
@@ -49,16 +43,10 @@ class AdminCreateAcceptedMethod:
             raise
 
 class AdminUpdateAcceptedMethod:
-    def __init__(self, repos: Optional[Repository] = None) -> None:
-        if repos:
-            self._repo = repos.payment.accepted_method
-            from tuned.interface.audit import AuditService
-            self._audit = AuditService(repos=repos)
-        else:
-            from tuned.repository import repositories
-            self._repo = repositories.payment.accepted_method
-            from tuned.interface.audit import audit_service
-            self._audit = audit_service
+    def __init__(self, repos: Repository) -> None:
+        self._repo = repos.payment.accepted_method
+        from tuned.interface.audit import AuditService
+        self._audit = AuditService(repos=repos)
 
     def execute(self, method_id: str, data: AcceptedMethodUpdateDTO, admin_id: str) -> AcceptedMethodResponseDTO:
         try:
@@ -91,12 +79,8 @@ class AdminUpdateAcceptedMethod:
             raise
 
 class GetAcceptedMethods:
-    def __init__(self, repos: Optional[Repository] = None) -> None:
-        if repos:
-            self._repo = repos.payment.accepted_method
-        else:
-            from tuned.repository import repositories
-            self._repo = repositories.payment.accepted_method
+    def __init__(self, repos: Repository) -> None:
+        self._repo = repos.payment.accepted_method
 
     def execute(self) -> list[AcceptedMethodResponseDTO]:
         try:

@@ -13,16 +13,10 @@ if TYPE_CHECKING:
 logger: logging.Logger = get_logger(__name__)
 
 class GenerateInvoice:
-    def __init__(self, repos: Optional[Repository] = None) -> None:
-        if repos:
-            self._repo = repos.payment.invoice
-            from tuned.interface.audit import AuditService
-            self._audit = AuditService(repos=repos)
-        else:
-            from tuned.repository import repositories
-            self._repo = repositories.payment.invoice
-            from tuned.interface.audit import audit_service
-            self._audit = audit_service
+    def __init__(self, repos: Repository) -> None:
+        self._repo = repos.payment.invoice
+        from tuned.interface.audit import AuditService
+        self._audit = AuditService(repos=repos)
 
     def execute(self, data: InvoiceCreateDTO) -> InvoiceResponseDTO:
         try:
@@ -58,12 +52,8 @@ class GenerateInvoice:
             raise
 
 class GetInvoiceDetails:
-    def __init__(self, repos: Optional[Repository] = None) -> None:
-        if repos:
-            self._repo = repos.payment.invoice
-        else:
-            from tuned.repository import repositories
-            self._repo = repositories.payment.invoice
+    def __init__(self, repos: Repository) -> None:
+        self._repo = repos.payment.invoice
 
     def execute(self, invoice_id: str) -> InvoiceResponseDTO:
         try:
@@ -73,16 +63,10 @@ class GetInvoiceDetails:
             raise
 
 class MarkInvoicePaid:
-    def __init__(self, repos: Optional[Repository] = None) -> None:
-        if repos:
-            self._repo = repos.payment.invoice
-            from tuned.interface.audit import AuditService
-            self._audit = AuditService(repos=repos)
-        else:
-            from tuned.repository import repositories
-            self._repo = repositories.payment.invoice
-            from tuned.interface.audit import audit_service
-            self._audit = audit_service
+    def __init__(self, repos: Repository) -> None:
+        self._repo = repos.payment.invoice
+        from tuned.interface.audit import AuditService
+        self._audit = AuditService(repos=repos)
 
     def execute(self, invoice_id: str, payment_id: str, actor_id: str) -> InvoiceResponseDTO:
         try:

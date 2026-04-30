@@ -3,7 +3,7 @@ import click
 from flask.cli import with_appcontext
 
 from tuned.dtos import SampleDTO
-from tuned.interface import Services
+from tuned.utils.dependencies import get_services
 from tuned.manage.data import samples_dict
 from tuned.models import Service, Tag
 from tuned.extensions import db
@@ -20,7 +20,7 @@ def _build_service_map() -> dict[str, str]:
 @click.command("create-samples")
 @with_appcontext
 def create_samples() -> None:
-    services = Services()
+    services = get_services()
     service_map = _build_service_map()
 
     if not service_map:

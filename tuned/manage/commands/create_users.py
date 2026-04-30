@@ -4,7 +4,7 @@ from flask.cli import with_appcontext
 
 from tuned.dtos import CreateUserDTO
 from tuned.dtos.base import BaseRequestDTO
-from tuned.interface import Services
+from tuned.utils.dependencies import get_services
 from tuned.manage.data import users_dict
 from tuned.models.enums import GenderEnum
 # from tuned.repository.exceptions import AlreadyExists, DatabaseError
@@ -15,7 +15,7 @@ logger: logging.Logger = get_logger(__name__)
 @click.command("create-users")
 @with_appcontext
 def create_users() -> None:
-    services = Services()
+    services = get_services()
     created = skipped = failed = 0
 
     for entry in users_dict:

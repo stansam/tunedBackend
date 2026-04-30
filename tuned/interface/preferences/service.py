@@ -20,7 +20,7 @@ logger: logging.Logger = get_logger(__name__)
 class PreferenceService:
     def __init__(
         self,
-        repos: Optional[Repository] = None,
+        repos: Repository,
         repo: Optional[PreferenceRepositoryProtocol] = None,
         audit_service: Optional[ActivityLogServiceProtocol] = None,
         event_bus: Optional[EventBus] = None,
@@ -29,17 +29,10 @@ class PreferenceService:
         self._audit: Optional[AuditService] = None
         self._audit_service: ActivityLogServiceProtocol
 
-        if repos:
-            self._repo = repo or repos.preferences
-            from tuned.interface.audit import AuditService as AuditAggregator
-            self._audit = AuditAggregator(repos=repos)
-            self._audit_service = audit_service or self._audit.activity_log
-        else:
-            from tuned.repository import repositories
-            self._repo = repo or repositories.preferences
-            from tuned.interface.audit import audit_service as global_audit_agg
-            self._audit = global_audit_agg
-            self._audit_service = audit_service or self._audit.activity_log
+        self._repo = repo or repos.preferences
+        from tuned.interface.audit import AuditService as AuditAggregator
+        self._audit = AuditAggregator(repos=repos)
+        self._audit_service = audit_service or self._audit.activity_log
             
         self._event_bus = event_bus or get_event_bus()
 

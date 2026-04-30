@@ -3,7 +3,7 @@ import click
 from flask.cli import with_appcontext
 
 from tuned.dtos import AcademicLevelDTO, DeadlineDTO
-from tuned.interface import Services
+from tuned.utils.dependencies import get_services
 from tuned.manage.data import academic_levels_dict, deadlines_dict
 from tuned.repository.exceptions import AlreadyExists #, DatabaseError
 from tuned.core.logging import get_logger
@@ -14,7 +14,7 @@ logger: logging.Logger = get_logger(__name__)
 @click.command("create-content")
 @with_appcontext
 def create_content() -> None:
-    services = Services()
+    services = get_services()
 
     al_created = al_skipped = al_failed = 0
     click.echo("Seeding academic levels…")

@@ -10,12 +10,8 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 class NotificationInterface:
-    def __init__(self, repos: Optional[Repository] = None, repo: Optional[NotificationRepository] = None) -> None:
-        if repos:
-            self._repo = repo or repos.notification
-        else:
-            from tuned.repository import repositories
-            self._repo = repo or repositories.notification
+    def __init__(self, repos: Repository) -> None:
+        self._repo = repos.notification
 
     def create_notification(self, data: NotificationCreateDTO) -> NotificationResponseDTO:
         notification = self._repo.create(data)

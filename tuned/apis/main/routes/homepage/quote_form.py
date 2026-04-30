@@ -1,8 +1,5 @@
-from tuned.interface import(
-    service as _service_interface, 
-    academic_level as _academic_level_interface,
-    price_rate as _price_interface
-)
+from flask.views import MethodView
+from tuned.utils.dependencies import get_services
 from tuned.apis.main.schemas import CalculatePriceSchema
 from tuned.utils.responses import success_response, error_response
 from tuned.redis_client import redis_client
@@ -16,15 +13,16 @@ from dataclasses import asdict
 from flask import request
 import json
 import logging
+from typing import Any
 
 logger: logging.Logger = get_logger(__name__)
 
 CACHE_KEY = 'quote:options'
 CACHE_TTL = 600
 
-class GetQuoteFormOptions(MethodView): #TODO: Implement strict return types    
+class GetQuoteFormOptions(MethodView):    
     def _build_services_response(self) -> list[ServiceWithPricingCategory]:
-        services = _service_interface.list_services()
+        services = get_services().service.list_services()
         services_response: list[ServiceWithPricingCategory] = []
         
         for service in services:
@@ -48,7 +46,7 @@ class GetQuoteFormOptions(MethodView): #TODO: Implement strict return types
 
         return services_response
 
-    def get(self):
+    def get(self) -> tuple[Any, int]:
         try:
             cached_data = redis_client.get(CACHE_KEY)
             if cached_data:
@@ -57,7 +55,7 @@ class GetQuoteFormOptions(MethodView): #TODO: Implement strict return types
             
             # TODO: Implement strict response DTOs
             services = self._build_services_response()     
-            academic_levels = _academic_level_interface.list_academic_levels()
+            academic_levels = get_services().academic_level.list_academic_levels()
             
             data = {
                 'services': [asdict(s) for s in services],
@@ -106,7 +104,7 @@ class CalculatePrice(MethodView):
     def _get_service_pricing_category(self, service_id: int) -> int:
         from tuned.repository.exceptions import DatabaseError, NotFound
         try:
-            service = _service_interface.get_service(service_id)
+            service = get_services().service.get_service(service_id)
             return service.pricing_category_id
         except NotFound as e:
             raise NotFound(f"Service not found: {str(e)}.") from e
@@ -116,7 +114,7 @@ class CalculatePrice(MethodView):
             raise RuntimeError(f"Error while fetching service category: {str(e)}.") from e
         
 
-    def post(self):
+    def post(self) -> tuple[Any, int]:
         try:
             data = request.get_json()
             validated_data = self._schema.load(data)
@@ -125,7 +123,7 @@ class CalculatePrice(MethodView):
             validated_data['pricing_category_id'] = service_category_id
 
             dto = self._convert_schema_to_dto(validated_data)
-            price = _price_interface.calculate_price(dto)
+            price = get_services().price_rate.calculate_price(dto)
 
             return success_response(price)
 

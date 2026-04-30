@@ -1,10 +1,11 @@
 import os
 import logging
+from typing import Optional
 from flask import Flask
 from tuned.core.config import config
 from tuned.core.logging import _configure_logging, get_logger
 
-def create_app(config_name=None):
+def create_app(config_name: Optional[str] = None) -> Flask:
     app = Flask(__name__)
     
     if config_name is None:
@@ -49,6 +50,14 @@ def create_app(config_name=None):
     app.celery = celery_app
     app.extensions['celery'] = celery_app
     
+    with app.app_context():
+        from tuned.repository import Repository
+        from tuned.interface import Services
+        from tuned.extensions import db
+        repos = Repository(db.session)
+        services = Services(repos=repos)
+        app.extensions['services'] = services
+    
     login_manager.login_view = 'auth.login'
     login_manager.login_message = 'Please log in to access this page.'
     login_manager.session_protection = 'strong'
@@ -68,13 +77,13 @@ def create_app(config_name=None):
         return is_token_blacklisted(jti)
     
     from tuned.apis import(
-        main_bp, auth_bp, notifications_bp, client_bp
+        main_bp, auth_bp, notification_bp, client_bp
     ) 
     from tuned.manage import manage_bp
     
     # app.register_blueprint(admin_bp, url_prefix='/api/admin')
     app.register_blueprint(auth_bp, url_prefix='/api')
-    app.register_blueprint(notifications_bp, url_prefix='/api/notifications')
+    app.register_blueprint(notification_bp, url_prefix='/api/notifications')
     app.register_blueprint(client_bp, url_prefix='/api/client')
     app.register_blueprint(manage_bp)
     
@@ -103,9 +112,7 @@ def create_app(config_name=None):
     return app
 
 
-def register_error_handlers(app):
-    """Register error handlers for common HTTP errors."""
-    
+def register_error_handlers(app: Flask) -> None:
     @app.errorhandler(404)
     def not_found_error(error):
         return {'error': 'Resource not found'}, 404
@@ -117,9 +124,7 @@ def register_error_handlers(app):
         return {'error': 'Internal server error'}, 500
 
 
-def register_shell_context(app):
-    """Register shell context for flask shell command."""
-    
+def register_shell_context(app: Flask) -> None:
     @app.shell_context_processor
     def make_shell_context():
         from tuned.extensions import db

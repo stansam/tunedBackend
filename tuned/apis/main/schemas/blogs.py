@@ -1,18 +1,8 @@
-"""
-Validation schemas for blog-related endpoints.
-
-Includes schemas for:
-- Blog filtering and pagination
-- Blog comment creation
-- Blog comment reactions
-"""
 from marshmallow import Schema, fields, validate, validates, ValidationError
+from typing import Any
 import re
 
-
 class BlogFilterSchema(Schema):
-    """Schema for filtering and paginating blog posts."""
-    
     category_id = fields.Str(
         required=False,
         validate=validate.Length(min=1),
@@ -113,14 +103,11 @@ class BlogCommentSchema(Schema):
     )
     
     @validates('content')
-    def validate_content(self, value, **kwargs):
-        """Validate comment content for spam."""
-        # Check for excessive links
+    def validate_content(self, value: str, **kwargs: Any) -> str:
         link_count = len(re.findall(r'http[s]?://', value))
         if link_count > 3:
             raise ValidationError('Comment appears to be spam (too many links)')
         
-        # Check for repetitive patterns
         words = value.lower().split()
         if len(words) > 10:
             word_freq = {}
@@ -134,8 +121,6 @@ class BlogCommentSchema(Schema):
 
 
 class CommentReactionSchema(Schema):
-    """Schema for blog comment reactions (likes/dislikes)."""
-    
     reaction_type = fields.Str(
         required=True,
         validate=validate.OneOf(['like', 'dislike']),
@@ -146,7 +131,6 @@ class CommentReactionSchema(Schema):
         }
     )
 
-# class PostByCategorySchema(Schema):
     category_id = fields.Str(
         required=True,
         validate=validate.Length(min=1),

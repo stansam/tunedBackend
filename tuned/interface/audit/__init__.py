@@ -5,7 +5,7 @@ from tuned.interface.audit.activity_log import ActivityLogService
 from tuned.interface.audit.email_log import EmailLogService
 
 class AuditService:
-    def __init__(self, repos: Optional[Any] = None) -> None:
+    def __init__(self, repos: Any) -> None:
         self._repos = repos
         self._price_history: Optional[PriceHistoryService] = None
         self._order_status_history: Optional[OrderStatusHistoryService] = None
@@ -36,6 +36,3 @@ class AuditService:
             self._email_log = EmailLogService(repos=self._repos)
         return self._email_log
 
-# Legacy support
-from tuned.repository import repositories
-audit_service = AuditService(repos=repositories)

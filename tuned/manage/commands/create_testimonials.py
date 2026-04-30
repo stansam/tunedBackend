@@ -3,7 +3,7 @@ import click
 from flask.cli import with_appcontext
 
 from tuned.dtos import TestimonialDTO
-from tuned.interface import Services
+from tuned.utils.dependencies import get_services
 from tuned.manage.data import testimonials_dict
 from tuned.models import Service, User
 from tuned.extensions import db
@@ -24,7 +24,7 @@ def _build_user_map() -> dict[str, str]:
 @click.command("create-testimonials")
 @with_appcontext
 def create_testimonials() -> None:
-    services = Services()
+    services = get_services()
     service_map = _build_service_map()
     user_map = _build_user_map()
 

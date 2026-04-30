@@ -139,7 +139,3 @@ class Repository:
         if not self._notification:
             self._notification = NotificationRepository(self.session)
         return self._notification
-
-# Global instance for legacy support.
-# DEPRECATED: Do not use in new code. Use dependency injection instead.
-repositories = Repository(db.session) # type: ignore[arg-type]

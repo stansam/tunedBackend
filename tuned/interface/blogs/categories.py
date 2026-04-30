@@ -12,12 +12,8 @@ if TYPE_CHECKING:
 logger: logging.Logger = get_logger(__name__)
 
 class BlogCategoryService:
-    def __init__(self, repos: Optional[Repository] = None) -> None:
-        if repos:
-            self._repo = repos.blog
-        else:
-            from tuned.repository import repositories
-            self._repo = repositories.blog
+    def __init__(self, repos: Repository) -> None:
+        self._repo = repos.blog
 
     def create_category(self, data: BlogCategoryDTO) -> BlogCategoryResponseDTO:
         try:

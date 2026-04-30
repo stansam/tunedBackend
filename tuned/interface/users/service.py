@@ -31,24 +31,14 @@ logger: logging.Logger = get_logger(__name__)
 event_bus = get_event_bus()
 
 class UserService:
-    def __init__(self, repos: Optional[Repository] = None):
-        if repos:
-            self._repo = repos.user
-            from tuned.interface.audit import AuditService
-            self._audit = AuditService(repos=repos)
-            self._core = CoreUserService(
-                user_repo=repos.user,
-                audit_service=self._audit.activity_log
-            )
-        else:
-            from tuned.repository import repositories
-            self._repo = repositories.user
-            from tuned.interface.audit import audit_service
-            self._audit = audit_service
-            self._core = CoreUserService(
-                user_repo=repositories.user,
-                audit_service=self._audit.activity_log
-            )
+    def __init__(self, repos: Repository):
+        self._repo = repos.user
+        from tuned.interface.audit import AuditService
+        self._audit = AuditService(repos=repos)
+        self._core = CoreUserService(
+            user_repo=repos.user,
+            audit_service=self._audit.activity_log
+        )
 
     def login_user(self, credentials: LoginRequestDTO) -> Tuple[bool, Dict[str, Any]]:
         try:
@@ -151,6 +141,14 @@ class UserService:
             return False, str(e)
         except ValueError as e:
             return False, str(e)
+
+    def get_user_by_id(self, user_id: str) -> Dict[str, Any]:
+        try:
+            user = self._repo.get_user_by_id(user_id)
+            return asdict(UserResponseDTO.from_model(user))
+        except Exception as e:
+            logger.error(f"Error fetching user by id {user_id}: {str(e)}")
+            raise
 
     def get_user_by_email(self, email: str) -> Dict[str, Any]:
         user = self._repo.get_user_for_resend(email)

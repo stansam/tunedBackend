@@ -9,7 +9,7 @@ if TYPE_CHECKING:
     from tuned.repository import Repository
 
 class Blogs:
-    def __init__(self, repos: Optional[Repository] = None) -> None:
+    def __init__(self, repos: Repository) -> None:
         self._repos = repos
         self._post: BlogPostService | None = None
         self._category: BlogCategoryService | None = None
@@ -40,13 +40,8 @@ class Blogs:
             self._reaction = CommentReactionService(repos=self._repos)
         return self._reaction
 
-# Legacy support
-from tuned.repository import repositories
-blogs = Blogs(repos=repositories)
-
 __all__ = [
     "Blogs",
-    "blogs",
     "BlogPostService",
     "BlogCategoryService",
     "BlogCommentService",

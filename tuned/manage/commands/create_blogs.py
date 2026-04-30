@@ -3,7 +3,7 @@ import click
 from flask.cli import with_appcontext
 
 from tuned.dtos import BlogCategoryDTO, BlogPostDTO
-from tuned.interface import Services
+from tuned.utils.dependencies import get_services
 from tuned.manage.data import blogCategories, blogPosts
 from tuned.models import BlogCategory, Tag
 from tuned.extensions import db
@@ -20,7 +20,7 @@ def _build_blog_category_map() -> dict[str, str]:
 @click.command("create-blogs")
 @with_appcontext
 def create_blogs() -> None:
-    services = Services()
+    services = get_services()
 
     bc_created = bc_skipped = 0
     click.echo("Seeding blog categories…")

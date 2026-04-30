@@ -7,13 +7,11 @@ import logging
 
 from tuned.utils.responses import success_response, error_response, validation_error_response
 from tuned.apis.client.schemas.referrals import ReferralFilterSchema, RedeemRewardSchema, ReferralShareSchema
-from tuned.interface import referral
+from tuned.utils.dependencies import get_services
 from dataclasses import asdict
 from typing import Any
 
 logger = logging.getLogger(__name__)
-
-_interface = referral
 
 
 def _validation_error_payload(message: str) -> dict[str, list[str]]:
@@ -25,7 +23,7 @@ class ReferralListView(MethodView):
         try:
             schema = ReferralFilterSchema()
             schema.load(request.args.to_dict())
-            referrals = _interface.get_active_by_referrer(str(current_user.id))
+            referrals = get_services().referral.get_active_by_referrer(str(current_user.id))
             return success_response({"referrals": [asdict(r) for r in referrals]})
         except ValidationError as err:
             logger.error(f"Error listing referrals: {err}")
@@ -40,10 +38,10 @@ class ReferralStatsView(MethodView):
     decorators = [login_required]
     def get(self) -> tuple[Any, int]:
         try:
-            referrals = _interface.get_active_by_referrer(str(current_user.id))
+            referrals = get_services().referral.get_active_by_referrer(str(current_user.id))
             total_earned = sum(r.points_earned for r in referrals if r.status == 'COMPLETED')
             total_used = sum(getattr(r, 'points_used', 0) for r in referrals)
-            growth = _interface.get_referral_growth(str(current_user.id))
+            growth = get_services().referral.get_referral_growth(str(current_user.id))
             
             stats = {
                 "total_referrals": len(referrals),
@@ -91,7 +89,7 @@ class ReferralRedeemView(MethodView):
             schema = RedeemRewardSchema()
             data = schema.load(request.get_json())
             
-            result = _interface.redeem_points(
+            result = get_services().referral.redeem_points(
                 user_id=str(current_user.id),
                 order_id=data['order_id'],
                 points_to_redeem=data['points']

@@ -29,24 +29,14 @@ logger: logging.Logger = get_logger(__name__)
 
 
 class AnalyticsService:
-    def __init__(self, repos: Optional[Repository] = None) -> None:
-        if repos:
-            self._repos = repos
-            self._order_repo = repos.order
-            self._user_repo = repos.user
-            self._payment_repo = repos.payment.payment
-            self._service_repo = repos.service
-            self._audit_repo = repos.audit.activity_log
-            self._referral_repo = repos.referral
-        else:
-            from tuned.repository import repositories
-            self._repos = repositories
-            self._order_repo = repositories.order
-            self._user_repo = repositories.user
-            self._payment_repo = repositories.payment.payment
-            self._service_repo = repositories.service
-            self._audit_repo = repositories.audit.activity_log
-            self._referral_repo = repositories.referral
+    def __init__(self, repos: Repository) -> None:
+        self._repos = repos
+        self._order_repo = repos.order
+        self._user_repo = repos.user
+        self._payment_repo = repos.payment.payment
+        self._service_repo = repos.service
+        self._audit_repo = repos.audit.activity_log
+        self._referral_repo = repos.referral
 
     def get_nav_stats(self, user_id: str) -> NavStatsDTO:
         try:

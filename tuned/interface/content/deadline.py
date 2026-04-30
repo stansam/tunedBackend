@@ -13,12 +13,8 @@ logger: logging.Logger = get_logger(__name__)
 
 
 class DeadlineService:
-    def __init__(self, repos: Optional[Repository] = None) -> None:
-        if repos:
-            self._repo = repos.deadline
-        else:
-            from tuned.repository import repositories
-            self._repo = repositories.deadline
+    def __init__(self, repos: Repository) -> None:
+        self._repo = repos.deadline
 
     def create_deadline(self, data: DeadlineDTO) -> DeadlineResponseDTO:
         try:

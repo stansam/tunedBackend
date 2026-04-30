@@ -18,10 +18,10 @@ CACHE_TTL: int = 60 * 60 * 24
 class ListBlogCategories(MethodView):
     def get(self) -> tuple[Any, int]:
         try:
-            cached_data = redis_client.get(CACHE_KEY)
-            if cached_data:
+            raw = redis_client.get(CACHE_KEY)
+            if raw is not None and isinstance(raw, (str, bytes, bytearray)):
                 logger.debug('Returning blog categories from cache')
-                return success_response(json.loads(cached_data))
+                return success_response(json.loads(raw))
             
             categories = get_services().blogs.category.list_categories()
             categories_dict = [asdict(category) for category in categories]
@@ -35,10 +35,7 @@ class ListBlogCategories(MethodView):
             return success_response(categories_dict)
         except Exception as e:
             logger.error(f'Error fetching blog categories: {str(e)}')
-            return error_response(
-                'Failed to fetch blog categories',
-                status=500
-            )
+            return error_response('Failed to fetch blog categories', status=500)
             
             
             

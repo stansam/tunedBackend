@@ -1,4 +1,5 @@
 from tuned.dtos.base import BaseDTO, PaginationDTO
+from tuned.dtos.user import UserResponseDTO
 from dataclasses import dataclass
 from typing import Optional, List, TYPE_CHECKING
 
@@ -196,6 +197,9 @@ class TestimonialResponseDTO(BaseDTO):
     content: str
     rating: int
     is_approved: bool
+    user: Optional[UserResponseDTO] = None
+    service: Optional[SampleServiceResponseDTO] = None
+    created_at: Optional[str] = None
 
     @classmethod
     def from_model(cls, obj: "Testimonial") -> "TestimonialResponseDTO":
@@ -207,7 +211,19 @@ class TestimonialResponseDTO(BaseDTO):
             content=obj.content,
             rating=obj.rating,
             is_approved=obj.is_approved,
+            user=UserResponseDTO.from_model(obj.author) if obj.author else None,
+            service=SampleServiceResponseDTO.from_model(obj.service) if obj.service else None,
+            created_at=obj.created_at.isoformat() if obj.created_at else None,
         )
+
+@dataclass
+class TestimonialListResponseDTO(PaginationDTO):
+    testimonials: List[TestimonialResponseDTO]
+    total: int
+
+@dataclass
+class TestimonialListRequestDTO(PaginationDTO):
+    service_id: Optional[str] = None
 
 
 @dataclass

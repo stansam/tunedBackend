@@ -3,7 +3,7 @@ from tuned.repository.referral import ReferralRepository
 from tuned.repository.blogs import BlogRepository
 from tuned.repository.content import(
     AcademicLevelRepository, DeadlineRepository, ServiceRepository, ServiceCategoryRepository,
-    SampleRepository, TestimonialRepository, FAQRepository
+    SampleRepository, TestimonialRepository, FAQRepository, TagRepository
 )
 from tuned.repository.price import (
     PricingCategoryRepository, PriceRateRepository
@@ -12,6 +12,7 @@ from tuned.repository.audit import AuditRepository
 from tuned.repository.order import OrderRepository
 from tuned.repository.preferences import PreferenceRepository
 from tuned.repository.payment import PaymentRepository
+from tuned.repository.communication import NewsletterRepository
 from tuned.repository.user.notification import NotificationRepository
 from tuned.extensions import db
 from sqlalchemy.orm import Session
@@ -37,6 +38,8 @@ class Repository:
         self._preferences: Optional[PreferenceRepository] = None
         self._payment: Optional[PaymentRepository] = None
         self._notification: Optional[NotificationRepository] = None
+        self._tag: Optional[TagRepository] = None
+        self._newsletter: Optional[NewsletterRepository] = None
 
     @property
     def user(self) -> UserRepository:
@@ -139,3 +142,15 @@ class Repository:
         if not self._notification:
             self._notification = NotificationRepository(self.session)
         return self._notification
+
+    @property
+    def tag(self) -> TagRepository:
+        if not self._tag:
+            self._tag = TagRepository(self.session)
+        return self._tag
+
+    @property
+    def newsletter(self) -> NewsletterRepository:
+        if not self._newsletter:
+            self._newsletter = NewsletterRepository(self.session)
+        return self._newsletter

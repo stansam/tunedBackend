@@ -131,3 +131,31 @@ class CalculatePriceSchema(Schema):
             'validator_failed': 'Report type must be one of: standard, turnitin'
         }
     )
+
+class TestimonialListSchema(Schema):
+    service_id = fields.Str(
+        required=False,
+        error_messages={
+            'invalid': 'Service ID must be a string',
+        }
+    )
+    
+    page = fields.Int(
+        required=False,
+        validate=validate.Range(min=1),
+        load_default=1,
+        error_messages={
+            'invalid': 'Page must be an integer',
+            'validator_failed': 'Page must be at least 1'
+        }
+    )
+    
+    per_page = fields.Int(
+        required=False,
+        validate=validate.Range(min=1, max=100),
+        load_default=10,
+        error_messages={
+            'invalid': 'Items per page must be an integer',
+            'validator_failed': 'Items per page must be between 1 and 100'
+        }
+    )

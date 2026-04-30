@@ -17,15 +17,15 @@ CACHE_TTL = 300
 class GetFeaturedContent(MethodView): 
     def get(self) -> tuple[Any, int]:
         try:
-            cached_data = redis_client.get(CACHE_KEY)
-            if cached_data:
+            raw = redis_client.get(CACHE_KEY)
+            if raw is not None and isinstance(raw, (str, bytes, bytearray)):
                 logger.debug('Returning featured content from cache')
-                return success_response(json.loads(cached_data))
+                return success_response(json.loads(raw))
             
-            # TODO: Implement strict response DTOs
             featured_services = get_services().service_category.list_categories()
             featured_samples = get_services().sample.list_featured_samples()
             featured_blogs = get_services().blogs.post.list_featured()
+            
             data = {
                 'services': [asdict(s) for s in featured_services],
                 'samples': [asdict(s) for s in featured_samples],
@@ -41,7 +41,4 @@ class GetFeaturedContent(MethodView):
             return success_response(data)
         except Exception as e:
             logger.error(f'Error fetching featured content: {str(e)}')
-            return error_response(
-                'Failed to fetch featured content',
-                status=500
-            )
+            return error_response('Failed to fetch featured content', status=500)

@@ -2,5 +2,14 @@
 from tuned.apis.main.routes.content.levels import GetAcademicLevels
 from tuned.apis.main.routes.content.samples import SampleListView, SampleDetailView, SampleServiceView, SampleRelatedView
 from tuned.apis.main.routes.content.tags import GetTagsList
+from tuned.apis.main.routes.content.testimonials import TestimonialsView
 
-__all__ = ['GetAcademicLevels', 'SampleListView', 'SampleDetailView', 'SampleServiceView', 'SampleRelatedView', 'GetTagsList']
+__all__ = [
+    'GetAcademicLevels', 
+    'SampleListView', 
+    'SampleDetailView', 
+    'SampleServiceView', 
+    'SampleRelatedView', 
+    'GetTagsList',
+    'TestimonialsView'
+]

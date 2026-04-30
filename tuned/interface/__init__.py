@@ -3,7 +3,7 @@ from tuned.interface.users import UserService
 from tuned.interface.referral import ReferralInterface
 from tuned.interface.content import (
     AcademicLevelService, DeadlineService, FAQService, SampleService,
-    ServiceCategoryService, ServiceService, TestimonialService
+    ServiceCategoryService, ServiceService, TestimonialService, TagService
 )
 from tuned.interface.price import PriceRateService, PricingCategoryService
 from tuned.interface.blogs import Blogs, BlogPostService, BlogCategoryService, BlogCommentService, CommentReactionService
@@ -13,6 +13,7 @@ from tuned.interface.preferences.service import PreferenceService
 from tuned.interface.analytics import Analytics, AnalyticsService
 from tuned.interface.audit import AuditService
 from tuned.interface.payment import PaymentService
+from tuned.interface.communication.newsletter import NewsletterService
 
 if TYPE_CHECKING:
     from tuned.repository import Repository
@@ -28,6 +29,7 @@ class Services:
         self._service_category: Optional[ServiceCategoryService] = None
         self._sample: Optional[SampleService] = None
         self._testimonial: Optional[TestimonialService] = None
+        self._tag: Optional[TagService] = None
         self._faq: Optional[FAQService] = None
         self._blogs: Optional[Blogs] = None
         self._price_rate: Optional[PriceRateService] = None
@@ -38,6 +40,7 @@ class Services:
         self._analytics_agg: Optional[Analytics] = None
         self._audit: Optional[AuditService] = None
         self._payment: Optional[PaymentService] = None
+        self._newsletter: Optional[NewsletterService] = None
 
     @property
     def user(self) -> UserService:
@@ -92,6 +95,12 @@ class Services:
         if not self._testimonial:
             self._testimonial = TestimonialService(repos=self._repos)
         return self._testimonial
+
+    @property
+    def tag(self) -> TagService:
+        if not self._tag:
+            self._tag = TagService(repos=self._repos)
+        return self._tag
 
     @property
     def blogs(self) -> Blogs:
@@ -166,5 +175,11 @@ class Services:
         if not self._payment:
             self._payment = PaymentService(repos=self._repos)
         return self._payment
+
+    @property
+    def newsletter(self) -> NewsletterService:
+        if not self._newsletter:
+            self._newsletter = NewsletterService(repos=self._repos, services=self)
+        return self._newsletter
 
 

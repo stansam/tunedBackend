@@ -18,26 +18,26 @@ CACHE_KEY_ACADEMIC_LEVELS = 'academic_levels:list'
 class GetAcademicLevels(MethodView):
     def get(self) -> tuple[Any, int]:
         try:
-            cached = redis_client.get(CACHE_KEY_ACADEMIC_LEVELS)
-            if cached:
+            raw = redis_client.get(CACHE_KEY_ACADEMIC_LEVELS)
+            if raw is not None and isinstance(raw, (str, bytes, bytearray)):
                 return success_response(
-                    json.loads(cached),
+                    json.loads(raw),
                     "Academic levels fetched successfully"
                 )
             
             academic_levels = get_services().academic_level.list_academic_levels()
-            academic_levels = [asdict(academic_level) for academic_level in academic_levels]
+            academic_levels_data = [asdict(academic_level) for academic_level in academic_levels]
             
             redis_client.setex(
                 CACHE_KEY_ACADEMIC_LEVELS, CACHE_TTL,
-                json.dumps(academic_levels)
+                json.dumps(academic_levels_data)
             )
 
             return success_response(
-                academic_levels,
+                academic_levels_data,
                 "Academic levels fetched successfully"
             )
 
         except Exception as e:
             logger.error(f"Error fetching academic levels: {str(e)}")
-            return error_response("Error fetching academic levels", str(e), 500)
+            return error_response("Failed to fetch academic levels", status=500)

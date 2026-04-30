@@ -1,9 +1,9 @@
 from marshmallow import Schema, fields, validate, validates, ValidationError
-from typing import Any
+from typing import Any, Optional
 import re
 
 class BlogFilterSchema(Schema):
-    category_id = fields.Str(
+    category_id: fields.Str = fields.Str(
         required=False,
         validate=validate.Length(min=1),
         error_messages={
@@ -12,7 +12,7 @@ class BlogFilterSchema(Schema):
         }
     )
     
-    is_published = fields.Bool(
+    is_published: fields.Bool = fields.Bool(
         required=False,
         load_default=True,
         error_messages={
@@ -20,7 +20,7 @@ class BlogFilterSchema(Schema):
         }
     )
     
-    q = fields.Str(
+    q: fields.Str = fields.Str(
         required=False,
         validate=validate.Length(min=2, max=200),
         error_messages={
@@ -30,7 +30,7 @@ class BlogFilterSchema(Schema):
         }
     )
     
-    sort = fields.Str(
+    sort: fields.Str = fields.Str(
         required=False,
         validate=validate.OneOf(['published_at', 'created_at', 'title']),
         load_default='published_at',
@@ -40,7 +40,7 @@ class BlogFilterSchema(Schema):
         }
     )
     
-    order = fields.Str(
+    order: fields.Str = fields.Str(
         required=False,
         validate=validate.OneOf(['asc', 'desc']),
         load_default='desc',
@@ -50,7 +50,7 @@ class BlogFilterSchema(Schema):
         }
     )
     
-    page = fields.Int(
+    page: fields.Int = fields.Int(
         required=False,
         validate=validate.Range(min=1),
         load_default=1,
@@ -60,7 +60,7 @@ class BlogFilterSchema(Schema):
         }
     )
     
-    per_page = fields.Int(
+    per_page: fields.Int = fields.Int(
         required=False,
         validate=validate.Range(min=1, max=100),
         load_default=20,
@@ -72,9 +72,7 @@ class BlogFilterSchema(Schema):
 
 
 class BlogCommentSchema(Schema):
-    """Schema for creating blog comments."""
-    
-    content = fields.Str(
+    content: fields.Str = fields.Str(
         required=True,
         validate=validate.Length(min=3, max=5000),
         error_messages={
@@ -86,7 +84,7 @@ class BlogCommentSchema(Schema):
     )
     
     # For guest comments (optional if authenticated)
-    name = fields.Str(
+    name: fields.Str = fields.Str(
         required=False,
         validate=validate.Length(max=100),
         error_messages={
@@ -95,7 +93,7 @@ class BlogCommentSchema(Schema):
         }
     )
     
-    email = fields.Email(
+    email: fields.Email = fields.Email(
         required=False,
         error_messages={
             'invalid': 'Invalid email address format'
@@ -103,14 +101,14 @@ class BlogCommentSchema(Schema):
     )
     
     @validates('content')
-    def validate_content(self, value: str, **kwargs: Any) -> str:
+    def validate_content_text(self, value: str, **kwargs: Any) -> str:
         link_count = len(re.findall(r'http[s]?://', value))
         if link_count > 3:
             raise ValidationError('Comment appears to be spam (too many links)')
         
         words = value.lower().split()
         if len(words) > 10:
-            word_freq = {}
+            word_freq: dict[str, int] = {}
             for word in words:
                 word_freq[word] = word_freq.get(word, 0) + 1
             max_freq = max(word_freq.values())
@@ -121,7 +119,7 @@ class BlogCommentSchema(Schema):
 
 
 class CommentReactionSchema(Schema):
-    reaction_type = fields.Str(
+    reaction_type: fields.Str = fields.Str(
         required=True,
         validate=validate.OneOf(['like', 'dislike']),
         error_messages={
@@ -131,7 +129,7 @@ class CommentReactionSchema(Schema):
         }
     )
 
-    category_id = fields.Str(
+    category_id: fields.Str = fields.Str(
         required=True,
         validate=validate.Length(min=1),
         error_messages={
@@ -140,7 +138,7 @@ class CommentReactionSchema(Schema):
             'validator_failed': 'Category ID must be at least 1'
         }
     )
-    exclude = fields.Str(
+    exclude: fields.Str = fields.Str(
         required=True,
         validate=validate.Length(min=1),
         error_messages={
@@ -149,7 +147,7 @@ class CommentReactionSchema(Schema):
             'validator_failed': 'Slug must be at least 1'
         }
     )
-    per_page = fields.Int(
+    per_page: fields.Int = fields.Int(
         required=False,
         validate=validate.Range(min=1, max=5),
         load_default=3,

@@ -1,12 +1,15 @@
 from typing import Any
 from sqlalchemy.orm import Session
-from sqlalchemy import select
+from sqlalchemy import select, func
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 
 from tuned.models import Testimonial
-from tuned.dtos.content import TestimonialDTO, TestimonialResponseDTO, TestimonialUpdateDTO
+from tuned.dtos.content import (
+    TestimonialDTO, TestimonialResponseDTO, TestimonialUpdateDTO,
+    TestimonialListRequestDTO, TestimonialListResponseDTO
+)
 from tuned.repository.exceptions import DatabaseError, NotFound
-
+from tuned.repository.protocols import TestimonialRepositoryProtocol
 
 _VALID_RATINGS = frozenset(range(1, 6))
 
@@ -63,6 +66,41 @@ class GetApprovedTestimonials:
             return [TestimonialResponseDTO.from_model(t) for t in testimonials]
         except SQLAlchemyError as e:
             raise DatabaseError(f"Database error while fetching testimonials: {str(e)}") from e
+
+
+class GetApprovedTestimonialsPaginated:
+    def __init__(self, session: Session) -> None:
+        self.session = session
+
+    def execute(self, req: TestimonialListRequestDTO) -> TestimonialListResponseDTO:
+        try:
+            stmt = select(Testimonial).where(Testimonial.is_approved == True)
+            if req.service_id:
+                stmt = stmt.where(Testimonial.service_id == req.service_id)
+
+            stmt = stmt.order_by(Testimonial.created_at.desc())
+            
+            # Count total
+            count_stmt = select(func.count()).select_from(stmt.subquery())
+            total = self.session.scalar(count_stmt) or 0
+            
+            # Paginate
+            offset = (req.page - 1) * req.per_page
+            stmt = stmt.offset(offset).limit(req.per_page)
+            
+            results = self.session.scalars(stmt).all()
+            testimonials = [TestimonialResponseDTO.from_model(t) for t in results]
+            
+            return TestimonialListResponseDTO(
+                testimonials=testimonials,
+                total=total,
+                page=req.page,
+                per_page=req.per_page,
+                sort=req.sort,
+                order=req.order
+            )
+        except SQLAlchemyError as e:
+            raise DatabaseError(f"Database error while fetching paginated testimonials: {str(e)}") from e
 
 
 class GetPendingTestimonials:
@@ -138,9 +176,6 @@ class DeleteTestimonial:
         except SQLAlchemyError as e:
             raise DatabaseError("Database error while deleting testimonial.") from e
 
-
-from tuned.repository.protocols import TestimonialRepositoryProtocol
-
 class TestimonialRepository(TestimonialRepositoryProtocol):
     def __init__(self, session: Session) -> None:
         self.session = session
@@ -153,6 +188,9 @@ class TestimonialRepository(TestimonialRepositoryProtocol):
 
     def get_approved(self, service_id: str | None = None) -> list[TestimonialResponseDTO]:
         return GetApprovedTestimonials(self.session).execute(service_id)
+
+    def get_approved_paginated(self, req: TestimonialListRequestDTO) -> TestimonialListResponseDTO:
+        return GetApprovedTestimonialsPaginated(self.session).execute(req)
 
     def get_pending(self) -> list[TestimonialResponseDTO]:
         return GetPendingTestimonials(self.session).execute()

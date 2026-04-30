@@ -21,7 +21,9 @@ from tuned.apis.client.routes.referrals import (
 )
 
 
-CLIENT_ROUTES = [
+from typing import Any
+
+CLIENT_ROUTES: list[dict[str, Any]] = [
     {
         "rule": "/nav-stats",
         "view_func": NavStats.as_view("client_nav_stats"),

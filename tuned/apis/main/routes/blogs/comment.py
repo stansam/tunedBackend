@@ -16,10 +16,10 @@ CACHE_TTL = 300
 class GetBlogComments(MethodView):
     def get(self, blog_id: int) -> tuple[Any, int]:
         try:
-            cached_data = redis_client.get(f'{CACHE_KEY}:{blog_id}')
-            if cached_data:
+            raw = redis_client.get(f'{CACHE_KEY}:{blog_id}')
+            if raw is not None and isinstance(raw, (str, bytes, bytearray)):
                 logger.debug('Returning comments from cache')
-                return success_response(json.loads(cached_data))
+                return success_response(json.loads(raw))
             
             comments = get_services().blogs.comment.get_blog_comments(blog_id)
             data = {
@@ -35,7 +35,4 @@ class GetBlogComments(MethodView):
             return success_response(data)
         except Exception as e:
             logger.error(f'Error fetching comments: {str(e)}')
-            return error_response(
-                'Failed to fetch comments',
-                status=500
-            )
+            return error_response('Failed to fetch comments', status=500)

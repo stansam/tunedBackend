@@ -2,7 +2,10 @@ from __future__ import annotations
 import logging
 from typing import Optional, TYPE_CHECKING
 
-from tuned.dtos import TestimonialDTO, TestimonialResponseDTO, TestimonialUpdateDTO
+from tuned.dtos import (
+    TestimonialDTO, TestimonialResponseDTO, TestimonialUpdateDTO,
+    TestimonialListRequestDTO, TestimonialListResponseDTO
+)
 from tuned.repository.exceptions import AlreadyExists, DatabaseError, NotFound
 from tuned.core.logging import get_logger
 
@@ -45,6 +48,13 @@ class TestimonialService:
         except DatabaseError:
             logger.error("Database error while fetching approved testimonials")
             raise DatabaseError("Database error while fetching approved testimonials")
+
+    def list_approved_paginated(self, req: TestimonialListRequestDTO) -> TestimonialListResponseDTO:
+        try:
+            return self._repo.get_approved_paginated(req)
+        except DatabaseError:
+            logger.error("Database error while fetching paginated testimonials")
+            raise DatabaseError("Database error while fetching paginated testimonials")
 
     def list_pending_testimonials(self) -> list[TestimonialResponseDTO]:
         try:

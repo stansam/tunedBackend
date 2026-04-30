@@ -1,17 +1,24 @@
+from __future__ import annotations
 import logging
-from typing import List
+from typing import List, Optional, TYPE_CHECKING
 
 from tuned.dtos import BlogCommentDTO, BlogCommentResponseDTO
-from tuned.repository import repositories
 from tuned.repository.exceptions import AlreadyExists, DatabaseError, NotFound
 from tuned.core.logging import get_logger
+
+if TYPE_CHECKING:
+    from tuned.repository import Repository
 
 logger: logging.Logger = get_logger(__name__)
 
 
 class BlogCommentService:
-    def __init__(self) -> None:
-        self._repo = repositories.blog
+    def __init__(self, repos: Optional[Repository] = None) -> None:
+        if repos:
+            self._repo = repos.blog
+        else:
+            from tuned.repository import repositories
+            self._repo = repositories.blog
 
     def create_comment(self, data: BlogCommentDTO) -> BlogCommentResponseDTO:
         try:

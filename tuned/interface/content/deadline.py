@@ -1,6 +1,8 @@
+from __future__ import annotations
 import logging
 from typing import Optional, TYPE_CHECKING
-from tuned.dtos import DeadlineDTO, DeadlineResponseDTO, DeadlineUpdateDTO
+
+from tuned.dtos import DeadlineDTO, DeadlineResponseDTO
 from tuned.repository.exceptions import AlreadyExists, DatabaseError, NotFound
 from tuned.core.logging import get_logger
 
@@ -9,8 +11,11 @@ if TYPE_CHECKING:
 
 logger: logging.Logger = get_logger(__name__)
 
+
 class DeadlineService:
-    def __init__(self, repos: Optional["Repository"] = None) -> None:
+    """Service layer for deadline business logic."""
+
+    def __init__(self, repos: Optional[Repository] = None) -> None:
         if repos:
             self._repo = repos.deadline
         else:
@@ -19,10 +24,10 @@ class DeadlineService:
 
     def create_deadline(self, data: DeadlineDTO) -> DeadlineResponseDTO:
         try:
-            logger.info("Creating deadline: %s (%dh)", data.name, data.hours)
-            deadline = self._repo.create(data)
-            logger.info("Deadline created: id=%s name=%s", deadline.id, deadline.name)
-            return deadline
+            logger.info("Creating deadline: %s (%d hours)", data.name, data.hours)
+            result = self._repo.create(data)
+            logger.info("Deadline created: id=%s", result.id)
+            return result
         except AlreadyExists:
             logger.error("Deadline already exists: %s", data.name)
             raise AlreadyExists("Deadline already exists")
@@ -47,12 +52,14 @@ class DeadlineService:
             logger.error("Database error while fetching deadlines")
             raise DatabaseError("Database error while fetching deadlines")
 
-    def update_deadline(self, deadline_id: str, updates: DeadlineUpdateDTO) -> DeadlineResponseDTO:
+    def update_deadline(self, deadline_id: str, updates: dict) -> DeadlineResponseDTO:
         try:
-            logger.info("Updating deadline id=%s", deadline_id)
-            deadline = self._repo.update(deadline_id, updates)
+            allowed = {"name", "hours", "display_order"}
+            safe_updates = {k: v for k, v in updates.items() if k in allowed}
+            logger.info("Updating deadline id=%s fields=%s", deadline_id, list(safe_updates.keys()))
+            result = self._repo.update(deadline_id, safe_updates)
             logger.info("Deadline updated: id=%s", deadline_id)
-            return deadline
+            return result
         except NotFound:
             logger.error("Deadline not found: %s", deadline_id)
             raise NotFound("Deadline not found")

@@ -12,6 +12,7 @@ from tuned.repository.audit import AuditRepository
 from tuned.repository.order import OrderRepository
 from tuned.repository.preferences import PreferenceRepository
 from tuned.repository.payment import PaymentRepository
+from tuned.repository.user.notification import NotificationRepository
 from tuned.extensions import db
 from sqlalchemy.orm import Session
 from typing import Optional
@@ -35,6 +36,7 @@ class Repository:
         self._order: Optional[OrderRepository] = None
         self._preferences: Optional[PreferenceRepository] = None
         self._payment: Optional[PaymentRepository] = None
+        self._notification: Optional[NotificationRepository] = None
 
     @property
     def user(self) -> UserRepository:
@@ -132,9 +134,12 @@ class Repository:
             self._payment = PaymentRepository(self.session)
         return self._payment
 
-# Global instance for legacy support, but should be avoided in new code
-# For strict compliance, this should be initialized within a request context
-# or passed as a dependency.
+    @property
+    def notification(self) -> NotificationRepository:
+        if not self._notification:
+            self._notification = NotificationRepository(self.session)
+        return self._notification
+
 # Global instance for legacy support.
 # DEPRECATED: Do not use in new code. Use dependency injection instead.
 repositories = Repository(db.session) # type: ignore[arg-type]

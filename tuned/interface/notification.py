@@ -1,15 +1,21 @@
+from __future__ import annotations
 import logging
-from typing import Optional, cast
-from tuned.repository.user.notification import NotificationRepository
+from typing import Optional, TYPE_CHECKING
 from tuned.dtos.notification import NotificationCreateDTO, NotificationResponseDTO
-from tuned.extensions import db
-from sqlalchemy.orm import Session
+
+if TYPE_CHECKING:
+    from tuned.repository import Repository
+    from tuned.repository.user.notification import NotificationRepository
 
 logger = logging.getLogger(__name__)
 
 class NotificationInterface:
-    def __init__(self, repo: Optional[NotificationRepository] = None) -> None:
-        self._repo = repo or NotificationRepository(cast(Session, db.session))
+    def __init__(self, repos: Optional[Repository] = None, repo: Optional[NotificationRepository] = None) -> None:
+        if repos:
+            self._repo = repo or repos.notification
+        else:
+            from tuned.repository import repositories
+            self._repo = repo or repositories.notification
 
     def create_notification(self, data: NotificationCreateDTO) -> NotificationResponseDTO:
         notification = self._repo.create(data)

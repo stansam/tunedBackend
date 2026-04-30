@@ -1,50 +1,59 @@
 from __future__ import annotations
 
 import logging
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 
 from tuned.core.logging import get_logger
 from tuned.dtos import (
     ActivityFeedEntryDTO,
-    ChartDataDTO,
     DashboardAlertsDTO,
     DashboardAnalyticsDTO,
     DashboardKPIDTO,
     DashboardTrackingDTO,
     NavStatsDTO,
     SpendingVelocityDTO,
-    ActivityLogFilterDTO
+    ActivityLogFilterDTO,
+    ChartDataDTO
 )
 from tuned.dtos.order import (
     OrderProgressDTO,
     UpcomingDeadlineDTO,
 )
-# from tuned.interface.audit import audit_service
 from tuned.utils.variables import Variables
-from tuned.repository import repositories
 from tuned.repository.exceptions import DatabaseError
+
+if TYPE_CHECKING:
+    from tuned.repository import Repository
 
 logger: logging.Logger = get_logger(__name__)
 
 
 class AnalyticsService:
-    def __init__(self) -> None:
-        self._order_repo  = repositories.order
-        self._user_repo = repositories.user
-        self._payment_repo = repositories.payment.payment
-        self._service_repo = repositories.service
-        self._audit_repo = repositories.audit.activity_log
-        self._referral_repo = repositories.referral
+    def __init__(self, repos: Optional[Repository] = None) -> None:
+        if repos:
+            self._repos = repos
+            self._order_repo = repos.order
+            self._user_repo = repos.user
+            self._payment_repo = repos.payment.payment
+            self._service_repo = repos.service
+            self._audit_repo = repos.audit.activity_log
+            self._referral_repo = repos.referral
+        else:
+            from tuned.repository import repositories
+            self._repos = repositories
+            self._order_repo = repositories.order
+            self._user_repo = repositories.user
+            self._payment_repo = repositories.payment.payment
+            self._service_repo = repositories.service
+            self._audit_repo = repositories.audit.activity_log
+            self._referral_repo = repositories.referral
 
     def get_nav_stats(self, user_id: str) -> NavStatsDTO:
-        """
-        # TODO: implement wallet balance calculation once wallet model exists
-        """
         try:
             active_orders = self._order_repo.get_active_orders(user_id)
             return NavStatsDTO(
                 active_orders=len(active_orders),
-                balance=0.0,  # TODO: implement wallet balance calculation
+                balance=0.0,
             )
         except DatabaseError:
             logger.error("[AnalyticsService.get_nav_stats] DB error for user %s", user_id)
@@ -52,9 +61,7 @@ class AnalyticsService:
 
     def get_kpis(self, user_id: str) -> DashboardKPIDTO:
         try:
-
             active_orders = self._order_repo.get_active_orders(user_id)
-
             portfolio_value = sum(o.total_price for o in active_orders)
 
             due_dates = [o.due_date for o in active_orders if o.due_date]

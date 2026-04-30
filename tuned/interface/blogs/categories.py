@@ -1,17 +1,23 @@
-from tuned.dtos.blogs import BlogCategoryResponseDTO
+from __future__ import annotations
 import logging
-from typing import List
+from typing import List, Optional, TYPE_CHECKING
 
-from tuned.dtos import BlogCategoryDTO
-from tuned.repository import repositories
+from tuned.dtos import BlogCategoryDTO, BlogCategoryResponseDTO
 from tuned.repository.exceptions import AlreadyExists, DatabaseError, NotFound
 from tuned.core.logging import get_logger
+
+if TYPE_CHECKING:
+    from tuned.repository import Repository
 
 logger: logging.Logger = get_logger(__name__)
 
 class BlogCategoryService:
-    def __init__(self) -> None:
-        self._repo = repositories.blog
+    def __init__(self, repos: Optional[Repository] = None) -> None:
+        if repos:
+            self._repo = repos.blog
+        else:
+            from tuned.repository import repositories
+            self._repo = repositories.blog
 
     def create_category(self, data: BlogCategoryDTO) -> BlogCategoryResponseDTO:
         try:
@@ -45,7 +51,6 @@ class BlogCategoryService:
             logger.error("Database error while fetching categories")
             raise DatabaseError("Database error while fetching categories")
 
-    
     def update_or_delete_category(self, id: str, data: BlogCategoryDTO) -> BlogCategoryResponseDTO:
         try:
             logger.debug("Updating or deleting blog category: %s", id)
@@ -56,4 +61,3 @@ class BlogCategoryService:
         except DatabaseError:
             logger.error("Database error while updating or deleting category")
             raise DatabaseError("Database error while updating or deleting category")
-

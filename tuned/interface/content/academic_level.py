@@ -1,19 +1,21 @@
+from __future__ import annotations
 import logging
 from typing import Optional, TYPE_CHECKING
-from tuned.dtos import AcademicLevelDTO, AcademicLevelResponseDTO, AcademicLevelUpdateDTO
+
+from tuned.dtos import AcademicLevelDTO, AcademicLevelResponseDTO
 from tuned.repository.exceptions import AlreadyExists, DatabaseError, NotFound
 from tuned.core.logging import get_logger
-from tuned.repository.protocols import AcademicLevelRepositoryProtocol
 
 if TYPE_CHECKING:
     from tuned.repository import Repository
 
 logger: logging.Logger = get_logger(__name__)
 
-class AcademicLevelService:
-    """Service layer for AcademicLevel business logic."""
 
-    def __init__(self, repos: Optional["Repository"] = None) -> None:
+class AcademicLevelService:
+    """Service layer for academic level business logic."""
+
+    def __init__(self, repos: Optional[Repository] = None) -> None:
         if repos:
             self._repo = repos.academic_level
         else:
@@ -23,9 +25,9 @@ class AcademicLevelService:
     def create_academic_level(self, data: AcademicLevelDTO) -> AcademicLevelResponseDTO:
         try:
             logger.info("Creating academic level: %s", data.name)
-            level = self._repo.create(data)
-            logger.info("Academic level created: id=%s name=%s", level.id, level.name)
-            return level
+            result = self._repo.create(data)
+            logger.info("Academic level created: id=%s", result.id)
+            return result
         except AlreadyExists:
             logger.error("Academic level already exists: %s", data.name)
             raise AlreadyExists("Academic level already exists")
@@ -50,12 +52,14 @@ class AcademicLevelService:
             logger.error("Database error while fetching academic levels")
             raise DatabaseError("Database error while fetching academic levels")
 
-    def update_academic_level(self, level_id: str, updates: AcademicLevelUpdateDTO) -> AcademicLevelResponseDTO:
+    def update_academic_level(self, level_id: str, updates: dict) -> AcademicLevelResponseDTO:
         try:
-            logger.info("Updating academic level id=%s", level_id)
-            level = self._repo.update(level_id, updates)
+            allowed = {"name", "description", "display_order"}
+            safe_updates = {k: v for k, v in updates.items() if k in allowed}
+            logger.info("Updating academic level id=%s fields=%s", level_id, list(safe_updates.keys()))
+            result = self._repo.update(level_id, safe_updates)
             logger.info("Academic level updated: id=%s", level_id)
-            return level
+            return result
         except NotFound:
             logger.error("Academic level not found: %s", level_id)
             raise NotFound("Academic level not found")

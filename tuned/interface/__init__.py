@@ -1,3 +1,4 @@
+from typing import Optional, TYPE_CHECKING
 from tuned.interface.users import UserService
 from tuned.interface.referral import ReferralInterface
 from tuned.interface.content import (
@@ -5,18 +6,13 @@ from tuned.interface.content import (
     ServiceCategoryService, ServiceService, TestimonialService
 )
 from tuned.interface.price import PriceRateService, PricingCategoryService
-from tuned.interface.blogs import(
-    BlogCategoryService,
-    BlogPostService,
-    BlogCommentService,
-    CommentReactionService
-)
+from tuned.interface.blogs import Blogs, BlogPostService, BlogCategoryService, BlogCommentService, CommentReactionService
 from tuned.interface.notification import NotificationInterface
 from tuned.interface.order import OrderService
 from tuned.interface.preferences.service import PreferenceService
-from tuned.interface.analytics import AnalyticsService
+from tuned.interface.analytics import Analytics, AnalyticsService
 from tuned.interface.audit import AuditService
-from typing import Optional, TYPE_CHECKING
+from tuned.interface.payment import PaymentService
 
 if TYPE_CHECKING:
     from tuned.repository import Repository
@@ -33,17 +29,15 @@ class Services:
         self._sample: Optional[SampleService] = None
         self._testimonial: Optional[TestimonialService] = None
         self._faq: Optional[FAQService] = None
-        self._blog_category: Optional[BlogCategoryService] = None
-        self._blog_post: Optional[BlogPostService] = None
-        self._blog_comment: Optional[BlogCommentService] = None
-        self._comment_reaction: Optional[CommentReactionService] = None
+        self._blogs: Optional[Blogs] = None
         self._price_rate: Optional[PriceRateService] = None
         self._pricing_category: Optional[PricingCategoryService] = None
         self._notification: Optional[NotificationInterface] = None
         self._order: Optional[OrderService] = None
         self._preferences: Optional[PreferenceService] = None
-        self._analytics: Optional[AnalyticsService] = None
+        self._analytics_agg: Optional[Analytics] = None
         self._audit: Optional[AuditService] = None
+        self._payment: Optional[PaymentService] = None
 
     @property
     def user(self) -> UserService:
@@ -100,70 +94,78 @@ class Services:
         return self._testimonial
 
     @property
+    def blogs(self) -> Blogs:
+        if not self._blogs:
+            self._blogs = Blogs(repos=self._repos)
+        return self._blogs
+
+    @property
     def blog_post(self) -> BlogPostService:
-        if not self._blog_post:
-            self._blog_post = BlogPostService()
-        return self._blog_post
+        return self.blogs.post
 
     @property
     def blog_category(self) -> BlogCategoryService:
-        if not self._blog_category:
-            self._blog_category = BlogCategoryService()
-        return self._blog_category
+        return self.blogs.category
     
     @property
     def blog_comment(self) -> BlogCommentService:
-        if not self._blog_comment:
-            self._blog_comment = BlogCommentService()
-        return self._blog_comment
+        return self.blogs.comment
     
     @property
     def comment_reaction(self) -> CommentReactionService:
-        if not self._comment_reaction:
-            self._comment_reaction = CommentReactionService()
-        return self._comment_reaction
+        return self.blogs.reaction
 
     @property
     def price_rate(self) -> PriceRateService:
         if not self._price_rate:
-            self._price_rate = PriceRateService(self)
+            self._price_rate = PriceRateService(interfaces=self, repos=self._repos)
         return self._price_rate
 
     @property
     def pricing_category(self) -> PricingCategoryService:
         if not self._pricing_category:
-            self._pricing_category = PricingCategoryService()
+            self._pricing_category = PricingCategoryService(repos=self._repos)
         return self._pricing_category
 
     @property
     def notification(self) -> NotificationInterface:
         if not self._notification:
-            self._notification = NotificationInterface()
+            self._notification = NotificationInterface(repos=self._repos)
         return self._notification
 
     @property
     def order(self) -> OrderService:
         if not self._order:
-            self._order = OrderService()
+            self._order = OrderService(repos=self._repos)
         return self._order
 
     @property
     def preferences(self) -> PreferenceService:
         if not self._preferences:
-            self._preferences = PreferenceService()
+            self._preferences = PreferenceService(repos=self._repos)
         return self._preferences
 
     @property
+    def analytics_agg(self) -> Analytics:
+        if not self._analytics_agg:
+            self._analytics_agg = Analytics(repos=self._repos)
+        return self._analytics_agg
+
+    @property
     def analytics(self) -> AnalyticsService:
-        if not self._analytics:
-            self._analytics = AnalyticsService()
-        return self._analytics
+        return self.analytics_agg.client
 
     @property
     def audit(self) -> AuditService:
         if not self._audit:
             self._audit = AuditService(repos=self._repos)
         return self._audit
+
+    @property
+    def payment(self) -> PaymentService:
+        if not self._payment:
+            self._payment = PaymentService(repos=self._repos)
+        return self._payment
 
 
 # Global instance for legacy support.
@@ -179,6 +181,7 @@ service_category = interface.service_category
 sample = interface.sample
 testimonial = interface.testimonial
 faq = interface.faq
+blogs_agg = interface.blogs
 blog_category = interface.blog_category
 blog_post = interface.blog_post
 blog_comment = interface.blog_comment
@@ -189,3 +192,5 @@ notification = interface.notification
 order = interface.order
 preferences = interface.preferences
 analytics = interface.analytics
+payment = interface.payment
+audit = interface.audit

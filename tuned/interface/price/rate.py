@@ -1,5 +1,6 @@
+from __future__ import annotations
 import logging
-
+from typing import Optional, TYPE_CHECKING
 from tuned.dtos import (
     PriceRateDTO,
     PriceRateResponseDTO,
@@ -7,20 +8,27 @@ from tuned.dtos import (
     CalculatePriceRequestDTO,
     CalculatePriceResponseDTO,
 )
-from tuned.repository import repositories
 from tuned.repository.exceptions import AlreadyExists, DatabaseError, NotFound
 from tuned.interface.price.helper import CalculatePriceService
 from tuned.core.logging import get_logger
-from typing import TYPE_CHECKING
-
-logger: logging.Logger = get_logger(__name__)
 
 if TYPE_CHECKING:
     from tuned.interface import Services
+    from tuned.repository import Repository
+    from tuned.repository.protocols import PriceRateRepositoryProtocol
+
+logger: logging.Logger = get_logger(__name__)
 
 class PriceRateService:
-    def __init__(self, interfaces: "Services") -> None:
-        self._repo = repositories.price_rate
+    def __init__(self, interfaces: Optional[Services] = None, repos: Optional[Repository] = None) -> None:
+        if repos:
+            self._repo: PriceRateRepositoryProtocol = repos.price_rate
+        elif interfaces and hasattr(interfaces, "_repos") and interfaces._repos:
+            self._repo = interfaces._repos.price_rate
+        else:
+            from tuned.repository import repositories
+            self._repo = repositories.price_rate
+            
         self._interfaces = interfaces
 
     def create_rate(self, data: PriceRateDTO) -> PriceRateResponseDTO:
@@ -101,6 +109,9 @@ class PriceRateService:
     def calculate_price(self, data: CalculatePriceRequestDTO) -> CalculatePriceResponseDTO:
         try:
             logger.info("Calculating price for data=%s", data)
+            if not self._interfaces:
+                from tuned.interface import interface
+                return CalculatePriceService(interface).execute(data)
             return CalculatePriceService(self._interfaces).execute(data)
         except NotFound:
             logger.error("Price rate not found: %s", data)

@@ -1,19 +1,25 @@
+from __future__ import annotations
 import logging
-
+from typing import Optional, TYPE_CHECKING
 from tuned.dtos import (
     PricingCategoryDTO,
     PricingCategoryResponseDTO,
 )
-from tuned.repository import repositories
 from tuned.repository.exceptions import AlreadyExists, DatabaseError, NotFound
 from tuned.core.logging import get_logger
 
+if TYPE_CHECKING:
+    from tuned.repository import Repository
+
 logger: logging.Logger = get_logger(__name__)
 
-
 class PricingCategoryService:
-    def __init__(self) -> None:
-        self._repo = repositories.pricing_category
+    def __init__(self, repos: Optional[Repository] = None) -> None:
+        if repos:
+            self._repo = repos.pricing_category
+        else:
+            from tuned.repository import repositories
+            self._repo = repositories.pricing_category
 
     def create_category(self, data: PricingCategoryDTO) -> PricingCategoryResponseDTO:
         try:

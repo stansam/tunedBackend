@@ -1,3 +1,4 @@
+from __future__ import annotations
 import logging
 from dataclasses import asdict, is_dataclass
 from enum import Enum
@@ -12,27 +13,32 @@ from tuned.repository.protocols import PreferenceRepositoryProtocol
 if TYPE_CHECKING:
     from tuned.repository import Repository
     from tuned.interface.protocols import ActivityLogServiceProtocol
+    from tuned.interface.audit import AuditService
 
 logger: logging.Logger = get_logger(__name__)
 
 class PreferenceService:
     def __init__(
         self,
-        repos: Optional["Repository"] = None,
+        repos: Optional[Repository] = None,
         repo: Optional[PreferenceRepositoryProtocol] = None,
-        audit_service: Optional["ActivityLogServiceProtocol"] = None,
+        audit_service: Optional[ActivityLogServiceProtocol] = None,
         event_bus: Optional[EventBus] = None,
     ) -> None:
+        self._repo: PreferenceRepositoryProtocol
+        self._audit: Optional[AuditService] = None
+        self._audit_service: ActivityLogServiceProtocol
+
         if repos:
             self._repo = repo or repos.preferences
-            from tuned.interface.audit import AuditService
-            self._audit = AuditService(repos=repos)
+            from tuned.interface.audit import AuditService as AuditAggregator
+            self._audit = AuditAggregator(repos=repos)
             self._audit_service = audit_service or self._audit.activity_log
         else:
             from tuned.repository import repositories
             self._repo = repo or repositories.preferences
-            from tuned.interface.audit import audit_service
-            self._audit = audit_service
+            from tuned.interface.audit import audit_service as global_audit_agg
+            self._audit = global_audit_agg
             self._audit_service = audit_service or self._audit.activity_log
             
         self._event_bus = event_bus or get_event_bus()

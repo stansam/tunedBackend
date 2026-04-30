@@ -9,15 +9,17 @@ from tuned.dtos.blogs import(
 )
 from tuned.dtos.content import (
     AcademicLevelDTO, AcademicLevelResponseDTO, DeadlineDTO, DeadlineResponseDTO, SampleDTO, TestimonialDTO, FaqDTO,
-    TestimonialResponseDTO, FaqResponseDTO, SampleResponseDTO, SampleListResponseDTO, SampleListRequestDTO, SampleServiceResponseDTO
+    TestimonialResponseDTO, FaqResponseDTO, SampleResponseDTO, SampleListResponseDTO, SampleListRequestDTO, SampleServiceResponseDTO,
+    AcademicLevelUpdateDTO, DeadlineUpdateDTO, FaqUpdateDTO, SampleUpdateDTO, TestimonialUpdateDTO
 )
 from tuned.dtos.price import (
     PricingCategoryDTO, PriceRateDTO, PricingCategoryResponseDTO, PriceRateResponseDTO, PriceRateLookupDTO, 
-    CalculatePriceResponseDTO, CalculatePriceRequestDTO
+    CalculatePriceResponseDTO, CalculatePriceRequestDTO,
+    PricingCategoryUpdateDTO, PriceRateUpdateDTO
 )
 from tuned.dtos.services import (
     ServiceDTO, ServiceCategoryDTO, ServiceResponseDTO, ServiceCategoryResponseDTO,
-    ServiceWithPricingCategory    
+    ServiceWithPricingCategory, ServiceUpdateDTO, ServiceCategoryUpdateDTO
 )
 from tuned.dtos.audit import (
     PriceHistoryCreateDTO, PriceHistoryResponseDTO, OrderStatusHistoryCreateDTO,
@@ -68,10 +70,12 @@ __all__ = [
     "BlogCommentResponseDTO", "CommentReactionDTO", "CommentReactionResponseDTO", "BlogPostListResponseDTO", "BlogPostListRequestDTO", "PostByCategoryRequestDTO",
     "AcademicLevelDTO", "AcademicLevelResponseDTO", "DeadlineDTO", "DeadlineResponseDTO", "SampleDTO", "TestimonialDTO", "FaqDTO",
     "TestimonialResponseDTO", "FaqResponseDTO", "SampleResponseDTO", "SampleListResponseDTO", "SampleListRequestDTO", "SampleServiceResponseDTO",
+    "AcademicLevelUpdateDTO", "DeadlineUpdateDTO", "FaqUpdateDTO", "SampleUpdateDTO", "TestimonialUpdateDTO",
     "PricingCategoryDTO", "PriceRateDTO", "PricingCategoryResponseDTO", "PriceRateResponseDTO", "PriceRateLookupDTO", 
     "CalculatePriceResponseDTO", "CalculatePriceRequestDTO",
+    "PricingCategoryUpdateDTO", "PriceRateUpdateDTO",
     "ServiceDTO", "ServiceCategoryDTO", "ServiceResponseDTO", "ServiceCategoryResponseDTO",
-    "ServiceWithPricingCategory",
+    "ServiceWithPricingCategory", "ServiceUpdateDTO", "ServiceCategoryUpdateDTO",
     "PriceHistoryCreateDTO", "PriceHistoryResponseDTO", "OrderStatusHistoryCreateDTO",
     "OrderStatusHistoryResponseDTO", "ActivityLogCreateDTO", "ActivityLogResponseDTO",
     "ActivityLogFilterDTO", "EmailLogCreateDTO", "EmailLogResponseDTO",

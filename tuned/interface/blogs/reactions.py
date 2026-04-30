@@ -22,14 +22,15 @@ class CommentReactionService:
 
     def create_comment_reaction(self, data: CommentReactionDTO) -> CommentReactionResponseDTO:
         try:
-            logger.debug("Creating comment reaction: %s", data.name)
+            logger.debug("Creating comment reaction of type '%s'", data.reaction_type)
             return self._repo.create_comment_reaction(data)
         except AlreadyExists:
-            logger.error("Comment reaction already exists: %s", data.name)
+            logger.error("Comment reaction already exists for type '%s'", data.reaction_type)
             raise AlreadyExists("reaction already exists")
         except DatabaseError:
             logger.error("Database error while creating reaction")
             raise DatabaseError("Database error while creating reaction")
+
 
     def get_comment_reaction(self, id: str) -> CommentReactionResponseDTO:
         try:

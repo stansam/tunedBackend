@@ -1,12 +1,5 @@
-"""
-Preference service module.
-
-Centralized service for managing user preferences across all categories.
-Provides initialization, retrieval, export, import, and reset functionality.
-"""
-
 from datetime import datetime, timezone
-from typing import Dict, Optional, List
+from typing import Dict, Optional, List, Any
 from flask import current_app
 from tuned.extensions import db
 from tuned.models.user import User
@@ -25,29 +18,8 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-def initialize_user_preferences(user_id: int) -> Dict[str, bool]:
-    """
-    Initialize all preference models for a new user with defaults.
-    
-    Creates all 6 preference categories if they don't already exist.
-    This function is idempotent - safe to call multiple times.
-    
-    Args:
-        user_id: ID of the user to initialize preferences for
-        
-    Returns:
-        dict: Status of initialization for each category
-        Example: {
-            'notification': True,
-            'email': True,
-            'privacy': True,
-            'localization': True,
-            'accessibility': True,
-            'billing': True,
-            'success': True
-        }
-    """
-    result = {}
+def initialize_user_preferences(user_id: int) -> Dict[str, Any]:
+    result: Dict[str, Any] = {}
     user = User.query.get(user_id)
     
     if not user:
@@ -55,15 +27,13 @@ def initialize_user_preferences(user_id: int) -> Dict[str, bool]:
         return {'success': False, 'error': 'User not found'}
     
     try:
-        # 1. Notification Preferences
         if not user.notification_preferences:
             notif_prefs = UserNotificationPreferences(user_id=user_id)
             db.session.add(notif_prefs)
             result['notification'] = True
         else:
-            result['notification'] = False  # Already exists
+            result['notification'] = False
         
-        # 2. Email Preferences
         if not user.email_preferences:
             email_prefs = UserEmailPreferences(user_id=user_id)
             db.session.add(email_prefs)
@@ -71,7 +41,6 @@ def initialize_user_preferences(user_id: int) -> Dict[str, bool]:
         else:
             result['email'] = False
         
-        # 3. Privacy Settings
         if not user.privacy_settings:
             privacy_settings = UserPrivacySettings(user_id=user_id)
             db.session.add(privacy_settings)
@@ -79,7 +48,6 @@ def initialize_user_preferences(user_id: int) -> Dict[str, bool]:
         else:
             result['privacy'] = False
         
-        # 4. Localization Settings (use User.language and User.timezone if set)
         if not user.localization_settings:
             localization = UserLocalizationSettings(
                 user_id=user_id,
@@ -91,7 +59,6 @@ def initialize_user_preferences(user_id: int) -> Dict[str, bool]:
         else:
             result['localization'] = False
         
-        # 5. Accessibility Preferences
         if not user.accessibility_preferences:
             accessibility = UserAccessibilityPreferences(user_id=user_id)
             db.session.add(accessibility)
@@ -99,7 +66,6 @@ def initialize_user_preferences(user_id: int) -> Dict[str, bool]:
         else:
             result['accessibility'] = False
         
-        # 6. Billing Preferences
         if not user.billing_preferences:
             billing = UserBillingPreferences(user_id=user_id)
             db.session.add(billing)
@@ -120,25 +86,7 @@ def initialize_user_preferences(user_id: int) -> Dict[str, bool]:
         return {'success': False, 'error': str(e)}
 
 
-def get_all_user_preferences(user_id: int, lazy_init: bool = True) -> Optional[Dict]:
-    """
-    Retrieve all preferences for a user across all categories.
-    
-    Args:
-        user_id: ID of the user
-        lazy_init: If True, initialize missing preferences automatically
-        
-    Returns:
-        dict: All preferences organized by category, or None if user not found
-        Example: {
-            'notification': {...},
-            'email': {...},
-            'privacy': {...},
-            'localization': {...},
-            'accessibility': {...},
-            'billing': {...}
-        }
-    """
+def get_all_user_preferences(user_id: int, lazy_init: bool = True) -> Optional[Dict[str, Any]]:
     user = User.query.get(user_id)
     
     if not user:
@@ -159,7 +107,6 @@ def get_all_user_preferences(user_id: int, lazy_init: bool = True) -> Optional[D
         if needs_init:
             logger.info(f"Lazy-initializing missing preferences for user {user_id}")
             initialize_user_preferences(user_id)
-            # Refresh user object to get new preferences
             db.session.refresh(user)
     
     return {
@@ -172,19 +119,7 @@ def get_all_user_preferences(user_id: int, lazy_init: bool = True) -> Optional[D
     }
 
 
-def export_user_preferences(user_id: int) -> Optional[Dict]:
-    """
-    Export all user preferences in a GDPR-compliant format.
-    
-    Returns all preference data in a structured format for data portability.
-    Does NOT include sensitive data like passwords or tokens.
-    
-    Args:
-        user_id: ID of the user
-        
-    Returns:
-        dict: Complete preference export with metadata
-    """
+def export_user_preferences(user_id: int) -> Optional[Dict[str, Any]]:
     user = User.query.get(user_id)
     
     if not user:
@@ -208,7 +143,6 @@ def export_user_preferences(user_id: int) -> Optional[Dict]:
         }
     }
     
-    # Log export activity
     try:
         activity = ActivityLog(
             user_id=user_id,
@@ -226,20 +160,7 @@ def export_user_preferences(user_id: int) -> Optional[Dict]:
     return export_data
 
 
-def import_user_preferences(user_id: int, import_data: Dict) -> Dict[str, any]:
-    """
-    Import user preferences from export data (GDPR data portability).
-    
-    Validates and safely imports preference data. Does NOT allow
-    privilege escalation or modification of critical system fields.
-    
-    Args:
-        user_id: ID of the user
-        import_data: Dictionary containing preference data to import
-        
-    Returns:
-        dict: Result of import with validation errors if any
-    """
+def import_user_preferences(user_id: int, import_data: Dict[str, Any]) -> Dict[str, Any]:
     user = User.query.get(user_id)
     
     if not user:
@@ -251,10 +172,8 @@ def import_user_preferences(user_id: int, import_data: Dict) -> Dict[str, any]:
     try:
         preferences_data = import_data.get('preferences', {})
         
-        # Import each category if data is provided
         if 'notification' in preferences_data and preferences_data['notification']:
             if user.notification_preferences:
-                # Update existing
                 for key, value in preferences_data['notification'].items():
                     if hasattr(user.notification_preferences, key) and key not in ['id', 'user_id', 'created_at']:
                         setattr(user.notification_preferences, key, value)
@@ -263,7 +182,6 @@ def import_user_preferences(user_id: int, import_data: Dict) -> Dict[str, any]:
         if 'email' in preferences_data and preferences_data['email']:
             if user.email_preferences:
                 for key, value in preferences_data['email'].items():
-                    # Enforce critical email protection
                     if key in ['order_confirmations', 'payment_receipts', 'account_security']:
                         if value is False:
                             validation_errors.append(f"Cannot disable critical email: {key}")
@@ -302,7 +220,6 @@ def import_user_preferences(user_id: int, import_data: Dict) -> Dict[str, any]:
         
         db.session.commit()
         
-        # Log import activity
         activity = ActivityLog(
             user_id=user_id,
             action='preference_data_imported',
@@ -330,28 +247,13 @@ def import_user_preferences(user_id: int, import_data: Dict) -> Dict[str, any]:
         return {'success': False, 'error': str(e)}
 
 
-def reset_preferences_to_defaults(user_id: int, category: Optional[str] = None) -> Dict[str, any]:
-    """
-    Reset user preferences to default values.
-    
-    Can reset a specific category or all categories at once.
-    Creates a snapshot before resetting for potential recovery.
-    
-    Args:
-        user_id: ID of the user
-        category: Specific category to reset (notification, email, privacy, etc.)
-                 If None, resets all categories
-                 
-    Returns:
-        dict: Result of reset operation
-    """
+def reset_preferences_to_defaults(user_id: int, category: Optional[str] = None) -> Dict[str, Any]:
     user = User.query.get(user_id)
     
     if not user:
         return {'success': False, 'error': 'User not found'}
     
     try:
-        # Create snapshot before reset (for potential recovery)
         snapshot = export_user_preferences(user_id)
         
         reset_categories = []
@@ -388,10 +290,8 @@ def reset_preferences_to_defaults(user_id: int, category: Optional[str] = None) 
         
         db.session.commit()
         
-        # Re-initialize with defaults
         initialize_user_preferences(user_id)
         
-        # Log reset activity
         activity = ActivityLog(
             user_id=user_id,
             action='preferences_reset',

@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from typing import Optional, List, TYPE_CHECKING
 from tuned.models import Service
+from tuned.dtos.base import BaseDTO
 
 if TYPE_CHECKING:
     from tuned.models.service import ServiceCategory
@@ -51,10 +52,10 @@ class ServiceWithPricingCategory:
 
 
 @dataclass
-class ServiceResponseDTO:
+class ServiceResponseDTO(BaseDTO):
     id: str
     name: str
-    description: str
+    description: Optional[str]
     category_id: str
     featured: bool
     pricing_category_id: str
@@ -81,10 +82,10 @@ class ServiceResponseDTO:
             tags=[TagResponseDTO.from_model(tag) for tag in model.tag_list],
         )
 @dataclass
-class ServiceCategoryResponseDTO:
+class ServiceCategoryResponseDTO(BaseDTO):
     id: str
     name: str
-    description: str
+    description: Optional[str]
     order: int
 
     @classmethod

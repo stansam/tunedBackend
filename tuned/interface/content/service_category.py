@@ -2,7 +2,7 @@ from __future__ import annotations
 import logging
 from typing import Optional, TYPE_CHECKING
 
-from tuned.dtos import ServiceCategoryDTO, ServiceCategoryResponseDTO
+from tuned.dtos import ServiceCategoryDTO, ServiceCategoryResponseDTO, ServiceCategoryUpdateDTO
 from tuned.repository.exceptions import AlreadyExists, DatabaseError, NotFound
 from tuned.core.logging import get_logger
 
@@ -13,8 +13,6 @@ logger: logging.Logger = get_logger(__name__)
 
 
 class ServiceCategoryService:
-    """Service layer for service category business logic."""
-
     def __init__(self, repos: Optional[Repository] = None) -> None:
         if repos:
             self._repo = repos.service_category
@@ -52,12 +50,10 @@ class ServiceCategoryService:
             logger.error("Database error while fetching service categories")
             raise DatabaseError("Database error while fetching service categories")
 
-    def update_category(self, category_id: str, updates: dict) -> ServiceCategoryResponseDTO:
+    def update_category(self, category_id: str, updates: ServiceCategoryUpdateDTO) -> ServiceCategoryResponseDTO:
         try:
-            allowed = {"name", "description", "icon_url", "display_order"}
-            safe_updates = {k: v for k, v in updates.items() if k in allowed}
-            logger.info("Updating service category id=%s fields=%s", category_id, list(safe_updates.keys()))
-            result = self._repo.update(category_id, safe_updates)
+            logger.info("Updating service category id=%s", category_id)
+            result = self._repo.update(category_id, updates)
             logger.info("Service category updated: id=%s", category_id)
             return result
         except NotFound:

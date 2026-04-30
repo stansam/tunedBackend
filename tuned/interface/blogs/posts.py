@@ -83,25 +83,23 @@ class BlogPostService:
             logger.error("Database error while updating or deleting post")
             raise DatabaseError("Database error while fetching comment")
 
-    def get_by_category(self, req: PostByCategoryRequestDTO) -> BlogPostResponseDTO:
+    def get_by_category(self, req: PostByCategoryRequestDTO) -> List[BlogPostResponseDTO]:
         try:
-            logger.debug("Fetching blog post: %s", req.exclude)
+            logger.debug("Fetching blog posts for category: %s", req.category_id)
             return self._repo.get_by_category(req)
-        except NotFound:
-            logger.error("Post not found: %s", req.exclude)
-            raise NotFound("post not found")
         except DatabaseError:
-            logger.error("Database error while fetching post")
-            raise DatabaseError("Database error while fetching post")
+            logger.error("Database error while fetching posts by category")
+            raise DatabaseError("Database error while fetching posts")
     
-    def get_related(self, slug: str) -> BlogPostResponseDTO:
+    def get_related(self, slug: str) -> List[BlogPostResponseDTO]:
         try:
-            logger.debug("Fetching related blog posts: %s", slug)
+            logger.debug("Fetching related blog posts for: %s", slug)
             post = self.get_by_slug(slug)
+            if not post.category_id:
+                return []
             return self.get_by_category(PostByCategoryRequestDTO(category_id=post.category_id, exclude=slug, per_page=3))
         except NotFound:
-            logger.error("Post not found: %s", slug)
-            raise NotFound("post not found")
+            return []
         except DatabaseError:
-            logger.error("Database error while fetching post")
-            raise DatabaseError("Database error while fetching post")
+            logger.error("Database error while fetching related posts")
+            raise DatabaseError("Database error while fetching posts")

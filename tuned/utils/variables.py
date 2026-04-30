@@ -3,9 +3,10 @@ class Variables:
     USER_REGISTER_ACTION = "user_register"
     USER_ENTITY_TYPE = "User"
     EMAIL_VERIFICATION_ACTION = "email_verification"
-    USER_UPDATE_ACTION = "user_update"
+    PROFILE_UPDATE_ACTION = "user_profile_update"
     PASSWORD_CHANGE_ACTION = "password_change"
-    AVATAR_UPDATE_ACTION = "avatar_upload"
+    AVATAR_UPLOAD_ACTION = "avatar_upload"
+    AVATAR_UPDATE_ACTION = "avatar_update"
     AVATAR_DELETE_ACTION = "avatar_delete"
 
     ORDER_ENTITY_TYPE = "Order"

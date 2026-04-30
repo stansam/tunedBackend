@@ -1,13 +1,16 @@
 from __future__ import annotations
 
 import logging
+from typing import Any, Dict, TYPE_CHECKING
 from tuned.core.logging import get_logger
-from flask_socketio import emit
+
+if TYPE_CHECKING:
+    from tuned.core.events import EventBus
 
 logger: logging.Logger = get_logger(__name__)
 
 class PaymentEventHandlers:
-    def __init__(self, bus) -> None:
+    def __init__(self, bus: EventBus) -> None:
         self.bus = bus
 
     def register(self) -> None:
@@ -18,7 +21,7 @@ class PaymentEventHandlers:
         self.bus.on("refund.processed", self._on_refund_processed)
         logger.info("[PaymentEventHandlers] registered")
 
-    def _on_payment_created(self, event_data: dict) -> None:
+    def _on_payment_created(self, event_data: Dict[str, Any]) -> None:
         try:
             logger.info(f"[PaymentEventHandlers] Processing payment.created: {event_data['payment_id']}")
             from tuned.extensions import socketio
@@ -30,7 +33,7 @@ class PaymentEventHandlers:
         except Exception as exc:
             logger.error(f"[PaymentEventHandlers] Error in payment.created handler: {exc!r}")
 
-    def _on_payment_client_marked_paid(self, event_data: dict) -> None:
+    def _on_payment_client_marked_paid(self, event_data: Dict[str, Any]) -> None:
         try:
             logger.info(f"[PaymentEventHandlers] Processing payment.client_marked_paid: {event_data['payment_id']}")
             # TODO: Notify Admin (log actionable alert)
@@ -46,7 +49,7 @@ class PaymentEventHandlers:
         except Exception as exc:
             logger.error(f"[PaymentEventHandlers] Error in payment.client_marked_paid handler: {exc!r}")
 
-    def _on_payment_verified_by_admin(self, event_data: dict) -> None:
+    def _on_payment_verified_by_admin(self, event_data: Dict[str, Any]) -> None:
         try:
             logger.info(f"[PaymentEventHandlers] Processing payment.verified_by_admin: {event_data['payment_id']}")
             from tuned.extensions import socketio
@@ -58,7 +61,7 @@ class PaymentEventHandlers:
         except Exception as exc:
             logger.error(f"[PaymentEventHandlers] Error in payment.verified_by_admin handler: {exc!r}")
 
-    def _on_invoice_created(self, event_data: dict) -> None:
+    def _on_invoice_created(self, event_data: Dict[str, Any]) -> None:
         try:
             logger.info(f"[PaymentEventHandlers] Processing invoice.created: {event_data['invoice_id']}")
             from tuned.repository import repositories
@@ -70,7 +73,7 @@ class PaymentEventHandlers:
         except Exception as exc:
             logger.error(f"[PaymentEventHandlers] Error in invoice.created handler: {exc!r}")
 
-    def _on_refund_processed(self, event_data: dict) -> None:
+    def _on_refund_processed(self, event_data: Dict[str, Any]) -> None:
         try:
             logger.info(f"[PaymentEventHandlers] Processing refund.processed: {event_data['refund_id']}")
             # TODO: Add email and dashboard notification

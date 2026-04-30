@@ -131,7 +131,7 @@ class AnalyticsService:
                     UpcomingDeadlineDTO.from_model(o) for o in deadlines
                 ],
                 activity_feed=[
-                    ActivityFeedEntryDTO.from_model(e) for e in log_entries
+                    ActivityFeedEntryDTO.from_dto(e) for e in log_entries
                 ],
             )
         except DatabaseError:

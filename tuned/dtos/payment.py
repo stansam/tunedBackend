@@ -254,7 +254,7 @@ class RefundUpdateDTO:
 @dataclass(kw_only=True)
 class RefundResponseDTO(BaseDTO):
     id: str
-    payment_id: str
+    payment_id: Optional[str]
     amount: float
     reason: Optional[str]
     status: RefundStatus

@@ -1,5 +1,4 @@
 from __future__ import annotations
-
 import logging
 from typing import Optional, TYPE_CHECKING
 from tuned.core.logging import get_logger
@@ -11,6 +10,7 @@ from tuned.repository.protocols import OrderRepositoryProtocol
 if TYPE_CHECKING:
     from tuned.repository import Repository
     from tuned.interface.protocols import ActivityLogServiceProtocol
+    from tuned.interface.audit import AuditService
 
 logger: logging.Logger = get_logger(__name__)
 
@@ -18,20 +18,24 @@ logger: logging.Logger = get_logger(__name__)
 class OrderService:
     def __init__(
         self,
-        repos: Optional["Repository"] = None,
+        repos: Optional[Repository] = None,
         repo: Optional[OrderRepositoryProtocol] = None,
-        audit_service: Optional["ActivityLogServiceProtocol"] = None,
+        audit_service: Optional[ActivityLogServiceProtocol] = None,
     ) -> None:
+        self._repo: OrderRepositoryProtocol
+        self._audit: Optional[AuditService] = None
+        self._audit_service: ActivityLogServiceProtocol
+
         if repos:
             self._repo = repo or repos.order
-            from tuned.interface.audit import AuditService
-            self._audit = AuditService(repos=repos)
+            from tuned.interface.audit import AuditService as AuditAggregator
+            self._audit = AuditAggregator(repos=repos)
             self._audit_service = audit_service or self._audit.activity_log
         else:
             from tuned.repository import repositories
             self._repo = repo or repositories.order
-            from tuned.interface.audit import audit_service
-            self._audit = audit_service
+            from tuned.interface.audit import audit_service as global_audit_agg
+            self._audit = global_audit_agg
             self._audit_service = audit_service or self._audit.activity_log
 
     def reorder(self, order_id: str, user_id: str) -> ReorderResponseDTO:

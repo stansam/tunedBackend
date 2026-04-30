@@ -2,7 +2,7 @@ from __future__ import annotations
 import logging
 from typing import Optional, TYPE_CHECKING
 
-from tuned.dtos import TestimonialDTO, TestimonialResponseDTO
+from tuned.dtos import TestimonialDTO, TestimonialResponseDTO, TestimonialUpdateDTO
 from tuned.repository.exceptions import AlreadyExists, DatabaseError, NotFound
 from tuned.core.logging import get_logger
 
@@ -13,8 +13,6 @@ logger: logging.Logger = get_logger(__name__)
 
 
 class TestimonialService:
-    """Service layer for client testimonial business logic."""
-
     def __init__(self, repos: Optional[Repository] = None) -> None:
         if repos:
             self._repo = repos.testimonial
@@ -24,12 +22,12 @@ class TestimonialService:
 
     def create_testimonial(self, data: TestimonialDTO) -> TestimonialResponseDTO:
         try:
-            logger.info("Creating testimonial from user: %s", data.user_id)
+            logger.info("Creating testimonial from user %s", data.user_id)
             result = self._repo.create(data)
             logger.info("Testimonial created: id=%s", result.id)
             return result
         except AlreadyExists:
-            logger.error("Testimonial already exists from user: %s", data.user_id)
+            logger.error("Testimonial already exists")
             raise AlreadyExists("Testimonial already exists")
         except DatabaseError:
             logger.error("Database error while creating testimonial")
@@ -45,19 +43,37 @@ class TestimonialService:
             logger.error("Database error while fetching testimonial")
             raise DatabaseError("Database error while fetching testimonial")
 
-    def list_testimonials(self, approved_only: bool = True) -> list[TestimonialResponseDTO]:
+    def list_approved_testimonials(self, service_id: str | None = None) -> list[TestimonialResponseDTO]:
         try:
-            return self._repo.get_all(approved_only=approved_only)
+            return self._repo.get_approved(service_id=service_id)
         except DatabaseError:
-            logger.error("Database error while fetching testimonials")
-            raise DatabaseError("Database error while fetching testimonials")
+            logger.error("Database error while fetching approved testimonials")
+            raise DatabaseError("Database error while fetching approved testimonials")
 
-    def update_testimonial(self, testimonial_id: str, updates: dict) -> TestimonialResponseDTO:
+    def list_pending_testimonials(self) -> list[TestimonialResponseDTO]:
         try:
-            allowed = {"content", "rating", "is_approved", "display_order"}
-            safe_updates = {k: v for k, v in updates.items() if k in allowed}
-            logger.info("Updating testimonial id=%s fields=%s", testimonial_id, list(safe_updates.keys()))
-            result = self._repo.update(testimonial_id, safe_updates)
+            return self._repo.get_pending()
+        except DatabaseError:
+            logger.error("Database error while fetching pending testimonials")
+            raise DatabaseError("Database error while fetching pending testimonials")
+
+    def approve_testimonial(self, testimonial_id: str) -> TestimonialResponseDTO:
+        try:
+            logger.info("Approving testimonial id=%s", testimonial_id)
+            result = self._repo.approve(testimonial_id)
+            logger.info("Testimonial approved: id=%s", testimonial_id)
+            return result
+        except NotFound:
+            logger.error("Testimonial not found: %s", testimonial_id)
+            raise NotFound("Testimonial not found")
+        except DatabaseError:
+            logger.error("Database error while approving testimonial")
+            raise DatabaseError("Database error while approving testimonial")
+
+    def update_testimonial(self, testimonial_id: str, updates: TestimonialUpdateDTO) -> TestimonialResponseDTO:
+        try:
+            logger.info("Updating testimonial id=%s", testimonial_id)
+            result = self._repo.update(testimonial_id, updates)
             logger.info("Testimonial updated: id=%s", testimonial_id)
             return result
         except NotFound:

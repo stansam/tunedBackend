@@ -1,4 +1,5 @@
-from typing import Optional, TYPE_CHECKING, Any, Tuple
+from __future__ import annotations
+from typing import Optional, TYPE_CHECKING, Any, Tuple, Dict
 from datetime import datetime, timezone
 import logging
 import os
@@ -30,7 +31,7 @@ logger: logging.Logger = get_logger(__name__)
 event_bus = get_event_bus()
 
 class UserService:
-    def __init__(self, repos: Optional["Repository"] = None):
+    def __init__(self, repos: Optional[Repository] = None):
         if repos:
             self._repo = repos.user
             from tuned.interface.audit import AuditService
@@ -40,17 +41,16 @@ class UserService:
                 audit_service=self._audit.activity_log
             )
         else:
-            # Fallback for legacy
             from tuned.repository import repositories
             self._repo = repositories.user
-            from tuned.interface.audit import AuditService
-            self._audit = AuditService(repos=repositories)
+            from tuned.interface.audit import audit_service
+            self._audit = audit_service
             self._core = CoreUserService(
                 user_repo=repositories.user,
                 audit_service=self._audit.activity_log
             )
 
-    def login_user(self, credentials: LoginRequestDTO) -> Tuple[bool, dict[str, Any]]:
+    def login_user(self, credentials: LoginRequestDTO) -> Tuple[bool, Dict[str, Any]]:
         try:
             user = self._core.authenticate_user(credentials)
             
@@ -58,7 +58,6 @@ class UserService:
                 logger.info(f'Login blocked — email not verified: {user.email}')
                 raise InvalidCredentials("Email not verified.")
 
-            # Framework specific side effect
             login_user(user, remember=credentials.remember_me)
             
             user_dto = UserResponseDTO.from_model(user)
@@ -70,7 +69,7 @@ class UserService:
             logger.error(f"Unexpected login error: {e}")
             raise DatabaseError(str(e))
 
-    def create_user(self, data: CreateUserDTO, locale: BaseRequestDTO, referred_by_code: Optional[str] = None) -> dict[str, Any]:
+    def create_user(self, data: CreateUserDTO, locale: BaseRequestDTO, referred_by_code: Optional[str] = None) -> Dict[str, Any]:
         try:
             created_user = self._core.register_user(
                 data, 
@@ -104,7 +103,7 @@ class UserService:
     def resend_verification_email(self, dto: EmailVerificationResendDTO) -> bool:
         cooldown_key = f'email_resend_cooldown:{dto.email}'
         if redis_client.exists(cooldown_key):
-            ttl: int = redis_client.ttl(cooldown_key)
+            ttl: int = int(redis_client.ttl(cooldown_key))
             raise ValueError(f'rate_limited:{ttl}')
 
         user = self._repo.get_user_for_resend(dto.email)
@@ -133,15 +132,13 @@ class UserService:
         try:
             verified_user = self._repo.confirm_email_verification(dto.uid, dto.token)
             
-            # Audit log
-            # Audit log
             self._audit.activity_log.log(ActivityLogCreateDTO(
                 user_id=str(verified_user.id),
                 action=Variables.EMAIL_VERIFICATION_ACTION,
                 entity_type=Variables.USER_ENTITY_TYPE,
                 entity_id=str(verified_user.id),
                 before=None,
-                after=asdict(verified_user) if hasattr(verified_user, "__dict__") else str(verified_user),
+                after=asdict(UserResponseDTO.from_model(verified_user)),
                 ip_address=dto.ip_address,
                 user_agent=dto.user_agent,
                 created_by=str(verified_user.id),
@@ -155,12 +152,20 @@ class UserService:
         except ValueError as e:
             return False, str(e)
 
-    def get_profile(self, user_id: str) -> dict[str, Any]:
+    def get_user_by_email(self, email: str) -> Dict[str, Any]:
+        user = self._repo.get_user_for_resend(email)
+        if not user:
+            raise NotFound("User not found")
+        return asdict(UserResponseDTO.from_model(user))
+
+    def get_profile(self, user_id: str) -> Dict[str, Any]:
         user = self._repo.get_user_by_id(user_id)
         return asdict(ProfileResponseDTO.from_model(user))
 
-    def update_profile(self, user_id: str, data: UpdateProfileRequestDTO, locale: BaseRequestDTO) -> dict[str, Any]:
+    def update_profile(self, user_id: str, data: UpdateProfileRequestDTO, locale: BaseRequestDTO) -> Dict[str, Any]:
         user = self._repo.get_user_by_id(user_id)
+        before_snapshot = asdict(UserResponseDTO.from_model(user))
+
         update_dto = UpdateUserDTO(
             user_id=user_id,
             first_name=data.first_name,
@@ -169,16 +174,15 @@ class UserService:
             gender=data.gender
         )
         updated_user = self._repo.update_user(update_dto, actor_id=user_id)
+        after_snapshot = asdict(UserResponseDTO.from_model(updated_user))
         
-        # Log activity
-        # Log activity
         self._audit.activity_log.log(ActivityLogCreateDTO(
             user_id=user_id,
-            action='USER_PROFILE_UPDATE',
+            action=Variables.PROFILE_UPDATE_ACTION,
             entity_type=Variables.USER_ENTITY_TYPE,
             entity_id=user_id,
-            before=asdict(user) if hasattr(user, "__dict__") else str(user),
-            after=asdict(updated_user) if hasattr(updated_user, "__dict__") else str(updated_user),
+            before=before_snapshot,
+            after=after_snapshot,
             ip_address=locale.ip_address,
             user_agent=locale.user_agent,
             created_by=user_id
@@ -199,7 +203,7 @@ class UserService:
         
         self._audit.activity_log.log(ActivityLogCreateDTO(
             user_id=user_id,
-            action='PASSWORD_CHANGE',
+            action=Variables.PASSWORD_CHANGE_ACTION,
             entity_type=Variables.USER_ENTITY_TYPE,
             entity_id=user_id,
             before=None,
@@ -211,7 +215,7 @@ class UserService:
         self._repo.save()
         return True
 
-    def upload_avatar(self, user_id: str, file: Any, locale: BaseRequestDTO) -> dict[str, Any]:
+    def upload_avatar(self, user_id: str, file: Any, locale: BaseRequestDTO) -> Dict[str, Any]:
         user = self._repo.get_user_by_id(user_id)
         
         static_folder = current_app.static_folder or "static"
@@ -232,7 +236,7 @@ class UserService:
         
         self._audit.activity_log.log(ActivityLogCreateDTO(
             user_id=user_id,
-            action='AVATAR_UPLOAD',
+            action=Variables.AVATAR_UPLOAD_ACTION,
             entity_type=Variables.USER_ENTITY_TYPE,
             entity_id=user_id,
             before=None,
@@ -244,7 +248,7 @@ class UserService:
         self._repo.save()
         return {"profile_pic_url": updated_user.get_profile_pic_url()}
 
-    def delete_avatar(self, user_id: str, locale: BaseRequestDTO) -> dict[str, Any]:
+    def delete_avatar(self, user_id: str, locale: BaseRequestDTO) -> Dict[str, Any]:
         user = self._repo.get_user_by_id(user_id)
         updated_user = self._repo.update_user(
             UpdateUserDTO(user_id=user_id, profile_pic="default.png"),
@@ -252,7 +256,7 @@ class UserService:
         )
         self._audit.activity_log.log(ActivityLogCreateDTO(
             user_id=user_id,
-            action='AVATAR_DELETE',
+            action=Variables.AVATAR_DELETE_ACTION,
             entity_type=Variables.USER_ENTITY_TYPE,
             entity_id=user_id,
             before=None,

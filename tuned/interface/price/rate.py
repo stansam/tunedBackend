@@ -4,6 +4,7 @@ from typing import Optional, TYPE_CHECKING
 from tuned.dtos import (
     PriceRateDTO,
     PriceRateResponseDTO,
+    PriceRateUpdateDTO,
     PriceRateLookupDTO,
     CalculatePriceRequestDTO,
     CalculatePriceResponseDTO,
@@ -44,7 +45,7 @@ class PriceRateService:
             logger.info("Price rate created: id=%s", result.id)
             return result
         except AlreadyExists:
-            logger.error("Price rate already exists: %s", data.name)
+            logger.error("Price rate already exists for category %s", data.pricing_category_id)
             raise AlreadyExists("Price rate already exists")
         except DatabaseError:
             logger.error("Database error while creating price rate")
@@ -74,17 +75,15 @@ class PriceRateService:
         self, pricing_category_id: str, active_only: bool = True
     ) -> list[PriceRateResponseDTO]:
         try:
-            return self._repo.get_by_category(pricing_category_id, active_only)
+            return list(self._repo.get_by_category(pricing_category_id, active_only))
         except DatabaseError:
             logger.error("Database error while fetching price rate")
             raise DatabaseError("Database error while fetching price rate")
 
-    def update_rate(self, rate_id: str, updates: dict) -> PriceRateResponseDTO:
+    def update_rate(self, rate_id: str, data: PriceRateUpdateDTO) -> PriceRateResponseDTO:
         try:
-            allowed = {"price_per_page", "is_active"}
-            safe_updates = {k: v for k, v in updates.items() if k in allowed}
-            logger.info("Updating price rate id=%s fields=%s", rate_id, list(safe_updates.keys()))
-            result = self._repo.update(rate_id, safe_updates)
+            logger.info("Updating price rate id=%s", rate_id)
+            result = self._repo.update(rate_id, data)
             logger.info("Price rate updated: id=%s", rate_id)
             return result
         except NotFound:

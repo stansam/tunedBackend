@@ -61,7 +61,7 @@ class ReferralInterface(ReferralInterfaceProtocol):
     def get_referral_growth(self, referrer_id: str) -> Sequence[tuple[str, float]]:
         return self._referral_repo.get_referral_growth(referrer_id)
     
-    def count_monthly_completed_referrals(self, referrer_id: str, year: int, month: int) -> Optional[int]:
+    def count_monthly_completed_referrals(self, referrer_id: str, year: int, month: int) -> int:
         return self._referral_repo.count_monthly_completed_referrals(referrer_id, year, month)
             
     def process_signup(self, new_user_id: str, referral_code: str) -> None:

@@ -1,8 +1,9 @@
+from __future__ import annotations
 import logging
-from typing import Optional, TYPE_CHECKING, Tuple, Any
+from typing import Optional, TYPE_CHECKING, Tuple, Any, cast, Dict
 from datetime import datetime, timezone, timedelta
 import math
-from dataclasses import asdict, is_dataclass
+from dataclasses import asdict
 
 from tuned.core.exceptions import InvalidCredentials, ServiceError
 from tuned.repository.protocols import UserRepositoryProtocol
@@ -24,7 +25,7 @@ class UserService:
     def __init__(
         self, 
         user_repo: UserRepositoryProtocol,
-        audit_service: "ActivityLogServiceProtocol"
+        audit_service: ActivityLogServiceProtocol
     ):
         self._repo = user_repo
         self._audit_service = audit_service
@@ -42,7 +43,7 @@ class UserService:
         except Exception as e:
             raise ServiceError(f"Error while fetching user by referral code: {str(e)}") from e
 
-    def _check_account_lockout(self, user: "User") -> Tuple["User", bool, Optional[str]]:
+    def _check_account_lockout(self, user: User) -> Tuple[User, bool, Optional[str]]:
         if user.failed_login_attempts >= 5:
             if user.last_failed_login:
                 lockout_duration = timedelta(minutes=15)
@@ -60,7 +61,7 @@ class UserService:
         
         return user, False, None
 
-    def authenticate_user(self, credentials: LoginRequestDTO) -> "User":
+    def authenticate_user(self, credentials: LoginRequestDTO) -> User:
         user = self._repo.get_user_by_email(credentials.identifier) if validate_email(credentials.identifier) else None
         if not user:
             success, username = validate_username(credentials.identifier)
@@ -115,18 +116,12 @@ class UserService:
         self._repo.save()
         return updated_user
 
-    def _log_activity(self, user_id: str, action: str, before: "User", after: "User", ip_address: Optional[str], user_agent: Optional[str]) -> None:
+    def _log_activity(self, user_id: str, action: str, before: Optional[User], after: Optional[User], ip_address: Optional[str], user_agent: Optional[str]) -> None:
         try:
-            def _serialize(obj: "User") -> Any:
+            def _serialize(obj: Optional[User]) -> Optional[Dict[str, Any]]:
                 if obj is None:
                     return None
-                if is_dataclass(obj) and not isinstance(obj, type):
-                    return asdict(obj)
-                if hasattr(obj, "to_dict"):
-                    return obj.to_dict()
-                if hasattr(obj, "__dict__"):
-                    return {k: v for k, v in obj.__dict__.items() if not k.startswith("_")}
-                return str(obj)
+                return asdict(UserResponseDTO.from_model(obj))
 
             self._audit_service.log(ActivityLogCreateDTO(
                 user_id=user_id,
@@ -142,7 +137,7 @@ class UserService:
         except Exception as e:
             logger.error(f"Failed to log user activity: {e}")
 
-    def register_user(self, data: CreateUserDTO, ip_address: str, user_agent: str) -> "User":
+    def register_user(self, data: CreateUserDTO, ip_address: str, user_agent: str) -> User:
         user = self._repo.create_user(data)
         
         self._log_activity(

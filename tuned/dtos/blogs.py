@@ -19,7 +19,7 @@ class BlogCategoryResponseDTO(BaseDTO):
     id: str
     name: str
     slug: str
-    description: str
+    description: Optional[str]
 
     @classmethod
     def from_model(cls, obj: "BlogCategory") -> "BlogCategoryResponseDTO":
@@ -50,7 +50,7 @@ class BlogPostResponseDTO(BaseDTO):
     title: str
     content: str
     author: str
-    category_id: str
+    category_id: Optional[str]
     slug: str
     excerpt: str
     featured_image: str
@@ -76,7 +76,7 @@ class BlogPostResponseDTO(BaseDTO):
             is_published=obj.is_published,
             is_featured=obj.is_featured,
             published_at=obj.published_at.isoformat() if obj.published_at else "",
-            comments=[BlogCommentResponseDTO.from_model(comment) for comment in obj.comments.all()],
+            comments=[BlogCommentResponseDTO.from_model(comment) for comment in obj.comments],
             tags=[TagResponseDTO.from_model(tag) for tag in obj.tag_list],
         )
 
@@ -116,8 +116,8 @@ class BlogCommentResponseDTO(BaseDTO):
     id: str
     post_id: str
     content: str
-    name: str = ""
-    email: str = ""
+    name: Optional[str] = ""
+    email: Optional[str] = ""
     user_id: Optional[str] = None
     approved: bool = False
     reactions: List[CommentReactionResponseDTO] = field(default_factory=list)
@@ -132,7 +132,7 @@ class BlogCommentResponseDTO(BaseDTO):
             content=obj.content,
             name=obj.name,
             email=obj.email,
-            user_id=str(obj.user_id),
+            user_id=str(obj.user_id) if obj.user_id else None,
             approved=obj.approved,
             reactions=[CommentReactionResponseDTO.from_model(reaction) for reaction in obj.reactions],
             total_likes=obj.total_likes,

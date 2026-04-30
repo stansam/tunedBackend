@@ -6,11 +6,12 @@ This module provides PDF generation functionality using ReportLab or similar.
 
 from io import BytesIO
 import logging
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
 
-def generate_invoice_pdf(order, include_logo=True, language='en'):
+def generate_invoice_pdf(order: Any, include_logo: bool = True, language: str = 'en') -> BytesIO:
     """
     Generate PDF invoice for an order.
     
@@ -43,7 +44,7 @@ def generate_invoice_pdf(order, include_logo=True, language='en'):
     return pdf_buffer
 
 
-def generate_receipt_pdf(payment):
+def generate_receipt_pdf(payment: Any) -> BytesIO:
     """
     Generate PDF receipt for a payment.
     

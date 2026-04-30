@@ -3,6 +3,7 @@ from __future__ import annotations
 from tuned.core.events import EventBus, EventPayload
 from tuned.core.logging import get_logger
 import logging
+from typing import cast, Any
 
 logger: logging.Logger = get_logger(__name__)
 
@@ -28,8 +29,8 @@ class UserEventHandlers:
         raw_token = payload.get("raw_token")
 
         try:
-            user = GetUserByID(db.session).execute(str(user_id))
-            send_verification_email(user, raw_token)
+            user = GetUserByID(cast(Any, db.session)).execute(str(user_id))
+            send_verification_email(user, str(raw_token or ""))
             send_welcome_task.apply_async(
                 args=[user_id], countdown=1800, queue="email"
             )
@@ -45,8 +46,8 @@ class UserEventHandlers:
         raw_token = payload.get("raw_token")
 
         try:
-            user = GetUserByID(db.session).execute(str(user_id))
-            send_verification_email(user, raw_token)
+            user = GetUserByID(cast(Any, db.session)).execute(str(user_id))
+            send_verification_email(user, str(raw_token or ""))
         except Exception as exc:
             logger.error(
                 "[UserEventHandlers._on_resend_verification] Error: %r", exc
@@ -58,7 +59,7 @@ class UserEventHandlers:
 
         user_id = payload.get("user_id")
         create_in_app_notification.delay(
-            user_id=user_id,
+            user_id=str(user_id),
             title="Email Verified",
             message="Your email has been verified. Welcome to TunedEssays!",
             notification_type=NotificationType.SUCCESS,
@@ -70,7 +71,7 @@ class UserEventHandlers:
 
         user_id = payload.get("user_id")
         create_in_app_notification.delay(
-            user_id=user_id,
+            user_id=str(user_id),
             title="Password Changed",
             message=(
                 "Your password has been successfully updated. "

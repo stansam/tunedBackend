@@ -76,7 +76,6 @@ class PriceRateResponseDTO:
 
 @dataclass
 class PriceRateLookupDTO:
-    """Used to look up a specific rate by the three FK dimensions."""
     pricing_category_id: str
     academic_level_id: str
     deadline_id: str
@@ -92,10 +91,10 @@ class CalculatePriceRequestDTO:
 
 @dataclass
 class CalculatePriceResponseDTO:
-    price_per_page: int
-    page_count: int
-    pages_price: int
-    total_price: int
-    deadline_hours: int
+    price_per_page: float
+    page_count: float
+    pages_price: float
+    total_price: float
+    deadline_hours: float
     selected_deadline: DeadlineResponseDTO
 

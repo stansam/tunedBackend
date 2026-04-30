@@ -2,7 +2,7 @@ from __future__ import annotations
 import logging
 from typing import Optional, TYPE_CHECKING
 
-from tuned.dtos import DeadlineDTO, DeadlineResponseDTO
+from tuned.dtos import DeadlineDTO, DeadlineResponseDTO, DeadlineUpdateDTO
 from tuned.repository.exceptions import AlreadyExists, DatabaseError, NotFound
 from tuned.core.logging import get_logger
 
@@ -13,8 +13,6 @@ logger: logging.Logger = get_logger(__name__)
 
 
 class DeadlineService:
-    """Service layer for deadline business logic."""
-
     def __init__(self, repos: Optional[Repository] = None) -> None:
         if repos:
             self._repo = repos.deadline
@@ -52,12 +50,10 @@ class DeadlineService:
             logger.error("Database error while fetching deadlines")
             raise DatabaseError("Database error while fetching deadlines")
 
-    def update_deadline(self, deadline_id: str, updates: dict) -> DeadlineResponseDTO:
+    def update_deadline(self, deadline_id: str, updates: DeadlineUpdateDTO) -> DeadlineResponseDTO:
         try:
-            allowed = {"name", "hours", "display_order"}
-            safe_updates = {k: v for k, v in updates.items() if k in allowed}
-            logger.info("Updating deadline id=%s fields=%s", deadline_id, list(safe_updates.keys()))
-            result = self._repo.update(deadline_id, safe_updates)
+            logger.info("Updating deadline id=%s", deadline_id)
+            result = self._repo.update(deadline_id, updates)
             logger.info("Deadline updated: id=%s", deadline_id)
             return result
         except NotFound:

@@ -2,7 +2,7 @@ from __future__ import annotations
 import logging
 from typing import Optional, TYPE_CHECKING
 
-from tuned.dtos import FaqDTO, FaqResponseDTO
+from tuned.dtos import FaqDTO, FaqResponseDTO, FaqUpdateDTO
 from tuned.repository.exceptions import AlreadyExists, DatabaseError, NotFound
 from tuned.core.logging import get_logger
 
@@ -59,12 +59,10 @@ class FAQService:
             logger.error("Database error while fetching FAQ categories")
             raise DatabaseError("Database error while fetching FAQ categories")
 
-    def update_faq(self, faq_id: str, updates: dict) -> FaqResponseDTO:
+    def update_faq(self, faq_id: str, updates: FaqUpdateDTO) -> FaqResponseDTO:
         try:
-            allowed = {"question", "answer", "category", "order"}
-            safe_updates = {k: v for k, v in updates.items() if k in allowed}
-            logger.info("Updating FAQ id=%s fields=%s", faq_id, list(safe_updates.keys()))
-            result = self._repo.update(faq_id, safe_updates)
+            logger.info("Updating FAQ id=%s", faq_id)
+            result = self._repo.update(faq_id, updates)
             logger.info("FAQ updated: id=%s", faq_id)
             return result
         except NotFound:

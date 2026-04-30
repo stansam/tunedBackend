@@ -143,12 +143,12 @@ class SampleResponseDTO(BaseDTO):
     title: str
     slug: str
     excerpt: str
-    service_id: str
+    service_id: Optional[str]
     word_count: int
     featured: bool
     image: str
     tags: List[TagResponseDTO]
-    service: SampleServiceResponseDTO
+    service: Optional[SampleServiceResponseDTO]
 
     @classmethod
     def from_model(cls, obj: "Sample") -> "SampleResponseDTO":
@@ -162,7 +162,7 @@ class SampleResponseDTO(BaseDTO):
             featured=obj.featured,
             image=obj.image or "",
             tags=[TagResponseDTO.from_model(tag) for tag in obj.tag_list],
-            service=SampleServiceResponseDTO.from_model(obj.service),
+            service=SampleServiceResponseDTO.from_model(obj.service) if obj.service else None,
         )
 
 @dataclass
@@ -190,9 +190,9 @@ class SampleListRequestDTO(PaginationDTO):
 @dataclass
 class TestimonialResponseDTO(BaseDTO):
     id: str
-    user_id: str
-    service_id: str
-    order_id: str
+    user_id: Optional[str]
+    service_id: Optional[str]
+    order_id: Optional[str]
     content: str
     rating: int
     is_approved: bool
@@ -232,7 +232,7 @@ class FaqResponseDTO(BaseDTO):
 class TagResponseDTO(BaseDTO):
     id: str
     name: str
-    description: str
+    description: Optional[str]
     slug: str
     usage_count: int
 

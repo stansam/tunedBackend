@@ -5,6 +5,7 @@ from typing import Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from tuned.models.audit import ActivityLog
+    from tuned.dtos import ActivityLogResponseDTO
 
 
 from tuned.dtos.order import OrderProgressDTO, UpcomingDeadlineDTO
@@ -57,6 +58,16 @@ class ActivityFeedEntryDTO:
                 if log.entity_id else None
             ),
             created_at=log.created_at.isoformat(),
+        )
+
+    @classmethod
+    def from_dto(cls, dto: "ActivityLogResponseDTO") -> "ActivityFeedEntryDTO":
+        return cls(
+            id=dto.id,
+            action=dto.action,
+            entity_type=dto.entity_type,
+            entity_id=dto.entity_id,
+            created_at=dto.created_at.isoformat() if hasattr(dto.created_at, 'isoformat') else str(dto.created_at),
         )
 
 

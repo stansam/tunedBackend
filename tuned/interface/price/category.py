@@ -4,6 +4,7 @@ from typing import Optional, TYPE_CHECKING
 from tuned.dtos import (
     PricingCategoryDTO,
     PricingCategoryResponseDTO,
+    PricingCategoryUpdateDTO
 )
 from tuned.repository.exceptions import AlreadyExists, DatabaseError, NotFound
 from tuned.core.logging import get_logger
@@ -51,12 +52,10 @@ class PricingCategoryService:
             logger.error("Database error while fetching pricing categories")
             raise DatabaseError("Database error while fetching pricing categories")
 
-    def update_category(self, category_id: str, updates: dict) -> PricingCategoryResponseDTO:
+    def update_category(self, category_id: str, data: PricingCategoryUpdateDTO) -> PricingCategoryResponseDTO:
         try:
-            allowed = {"name", "description", "display_order"}
-            safe_updates = {k: v for k, v in updates.items() if k in allowed}
-            logger.info("Updating pricing category id=%s fields=%s", category_id, list(safe_updates.keys()))
-            result = self._repo.update(category_id, safe_updates)
+            logger.info("Updating pricing category id=%s", category_id)
+            result = self._repo.update(category_id, data)
             logger.info("Pricing category updated: id=%s", category_id)
             return result
         except NotFound:

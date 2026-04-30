@@ -4,7 +4,7 @@ from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 
 from tuned.models import AcademicLevel
-from tuned.dtos.content import AcademicLevelDTO, AcademicLevelResponseDTO
+from tuned.dtos.content import AcademicLevelDTO, AcademicLevelResponseDTO, AcademicLevelUpdateDTO
 from tuned.repository.exceptions import AlreadyExists, DatabaseError, NotFound
 
 
@@ -56,13 +56,14 @@ class UpdateAcademicLevel:
     def __init__(self, session: Session) -> None:
         self.session = session
 
-    def execute(self, level_id: str, updates: dict[str, Any]) -> AcademicLevelResponseDTO:
+    def execute(self, level_id: str, updates: AcademicLevelUpdateDTO) -> AcademicLevelResponseDTO:
         try:
             stmt = select(AcademicLevel).where(AcademicLevel.id == level_id)
             level = self.session.scalar(stmt)
             if not level:
                 raise NotFound("Academic level not found.")
-            for key, value in updates.items():
+            update_data = {k: v for k, v in updates.__dict__.items() if v is not None}
+            for key, value in update_data.items():
                 if hasattr(level, key):
                     setattr(level, key, value)
             self.session.flush()
@@ -89,7 +90,9 @@ class DeleteAcademicLevel:
             raise DatabaseError("Database error while deleting academic level.") from e
 
 
-class AcademicLevelRepository:
+from tuned.repository.protocols import AcademicLevelRepositoryProtocol
+
+class AcademicLevelRepository(AcademicLevelRepositoryProtocol):
     def __init__(self, session: Session) -> None:
         self.session = session
 
@@ -102,7 +105,7 @@ class AcademicLevelRepository:
     def get_all(self) -> list[AcademicLevelResponseDTO]:
         return GetAllAcademicLevels(self.session).execute()
 
-    def update(self, level_id: str, updates: dict[str, Any]) -> AcademicLevelResponseDTO: # TODO: Type Hint the data dict
+    def update(self, level_id: str, updates: AcademicLevelUpdateDTO) -> AcademicLevelResponseDTO:
         return UpdateAcademicLevel(self.session).execute(level_id, updates)
 
     def delete(self, level_id: str) -> None:

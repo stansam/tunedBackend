@@ -29,7 +29,9 @@ from tuned.dtos import (
 from tuned.extensions import db
 
 
-class BlogRepository:
+from tuned.repository.protocols import BlogRepositoryProtocol
+
+class BlogRepository(BlogRepositoryProtocol):
     def __init__(self, session: Session) -> None:
         self.session = session
 

@@ -75,7 +75,9 @@ class GetActivityLogsFiltered:
         except SQLAlchemyError as e:
             raise DatabaseError(f"Database error while fetching activity logs: {str(e)}") from e
 
-class ActivityLogRepository:
+from tuned.repository.protocols import ActivityLogRepositoryProtocol
+
+class ActivityLogRepository(ActivityLogRepositoryProtocol):
     def __init__(self, session: Session) -> None:
         self.session = session
 

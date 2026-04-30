@@ -14,26 +14,27 @@ from tuned.repository.preferences import PreferenceRepository
 from tuned.repository.payment import PaymentRepository
 from tuned.extensions import db
 from sqlalchemy.orm import Session
+from typing import Optional
 
 class Repository:
     def __init__(self, session: Session) -> None:
         self.session = session
-        self._user: UserRepository | None = None
-        self._referral: ReferralRepository | None = None
-        self._blog: BlogRepository | None = None
-        self._academic_level: AcademicLevelRepository | None = None
-        self._deadline: DeadlineRepository | None = None
-        self._service: ServiceRepository | None = None
-        self._service_category: ServiceCategoryRepository | None = None
-        self._sample: SampleRepository | None = None
-        self._testimonial: TestimonialRepository | None = None
-        self._faq: FAQRepository | None = None
-        self._price: PriceRateRepository | None = None
-        self._pricing_category: PricingCategoryRepository | None = None
-        self._audit: AuditRepository | None = None
-        self._order: OrderRepository | None = None
-        self._preferences: PreferenceRepository | None = None
-        self._payment: PaymentRepository | None = None
+        self._user: Optional[UserRepository] = None
+        self._referral: Optional[ReferralRepository] = None
+        self._blog: Optional[BlogRepository] = None
+        self._academic_level: Optional[AcademicLevelRepository] = None
+        self._deadline: Optional[DeadlineRepository] = None
+        self._service: Optional[ServiceRepository] = None
+        self._service_category: Optional[ServiceCategoryRepository] = None
+        self._sample: Optional[SampleRepository] = None
+        self._testimonial: Optional[TestimonialRepository] = None
+        self._faq: Optional[FAQRepository] = None
+        self._price: Optional[PriceRateRepository] = None
+        self._pricing_category: Optional[PricingCategoryRepository] = None
+        self._audit: Optional[AuditRepository] = None
+        self._order: Optional[OrderRepository] = None
+        self._preferences: Optional[PreferenceRepository] = None
+        self._payment: Optional[PaymentRepository] = None
 
     @property
     def user(self) -> UserRepository:
@@ -134,4 +135,6 @@ class Repository:
 # Global instance for legacy support, but should be avoided in new code
 # For strict compliance, this should be initialized within a request context
 # or passed as a dependency.
+# Global instance for legacy support.
+# DEPRECATED: Do not use in new code. Use dependency injection instead.
 repositories = Repository(db.session) # type: ignore[arg-type]

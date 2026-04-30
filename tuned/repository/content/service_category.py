@@ -4,7 +4,7 @@ from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 
 from tuned.models.service import ServiceCategory
-from tuned.dtos.services import ServiceCategoryDTO, ServiceCategoryResponseDTO
+from tuned.dtos.services import ServiceCategoryDTO, ServiceCategoryResponseDTO, ServiceCategoryUpdateDTO
 from tuned.repository.exceptions import AlreadyExists, DatabaseError, NotFound
 
 class CreateServiceCategory:
@@ -56,13 +56,14 @@ class UpdateServiceCategory:
     def __init__(self, session: Session) -> None:
         self.session = session
 
-    def execute(self, category_id: str, updates: dict[str, Any]) -> ServiceCategoryResponseDTO:
+    def execute(self, category_id: str, updates: ServiceCategoryUpdateDTO) -> ServiceCategoryResponseDTO:
         try:
             stmt = select(ServiceCategory).where(ServiceCategory.id == category_id)
             category = self.session.scalar(stmt)
             if not category:
                 raise NotFound("Service category not found.")
-            for key, value in updates.items():
+            update_data = {k: v for k, v in updates.__dict__.items() if v is not None}
+            for key, value in update_data.items():
                 if hasattr(category, key):
                     setattr(category, key, value)
             self.session.flush()
@@ -87,7 +88,9 @@ class DeleteServiceCategory:
         except SQLAlchemyError as e:
             raise DatabaseError("Database error while deleting service category.") from e
 
-class ServiceCategoryRepository:
+from tuned.repository.protocols import ServiceCategoryRepositoryProtocol
+
+class ServiceCategoryRepository(ServiceCategoryRepositoryProtocol):
     def __init__(self, session: Session) -> None:
         self.session = session
 
@@ -100,7 +103,7 @@ class ServiceCategoryRepository:
     def get_all(self) -> list[ServiceCategoryResponseDTO]:
         return GetAllServiceCategories(self.session).execute()
 
-    def update(self, category_id: str, updates: dict[str, Any]) -> ServiceCategoryResponseDTO:
+    def update(self, category_id: str, updates: ServiceCategoryUpdateDTO) -> ServiceCategoryResponseDTO:
         return UpdateServiceCategory(self.session).execute(category_id, updates)
 
     def delete(self, category_id: str) -> None:

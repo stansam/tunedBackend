@@ -4,7 +4,7 @@ from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 
 from tuned.models import PriceRate
-from tuned.dtos.price import PriceRateDTO, PriceRateResponseDTO, PriceRateLookupDTO
+from tuned.dtos.price import PriceRateDTO, PriceRateResponseDTO, PriceRateLookupDTO, PriceRateUpdateDTO
 from tuned.repository.exceptions import AlreadyExists, DatabaseError, NotFound
 
 
@@ -90,13 +90,14 @@ class UpdatePriceRate:
     def __init__(self, session: Session) -> None:
         self.session = session
 
-    def execute(self, rate_id: str, updates: dict[str, Any]) -> PriceRateResponseDTO:
+    def execute(self, rate_id: str, updates: PriceRateUpdateDTO) -> PriceRateResponseDTO:
         try:
             stmt = select(PriceRate).where(PriceRate.id == rate_id)
             rate = self.session.scalar(stmt)
             if not rate:
                 raise NotFound("Price rate not found.")
-            for key, value in updates.items():
+            update_data = {k: v for k, v in updates.__dict__.items() if v is not None}
+            for key, value in update_data.items():
                 if hasattr(rate, key):
                     setattr(rate, key, value)
             self.session.flush()
@@ -125,7 +126,9 @@ class DeletePriceRate:
             raise DatabaseError("Database error while deleting price rate.") from e
 
 
-class PriceRateRepository:
+from tuned.repository.protocols import PriceRateRepositoryProtocol
+
+class PriceRateRepository(PriceRateRepositoryProtocol):
     def __init__(self, session: Session) -> None:
         self.session = session
 
@@ -143,7 +146,7 @@ class PriceRateRepository:
     ) -> list[PriceRateResponseDTO]:
         return GetPriceRatesByCategory(self.session).execute(pricing_category_id, active_only)
 
-    def update(self, rate_id: str, updates: dict[str, Any]) -> PriceRateResponseDTO:
+    def update(self, rate_id: str, updates: PriceRateUpdateDTO) -> PriceRateResponseDTO:
         return UpdatePriceRate(self.session).execute(rate_id, updates)
 
     def delete(self, rate_id: str) -> None:

@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 from tuned.models import PricingCategory
-from tuned.dtos.price import PricingCategoryDTO, PricingCategoryResponseDTO
+from tuned.dtos.price import PricingCategoryDTO, PricingCategoryResponseDTO, PricingCategoryUpdateDTO
 from tuned.repository.exceptions import AlreadyExists, DatabaseError, NotFound
 
 
@@ -59,13 +59,14 @@ class UpdatePricingCategory:
     def __init__(self, session: Session) -> None:
         self.session = session
 
-    def execute(self, category_id: str, updates: dict[str, Any]) -> PricingCategoryResponseDTO:
+    def execute(self, category_id: str, updates: PricingCategoryUpdateDTO) -> PricingCategoryResponseDTO:
         try:
             stmt = select(PricingCategory).where(PricingCategory.id == category_id)
             category = self.session.scalar(stmt)
             if not category:
                 raise NotFound("Pricing category not found.")
-            for key, value in updates.items():
+            update_data = {k: v for k, v in updates.__dict__.items() if v is not None}
+            for key, value in update_data.items():
                 if hasattr(category, key):
                     setattr(category, key, value)
             self.session.flush()
@@ -92,7 +93,9 @@ class DeletePricingCategory:
             raise DatabaseError("Database error while deleting pricing category.") from e
 
 
-class PricingCategoryRepository:
+from tuned.repository.protocols import PricingCategoryRepositoryProtocol
+
+class PricingCategoryRepository(PricingCategoryRepositoryProtocol):
     def __init__(self, session: Session) -> None:
         self.session = session
 
@@ -105,7 +108,7 @@ class PricingCategoryRepository:
     def get_all(self) -> list[PricingCategoryResponseDTO]:
         return GetAllPricingCategories(self.session).execute()
 
-    def update(self, category_id: str, updates: dict[str, Any]) -> PricingCategoryResponseDTO:
+    def update(self, category_id: str, updates: PricingCategoryUpdateDTO) -> PricingCategoryResponseDTO:
         return UpdatePricingCategory(self.session).execute(category_id, updates)
 
     def delete(self, category_id: str) -> None:

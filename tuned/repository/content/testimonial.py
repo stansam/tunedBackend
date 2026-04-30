@@ -4,7 +4,7 @@ from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 
 from tuned.models import Testimonial
-from tuned.dtos.content import TestimonialDTO, TestimonialResponseDTO
+from tuned.dtos.content import TestimonialDTO, TestimonialResponseDTO, TestimonialUpdateDTO
 from tuned.repository.exceptions import DatabaseError, NotFound
 
 
@@ -103,15 +103,18 @@ class UpdateTestimonial:
     def __init__(self, session: Session) -> None:
         self.session = session
 
-    def execute(self, testimonial_id: str, updates: dict[str, Any]) -> TestimonialResponseDTO:
-        if "rating" in updates and updates["rating"] not in _VALID_RATINGS:
-            raise ValueError(f"Rating must be between 1 and 5, got {updates['rating']}.")
+    def execute(self, testimonial_id: str, updates: TestimonialUpdateDTO) -> TestimonialResponseDTO:
         try:
             stmt = select(Testimonial).where(Testimonial.id == testimonial_id)
             t = self.session.scalar(stmt)
             if not t:
                 raise NotFound("Testimonial not found.")
-            for key, value in updates.items():
+            
+            update_data = {k: v for k, v in updates.__dict__.items() if v is not None}
+            if "rating" in update_data and update_data["rating"] not in _VALID_RATINGS:
+                raise ValueError(f"Rating must be between 1 and 5, got {update_data['rating']}.")
+
+            for key, value in update_data.items():
                 if hasattr(t, key):
                     setattr(t, key, value)
             self.session.flush()
@@ -136,7 +139,9 @@ class DeleteTestimonial:
             raise DatabaseError("Database error while deleting testimonial.") from e
 
 
-class TestimonialRepository:
+from tuned.repository.protocols import TestimonialRepositoryProtocol
+
+class TestimonialRepository(TestimonialRepositoryProtocol):
     def __init__(self, session: Session) -> None:
         self.session = session
 
@@ -155,7 +160,7 @@ class TestimonialRepository:
     def approve(self, testimonial_id: str) -> TestimonialResponseDTO:
         return ApproveTestimonial(self.session).execute(testimonial_id)
 
-    def update(self, testimonial_id: str, updates: dict[str, Any]) -> TestimonialResponseDTO:
+    def update(self, testimonial_id: str, updates: TestimonialUpdateDTO) -> TestimonialResponseDTO:
         return UpdateTestimonial(self.session).execute(testimonial_id, updates)
 
     def delete(self, testimonial_id: str) -> None:

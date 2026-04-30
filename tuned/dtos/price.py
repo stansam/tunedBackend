@@ -13,6 +13,12 @@ class PricingCategoryDTO:
     description: str = ""
     display_order: int = 0
 
+@dataclass
+class PricingCategoryUpdateDTO:
+    name: Optional[str] = None
+    description: Optional[str] = None
+    display_order: Optional[int] = None
+
 
 @dataclass
 class PriceRateDTO:
@@ -21,6 +27,14 @@ class PriceRateDTO:
     deadline_id: str
     price_per_page: float
     is_active: Optional[bool] = True
+
+@dataclass
+class PriceRateUpdateDTO:
+    pricing_category_id: Optional[str] = None
+    academic_level_id: Optional[str] = None
+    deadline_id: Optional[str] = None
+    price_per_page: Optional[float] = None
+    is_active: Optional[bool] = None
 
 @dataclass
 class PricingCategoryResponseDTO:

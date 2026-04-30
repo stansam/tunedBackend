@@ -14,11 +14,22 @@ class DeadlineDTO(BaseDTO):
     hours: int
     order: int = 0
 
+@dataclass
+class DeadlineUpdateDTO:
+    name: Optional[str] = None
+    hours: Optional[int] = None
+    order: Optional[int] = None
+
 
 @dataclass
 class AcademicLevelDTO(BaseDTO):
     name: str
     order: int = 0
+
+@dataclass
+class AcademicLevelUpdateDTO:
+    name: Optional[str] = None
+    order: Optional[int] = None
 
 
 @dataclass
@@ -32,6 +43,17 @@ class SampleDTO(BaseDTO):
     image: str = ""
     slug: Optional[str] = None
 
+@dataclass
+class SampleUpdateDTO:
+    title: Optional[str] = None
+    content: Optional[str] = None
+    service_id: Optional[str] = None
+    excerpt: Optional[str] = None
+    word_count: Optional[int] = None
+    featured: Optional[bool] = None
+    image: Optional[str] = None
+    slug: Optional[str] = None
+
 
 @dataclass
 class TestimonialDTO(BaseDTO):
@@ -42,6 +64,12 @@ class TestimonialDTO(BaseDTO):
     order_id: Optional[str] = None
     is_approved: bool = False
 
+@dataclass
+class TestimonialUpdateDTO:
+    content: Optional[str] = None
+    rating: Optional[int] = None
+    is_approved: Optional[bool] = None
+
 
 @dataclass
 class FaqDTO(BaseDTO):
@@ -49,6 +77,13 @@ class FaqDTO(BaseDTO):
     answer: str
     category: str = "General"
     order: int = 0
+
+@dataclass
+class FaqUpdateDTO:
+    question: Optional[str] = None
+    answer: Optional[str] = None
+    category: Optional[str] = None
+    order: Optional[int] = None
 
 @dataclass
 class TagDTO(BaseDTO):

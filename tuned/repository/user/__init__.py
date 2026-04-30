@@ -14,7 +14,9 @@ from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 from tuned.repository.exceptions import DatabaseError
 
-class UserRepository: 
+from tuned.repository.protocols import UserRepositoryProtocol
+
+class UserRepository(UserRepositoryProtocol): 
     def __init__(self, session: Session) -> None:
         self.session = session  
     def create_user(self, user_data: CreateUserDTO) -> User:

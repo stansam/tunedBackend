@@ -5,7 +5,7 @@ from sqlalchemy import select, func
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 
 from tuned.models import Service, ServiceCategory, Order
-from tuned.dtos.services import ServiceDTO, ServiceResponseDTO
+from tuned.dtos.services import ServiceDTO, ServiceResponseDTO, ServiceUpdateDTO
 from tuned.repository.exceptions import AlreadyExists, DatabaseError, NotFound
 from tuned.core.logging import get_logger
 
@@ -97,13 +97,14 @@ class UpdateService:
     def __init__(self, session: Session) -> None:
         self.session = session
         
-    def execute(self, service_id: str, updates: dict[str, Any]) -> ServiceResponseDTO:
+    def execute(self, service_id: str, updates: ServiceUpdateDTO) -> ServiceResponseDTO:
         try:
             stmt = select(Service).where(Service.id == service_id)
             service = self.session.scalar(stmt)
             if not service:
                 raise NotFound("Service not found.")
-            for key, value in updates.items():
+            update_data = {k: v for k, v in updates.__dict__.items() if v is not None}
+            for key, value in update_data.items():
                 if hasattr(service, key):
                     setattr(service, key, value)
             self.session.flush()
@@ -162,7 +163,9 @@ class GetServiceMix:
             raise DatabaseError(str(exc)) from exc
 
 
-class ServiceRepository:
+from tuned.repository.protocols import ServiceRepositoryProtocol
+
+class ServiceRepository(ServiceRepositoryProtocol):
     def __init__(self, session: Session) -> None:
         self.session = session
 
@@ -181,7 +184,7 @@ class ServiceRepository:
     def get_featured(self) -> list[ServiceResponseDTO]:
         return GetFeaturedServices(self.session).execute()
 
-    def update(self, service_id: str, updates: dict[str, Any]) -> ServiceResponseDTO:
+    def update(self, service_id: str, updates: ServiceUpdateDTO) -> ServiceResponseDTO:
         return UpdateService(self.session).execute(service_id, updates)
 
     def delete(self, service_id: str) -> None:

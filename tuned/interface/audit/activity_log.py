@@ -4,13 +4,17 @@ from tuned.repository import repositories
 from tuned.repository.exceptions import DatabaseError, NotFound
 from tuned.core.logging import get_logger
 from tuned.utils.audit import sanitize_json_snapshot, sanitize_ip, truncate_user_agent
-from typing import List
+from typing import List, Any, Optional
 
 logger: logging.Logger = get_logger(__name__)
 
 class ActivityLogService:
-    def __init__(self) -> None:
-        self._repo = repositories.audit.activity_log
+    def __init__(self, repos: Optional[Any] = None) -> None:
+        if repos:
+            self._repo = repos.audit.activity_log
+        else:
+            from tuned.repository import repositories
+            self._repo = repositories.audit.activity_log
 
     def log(self, data: ActivityLogCreateDTO) -> ActivityLogResponseDTO:
         try:

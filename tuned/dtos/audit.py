@@ -87,8 +87,8 @@ class ActivityLogCreateDTO:
     user_id: Optional[str] = None
     entity_type: Optional[str] = None
     entity_id: Optional[str] = None
-    before: Optional[dict[str, Any]] = None
-    after: Optional[dict[str, Any]] = None
+    before: Any = None
+    after: Any = None
     ip_address: Optional[str] = None
     user_agent: Optional[str] = None
     created_by: Optional[str] = None
@@ -100,8 +100,8 @@ class ActivityLogResponseDTO:
     action: str
     entity_type: Optional[str]
     entity_id: Optional[str]
-    before: Optional[dict[str, Any]]
-    after: Optional[dict[str, Any]]
+    before: Any
+    after: Any
     ip_address: Optional[str]
     user_agent: Optional[str]
     created_at: datetime

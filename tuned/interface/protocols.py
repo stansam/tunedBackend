@@ -4,11 +4,15 @@ from datetime import datetime
 if TYPE_CHECKING:
     from tuned.dtos import (
         UserResponseDTO, CreateUserDTO, LoginRequestDTO, UpdateUserDTO,
-        ActivityLogCreateDTO, EmailVerificationResendDTO, EmailVerifyConfirmDTO,
+        ActivityLogCreateDTO, ActivityLogResponseDTO, EmailVerificationResendDTO, EmailVerifyConfirmDTO,
         ProfileResponseDTO, UpdateProfileRequestDTO, ChangePasswordRequestDTO,
         ReferralResponseDTO, RewardCalculationResultDTO, ReferralRedemptionResultDTO
     )
     from tuned.dtos.base import BaseRequestDTO
+
+@runtime_checkable
+class ActivityLogServiceProtocol(Protocol):
+    def log(self, data: "ActivityLogCreateDTO") -> "ActivityLogResponseDTO": ...
 
 @runtime_checkable
 class UserServiceProtocol(Protocol):

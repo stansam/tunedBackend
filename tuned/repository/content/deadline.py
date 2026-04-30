@@ -4,7 +4,7 @@ from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 
 from tuned.models import Deadline
-from tuned.dtos.content import DeadlineDTO, DeadlineResponseDTO
+from tuned.dtos.content import DeadlineDTO, DeadlineResponseDTO, DeadlineUpdateDTO
 from tuned.repository.exceptions import AlreadyExists, DatabaseError, NotFound
 
 
@@ -56,13 +56,14 @@ class UpdateDeadline:
     def __init__(self, session: Session) -> None:
         self.session = session
 
-    def execute(self, deadline_id: str, updates: dict[str, Any]) -> DeadlineResponseDTO:
+    def execute(self, deadline_id: str, updates: DeadlineUpdateDTO) -> DeadlineResponseDTO:
         try:
             stmt = select(Deadline).where(Deadline.id == deadline_id)
             deadline = self.session.scalar(stmt)
             if not deadline:
                 raise NotFound("Deadline not found.")
-            for key, value in updates.items():
+            update_data = {k: v for k, v in updates.__dict__.items() if v is not None}
+            for key, value in update_data.items():
                 if hasattr(deadline, key):
                     setattr(deadline, key, value)
             self.session.flush()
@@ -89,7 +90,9 @@ class DeleteDeadline:
             raise DatabaseError("Database error while deleting deadline.") from e
 
 
-class DeadlineRepository:
+from tuned.repository.protocols import DeadlineRepositoryProtocol
+
+class DeadlineRepository(DeadlineRepositoryProtocol):
     def __init__(self, session: Session) -> None:
         self.session = session
 
@@ -102,7 +105,7 @@ class DeadlineRepository:
     def get_all(self) -> list[DeadlineResponseDTO]:
         return GetAllDeadlines(self.session).execute()
 
-    def update(self, deadline_id: str, updates: dict[str, Any]) -> DeadlineResponseDTO:
+    def update(self, deadline_id: str, updates: DeadlineUpdateDTO) -> DeadlineResponseDTO:
         return UpdateDeadline(self.session).execute(deadline_id, updates)
 
     def delete(self, deadline_id: str) -> None:

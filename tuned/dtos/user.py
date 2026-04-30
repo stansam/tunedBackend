@@ -57,7 +57,7 @@ class UpdateUserDTO:
     email: Optional[str] = None
     first_name: Optional[str] = None
     last_name: Optional[str] = None
-    gender: Optional[str] = None
+    gender: Optional[GenderEnum] = None
     phone_number: Optional[str] = None
     profile_pic: Optional[str] = None
     failed_login_attempts: Optional[int] = None
@@ -93,7 +93,7 @@ class ProfileResponseDTO:
     email: str
     first_name: str
     last_name: str
-    gender: Optional[str]
+    gender: Optional[GenderEnum]
     phone_number: Optional[str]
     profile_pic_url: Optional[str]
     email_verified: bool
@@ -106,8 +106,6 @@ class ProfileResponseDTO:
 
     @classmethod
     def from_model(cls, obj: "User") -> "ProfileResponseDTO":
-        gender_val = obj.gender.value if obj.gender else None
-        
         last_login = obj.last_login_at.isoformat() if obj.last_login_at else None
         last_failed = obj.last_failed_login.isoformat() if obj.last_failed_login else None
         created = obj.created_at.isoformat() if obj.created_at else None
@@ -118,7 +116,7 @@ class ProfileResponseDTO:
             email=obj.email,
             first_name=obj.first_name,
             last_name=obj.last_name,
-            gender=gender_val,
+            gender=obj.gender,
             phone_number=obj.phone_number,
             profile_pic_url=obj.get_profile_pic_url(),
             email_verified=obj.email_verified,
@@ -135,7 +133,7 @@ class UpdateProfileRequestDTO:
     first_name: str
     last_name: str
     phone_number: Optional[str] = None
-    gender: Optional[str] = None
+    gender: Optional[GenderEnum] = None
 
 @dataclass
 class ChangePasswordRequestDTO:

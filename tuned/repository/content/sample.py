@@ -5,7 +5,7 @@ from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 
 from tuned.models import Sample
 from tuned.dtos.content import(
-    SampleDTO, SampleResponseDTO,
+    SampleDTO, SampleResponseDTO, SampleUpdateDTO,
     SampleListResponseDTO, SampleListRequestDTO
 )
 from tuned.repository.exceptions import AlreadyExists, DatabaseError, NotFound
@@ -153,13 +153,14 @@ class UpdateSample:
     def __init__(self, session: Session) -> None:
         self.session = session
 
-    def execute(self, sample_id: str, updates: dict[str, Any]) -> SampleResponseDTO:
+    def execute(self, sample_id: str, updates: SampleUpdateDTO) -> SampleResponseDTO:
         try:
             stmt = select(Sample).where(Sample.id == sample_id)
             sample = self.session.scalar(stmt)
             if not sample:
                 raise NotFound("Sample not found.")
-            for key, value in updates.items():
+            update_data = {k: v for k, v in updates.__dict__.items() if v is not None}
+            for key, value in update_data.items():
                 if hasattr(sample, key):
                     setattr(sample, key, value)
             self.session.flush()
@@ -198,7 +199,9 @@ class GetSamplesByServiceId:
             raise DatabaseError(f"Database error while fetching samples: {str(e)}") from e
 
 
-class SampleRepository:
+from tuned.repository.protocols import SampleRepositoryProtocol
+
+class SampleRepository(SampleRepositoryProtocol):
     """Facade composing all Sample command objects."""
 
     def __init__(self, session: Session) -> None:
@@ -225,7 +228,7 @@ class SampleRepository:
     ) -> SampleListResponseDTO:
         return ListAllSamples(self.session).execute(req)
 
-    def update(self, sample_id: str, updates: dict[str, Any]) -> SampleResponseDTO:
+    def update(self, sample_id: str, updates: SampleUpdateDTO) -> SampleResponseDTO:
         return UpdateSample(self.session).execute(sample_id, updates)
 
     def delete(self, sample_id: str) -> None:

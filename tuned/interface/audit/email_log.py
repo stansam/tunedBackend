@@ -1,14 +1,18 @@
 import logging
+from typing import Optional, Any
 from tuned.dtos import EmailLogCreateDTO, EmailLogResponseDTO, EmailLogFilterDTO, EmailLogUpdateDTO, AuditListResponseDTO
-from tuned.repository import repositories
 from tuned.repository.exceptions import DatabaseError, NotFound
 from tuned.core.logging import get_logger
 
 logger: logging.Logger = get_logger(__name__)
 
 class EmailLogService:
-    def __init__(self) -> None:
-        self._repo = repositories.audit.email_log
+    def __init__(self, repos: Optional[Any] = None) -> None:
+        if repos:
+            self._repo = repos.audit.email_log
+        else:
+            from tuned.repository import repositories
+            self._repo = repositories.audit.email_log
 
     def log_email(self, data: EmailLogCreateDTO) -> EmailLogResponseDTO:
         try:

@@ -4,7 +4,7 @@ from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 
 from tuned.models import FAQ
-from tuned.dtos.content import FaqDTO, FaqResponseDTO
+from tuned.dtos.content import FaqDTO, FaqResponseDTO, FaqUpdateDTO
 from tuned.repository.exceptions import AlreadyExists, DatabaseError, NotFound
 
 
@@ -83,13 +83,14 @@ class UpdateFAQ:
     def __init__(self, session: Session) -> None:
         self.session = session
 
-    def execute(self, faq_id: str, updates: dict[str, Any]) -> FaqResponseDTO:
+    def execute(self, faq_id: str, updates: FaqUpdateDTO) -> FaqResponseDTO:
         try:
             stmt = select(FAQ).where(FAQ.id == faq_id)
             faq = self.session.scalar(stmt)
             if not faq:
                 raise NotFound("FAQ not found.")
-            for key, value in updates.items():
+            update_data = {k: v for k, v in updates.__dict__.items() if v is not None}
+            for key, value in update_data.items():
                 if hasattr(faq, key):
                     setattr(faq, key, value)
             self.session.flush()
@@ -116,7 +117,9 @@ class DeleteFAQ:
             raise DatabaseError("Database error while deleting FAQ.") from e
 
 
-class FAQRepository:
+from tuned.repository.protocols import FAQRepositoryProtocol
+
+class FAQRepository(FAQRepositoryProtocol):
     def __init__(self, session: Session) -> None:
         self.session = session
 
@@ -132,7 +135,7 @@ class FAQRepository:
     def get_categories(self) -> list[str]:
         return GetFAQCategories(self.session).execute()
 
-    def update(self, faq_id: str, updates: dict[str, Any]) -> FaqResponseDTO:
+    def update(self, faq_id: str, updates: FaqUpdateDTO) -> FaqResponseDTO:
         return UpdateFAQ(self.session).execute(faq_id, updates)
 
     def delete(self, faq_id: str) -> None:

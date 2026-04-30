@@ -1,15 +1,21 @@
 import logging
-from tuned.dtos import DeadlineDTO, DeadlineResponseDTO
-from tuned.repository import repositories
+from typing import Optional, TYPE_CHECKING
+from tuned.dtos import DeadlineDTO, DeadlineResponseDTO, DeadlineUpdateDTO
 from tuned.repository.exceptions import AlreadyExists, DatabaseError, NotFound
 from tuned.core.logging import get_logger
 
+if TYPE_CHECKING:
+    from tuned.repository import Repository
+
 logger: logging.Logger = get_logger(__name__)
 
-
 class DeadlineService:
-    def __init__(self) -> None:
-        self._repo = repositories.deadline
+    def __init__(self, repos: Optional["Repository"] = None) -> None:
+        if repos:
+            self._repo = repos.deadline
+        else:
+            from tuned.repository import repositories
+            self._repo = repositories.deadline
 
     def create_deadline(self, data: DeadlineDTO) -> DeadlineResponseDTO:
         try:
@@ -41,12 +47,10 @@ class DeadlineService:
             logger.error("Database error while fetching deadlines")
             raise DatabaseError("Database error while fetching deadlines")
 
-    def update_deadline(self, deadline_id: str, updates: dict) -> DeadlineResponseDTO:
+    def update_deadline(self, deadline_id: str, updates: DeadlineUpdateDTO) -> DeadlineResponseDTO:
         try:
-            allowed_fields = {"name", "hours", "order"}
-            safe_updates = {k: v for k, v in updates.items() if k in allowed_fields}
-            logger.info("Updating deadline id=%s fields=%s", deadline_id, list(safe_updates.keys()))
-            deadline = self._repo.update(deadline_id, safe_updates)
+            logger.info("Updating deadline id=%s", deadline_id)
+            deadline = self._repo.update(deadline_id, updates)
             logger.info("Deadline updated: id=%s", deadline_id)
             return deadline
         except NotFound:

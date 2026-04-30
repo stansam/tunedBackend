@@ -1,7 +1,7 @@
 from datetime import datetime, timezone, timedelta
 from dataclasses import asdict
 import logging
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 from tuned.models.enums import ReferralStatus
 from tuned.dtos import (
     ReferralResponseDTO,
@@ -10,8 +10,6 @@ from tuned.dtos import (
     UpdateUserDTO,
     ReferralRedemptionResultDTO,
 )
-from tuned.repository import repositories
-from tuned.interface.audit import audit_service
 from tuned.core.logging import get_logger
 from tuned.repository.exceptions import DatabaseError, NotFound
 from tuned.repository.protocols import (
@@ -20,22 +18,24 @@ from tuned.repository.protocols import (
     UserRepositoryProtocol,
 )
 from tuned.utils.variables import Variables
-from tuned.interface.audit.activity_log import ActivityLogService
+
+if TYPE_CHECKING:
+    from tuned.interface.protocols import ActivityLogServiceProtocol
 
 logger: logging.Logger = get_logger(__name__)
 
 class ReferralService:
     def __init__(
         self,
-        user_repo: Optional[UserRepositoryProtocol] = None,
-        referral_repo: Optional[ReferralRepositoryProtocol] = None,
-        order_repo: Optional[OrderRepositoryProtocol] = None,
-        activity_log_service: Optional[ActivityLogService] = None,
+        user_repo: UserRepositoryProtocol,
+        referral_repo: ReferralRepositoryProtocol,
+        order_repo: OrderRepositoryProtocol,
+        audit_service: "ActivityLogServiceProtocol",
     ) -> None:
-        self._user_repo = user_repo or repositories.user
-        self._referral_repo = referral_repo or repositories.referral
-        self._order_repo = order_repo or repositories.order
-        self._log = activity_log_service or audit_service.activity_log
+        self._user_repo = user_repo
+        self._referral_repo = referral_repo
+        self._order_repo = order_repo
+        self._audit_service = audit_service
 
     def _rollback_all(self) -> None:
         self._order_repo.rollback()
@@ -73,7 +73,7 @@ class ReferralService:
                 ip_address="system",
                 user_agent="system"
             )
-            self._log.log(log_dto)
+            self._audit_service.log(log_dto)
             self._referral_repo.save()
             logger.info(f"[ReferralService] Created PENDING referral {referral.id} for referrer {referrer_id}")
             return referral
@@ -149,14 +149,14 @@ class ReferralService:
                 created_by=referral.referrer_id,
             )
             
-            self._log.log(log_dto)
+            self._audit_service.log(log_dto)
             self._referral_repo.save()
             return RewardCalculationResultDTO(
                 referral_id=updated_referral.id,
                 referrer_id=referral.referrer_id,
                 referred_id=referred_id,
                 points_earned=points_earned,
-                new_status=new_status.value if hasattr(new_status, 'value') else new_status
+                new_status=new_status.value if hasattr(new_status, 'value') else str(new_status)
             )
         except (DatabaseError, NotFound, ValueError):
             self._rollback_all()
@@ -223,7 +223,7 @@ class ReferralService:
                 user_agent="system",
                 created_by=user_id,
             )
-            self._log.log(log_dto)            
+            self._audit_service.log(log_dto)            
             return ReferralRedemptionResultDTO(
                 redeemed_points=points_to_apply,
                 discount_amount=discount_amount,
@@ -238,5 +238,3 @@ class ReferralService:
             self._rollback_all()
             logger.error(f"[ReferralService] redeem_points failed: {e}")
             raise
-
-referral_service = ReferralService()

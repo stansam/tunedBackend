@@ -1,27 +1,50 @@
 import logging
-from typing import Optional, Sequence
-from tuned.services.referral_service import referral_service
+from typing import Optional, Sequence, TYPE_CHECKING
 from tuned.core.events import get_event_bus
-from tuned.repository import repositories
 from tuned.core.logging import get_logger
 from tuned.dtos import ReferralResponseDTO, ReferralRedemptionResultDTO
-from tuned.repository.protocols import ReferralRepositoryProtocol, UserRepositoryProtocol
+from tuned.repository.protocols import(
+    ReferralRepositoryProtocol, UserRepositoryProtocol,
+    OrderRepositoryProtocol, ActivityLogRepositoryProtocol
+)
 from tuned.services.referral_service import ReferralService
+from tuned.interface.protocols import ReferralInterfaceProtocol
+
+if TYPE_CHECKING:
+    from tuned.repository import Repository
 
 logger: logging.Logger = get_logger(__name__)
-
-from tuned.interface.protocols import ReferralInterfaceProtocol
 
 class ReferralInterface(ReferralInterfaceProtocol):
     def __init__(
         self,
+        repos: Optional["Repository"] = None,
         service: Optional[ReferralService] = None,
-        user_repo: Optional[UserRepositoryProtocol] = None,
-        referral_repo: Optional[ReferralRepositoryProtocol] = None,
     ) -> None:
-        self._service = service or referral_service
-        self._user_repo = user_repo or repositories.user
-        self._referral_repo = referral_repo or repositories.referral
+        if service:
+            self._service = service
+        elif repos:
+            from tuned.interface.audit import audit_service
+            self._audit = audit_service
+            self._service = ReferralService(
+                user_repo=repos.user,
+                referral_repo=repos.referral,
+                order_repo=repos.order,
+                audit_service=audit_service
+            )
+        else:
+            from tuned.repository import repositories
+            from tuned.interface.audit import audit_service
+            self._audit = audit_service
+            self._service = ReferralService(
+                user_repo=repositories.user,
+                referral_repo=repositories.referral,
+                order_repo=repositories.order,
+                audit_service=audit_service
+            )
+        
+        self._user_repo = repos.user if repos else repositories.user
+        self._referral_repo = repos.referral if repos else repositories.referral
     
     def get_by_id(self, id: str) -> Optional[ReferralResponseDTO]:
         return self._referral_repo.get_by_id(id)

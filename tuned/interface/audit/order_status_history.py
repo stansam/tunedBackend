@@ -1,4 +1,5 @@
 import logging
+from typing import Optional, Any
 from tuned.dtos import OrderStatusHistoryCreateDTO, OrderStatusHistoryResponseDTO, AuditListResponseDTO
 from tuned.repository import repositories
 from tuned.repository.exceptions import DatabaseError, NotFound
@@ -7,8 +8,12 @@ from tuned.core.logging import get_logger
 logger: logging.Logger = get_logger(__name__)
 
 class OrderStatusHistoryService:
-    def __init__(self) -> None:
-        self._repo = repositories.audit.order_status_history
+    def __init__(self, repos: Optional[Any] = None) -> None:
+        if repos:
+            self._repo = repos.audit.order_status_history
+        else:
+            from tuned.repository import repositories
+            self._repo = repositories.audit.order_status_history
 
     def log_status_change(self, data: OrderStatusHistoryCreateDTO) -> OrderStatusHistoryResponseDTO:
         try:

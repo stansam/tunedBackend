@@ -1,4 +1,7 @@
-from tuned.models import RefundStatus
+from tuned.models import (
+    RefundStatus, PaymentStatus, MethodCategory, TransactionType,
+    TransactionStatus, DiscountType, Currency
+)
 from dataclasses import dataclass
 from typing import Optional, TYPE_CHECKING
 from datetime import datetime
@@ -11,14 +14,14 @@ if TYPE_CHECKING:
 @dataclass(kw_only=True)
 class AcceptedMethodCreateDTO:
     name: str
-    category: str
+    category: MethodCategory
     details: Optional[str] = None
     is_active: Optional[bool] = True
 
 @dataclass(kw_only=True)
 class AcceptedMethodUpdateDTO:
     name: Optional[str] = None
-    category: Optional[str] = None
+    category: Optional[MethodCategory] = None
     details: Optional[str] = None
     is_active: Optional[bool] = None
 
@@ -26,7 +29,7 @@ class AcceptedMethodUpdateDTO:
 class AcceptedMethodResponseDTO(BaseDTO):
     id: str
     name: str
-    category: str
+    category: MethodCategory
     details: Optional[str]
     is_active: bool
 
@@ -35,7 +38,7 @@ class AcceptedMethodResponseDTO(BaseDTO):
         return cls(
             id=str(model.id),
             name=model.name,
-            category=model.category.value if hasattr(model.category, 'value') else model.category,
+            category=model.category,
             details=model.details,
             is_active=model.is_active,
             created_at=model.created_at,
@@ -49,7 +52,7 @@ class PaymentCreateDTO:
     user_id: str
     amount: float
     accepted_method_id: int
-    status: Optional[str] = "pending"
+    status: PaymentStatus = PaymentStatus.PENDING
 
 @dataclass(kw_only=True)
 class PaymentClientMarkDTO:
@@ -61,7 +64,7 @@ class PaymentAdminVerifyDTO:
 
 @dataclass(kw_only=True)
 class PaymentUpdateDTO:
-    status: Optional[str] = None
+    status: Optional[PaymentStatus] = None
     client_proof_reference: Optional[str] = None
     client_marked_paid_at: Optional[datetime] = None
     admin_verified_at: Optional[datetime] = None
@@ -73,9 +76,9 @@ class PaymentResponseDTO(BaseDTO):
     order_id: str
     user_id: str
     amount: float
-    status: str
+    status: PaymentStatus
     accepted_method_id: int
-    currency: str
+    currency: Currency
     client_proof_reference: Optional[str]
     client_marked_paid_at: Optional[datetime]
     admin_verified_at: Optional[datetime]
@@ -88,9 +91,9 @@ class PaymentResponseDTO(BaseDTO):
             order_id=model.order_id,
             user_id=model.user_id,
             amount=model.amount,
-            status=model.status.value if hasattr(model.status, 'value') else model.status,
+            status=model.status,
             accepted_method_id=model.accepted_method_id,
-            currency=model.currency.value if hasattr(model.currency, 'value') else model.currency,
+            currency=model.currency,
             client_proof_reference=model.client_proof_reference,
             client_marked_paid_at=model.client_marked_paid_at,
             admin_verified_at=model.admin_verified_at,
@@ -153,18 +156,18 @@ class InvoiceResponseDTO(BaseDTO):
 class TransactionCreateDTO:
     payment_id: str
     transaction_id: str
-    type: str
+    type: TransactionType
     amount: float
-    status: str
+    status: TransactionStatus
 
 @dataclass(kw_only=True)
 class TransactionResponseDTO(BaseDTO):
     id: str
     payment_id: str
     transaction_id: str
-    type: str
+    type: TransactionType
     amount: float
-    status: str
+    status: TransactionStatus
     
     @classmethod
     def from_model(cls, model: "Transaction") -> 'TransactionResponseDTO':
@@ -172,7 +175,7 @@ class TransactionResponseDTO(BaseDTO):
             id=str(model.id),
             payment_id=model.payment_id,
             transaction_id=model.transaction_id,
-            type=model.type.value if hasattr(model.type, 'value') else model.type,
+            type=model.type,
             amount=model.amount,
             status=model.status,
             created_at=model.created_at,
@@ -184,7 +187,7 @@ class TransactionResponseDTO(BaseDTO):
 class DiscountCreateDTO:
     code: str
     amount: float
-    discount_type: Optional[str] = "PERCENTAGE"
+    discount_type: DiscountType = DiscountType.PERCENTAGE
     description: Optional[str] = None
     min_order_value: Optional[float] = 0.0
     max_discount_value: Optional[float] = None
@@ -204,7 +207,7 @@ class DiscountResponseDTO(BaseDTO):
     id: str
     code: str
     description: Optional[str]
-    discount_type: str
+    discount_type: DiscountType
     amount: float
     min_order_value: float
     max_discount_value: Optional[float]
@@ -220,7 +223,7 @@ class DiscountResponseDTO(BaseDTO):
             id=str(model.id),
             code=model.code,
             description=model.description,
-            discount_type=model.discount_type.value if hasattr(model.discount_type, 'value') else model.discount_type,
+            discount_type=model.discount_type,
             amount=model.amount,
             min_order_value=model.min_order_value,
             max_discount_value=model.max_discount_value,
@@ -246,7 +249,7 @@ class RefundCreateDTO:
 
 @dataclass(kw_only=True)
 class RefundUpdateDTO:
-    status: Optional[str] = None
+    status: Optional[RefundStatus] = None
 
 @dataclass(kw_only=True)
 class RefundResponseDTO(BaseDTO):
@@ -254,7 +257,7 @@ class RefundResponseDTO(BaseDTO):
     payment_id: str
     amount: float
     reason: Optional[str]
-    status: str
+    status: RefundStatus
     processed_by: Optional[str]
     admin_reference_id: Optional[str]
     refund_date: Optional[datetime]
@@ -266,7 +269,7 @@ class RefundResponseDTO(BaseDTO):
             payment_id=model.payment_id,
             amount=model.amount,
             reason=model.reason,
-            status=model.status.value if hasattr(model.status, 'value') else model.status,
+            status=model.status,
             processed_by=model.processed_by,
             admin_reference_id=model.admin_reference_id,
             refund_date=model.refund_date,

@@ -18,12 +18,28 @@ class ServiceDTO:
     slug: Optional[str] = None
     is_active: Optional[bool] = True
 
+@dataclass
+class ServiceUpdateDTO:
+    name: Optional[str] = None
+    description: Optional[str] = None
+    category_id: Optional[str] = None
+    featured: Optional[bool] = None
+    pricing_category_id: Optional[str] = None
+    slug: Optional[str] = None
+    is_active: Optional[bool] = None
+
 
 @dataclass
 class ServiceCategoryDTO:
     name: str
     description: str = ""
     order: int = 0
+
+@dataclass
+class ServiceCategoryUpdateDTO:
+    name: Optional[str] = None
+    description: Optional[str] = None
+    order: Optional[int] = None
 
 
 @dataclass

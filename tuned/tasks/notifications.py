@@ -1,11 +1,12 @@
 from tuned.models import NotificationType
 from tuned.celery_app import celery_app
 from celery.utils.log import get_task_logger
-from typing import Optional
+from typing import Optional, Any
+from celery import Task
 
 logger = get_task_logger(__name__)
 
-@celery_app.task(
+@celery_app.task(  # type: ignore[untyped-decorator]
     name='tuned.tasks.notifications.create_in_app_notification',
     bind=True,
     queue='notifications',
@@ -13,7 +14,7 @@ logger = get_task_logger(__name__)
     acks_late=True,
 )
 def create_in_app_notification(
-    self,
+    self: Task,
     user_id: str,
     title: str,
     message: str,
@@ -55,7 +56,7 @@ def create_in_app_notification(
         logger.error(f"[notif] Error creating notification for user {user_id}: {exc!r}")
         raise self.retry(exc=exc, countdown=30)
 
-@celery_app.task
-def test_flask_context():
+@celery_app.task  # type: ignore[untyped-decorator]
+def test_flask_context() -> Any:
     from flask import current_app
     return current_app.config.get("APP_VERSION")

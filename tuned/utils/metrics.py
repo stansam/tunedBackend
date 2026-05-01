@@ -1,36 +1,18 @@
-"""
-Performance metrics tracking utility.
-
-Provides decorators and utilities for tracking:
-- Request/response metrics
-- Cache hit/miss rates
-- Search query analytics
-- Error rates
-"""
 from functools import wraps
 from time import time
 from flask import g, request
 from tuned.redis_client import redis_client
 import json
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
+from typing import Any, Optional, Dict, List, Union, Callable, cast
 
 
 class MetricsCollector:
-    """Collects and stores application metrics"""
-    
     @staticmethod
-    def track_request(endpoint):
-        """
-        Decorator to track request metrics for an endpoint.
-        
-        Usage:
-            @metrics.track_request('/api/blogs')
-            def get_blogs():
-                ...
-        """
-        def decorator(f):
+    def track_request(endpoint: str) -> Callable[..., Any]:
+        def decorator(f: Callable[..., Any]) -> Callable[..., Any]:
             @wraps(f)
-            def decorated_function(*args, **kwargs):
+            def decorated_function(*args: Any, **kwargs: Any) -> Any:
                 start_time = time()
                 
                 try:
@@ -66,8 +48,7 @@ class MetricsCollector:
         return decorator
     
     @staticmethod
-    def _record_request(endpoint, method, status_code, duration_ms, success, error=None):
-        """Record request metrics in Redis"""
+    def _record_request(endpoint: str, method: str, status_code: int, duration_ms: float, success: bool, error: Optional[str] = None) -> None:
         try:
             if not redis_client:
                 return
@@ -81,7 +62,7 @@ class MetricsCollector:
             redis_client.hincrby(f'metrics:requests:{today}:status', f'{endpoint}:{status_code}', 1)
             
             # Track response times (store in list, limit to last 100)
-            redis_client.lpush(f'metrics:duration:{endpoint}', duration_ms)
+            redis_client.lpush(f'metrics:duration:{endpoint}', float(duration_ms))
             redis_client.ltrim(f'metrics:duration:{endpoint}', 0, 99)
             
             # Track errors
@@ -104,8 +85,7 @@ class MetricsCollector:
             print(f"Error recording metrics: {str(e)}")
     
     @staticmethod
-    def track_cache_hit(cache_key):
-        """Track cache hit"""
+    def track_cache_hit(cache_key: str) -> None:
         try:
             if not redis_client:
                 return
@@ -117,8 +97,7 @@ class MetricsCollector:
             pass
     
     @staticmethod
-    def track_cache_miss(cache_key):
-        """Track cache miss"""
+    def track_cache_miss(cache_key: str) -> None:
         try:
             if not redis_client:
                 return
@@ -130,8 +109,7 @@ class MetricsCollector:
             pass
     
     @staticmethod
-    def track_search(query, search_type, result_count):
-        """Track search query analytics"""
+    def track_search(query: str, search_type: str, result_count: int) -> None:
         try:
             if not redis_client:
                 return
@@ -161,19 +139,16 @@ class MetricsCollector:
             pass
     
     @staticmethod
-    def get_endpoint_metrics(endpoint, days=7):
-        """Get metrics for a specific endpoint"""
+    def get_endpoint_metrics(endpoint: str, days: int = 7) -> Optional[Dict[str, Any]]:
         try:
             if not redis_client:
                 return None
             
-            from datetime import timedelta
-            
-            metrics = {
+            metrics_data: Dict[str, Any] = {
                 'endpoint': endpoint,
                 'requests': {},
                 'errors': {},
-                'avg_duration_ms': 0
+                'avg_duration_ms': 0.0
             }
             
             # Collect data for last N days
@@ -181,118 +156,107 @@ class MetricsCollector:
                 date = (datetime.now(timezone.utc) - timedelta(days=i)).strftime('%Y-%m-%d')
                 
                 # Get request count
-                count = redis_client.hget(f'metrics:requests:{date}', endpoint)
+                count = cast(Any, redis_client.hget(f'metrics:requests:{date}', endpoint))
                 if count:
-                    metrics['requests'][date] = int(count)
+                    metrics_data['requests'][date] = int(count)
                 
                 # Get error count
-                errors = redis_client.hget(f'metrics:errors:{date}', endpoint)
+                errors = cast(Any, redis_client.hget(f'metrics:errors:{date}', endpoint))
                 if errors:
-                    metrics['errors'][date] = int(errors)
+                    metrics_data['errors'][date] = int(errors)
             
             # Get average duration
-            durations = redis_client.lrange(f'metrics:duration:{endpoint}', 0, -1)
+            durations: List[Any] = cast(Any, redis_client.lrange(f'metrics:duration:{endpoint}', 0, -1))
             if durations:
                 avg_duration = sum(float(d) for d in durations) / len(durations)
-                metrics['avg_duration_ms'] = round(avg_duration, 2)
+                metrics_data['avg_duration_ms'] = round(avg_duration, 2)
             
-            return metrics
+            return metrics_data
             
         except Exception as e:
             return {'error': str(e)}
     
     @staticmethod
-    def get_cache_metrics(days=7):
-        """Get cache hit/miss statistics"""
+    def get_cache_metrics(days: int = 7) -> Optional[Dict[str, Any]]:
         try:
             if not redis_client:
                 return None
             
-            from datetime import timedelta
-            
-            metrics = {
+            metrics_data: Dict[str, Any] = {
                 'daily': {},
                 'total_hits': 0,
                 'total_misses': 0,
-                'hit_rate': 0
+                'hit_rate': 0.0
             }
             
             for i in range(days):
                 date = (datetime.now(timezone.utc) - timedelta(days=i)).strftime('%Y-%m-%d')
                 
-                hits = redis_client.hget(f'metrics:cache:{date}', 'hits')
-                misses = redis_client.hget(f'metrics:cache:{date}', 'misses')
+                hits_raw = cast(Any, redis_client.hget(f'metrics:cache:{date}', 'hits'))
+                misses_raw = cast(Any, redis_client.hget(f'metrics:cache:{date}', 'misses'))
                 
-                if hits or misses:
-                    hits = int(hits) if hits else 0
-                    misses = int(misses) if misses else 0
+                if hits_raw or misses_raw:
+                    hits: int = int(hits_raw) if hits_raw else 0
+                    misses: int = int(misses_raw) if misses_raw else 0
                     
-                    metrics['daily'][date] = {
+                    metrics_data['daily'][date] = {
                         'hits': hits,
                         'misses': misses,
                         'hit_rate': round((hits / (hits + misses) * 100), 2) if (hits + misses) > 0 else 0
                     }
                     
-                    metrics['total_hits'] += hits
-                    metrics['total_misses'] += misses
+                    metrics_data['total_hits'] += hits
+                    metrics_data['total_misses'] += misses
             
             # Calculate overall hit rate
-            total = metrics['total_hits'] + metrics['total_misses']
+            total = metrics_data['total_hits'] + metrics_data['total_misses']
             if total > 0:
-                metrics['hit_rate'] = round((metrics['total_hits'] / total * 100), 2)
+                metrics_data['hit_rate'] = round((metrics_data['total_hits'] / total * 100), 2)
             
-            return metrics
+            return metrics_data
             
         except Exception as e:
             return {'error': str(e)}
     
     @staticmethod
-    def get_search_analytics(days=7, top_n=20):
-        """Get search analytics"""
+    def get_search_analytics(days: int = 7, top_n: int = 20) -> Optional[Dict[str, Any]]:
         try:
             if not redis_client:
                 return None
             
-            from datetime import timedelta
-            
-            metrics = {
+            metrics_data: Dict[str, Any] = {
                 'daily_totals': {},
                 'popular_queries': [],
                 'zero_result_queries': []
             }
             
-            # Get daily totals
             for i in range(days):
                 date = (datetime.now(timezone.utc) - timedelta(days=i)).strftime('%Y-%m-%d')
                 
-                total = redis_client.hget(f'metrics:search:{date}', 'total')
-                zero_results = redis_client.hget(f'metrics:search:{date}', 'zero_results')
+                total = cast(Any, redis_client.hget(f'metrics:search:{date}', 'total'))
+                zero_results = cast(Any, redis_client.hget(f'metrics:search:{date}', 'zero_results'))
                 
                 if total:
-                    metrics['daily_totals'][date] = {
+                    metrics_data['daily_totals'][date] = {
                         'total': int(total),
                         'zero_results': int(zero_results) if zero_results else 0
                     }
             
-            # Get popular queries
-            popular = redis_client.zrevrange(f'metrics:search:popular', 0, top_n - 1, withscores=True)
-            metrics['popular_queries'] = [
+            popular = cast(Any, redis_client.zrevrange(f'metrics:search:popular', 0, top_n - 1, withscores=True))
+            metrics_data['popular_queries'] = [
                 {'query': query.decode('utf-8') if isinstance(query, bytes) else query, 'count': int(score)}
                 for query, score in popular
             ]
             
-            # Get zero-result queries
-            zero_queries = redis_client.zrevrange(f'metrics:search:zero_queries', 0, top_n - 1, withscores=True)
-            metrics['zero_result_queries'] = [
+            zero_queries = cast(Any, redis_client.zrevrange(f'metrics:search:zero_queries', 0, top_n - 1, withscores=True))
+            metrics_data['zero_result_queries'] = [
                 {'query': query.decode('utf-8') if isinstance(query, bytes) else query, 'count': int(score)}
                 for query, score in zero_queries
             ]
             
-            return metrics
+            return metrics_data
             
         except Exception as e:
             return {'error': str(e)}
 
-
-# Create global instance
 metrics = MetricsCollector()

@@ -2,13 +2,16 @@ from __future__ import annotations
 
 import os
 from celery import Celery, Task
-from flask import has_app_context
 from tuned.core.config import config
 
-flask_app_instance = None
+from typing import Any, Optional, TYPE_CHECKING
+if TYPE_CHECKING:
+    from flask import Flask
 
-class ContextTask(Task):
-    def __call__(self, *args, **kwargs):
+flask_app_instance: Optional[Flask] = None
+
+class ContextTask(Task):  # type: ignore[misc]
+    def __call__(self, *args: Any, **kwargs: Any) -> Any:
         # if has_app_context():
         #     return self.run(*args, **kwargs)
         
@@ -19,8 +22,10 @@ class ContextTask(Task):
         #     flask_app_instance = create_app(flask_env)
             # raise RuntimeError("Celery app not initialized with Flask app")
             
-        with flask_app_instance.app_context():
-            return self.run(*args, **kwargs)
+        if flask_app_instance:
+            with flask_app_instance.app_context():
+                return self.run(*args, **kwargs)
+        return self.run(*args, **kwargs)
 
 config_name = os.environ.get('FLASK_ENV', 'development')
 flask_config = config[config_name]
@@ -57,6 +62,6 @@ celery_app.conf.update(
     },
 )
 
-def init_celery(app):
+def init_celery(app: Flask) -> None:
     global flask_app_instance
     flask_app_instance = app

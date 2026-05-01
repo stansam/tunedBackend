@@ -1,4 +1,5 @@
 import logging
+from typing import Any
 import click
 from flask.cli import with_appcontext
 
@@ -15,7 +16,7 @@ from tuned.core.logging import get_logger
 logger: logging.Logger = get_logger(__name__)
 
 
-def _run_step(ctx: click.Context, cmd: click.BaseCommand, label: str) -> None:
+def _run_step(ctx: click.Context, cmd: Any, label: str) -> None:
     click.echo(f"\n{'─' * 60}")
     click.echo(f"  STEP: {label}")
     click.echo(f"{'─' * 60}")

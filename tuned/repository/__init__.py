@@ -15,11 +15,11 @@ from tuned.repository.payment import PaymentRepository
 from tuned.repository.communication import NewsletterRepository
 from tuned.repository.user.notification import NotificationRepository
 from tuned.extensions import db
-from sqlalchemy.orm import Session
-from typing import Optional
+from sqlalchemy.orm import Session, scoped_session
+from typing import Optional, Union, Any
 
 class Repository:
-    def __init__(self, session: Session) -> None:
+    def __init__(self, session: Any) -> None:
         self.session = session
         self._user: Optional[UserRepository] = None
         self._referral: Optional[ReferralRepository] = None

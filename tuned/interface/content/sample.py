@@ -2,7 +2,10 @@ from __future__ import annotations
 import logging
 from typing import Optional, TYPE_CHECKING
 
-from tuned.dtos import SampleDTO, SampleResponseDTO, SampleUpdateDTO, SampleListRequestDTO, SampleListResponseDTO
+from tuned.dtos import (
+    SampleDTO, SampleResponseDTO, SampleUpdateDTO, SampleListRequestDTO, 
+    SampleListResponseDTO, SampleServiceResponseDTO
+)
 from tuned.repository.exceptions import AlreadyExists, DatabaseError, NotFound
 from tuned.core.logging import get_logger
 
@@ -95,3 +98,17 @@ class SampleService:
         except DatabaseError:
             logger.error("Database error while fetching featured samples")
             raise DatabaseError("Database error while fetching featured samples")
+
+    def get_sample_services(self) -> list[SampleServiceResponseDTO]:
+        try:
+            return list(self._repo.get_distinct_services())
+        except DatabaseError:
+            logger.error("Database error while fetching sample services")
+            raise DatabaseError("Database error while fetching sample services")
+
+    def get_related_samples(self, slug: str) -> list[SampleResponseDTO]:
+        try:
+            return list(self._repo.get_related_samples(slug))
+        except DatabaseError:
+            logger.error("Database error while fetching related samples: %s", slug)
+            raise DatabaseError("Database error while fetching related samples")

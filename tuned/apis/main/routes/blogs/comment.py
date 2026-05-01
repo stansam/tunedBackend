@@ -14,7 +14,7 @@ CACHE_KEY = 'blogs:comments'
 CACHE_TTL = 300
 
 class GetBlogComments(MethodView):
-    def get(self, blog_id: int) -> tuple[Any, int]:
+    def get(self, blog_id: str) -> tuple[Any, int]:
         try:
             raw = redis_client.get(f'{CACHE_KEY}:{blog_id}')
             if raw is not None and isinstance(raw, (str, bytes, bytearray)):

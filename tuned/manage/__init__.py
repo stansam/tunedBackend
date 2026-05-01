@@ -11,11 +11,12 @@ from tuned.manage.commands import (
     seed_db,
     manage_tables,
 )
-from flask import Blueprint
+from typing import Any, Union
+from flask import Blueprint, Flask
 
 manage_bp = Blueprint('manage', __name__)
 
-def register_cli_commands(app):
+def register_cli_commands(app: Union[Flask, Blueprint]) -> None:
     app.cli.add_command(create_superuser)
     app.cli.add_command(create_users)
     app.cli.add_command(create_content)

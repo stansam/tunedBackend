@@ -3,7 +3,7 @@ from tuned.interface.users import UserService
 from tuned.interface.referral import ReferralInterface
 from tuned.interface.content import (
     AcademicLevelService, DeadlineService, FAQService, SampleService,
-    ServiceCategoryService, ServiceService, TestimonialService, TagService
+    ServiceCategoryService, ServiceService, TestimonialService, TagService, SearchService
 )
 from tuned.interface.price import PriceRateService, PricingCategoryService
 from tuned.interface.blogs import Blogs, BlogPostService, BlogCategoryService, BlogCommentService, CommentReactionService
@@ -41,6 +41,7 @@ class Services:
         self._audit: Optional[AuditService] = None
         self._payment: Optional[PaymentService] = None
         self._newsletter: Optional[NewsletterService] = None
+        self._search: Optional[SearchService] = None
 
     @property
     def user(self) -> UserService:
@@ -181,5 +182,11 @@ class Services:
         if not self._newsletter:
             self._newsletter = NewsletterService(repos=self._repos, services=self)
         return self._newsletter
+
+    @property
+    def search(self) -> SearchService:
+        if not self._search:
+            self._search = SearchService(repos=self._repos)
+        return self._search
 
 

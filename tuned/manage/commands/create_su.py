@@ -1,10 +1,8 @@
 from flask.cli import with_appcontext
-# from tuned.models import User
-# from tuned.models.enums import GenderEnum
 import click 
 from tuned.utils.dependencies import get_services
 from tuned.dtos import CreateUserDTO
-# from tuned.extensions import db
+from tuned.dtos.base import BaseRequestDTO
 
 @click.command("createsuperuser")
 @click.option("--username", prompt=True)
@@ -13,14 +11,16 @@ from tuned.dtos import CreateUserDTO
 @click.option("--email", prompt=True)
 @click.option("--password", prompt=True, hide_input=True, confirmation_prompt=True)
 @with_appcontext
-def create_superuser(username, first_name, last_name, email, password) -> str:
+def create_superuser(username: str, first_name: str, last_name: str, email: str, password: str) -> None:
     try:
         user_service = get_services().user
-        user = user_service.get_user_by_email(email)
-
-        if user:
-            click.echo("Admin user already exists")
-            return
+        try:
+            user = user_service.get_user_by_email(email)
+            if user:
+                click.echo("Admin user already exists")
+                return
+        except Exception:
+            pass
 
         admin_dto = CreateUserDTO(
             username=username,
@@ -28,12 +28,14 @@ def create_superuser(username, first_name, last_name, email, password) -> str:
             password=password,
             first_name=first_name,
             last_name=last_name,
-            is_admin=True
+            is_admin=True,
+            email_verified=True
         )
 
-        adminUser = user_service.create_user(admin_dto)
-        if adminUser:
-            click.echo(f"Admin user created successfully. Email:{adminUser.email}")
+        locale = BaseRequestDTO(ip_address="cli", user_agent="cli-tool")
+        admin_user_resp = user_service.create_user(admin_dto, locale)
+        if admin_user_resp:
+            click.echo(f"Admin user created successfully. Email: {admin_user_resp['email']}")
         else:
             click.echo("Admin user creation failed")
     except Exception as e:

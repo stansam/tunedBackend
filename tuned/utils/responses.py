@@ -1,5 +1,5 @@
 from flask import jsonify
-from typing import Any, Dict, Optional, List
+from typing import Any, Dict, Optional, List, Union
 import math
 
 def success_response(
@@ -34,16 +34,19 @@ def error_response(
     return jsonify(response), status
 
 
-def validation_error_response(errors: Dict[str, Any]) -> tuple[Any, int]:
+def validation_error_response(errors: Union[dict[str, Any], list[Any]]) -> tuple[Any, int]:
+    normalized: dict[str, Any] = (
+        errors if isinstance(errors, dict) else {"_errors": errors}
+    )
     return error_response(
         message='Validation failed',
-        errors=errors,  # type: ignore[arg-type]
+        errors=normalized,
         status=422
     )
 
 
 def paginated_response(
-    items: list,
+    items: list[Any],
     page: int,
     per_page: int,
     total: int,

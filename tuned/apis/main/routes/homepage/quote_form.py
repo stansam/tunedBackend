@@ -4,11 +4,12 @@ from marshmallow import ValidationError
 from dataclasses import asdict
 import json
 import logging
-from typing import Any, Optional
+from typing import Any, Optional, cast
+from datetime import datetime
 
 from tuned.utils.dependencies import get_services
 from tuned.apis.main.schemas import CalculatePriceSchema
-from tuned.utils.responses import success_response, error_response
+from tuned.utils.responses import success_response, error_response, validation_error_response
 from tuned.redis_client import redis_client
 from tuned.dtos import CalculatePriceRequestDTO, ServiceWithPricingCategory
 from tuned.utils.enums import PricingCategoryEnum
@@ -79,11 +80,11 @@ class CalculatePrice(MethodView):
     
     def _convert_schema_to_dto(self, data: dict[str, Any]) -> CalculatePriceRequestDTO:
         return CalculatePriceRequestDTO(
-            deadline=data.get('deadline'),
-            pricing_category_id=data.get('pricing_category_id'),
-            academic_level_id=data.get('level_id'),
-            word_count=data.get('word_count'),
-            report_type=data.get('report_type')
+            deadline=cast(datetime, data.get('deadline')),
+            pricing_category_id=cast(str, data.get('pricing_category_id')),
+            academic_level_id=cast(str, data.get('level_id')),
+            word_count=cast(int, data.get('word_count')),
+            report_type=cast(Optional[str], data.get('report_type'))
         )
 
     def _get_service_pricing_category(self, service_id: str) -> str:
@@ -114,11 +115,7 @@ class CalculatePrice(MethodView):
 
         except ValidationError as err:
             logger.error(f'Validation error in calculate price: {str(err)}')
-            return error_response(
-                'Invalid data provided',
-                status=400,
-                errors=err.messages
-            )
+            return validation_error_response(err.messages)
         except NotFound as e:
             logger.error(f'Resource not found in calculate price: {str(e)}')
             return error_response('Failed to calculate price', status=404)

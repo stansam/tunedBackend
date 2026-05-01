@@ -1,9 +1,8 @@
 import logging
+from typing import Any
 from tuned.core.logging import get_logger
 from celery import shared_task
-from tuned.interface.payment import payment_service
-from tuned.dtos.payment import PaymentUpdateDTO
-# from tuned.utils.variables import Variables
+from tuned.utils.dependencies import get_services
 
 logger: logging.Logger = get_logger(__name__)
 
@@ -23,7 +22,7 @@ logger: logging.Logger = get_logger(__name__)
 #     except Exception as exc:
 #         logger.error(f"[PaymentTasks] Error processing async payment {payment_id}: {exc!r}")
 
-@shared_task(name="payment_tasks.generate_monthly_invoices")
+@shared_task(name="payment_tasks.generate_monthly_invoices")  # type: ignore[untyped-decorator]
 def generate_monthly_invoices() -> None:
    # TODO: Implement actual invoice generation
     try:

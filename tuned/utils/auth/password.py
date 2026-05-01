@@ -1,7 +1,7 @@
 import bcrypt
 import secrets
 import string
-from typing import Tuple, Optional
+from typing import Tuple, Optional, Any
 
 
 def hash_password(password: str) -> str:
@@ -48,7 +48,7 @@ def generate_temporary_password(length: int = 16) -> str:
     return ''.join(password)
 
 
-def rehash_password_if_needed(password: str, current_hash: str, user) -> None:
+def rehash_password_if_needed(password: str, current_hash: str, user: Any) -> None:
     if not current_hash.startswith('$2b$'):
         user.set_password(password)
         from tuned.extensions import db

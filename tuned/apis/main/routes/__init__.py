@@ -1,5 +1,6 @@
 from tuned.apis.main.routes.homepage import(
-    GetFeaturedContent, GetQuoteFormOptions, CalculatePrice, NewsletterSubscribeView
+    GetFeaturedContent, GetQuoteFormOptions, CalculatePrice, NewsletterSubscribeView,
+    GlobalSearchView
 )
 from tuned.apis.main.routes.services.list import(
     GetServicesList, GetServicesBySlug, GetServicesByCategory,
@@ -24,6 +25,7 @@ ROUTES: list[dict[str, Any]] = [
     {"url_rule": "/calculate-price", "view_func": CalculatePrice.as_view("calculate_price"), 'methods': ['POST']},
     {"url_rule": "/testimonials", "view_func": TestimonialsView.as_view("testimonials_list"), 'methods': ['GET']},
     {"url_rule": "/newsletter/subscribe", "view_func": NewsletterSubscribeView.as_view("newsletter_subscribe"), 'methods': ['POST']},
+    {"url_rule": "/search", "view_func": GlobalSearchView.as_view("global_search"), 'methods': ['GET']},
 
     {"url_rule": "/services", "view_func": GetServicesList.as_view("services"), 'methods': ['GET']},
     {"url_rule": "/services/<string:slug>", "view_func": GetServicesBySlug.as_view("service_by_slug"), 'methods': ['GET']},

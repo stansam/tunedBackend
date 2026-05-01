@@ -10,13 +10,12 @@ class NewsletterSubscribeDTO(BaseDTO):
     email: str
     name: Optional[str] = None
 
-@dataclass
+@dataclass(kw_only=True)
 class NewsletterSubscriberResponseDTO(BaseDTO):
     id: str
     email: str
     name: str
     is_active: bool
-    created_at: str
 
     @classmethod
     def from_model(cls, obj: "NewsletterSubscriber") -> "NewsletterSubscriberResponseDTO":
@@ -25,5 +24,5 @@ class NewsletterSubscriberResponseDTO(BaseDTO):
             email=obj.email,
             name=obj.name or "",
             is_active=obj.is_active,
-            created_at=obj.created_at.isoformat() if obj.created_at else ""
+            created_at=obj.created_at
         )

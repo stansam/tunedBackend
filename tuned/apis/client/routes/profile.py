@@ -52,7 +52,8 @@ class AvatarUploadView(MethodView):
         if file.filename == '':
             return error_response('No file selected', status=400)
 
-        if not file.content_type.startswith('image/'):
+        content_type = file.content_type or ""
+        if not content_type.startswith('image/'):
             return error_response('Only images are allowed', status=400)
 
         try:

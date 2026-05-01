@@ -6,9 +6,10 @@ from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 from tuned.models import Sample
 from tuned.dtos.content import(
     SampleDTO, SampleResponseDTO, SampleUpdateDTO,
-    SampleListResponseDTO, SampleListRequestDTO
+    SampleListResponseDTO, SampleListRequestDTO, SampleServiceResponseDTO
 )
 from tuned.repository.exceptions import AlreadyExists, DatabaseError, NotFound
+from tuned.repository.protocols import SampleRepositoryProtocol
 
 class CreateSample:
     def __init__(self, session: Session) -> None:
@@ -199,7 +200,46 @@ class GetSamplesByServiceId:
             raise DatabaseError(f"Database error while fetching samples: {str(e)}") from e
 
 
-from tuned.repository.protocols import SampleRepositoryProtocol
+class GetRelatedSamples:
+    def __init__(self, session: Session) -> None:
+        self.session = session
+
+    def execute(self, slug: str) -> list[SampleResponseDTO]:
+        try:
+            stmt = select(Sample).where(Sample.slug == slug)
+            sample = self.session.scalar(stmt)
+            if not sample:
+                return []
+            
+            related_stmt = (
+                select(Sample)
+                .where(Sample.service_id == sample.service_id)
+                .where(Sample.id != sample.id)
+                .limit(4)
+            )
+            related = self.session.scalars(related_stmt).all()
+            return [SampleResponseDTO.from_model(s) for s in related]
+        except SQLAlchemyError as e:
+            raise DatabaseError(f"Database error while fetching related samples: {str(e)}") from e
+
+
+class GetDistinctServices:
+    def __init__(self, session: Session) -> None:
+        self.session = session
+
+    def execute(self) -> list[SampleServiceResponseDTO]:
+        try:
+            from tuned.models import Service
+            stmt = (
+                select(Service)
+                .join(Sample)
+                .group_by(Service.id)
+            )
+            services = self.session.scalars(stmt).all()
+            return [SampleServiceResponseDTO.from_model(s) for s in services]
+        except SQLAlchemyError as e:
+            raise DatabaseError(f"Database error while fetching distinct services: {str(e)}") from e
+
 
 class SampleRepository(SampleRepositoryProtocol):
     def __init__(self, session: Session) -> None:
@@ -234,3 +274,9 @@ class SampleRepository(SampleRepositoryProtocol):
 
     def get_samples_by_service_id(self, service_id: str) -> list[SampleResponseDTO]:
         return GetSamplesByServiceId(self.session).execute(service_id)
+
+    def get_related_samples(self, slug: str) -> list[SampleResponseDTO]:
+        return GetRelatedSamples(self.session).execute(slug)
+
+    def get_distinct_services(self) -> list[SampleServiceResponseDTO]:
+        return GetDistinctServices(self.session).execute()

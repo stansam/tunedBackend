@@ -109,7 +109,7 @@ class SampleRelatedView(MethodView):
                 logger.info(f'Sample related fetched from cache: {slug}')
                 return success_response(data)
             
-            related_samples = get_services().sample.get_related(slug)
+            related_samples = get_services().sample.get_related_samples(slug)
             related_samples_data = [asdict(s) for s in related_samples]
 
             redis_client.set(

@@ -2,7 +2,7 @@ from flask import current_app, render_template
 from flask_mail import Mail, Message
 from tuned.models.audit import EmailLog
 from tuned.extensions import db, mail
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Dict, Any, cast
 import logging
 
 
@@ -16,7 +16,7 @@ def send_email(
     sender: Optional[str] = None,
     **context: Any
 ) -> bool:
-    recipients = [to] if isinstance(to, str) else to
+    recipients: List[str] = [to] if isinstance(to, str) else list(to)
     
     email_log = EmailLog.log_email(
         recipient=recipients[0] if recipients else '',
@@ -29,7 +29,7 @@ def send_email(
         
         msg = Message(
             subject=subject,
-            recipients=recipients,
+            recipients=cast(Any, recipients),
             html=html,
             sender=sender if sender else current_app.config['MAIL_DEFAULT_SENDER']
         )
@@ -48,12 +48,9 @@ def send_email(
         return False
 
 
-def send_async_email(to: str | List[str], subject: str, template: str, sender: Optional[str]=None, **context: Any) -> None:
+def send_async_email(to: str, subject: str, template: str, sender: Optional[str]=None, **context: Any) -> None:
     from tuned.tasks.email import send_transactional_email
-    if sender is None:
-        send_transactional_email.delay(to, subject, template, context)
-    else:
-        send_transactional_email.delay(to, subject, template, sender, context)
+    send_transactional_email.delay(to, subject, template, context, sender)
 
 
 def send_bulk_emails(

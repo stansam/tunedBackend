@@ -1,4 +1,5 @@
 from marshmallow import Schema, fields, validate, ValidationError, validates_schema
+from typing import Any
 
 class UpdateProfileSchema(Schema):
     first_name = fields.Str(required=True, validate=validate.Length(min=1, max=100))
@@ -12,6 +13,6 @@ class ChangePasswordSchema(Schema):
     confirm_password = fields.Str(required=True, validate=validate.Length(min=8))
 
     @validates_schema
-    def validate_password_match(self, data, **kwargs):
+    def validate_password_match(self, data: dict[str, Any], **kwargs: Any) -> None:
         if data.get("new_password") != data.get("confirm_password"):
             raise ValidationError("Passwords do not match", field_name="confirm_password")

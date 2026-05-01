@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Optional, TYPE_CHECKING, Any, Tuple, Dict
+from typing import Optional, TYPE_CHECKING, Any, Tuple, Dict, cast
 from datetime import datetime, timezone
 import logging
 import os
@@ -23,6 +23,7 @@ from tuned.utils.variables import Variables
 from tuned.utils.auth import is_email_verified_required
 from tuned.services.users import UserService as CoreUserService
 from tuned.redis_client import redis_client
+from tuned.interface.audit import AuditService
 
 if TYPE_CHECKING:
     from tuned.repository import Repository
@@ -33,7 +34,6 @@ event_bus = get_event_bus()
 class UserService:
     def __init__(self, repos: Repository):
         self._repo = repos.user
-        from tuned.interface.audit import AuditService
         self._audit = AuditService(repos=repos)
         self._core = CoreUserService(
             user_repo=repos.user,
@@ -93,7 +93,7 @@ class UserService:
     def resend_verification_email(self, dto: EmailVerificationResendDTO) -> bool:
         cooldown_key = f'email_resend_cooldown:{dto.email}'
         if redis_client.exists(cooldown_key):
-            ttl: int = int(redis_client.ttl(cooldown_key))
+            ttl: int = int(cast(Any, redis_client.ttl(cooldown_key)))
             raise ValueError(f'rate_limited:{ttl}')
 
         user = self._repo.get_user_for_resend(dto.email)

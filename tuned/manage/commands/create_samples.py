@@ -1,5 +1,6 @@
 import logging
 import click
+from typing import cast, Dict, Any, Optional
 from flask.cli import with_appcontext
 
 from tuned.dtos import SampleDTO
@@ -14,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 def _build_service_map() -> dict[str, str]:
     services = db.session.query(Service).all()
-    return {svc.name: svc.id for svc in services}
+    return {str(svc.name): str(svc.id) for svc in services}
 
 
 @click.command("create-samples")
@@ -31,7 +32,7 @@ def create_samples() -> None:
     click.echo("Seeding samples…")
 
     for entry in samples_dict:
-        service_name = entry.get("service", "")
+        service_name = str(entry.get("service", ""))
         service_id = service_map.get(service_name)
         if not service_id:
             click.echo(
@@ -42,23 +43,23 @@ def create_samples() -> None:
 
         try:
             dto = SampleDTO(
-                title=entry["title"],
-                content=entry["content"],
-                service_id=service_id,
-                excerpt=entry.get("excerpt", ""),
-                word_count=entry.get("word_count", 0),
-                featured=entry.get("featured", False),
-                image=entry.get("image", ""),
+                title=str(entry["title"]),
+                content=str(entry["content"]),
+                service_id=str(service_id),
+                excerpt=str(entry.get("excerpt", "")),
+                word_count=int(cast(Any, entry.get("word_count", 0))),
+                featured=bool(entry.get("featured", False)),
+                image=str(entry.get("image", "")),
             )
-            sample_obj = services.sample.create_sample(dto)
+            sample_resp = services.sample.create_sample(dto)
             click.echo(f"  ✓ Created sample: {entry['title']}")
             created += 1
 
-            tag_string = entry.get("tags", "")
+            tag_string = str(entry.get("tags", ""))
             if tag_string:
                 from tuned.models import Sample as SampleModel
                 sample_record = db.session.query(SampleModel).filter_by(
-                    id=sample_obj.id
+                    id=sample_resp.id
                 ).first()
                 if sample_record:
                     tag_objects = Tag.parse_tags(tag_string)

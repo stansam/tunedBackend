@@ -6,7 +6,7 @@ if TYPE_CHECKING:
         DeadlineDTO, DeadlineResponseDTO, DeadlineUpdateDTO,
         FaqDTO, FaqResponseDTO, FaqUpdateDTO,
         SampleDTO, SampleResponseDTO, SampleUpdateDTO, SampleListRequestDTO,
-        SampleListResponseDTO, ServiceCategoryDTO, ServiceCategoryResponseDTO,
+        SampleListResponseDTO, SampleServiceResponseDTO, ServiceCategoryDTO, ServiceCategoryResponseDTO,
         ServiceCategoryUpdateDTO, ServiceDTO, ServiceResponseDTO, ServiceUpdateDTO,
         TestimonialDTO, TestimonialResponseDTO, TestimonialUpdateDTO,
         TestimonialListRequestDTO, TestimonialListResponseDTO
@@ -48,6 +48,8 @@ class SampleRepositoryProtocol(Protocol):
     def update(self, sample_id: str, updates: "SampleUpdateDTO") -> "SampleResponseDTO": ...
     def delete(self, sample_id: str) -> None: ...
     def get_samples_by_service_id(self, service_id: str) -> Sequence["SampleResponseDTO"]: ...
+    def get_related_samples(self, slug: str) -> Sequence["SampleResponseDTO"]: ...
+    def get_distinct_services(self) -> Sequence["SampleServiceResponseDTO"]: ...
 
 @runtime_checkable
 class ServiceCategoryRepositoryProtocol(Protocol):

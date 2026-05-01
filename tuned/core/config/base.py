@@ -1,7 +1,7 @@
 import os
 from datetime import timedelta
 from dotenv import load_dotenv
-from typing import Literal
+from typing import Literal, Optional
 
 load_dotenv()
 
@@ -51,7 +51,7 @@ class BaseConfig:
     
     MAX_CONTENT_LENGTH: int = 16 * 1024 * 1024  # 16 MB max file size
     
-    SOCKETIO_MESSAGE_QUEUE: str = os.environ.get('SOCKETIO_MESSAGE_QUEUE')  # Redis URL for scaling
+    SOCKETIO_MESSAGE_QUEUE: Optional[str] = os.environ.get('SOCKETIO_MESSAGE_QUEUE')  # Redis URL for scaling
     
     REDIS_URL: str = os.environ.get('REDIS_URL', 'redis://localhost:6379/0')
     CELERY_BROKER_URL: str = os.environ.get('CELERY_BROKER_URL', 'redis://localhost:6379/1')

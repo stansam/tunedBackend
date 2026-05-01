@@ -138,7 +138,8 @@ class CommentReactionSchema(Schema):
             'validator_failed': 'Category ID must be at least 1'
         }
     )
-    exclude: fields.Str = fields.Str(
+    exclude_slug: fields.Str = fields.Str(
+        data_key="exclude",
         required=True,
         validate=validate.Length(min=1),
         error_messages={

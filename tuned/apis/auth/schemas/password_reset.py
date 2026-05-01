@@ -26,9 +26,9 @@ class PasswordResetConfirmSchema(Schema):
     def validate_password_field(self, value: str, **kwargs: Any) -> None:
         is_valid, error = validate_password_strength(value)
         if not is_valid:
-            raise ValidationError(error)
+            raise ValidationError(error or 'Invalid password')
     
     @validates_schema
-    def validate_passwords_match(self, data: dict, **kwargs: Any) -> None:
+    def validate_passwords_match(self, data: dict[str, Any], **kwargs: Any) -> None:
         if data.get('new_password') != data.get('confirm_password'):
             raise ValidationError({'confirm_password': ['Passwords do not match']})

@@ -188,18 +188,17 @@ class SampleListRequestDTO(PaginationDTO):
     service_id: Optional[str] = None
     featured: Optional[bool] = None
     
-@dataclass
+@dataclass(kw_only=True)
 class TestimonialResponseDTO(BaseDTO):
     id: str
-    user_id: Optional[str]
-    service_id: Optional[str]
-    order_id: Optional[str]
+    user_id: Optional[str] = None
+    service_id: Optional[str] = None
+    order_id: Optional[str] = None
     content: str
     rating: int
     is_approved: bool
     user: Optional[UserResponseDTO] = None
     service: Optional[SampleServiceResponseDTO] = None
-    created_at: Optional[str] = None
 
     @classmethod
     def from_model(cls, obj: "Testimonial") -> "TestimonialResponseDTO":
@@ -213,7 +212,7 @@ class TestimonialResponseDTO(BaseDTO):
             is_approved=obj.is_approved,
             user=UserResponseDTO.from_model(obj.author) if obj.author else None,
             service=SampleServiceResponseDTO.from_model(obj.service) if obj.service else None,
-            created_at=obj.created_at.isoformat() if obj.created_at else None,
+            created_at=obj.created_at
         )
 
 @dataclass

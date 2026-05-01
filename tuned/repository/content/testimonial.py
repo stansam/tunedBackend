@@ -85,8 +85,10 @@ class GetApprovedTestimonialsPaginated:
             total = self.session.scalar(count_stmt) or 0
             
             # Paginate
-            offset = (req.page - 1) * req.per_page
-            stmt = stmt.offset(offset).limit(req.per_page)
+            page = req.page or 1
+            per_page = req.per_page or 12
+            offset = (page - 1) * per_page
+            stmt = stmt.offset(offset).limit(per_page)
             
             results = self.session.scalars(stmt).all()
             testimonials = [TestimonialResponseDTO.from_model(t) for t in results]

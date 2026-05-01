@@ -2,7 +2,6 @@ from marshmallow import Schema, fields, validates, validates_schema, ValidationE
 from marshmallow.validate import Length
 from typing import Any
 from tuned.models.user import User
-from tuned.models.enums import GenderEnum
 from tuned.utils.validators import validate_email, validate_password_strength, validate_username, validate_phone_number
 
 class RegistrationSchema(Schema):
@@ -17,9 +16,7 @@ class RegistrationSchema(Schema):
     referred_by_code = fields.Str(required=False, allow_none=True)
 
     @pre_load
-    def handle_name_and_gender(self, data: dict, **kwargs: Any) -> dict:
-        # if "confirmPassword" in data:
-        #     data["confirm_password"] = data.pop("confirmPassword")
+    def handle_name_and_gender(self, data: dict[str, Any], **kwargs: Any) -> dict[str, Any]:
         if "name" in data and not data.get("first_name"):
             name_parts = data.pop("name")
             parts = name_parts.strip().split(maxsplit=1)
@@ -27,7 +24,7 @@ class RegistrationSchema(Schema):
             data["last_name"] = parts[1] if len(parts) > 1 else ""
             
         if "gender" in data:
-            val = data["gender"].lower()
+            val = str(data["gender"]).lower()
             if val in ("m", "male"):
                 data["gender"] = "male"
             elif val in ("f", "female"):
@@ -40,7 +37,7 @@ class RegistrationSchema(Schema):
     def validate_username_field(self, value: str, **kwargs: Any) -> None:
         is_valid, error = validate_username(value)
         if not is_valid:
-            raise ValidationError(error)
+            raise ValidationError(error or "Invalid username")
         
         if User.query.filter_by(username=value).first():
             raise ValidationError('Username already exists')
@@ -57,12 +54,7 @@ class RegistrationSchema(Schema):
     def validate_password_field(self, value: str, **kwargs: Any) -> None:
         is_valid, error = validate_password_strength(value)
         if not is_valid:
-            raise ValidationError(error)
-    
-    # @validates('gender')
-    # def validate_gender_field(self, value, **kwargs):
-    #     if value not in [g.value for g in GenderEnum]:
-    #         raise ValidationError('Gender must be either "male" or "female"')
+            raise ValidationError(error or "Invalid password")
     
     @validates('phone_number')
     def validate_phone_field(self, value: str | None, **kwargs: Any) -> None:
@@ -70,7 +62,7 @@ class RegistrationSchema(Schema):
             raise ValidationError('Invalid phone number format. Use international format (e.g., +1234567890)')
     
     @validates_schema
-    def validate_passwords_match(self, data: dict, **kwargs: Any) -> None:
+    def validate_passwords_match(self, data: dict[str, Any], **kwargs: Any) -> None:
         if 'password' in data and 'confirm_password' in data:
             if data['password'] != data['confirm_password']:
                 raise ValidationError(

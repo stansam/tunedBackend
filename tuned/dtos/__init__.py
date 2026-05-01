@@ -3,13 +3,15 @@ from tuned.dtos.user import (
     EmailVerificationResendDTO, EmailVerifyConfirmDTO,
     ProfileResponseDTO, ChangePasswordRequestDTO, UpdateProfileRequestDTO
 )
+from tuned.dtos.search import SearchResponseDTO, SearchResultItemDTO, SearchCountsDTO
 from tuned.dtos.blogs import(
     BlogCategoryDTO, BlogCategoryResponseDTO, BlogPostDTO, BlogPostResponseDTO, BlogCommentDTO,
     BlogCommentResponseDTO, CommentReactionDTO, CommentReactionResponseDTO, BlogPostListResponseDTO, BlogPostListRequestDTO, PostByCategoryRequestDTO
 )
 from tuned.dtos.content import (
     AcademicLevelDTO, AcademicLevelResponseDTO, DeadlineDTO, DeadlineResponseDTO, SampleDTO, TestimonialDTO, FaqDTO,
-    TestimonialResponseDTO, FaqResponseDTO, SampleResponseDTO, SampleListResponseDTO, SampleListRequestDTO, SampleServiceResponseDTO,
+    TestimonialResponseDTO, TestimonialListResponseDTO, TestimonialListRequestDTO, FaqResponseDTO, SampleResponseDTO, 
+    SampleListResponseDTO, SampleListRequestDTO, SampleServiceResponseDTO,
     AcademicLevelUpdateDTO, DeadlineUpdateDTO, FaqUpdateDTO, SampleUpdateDTO, TestimonialUpdateDTO
 )
 from tuned.dtos.price import (
@@ -61,6 +63,9 @@ from tuned.dtos.preferences import(
     PrivacyUpdateDTO, AccessibilityUpdateDTO, BillingPreferenceUpdateDTO,
     PreferenceUpdateDTO, PreferenceResponseDTO, build_preference_update_dto
 )
+from tuned.dtos.communication import(
+    NewsletterSubscribeDTO, NewsletterSubscriberResponseDTO
+)
 
 __all__ = [
     "CreateUserDTO", "LoginRequestDTO", "UserResponseDTO", "UpdateUserDTO",
@@ -69,7 +74,8 @@ __all__ = [
     "BlogCategoryDTO", "BlogCategoryResponseDTO", "BlogPostDTO", "BlogPostResponseDTO", "BlogCommentDTO",
     "BlogCommentResponseDTO", "CommentReactionDTO", "CommentReactionResponseDTO", "BlogPostListResponseDTO", "BlogPostListRequestDTO", "PostByCategoryRequestDTO",
     "AcademicLevelDTO", "AcademicLevelResponseDTO", "DeadlineDTO", "DeadlineResponseDTO", "SampleDTO", "TestimonialDTO", "FaqDTO",
-    "TestimonialResponseDTO", "FaqResponseDTO", "SampleResponseDTO", "SampleListResponseDTO", "SampleListRequestDTO", "SampleServiceResponseDTO",
+    "TestimonialResponseDTO", "TestimonialListResponseDTO", "TestimonialListRequestDTO", "FaqResponseDTO", "SampleResponseDTO", 
+    "SampleListResponseDTO", "SampleListRequestDTO", "SampleServiceResponseDTO",
     "AcademicLevelUpdateDTO", "DeadlineUpdateDTO", "FaqUpdateDTO", "SampleUpdateDTO", "TestimonialUpdateDTO",
     "PricingCategoryDTO", "PriceRateDTO", "PricingCategoryResponseDTO", "PriceRateResponseDTO", "PriceRateLookupDTO", 
     "CalculatePriceResponseDTO", "CalculatePriceRequestDTO",
@@ -99,5 +105,7 @@ __all__ = [
     "AccessibilityDTO", "BillingPreferenceDTO", "AllPreferencesResponseDTO",
     "LocalizationUpdateDTO", "NotificationPreferenceUpdateDTO", "EmailPreferenceUpdateDTO",
     "PrivacyUpdateDTO", "AccessibilityUpdateDTO", "BillingPreferenceUpdateDTO",
-    "PreferenceUpdateDTO", "PreferenceResponseDTO", "build_preference_update_dto"
+    "PreferenceUpdateDTO", "PreferenceResponseDTO", "build_preference_update_dto",
+    "SearchResponseDTO", "SearchResultItemDTO", "SearchCountsDTO",
+    "NewsletterSubscribeDTO", "NewsletterSubscriberResponseDTO"
 ]

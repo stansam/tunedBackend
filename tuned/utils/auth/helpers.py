@@ -2,14 +2,15 @@
 from flask import request
 
 def get_user_ip() -> str:
-    if request.headers.get('X-Forwarded-For'):
-        ip = request.headers.get('X-Forwarded-For').split(',')[0].strip()
-    elif request.headers.get('X-Real-IP'):
-        ip = request.headers.get('X-Real-IP')
-    else:
-        ip = request.remote_addr
+    forwarded = request.headers.get('X-Forwarded-For')
+    if forwarded:
+        return forwarded.split(',')[0].strip()
     
-    return ip or 'unknown'
+    real_ip = request.headers.get('X-Real-IP')
+    if real_ip:
+        return real_ip
+    
+    return request.remote_addr or 'unknown'
 
 def get_user_agent() -> str:
     return request.headers.get('User-Agent', 'unknown')
@@ -17,4 +18,4 @@ def get_user_agent() -> str:
 
 def is_email_verified_required() -> bool:
     from flask import current_app
-    return current_app.config.get('REQUIRE_EMAIL_VERIFICATION', True)
+    return bool(current_app.config.get('REQUIRE_EMAIL_VERIFICATION', True))

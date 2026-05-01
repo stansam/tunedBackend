@@ -4,12 +4,14 @@ from datetime import datetime, timezone
 
 from celery.utils.log import get_task_logger
 
+from typing import Any
+from celery import Task
 from tuned.celery_app import celery_app
 
 logger = get_task_logger(__name__)
 
 
-@celery_app.task(
+@celery_app.task(  # type: ignore[untyped-decorator]
     name="tuned.tasks.dashboard_tasks.emit_actionable_alert",
     bind=True,
     queue="notifications",
@@ -17,12 +19,12 @@ logger = get_task_logger(__name__)
     acks_late=True,
 )
 def emit_actionable_alert(
-    self,
+    self: Task,
     client_id:  str,
     alert_id:   str,
     alert_type: str,
     message:    str,
-    metadata:   dict,
+    metadata:   dict[str, Any],
 ) -> None:
     logger.debug(
         "[emit_actionable_alert] Dispatching %s alert to user %s",

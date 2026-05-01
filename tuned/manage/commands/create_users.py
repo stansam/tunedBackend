@@ -19,19 +19,19 @@ def create_users() -> None:
     created = skipped = failed = 0
 
     for entry in users_dict:
-        email = entry.get("email", "")
+        email = str(entry.get("email", ""))
         try:
             gender_raw = entry.get("gender")
-            gender = GenderEnum[gender_raw] if gender_raw else GenderEnum.UNKOWN
+            gender = GenderEnum[str(gender_raw)] if gender_raw and str(gender_raw) in GenderEnum.__members__ else GenderEnum.UNKNOWN
 
             dto = CreateUserDTO(
-                username=entry["username"],
+                username=str(entry["username"]),
                 email=email,
-                password=entry["password"],
-                first_name=entry["first_name"],
-                last_name=entry["last_name"],
+                password=str(entry["password"]),
+                first_name=str(entry["first_name"]),
+                last_name=str(entry["last_name"]),
                 gender=gender,
-                email_verified=entry.get("email_verified", False),
+                email_verified=bool(entry.get("email_verified", False)),
             )
             locale = BaseRequestDTO(
                 ip_address="127.0.0.1",
@@ -40,8 +40,8 @@ def create_users() -> None:
             services.user.create_user(dto, locale)
             click.echo(f"  ✓ Created user: {email}")
             created += 1
-        except ValueError:
-            click.echo(f"  ⚠ Skipped user (already exists): {email}")
+        except (ValueError, KeyError):
+            click.echo(f"  ⚠ Skipped user (already exists or invalid gender): {email}")
             skipped += 1
         except Exception as exc:
             logger.exception("Failed to create user %s", email)

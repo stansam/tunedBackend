@@ -1,5 +1,6 @@
 import os
 from dotenv import load_dotenv
+from typing import Optional
 from tuned.core.config.base import BaseConfig
 
 load_dotenv()
@@ -18,13 +19,13 @@ class ProductionConfig(BaseConfig):
         )
 
     # SERVER_NAME = os.environ.get('SERVER_NAME')  # e.g., 'tunedessays.com'
-    SESSION_COOKIE_DOMAIN: str = os.environ.get('SESSION_COOKIE_DOMAIN')
+    SESSION_COOKIE_DOMAIN: Optional[str] = os.environ.get('SESSION_COOKIE_DOMAIN')
     
     CORS_ORIGINS: list[str] = os.environ.get('CORS_ORIGINS', 'https://tunedessays.com').split(',')
     SESSION_COOKIE_SECURE: bool = True
     REMEMBER_COOKIE_SECURE: bool = True
     JWT_COOKIE_SECURE: bool = True
-    JWT_COOKIE_DOMAIN: str = os.environ.get('JWT_COOKIE_DOMAIN')
+    JWT_COOKIE_DOMAIN: Optional[str] = os.environ.get('JWT_COOKIE_DOMAIN')
     
     SSL_REDIRECT: bool = os.environ.get('SSL_REDIRECT', 'True').lower() == 'true'
     

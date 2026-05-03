@@ -21,7 +21,7 @@ from tuned.models.preferences import (
 from tuned.models.enums import (
     OrderStatus, SupportTicketStatus, PaymentStatus, PaymentMethod, MethodCategory,
     TransactionType, TransactionStatus, RefundStatus, NotificationType, ChatStatus, EmailStatus,
-    DeliveryStatus, FileType, ReferralStatus, DiscountType, Currency, GenderEnum, BlogReactionType
+    DeliveryStatus, FileType, ReferralStatus, DiscountType, Currency, GenderEnum, BlogReactionType, ReportType, LineSpacing
 )
 
 __all__ = [
@@ -43,5 +43,5 @@ __all__ = [
     "UserLocalizationSettings", "UserAccessibilityPreferences", "UserBillingPreferences",
     "OrderStatus", "SupportTicketStatus", "PaymentStatus", "PaymentMethod", "MethodCategory",
     "TransactionType", "TransactionStatus", "RefundStatus", "NotificationType", "ChatStatus", "EmailStatus",
-    "DeliveryStatus", "FileType", "ReferralStatus", "DiscountType", "Currency", "GenderEnum", "BlogReactionType"
+    "DeliveryStatus", "FileType", "ReferralStatus", "DiscountType", "Currency", "GenderEnum", "BlogReactionType", "ReportType", "LineSpacing"
 ]

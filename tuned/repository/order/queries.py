@@ -154,6 +154,8 @@ class CreateOrderFromReorder:
                 word_count=source.word_count,
                 page_count=source.page_count,
                 format_style=source.format_style,
+                sources=source.sources,
+                line_spacing=source.line_spacing,
                 report_type=source.report_type,
                 total_price=source.total_price,
                 price_per_page=source.price_per_page,

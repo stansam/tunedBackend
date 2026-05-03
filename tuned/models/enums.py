@@ -86,6 +86,13 @@ class ReferralStatus(str, Enum):
     COMPLETED = "completed"
     EXPIRED = "expired"
 
+class ReportType(str, Enum):
+    TURNITIN = "turnitin"
+    STANDARD = "standard"
+
+class LineSpacing(str, Enum):
+    DOUBLE = "double"
+    SINGLE = "single"
 
 class DiscountType(str, Enum):
     PERCENTAGE = "percentage"

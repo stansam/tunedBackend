@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Tuple, Optional
-from tuned.models import Deadline
+from tuned.models import ReportType
 from tuned.dtos import(
     PriceRateLookupDTO, CalculatePriceRequestDTO, 
     CalculatePriceResponseDTO, DeadlineResponseDTO
@@ -66,10 +66,10 @@ class CalculatePriceService:
         except Exception as e:
             raise Exception(f"Error while fetching page price: {str(e)}.")
     
-    def _get_report_price(self, report_type: str) -> float:
-        if report_type == "standard":
+    def _get_report_price(self, report_type: ReportType) -> float:
+        if report_type == ReportType.STANDARD:
             return 4.99
-        elif report_type == "turnitin":
+        elif report_type == ReportType.TURNITIN:
             return 9.99
         else:
             return 0.0

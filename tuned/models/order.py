@@ -1,7 +1,7 @@
 from tuned.extensions import db
 from tuned.models.base import BaseModel
 from datetime import datetime, timezone
-from tuned.models.enums import OrderStatus, SupportTicketStatus, Currency
+from tuned.models.enums import OrderStatus, SupportTicketStatus, Currency, ReportType, LineSpacing
 from sqlalchemy import event
 from sqlalchemy.orm import validates, Mapped, mapped_column, relationship, Session
 from tuned.utils.orders import generate_public_order_number
@@ -30,7 +30,9 @@ class Order(BaseModel):
     word_count: Mapped[int] = mapped_column(db.Integer, nullable=False)
     page_count: Mapped[float] = mapped_column(db.Float, nullable=False)
     format_style: Mapped[Optional[str]] = mapped_column(db.String(50), nullable=True, default=None)
-    report_type: Mapped[Optional[str]] = mapped_column(db.String(50), nullable=True, default=None)
+    sources: Mapped[int] = mapped_column(db.Integer, nullable=False)
+    line_spacing: Mapped[LineSpacing] = mapped_column(db.Enum(LineSpacing), default=LineSpacing.DOUBLE, nullable=False)
+    report_type: Mapped[Optional[ReportType]] = mapped_column(db.Enum(ReportType), nullable=True, default=None)
     total_price: Mapped[float] = mapped_column(db.Float, nullable=False)
     status: Mapped[OrderStatus] = mapped_column(db.Enum(OrderStatus), default=OrderStatus.PENDING, nullable=False)
     paid: Mapped[bool] = mapped_column(db.Boolean, default=False, nullable=False)
@@ -44,7 +46,6 @@ class Order(BaseModel):
     currency: Mapped[Currency] = mapped_column(db.Enum(Currency), default=Currency.USD, nullable=False)
     additional_materials: Mapped[Optional[str]] = mapped_column(db.Text, nullable=True, default=None)
     
-    # Relationships
     client: Mapped["User"] = relationship('User', foreign_keys=[client_id], back_populates='orders')
     service: Mapped["Service"] = relationship('Service', foreign_keys=[service_id], back_populates='orders')
     academic_level: Mapped["AcademicLevel"] = relationship('AcademicLevel', foreign_keys=[academic_level_id], back_populates='orders')

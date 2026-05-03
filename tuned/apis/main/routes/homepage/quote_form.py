@@ -15,6 +15,7 @@ from tuned.dtos import CalculatePriceRequestDTO, ServiceWithPricingCategory
 from tuned.utils.enums import PricingCategoryEnum
 from tuned.core.logging import get_logger
 from tuned.repository.exceptions import DatabaseError, NotFound
+from tuned.models import ReportType
 
 logger: logging.Logger = get_logger(__name__)
 
@@ -84,7 +85,7 @@ class CalculatePrice(MethodView):
             pricing_category_id=cast(str, data.get('pricing_category_id')),
             academic_level_id=cast(str, data.get('level_id')),
             word_count=cast(int, data.get('word_count')),
-            report_type=cast(Optional[str], data.get('report_type'))
+            report_type= ReportType(data.get('report_type')) #cast(Optional[str], data.get('report_type'))
         )
 
     def _get_service_pricing_category(self, service_id: str) -> str:

@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 from typing import Optional, TYPE_CHECKING
 from tuned.dtos.content import DeadlineResponseDTO
+from tuned.models.enums import ReportType
 from datetime import datetime
 
 if TYPE_CHECKING:
@@ -87,7 +88,7 @@ class CalculatePriceRequestDTO:
     pricing_category_id: str
     academic_level_id: str
     word_count: int
-    report_type: Optional[str] = None
+    report_type: Optional[ReportType] = None
 
 @dataclass
 class CalculatePriceResponseDTO:

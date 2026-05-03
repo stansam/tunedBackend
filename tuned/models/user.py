@@ -83,12 +83,12 @@ class User(UserMixin, BaseModel):  # type: ignore[misc]
     order_comments: Mapped[list["OrderComment"]] = relationship('OrderComment', foreign_keys="OrderComment.user_id", back_populates='user', lazy=True)
     support_tickets: Mapped[list["SupportTicket"]] = relationship('SupportTicket', foreign_keys="SupportTicket.user_id", back_populates='user', lazy=True)
 
-    privacy_settings: Mapped["UserPrivacySettings"] = relationship("UserPrivacySettings", back_populates="user", uselist=False, cascade="all, delete-orphan")
-    notification_preferences: Mapped["UserNotificationPreferences"] = relationship("UserNotificationPreferences", back_populates="user", uselist=False, cascade="all, delete-orphan")
-    localization_settings: Mapped["UserLocalizationSettings"] = relationship("UserLocalizationSettings", back_populates="user", uselist=False, cascade="all, delete-orphan")
-    email_preferences: Mapped["UserEmailPreferences"] = relationship("UserEmailPreferences", back_populates="user", uselist=False, cascade="all, delete-orphan")
-    billing_preferences: Mapped["UserBillingPreferences"] = relationship("UserBillingPreferences", back_populates="user", uselist=False, cascade="all, delete-orphan")
-    accessibility_preferences: Mapped["UserAccessibilityPreferences"] = relationship("UserAccessibilityPreferences", back_populates="user", uselist=False, cascade="all, delete-orphan")
+    privacy_settings: Mapped["UserPrivacySettings"] = relationship("UserPrivacySettings", foreign_keys="UserPrivacySettings.user_id", back_populates="user", uselist=False, cascade="all, delete-orphan")
+    notification_preferences: Mapped["UserNotificationPreferences"] = relationship("UserNotificationPreferences", foreign_keys="UserNotificationPreferences.user_id", back_populates="user", uselist=False, cascade="all, delete-orphan")
+    localization_settings: Mapped["UserLocalizationSettings"] = relationship("UserLocalizationSettings", foreign_keys="UserLocalizationSettings.user_id", back_populates="user", uselist=False, cascade="all, delete-orphan")
+    email_preferences: Mapped["UserEmailPreferences"] = relationship("UserEmailPreferences", foreign_keys="UserEmailPreferences.user_id", back_populates="user", uselist=False, cascade="all, delete-orphan")
+    billing_preferences: Mapped["UserBillingPreferences"] = relationship("UserBillingPreferences", foreign_keys="UserBillingPreferences.user_id", back_populates="user", uselist=False, cascade="all, delete-orphan")
+    accessibility_preferences: Mapped["UserAccessibilityPreferences"] = relationship("UserAccessibilityPreferences", foreign_keys="UserAccessibilityPreferences.user_id", back_populates="user", uselist=False, cascade="all, delete-orphan")
 
     def __init__(self: 'User', **kwargs: Any) -> None:
         super(User, self).__init__(**kwargs)

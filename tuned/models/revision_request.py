@@ -13,7 +13,6 @@ if TYPE_CHECKING:
 class OrderRevisionRequest(BaseModel):
     __tablename__ = 'order_revision_requests'
 
-    # Foreign Keys
     order_id: Mapped[str] = mapped_column(db.String(36), db.ForeignKey('order.id', ondelete='CASCADE'), nullable=False, index=True)
     delivery_id: Mapped[str] = mapped_column(db.String(36), db.ForeignKey('order_delivery.id', ondelete='CASCADE'), nullable=False)
     requested_by: Mapped[str] = mapped_column(db.String(36), db.ForeignKey('users.id'), nullable=False)

@@ -12,8 +12,7 @@ class PricingCategory(BaseModel):
     name: Mapped[str] = mapped_column(db.String(100), nullable=False, unique=True)
     description: Mapped[Optional[str]] = mapped_column(db.Text, nullable=True)
     display_order: Mapped[int] = mapped_column(db.Integer, default=0, nullable=False)
-    
-    # Relationships
+
     service: Mapped[list["Service"]] = relationship('Service', back_populates='pricing_category', lazy=True)
     price_rates: Mapped[list["PriceRate"]] = relationship('PriceRate', back_populates='pricing_category', lazy=True, cascade="all, delete-orphan")
     

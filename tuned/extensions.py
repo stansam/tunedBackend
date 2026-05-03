@@ -29,18 +29,8 @@ metadata = MetaData(naming_convention=naming_convention)
 
 db = SQLAlchemy(metadata=metadata)
 migrate = Migrate()
-
-# Authentication
-login_manager = LoginManager()  # Session-based auth for browser clients
-jwt = JWTManager()              # Token-based auth for Next.js API
-
-# Cross-origin resource sharing for Next.js frontend
+login_manager = LoginManager()
+jwt = JWTManager()
 cors = CORS()
-
-# Real-time communication (WebSocket)
-# Used by: Chat, Notifications
 socketio = SocketIO()
-
-# Email service
-# Used for: verification emails, password resets, notifications
 mail = Mail()

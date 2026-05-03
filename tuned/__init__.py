@@ -49,7 +49,6 @@ def create_app(config_name: Optional[str] = None) -> Flask:
     from tuned.core.events.bootstrap import init_events
     init_celery(app)
     init_events()
-    # app.celery = celery_app  # Removed: Flask has no .celery attribute, already in extensions
     app.extensions['celery'] = celery_app
     
     with app.app_context():
@@ -103,10 +102,7 @@ def create_app(config_name: Optional[str] = None) -> Flask:
         )
     
     register_error_handlers(app)
-    
     register_shell_context(app)
-
-
 
     return app
 

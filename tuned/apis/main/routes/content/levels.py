@@ -1,12 +1,13 @@
 from tuned.core.logging import get_logger
 from flask.views import MethodView
-from tuned.interface import Services
+from tuned.utils.dependencies import get_services
 from tuned.utils.responses import success_response, error_response
 from tuned.redis_client import redis_client
 
 from dataclasses import asdict
 import json
 import logging
+from typing import Any
 
 logger: logging.Logger = get_logger(__name__)
 
@@ -15,54 +16,28 @@ CACHE_KEY_ACADEMIC_LEVELS = 'academic_levels:list'
 
 
 class GetAcademicLevels(MethodView):
-    def get(self):
+    def get(self) -> tuple[Any, int]:
         try:
-            cached = redis_client.get(CACHE_KEY_ACADEMIC_LEVELS)
-            if cached:
+            raw = redis_client.get(CACHE_KEY_ACADEMIC_LEVELS)
+            if raw is not None and isinstance(raw, (str, bytes, bytearray)):
                 return success_response(
-                    json.loads(cached),
+                    json.loads(raw),
                     "Academic levels fetched successfully"
                 )
             
-            interface = Services()
-            academic_levels = interface.academic_level.list_academic_levels()
-            academic_levels = [asdict(academic_level) for academic_level in academic_levels]
+            academic_levels = get_services().academic_level.list_academic_levels()
+            academic_levels_data = [asdict(academic_level) for academic_level in academic_levels]
             
             redis_client.setex(
                 CACHE_KEY_ACADEMIC_LEVELS, CACHE_TTL,
-                json.dumps(academic_levels)
+                json.dumps(academic_levels_data)
             )
 
-            levels = []
-            for a in academic_levels:
-                data = f"{a["id"]} {a["name"]}, {a["order"]}"
-                levels.append(data)
-            print(level for level in levels)
             return success_response(
-                academic_levels,
+                academic_levels_data,
                 "Academic levels fetched successfully"
             )
 
         except Exception as e:
             logger.error(f"Error fetching academic levels: {str(e)}")
-            return error_response("Error fetching academic levels", str(e), 500)
-
-# class GetContentTypes(MethodView):
-#     def get(self):
-#         try:
-#             cached = redis_client.get('content_types')
-#             if cached:
-#                 return success_response(json.loads(cached), "Content types fetched successfully")
-            
-#             interface = Services()
-#             content_types = interface.content_type.list_content_types()
-
-#             redis_client.setex(
-#                 'content_types', CACHE_TTL,
-#                 json.dumps(asdict(content_types))
-#             )
-#             return success_response(asdict(content_types), "Content types fetched successfully")
-
-#         except Exception as e:
-#             logger.error(f"Error fetching content types: {str(e)}")
-#             return error_response("Error fetching content types", str(e), 500)
+            return error_response("Failed to fetch academic levels", status=500)

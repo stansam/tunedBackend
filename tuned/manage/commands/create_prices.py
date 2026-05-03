@@ -1,60 +1,50 @@
-"""
-create_prices — seed pricing categories and price rates.
-
-Requires academic levels and deadlines to already exist (run create-content first).
-
-Usage:
-    flask create-prices
-"""
 import logging
 import click
 from flask.cli import with_appcontext
 
 from tuned.dtos import PricingCategoryDTO, PriceRateDTO
-from tuned.interface import Services
+from tuned.utils.dependencies import get_services
 from tuned.manage.data import pricing_categories_dict, price_rates_dict, pricing_level_names
 from tuned.models import AcademicLevel, Deadline, PricingCategory
 from tuned.extensions import db
-from tuned.repository.exceptions import AlreadyExists, DatabaseError
+from tuned.repository.exceptions import AlreadyExists #, DatabaseError
+from tuned.core.logging import get_logger
 
-logger = logging.getLogger(__name__)
+logger: logging.Logger = get_logger(__name__)
 
+
+from typing import cast, Any
 
 def _build_level_map() -> dict[str, str]:
-    """Return {level_name: level_id} for all seeded academic levels."""
     levels = db.session.query(AcademicLevel).all()
-    return {lvl.name: lvl.id for lvl in levels}
+    return {str(lvl.name): str(lvl.id) for lvl in levels}
 
 
 def _build_deadline_map() -> dict[str, str]:
-    """Return {deadline_name: deadline_id} for all seeded deadlines."""
     deadlines = db.session.query(Deadline).all()
-    return {d.name: d.id for d in deadlines}
+    return {str(d.name): str(d.id) for d in deadlines}
 
 
 def _build_category_map() -> dict[str, str]:
-    """Return {category_name: category_id} for seeded pricing categories."""
     cats = db.session.query(PricingCategory).all()
-    return {c.name: c.id for c in cats}
+    return {str(c.name): str(c.id) for c in cats}
 
 
 @click.command("create-prices")
 @with_appcontext
 def create_prices() -> None:
-    """Seed pricing categories and per-page price rates."""
-    services = Services()
+    services = get_services()
 
-    # --- Pricing Categories ---
     pc_created = pc_skipped = 0
     click.echo("Seeding pricing categories…")
     for entry in pricing_categories_dict:
         try:
-            dto = PricingCategoryDTO(
-                name=entry["name"],
-                description=entry.get("description", ""),
-                display_order=entry.get("display_order", 0),
+            pc_dto = PricingCategoryDTO(
+                name=str(entry["name"]),
+                description=str(entry.get("description", "")),
+                display_order=int(cast(Any, entry.get("display_order", 0))),
             )
-            services.pricing_category.create_category(dto)
+            services.pricing_category.create_category(pc_dto)
             click.echo(f"  ✓ Created pricing category: {entry['name']}")
             pc_created += 1
         except AlreadyExists:
@@ -66,7 +56,6 @@ def create_prices() -> None:
 
     click.echo(f"Pricing Categories — created: {pc_created}, skipped: {pc_skipped}")
 
-    # --- Price Rates ---
     level_map = _build_level_map()
     deadline_map = _build_deadline_map()
     category_map = _build_category_map()
@@ -103,14 +92,14 @@ def create_prices() -> None:
 
                 price = prices[idx]
                 try:
-                    dto = PriceRateDTO(
-                        pricing_category_id=category_id,
-                        academic_level_id=level_id,
-                        deadline_id=deadline_id,
-                        price_per_page=price,
+                    pr_dto = PriceRateDTO(
+                        pricing_category_id=str(category_id),
+                        academic_level_id=str(level_id),
+                        deadline_id=str(deadline_id),
+                        price_per_page=float(cast(Any, price)),
                         is_active=True,
                     )
-                    services.price_rate.create_rate(dto)
+                    services.price_rate.create_rate(pr_dto)
                     pr_created += 1
                 except AlreadyExists:
                     pr_skipped += 1

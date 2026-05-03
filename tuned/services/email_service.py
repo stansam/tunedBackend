@@ -1,10 +1,11 @@
+from __future__ import annotations
 from flask import current_app
 from tuned.core.logging import get_logger
 from tuned.models import User
 from tuned.utils.auth import get_user_ip
 from datetime import datetime
 import logging
-import random
+from typing import Any, Optional
 
 logger: logging.Logger = get_logger(__name__)
 
@@ -42,13 +43,12 @@ def should_send_email(user_id: int, email_type: str = 'general') -> bool:
         'general': True
     }
     
-    should_send = type_mapping.get(email_type, True)
+    should_send = bool(type_mapping.get(email_type, True))
     
     if not should_send:
         logger.debug(f"Email type '{email_type}' disabled for user {user_id}")
     
     return should_send
-
 
 
 def send_verification_email(user: User, raw_token: str) -> None:
@@ -108,6 +108,27 @@ def send_welcome_email(user: User) -> None:
     
     logger.info(f"Welcome email sent to user {user.id}")
 
+def send_invoice_email(user: User, invoice: Any) -> None:
+    from tuned.utils.email import send_async_email
+
+    frontend_url = current_app.config.get('FRONTEND_URL', 'http://localhost:3000')
+    invoice_url = f"{frontend_url}/client/billing/invoices/{invoice.id}"
+    
+    send_async_email(
+        to=user.email,
+        subject=f'New Invoice Generated - {invoice.invoice_number}',
+        template='client/invoice',
+        recipient_name=user.get_name(),
+        invoice_number=invoice.invoice_number,
+        invoice_total=invoice.total,
+        invoice_due_date=invoice.due_date.strftime('%Y-%m-%d'),
+        invoice_url=invoice_url,
+        support_email=current_app.config.get('MAIL_DEFAULT_SENDER'),
+        current_year=datetime.now().year
+    )
+    
+    logger.info(f"Invoice email sent to user {user.id} for invoice {invoice.invoice_number}")
+
 
 def send_password_reset_email(user: User, reset_token: str) -> None:    
     from tuned.utils.email import send_async_email
@@ -151,50 +172,37 @@ def send_password_changed_email(user: User) -> None:
     logger.info(f"Password changed email queued for user {user.id}")
 
 
-def send_receipt_email(payment, email_address):
+def send_receipt_email(payment: Any, email_address: str) -> None:
     """Send payment receipt via email."""
     logger.info(f'Sending receipt email for payment {payment.id} to {email_address}')
-    pass
 
 
-def send_refund_request_email_admin(payment, refund_amount, reason):
+def send_refund_request_email_admin(payment: Any, refund_amount: float, reason: str) -> None:
     """Send refund request notification to admin/finance team."""
     logger.info(f'Sending refund request email for payment {payment.id}: ${refund_amount:.2f}')
-    pass
 
 
-def send_password_changed_email(user):
-    """Send password change confirmation email."""
-    logger.info(f'Sending password changed email to user {user.id}')
-    pass
-
-
-def send_email_change_confirmation(old_email, new_email, user_name):
+def send_email_change_confirmation(old_email: str, new_email: str, user_name: str) -> None:
     """Send email change confirmation to old email address."""
     logger.info(f'Sending email change confirmation: {old_email} -> {new_email}')
-    pass
 
 
-def send_newsletter_welcome_email(email, name):
+def send_newsletter_welcome_email(email: str, name: str) -> None:
     """Send newsletter welcome email."""
     logger.info(f'Sending newsletter welcome to {email}')
-    pass
 
 
-def send_newsletter_goodbye_email(email, name):
+def send_newsletter_goodbye_email(email: str, name: str) -> None:
     """Send newsletter unsubscribe confirmation."""
-    """Newsletter Email:sender="newsletter@tunedessays.com"""
     logger.info(f'Sending newsletter goodbye to {email}')
-    pass
 
 
-def send_payment_reminder_email(order):
+def send_payment_reminder_email(order: Any) -> None:
     """Send payment reminder for unpaid order."""
     logger.info(f'Sending payment reminder for order {order.id}')
-    pass
 
 
-def send_revision_request_email_admin(order, revision_notes: str) -> None:
+def send_revision_request_email_admin(order: Any, revision_notes: str) -> None:
     from tuned.utils.email import send_async_email
     try:
         subject = f'Revision Request - {order.order_number}'
@@ -207,14 +215,20 @@ def send_revision_request_email_admin(order, revision_notes: str) -> None:
         """
         admins = User.query.filter_by(is_admin=True, is_active=True).all()
         for admin in admins:
-            send_async_email(to=admin.email, subject=subject, html_body=html_body)
+            send_async_email(
+                to=admin.email, 
+                subject=subject, 
+                template='generic_notification',
+                body=html_body,
+                current_year=datetime.now().year
+            )
         logger.info(f'Revision request email sent for order {order.id}')
     except Exception as e:
         logger.error(f'Revision request email failed for order {order.id}: {str(e)}')
         raise
 
 
-def send_deadline_extension_request_email_admin(order, hours: int, reason: str) -> None:
+def send_deadline_extension_request_email_admin(order: Any, hours: int, reason: str) -> None:
     from tuned.utils.email import send_async_email
     try:
         subject = f'Deadline Extension Request - {order.order_number}'
@@ -229,14 +243,20 @@ def send_deadline_extension_request_email_admin(order, hours: int, reason: str) 
         """
         admins = User.query.filter_by(is_admin=True, is_active=True).all()
         for admin in admins:
-            send_async_email(to=admin.email, subject=subject, html_body=html_body)
+            send_async_email(
+                to=admin.email, 
+                subject=subject, 
+                template='generic_notification',
+                body=html_body,
+                current_year=datetime.now().year
+            )
         logger.info(f'Extension request email sent for order {order.id}')
     except Exception as e:
         logger.error(f'Extension request email failed for order {order.id}: {str(e)}')
         raise
 
 
-def send_order_created_email_client(order) -> None:
+def send_order_created_email_client(order: Any) -> None:
     from tuned.utils.email import send_async_email
     try:
         subject = f'Order Confirmation - {order.order_number}'
@@ -248,13 +268,19 @@ def send_order_created_email_client(order) -> None:
         <p>Due Date: {order.due_date.strftime('%Y-%m-%d %H:%M:%S UTC')}</p>
         <a href="{current_app.config.get('FRONTEND_URL', 'http://localhost:3000')}/orders/{order.id}">View Order</a>
         """
-        send_async_email(to=order.client.email, subject=subject, html_body=html_body)
+        send_async_email(
+            to=order.client.email, 
+            subject=subject, 
+            template='generic_notification',
+            body=html_body,
+            current_year=datetime.now().year
+        )
         logger.info(f'Order created email sent to {order.client.email}')
     except Exception as e:
         logger.error(f'Order created email failed: {str(e)}')
 
 
-def send_order_created_email_admin(order) -> None:
+def send_order_created_email_admin(order: Any) -> None:
     from tuned.utils.email import send_async_email
     try:
         subject = f'New Order - {order.order_number}'
@@ -268,7 +294,13 @@ def send_order_created_email_admin(order) -> None:
         """
         admins = User.query.filter_by(is_admin=True, is_active=True).all()
         for admin in admins:
-            send_async_email(to=admin.email, subject=subject, html_body=html_body)
+            send_async_email(
+                to=admin.email, 
+                subject=subject, 
+                template='generic_notification',
+                body=html_body,
+                current_year=datetime.now().year
+            )
         logger.info('New order email sent to admins')
     except Exception as e:
         logger.error(f'Order notification to admins failed: {str(e)}')

@@ -1,13 +1,23 @@
 from dataclasses import dataclass, field
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 from tuned.dtos.content import DeadlineResponseDTO
 from datetime import datetime
+
+if TYPE_CHECKING:
+    from tuned.models.price import PricingCategory, PriceRate
+
 
 @dataclass
 class PricingCategoryDTO:
     name: str
     description: str = ""
     display_order: int = 0
+
+@dataclass
+class PricingCategoryUpdateDTO:
+    name: Optional[str] = None
+    description: Optional[str] = None
+    display_order: Optional[int] = None
 
 
 @dataclass
@@ -19,6 +29,14 @@ class PriceRateDTO:
     is_active: Optional[bool] = True
 
 @dataclass
+class PriceRateUpdateDTO:
+    pricing_category_id: Optional[str] = None
+    academic_level_id: Optional[str] = None
+    deadline_id: Optional[str] = None
+    price_per_page: Optional[float] = None
+    is_active: Optional[bool] = None
+
+@dataclass
 class PricingCategoryResponseDTO:
     id: str
     name: str
@@ -26,7 +44,7 @@ class PricingCategoryResponseDTO:
     display_order: int
 
     @classmethod
-    def from_model(cls, obj) -> "PricingCategoryResponseDTO":
+    def from_model(cls, obj: "PricingCategory") -> "PricingCategoryResponseDTO":
         return cls(
             id=obj.id,
             name=obj.name,
@@ -45,7 +63,7 @@ class PriceRateResponseDTO:
     is_active: bool
 
     @classmethod
-    def from_model(cls, obj) -> "PriceRateResponseDTO":
+    def from_model(cls, obj: "PriceRate") -> "PriceRateResponseDTO":
         return cls(
             id=obj.id,
             pricing_category_id=obj.pricing_category_id,
@@ -58,7 +76,6 @@ class PriceRateResponseDTO:
 
 @dataclass
 class PriceRateLookupDTO:
-    """Used to look up a specific rate by the three FK dimensions."""
     pricing_category_id: str
     academic_level_id: str
     deadline_id: str
@@ -74,10 +91,10 @@ class CalculatePriceRequestDTO:
 
 @dataclass
 class CalculatePriceResponseDTO:
-    price_per_page: int
-    page_count: int
-    pages_price: int
-    total_price: int
-    deadline_hours: int
+    price_per_page: float
+    page_count: float
+    pages_price: float
+    total_price: float
+    deadline_hours: float
     selected_deadline: DeadlineResponseDTO
 

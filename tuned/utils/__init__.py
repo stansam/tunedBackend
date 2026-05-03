@@ -39,10 +39,7 @@ from tuned.utils.email import (
 )
 
 from tuned.utils.decorators import (
-    rate_limit,
-    log_activity,
-    require_api_key,
-    cors_preflight
+    rate_limit
 )
 
 
@@ -83,9 +80,5 @@ __all__ = [
     'send_bulk_emails',
     'send_test_email',
     
-    # Decorators
     'rate_limit',
-    'log_activity',
-    'require_api_key',
-    'cors_preflight',
 ]

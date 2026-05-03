@@ -1,23 +1,16 @@
-"""
-create_testimonials — seed approved client testimonials.
-
-Requires users and services to already exist.
-
-Usage:
-    flask create-testimonials
-"""
 import logging
 import click
+from typing import cast, Any
 from flask.cli import with_appcontext
 
 from tuned.dtos import TestimonialDTO
-from tuned.interface import Services
+from tuned.utils.dependencies import get_services
 from tuned.manage.data import testimonials_dict
 from tuned.models import Service, User
 from tuned.extensions import db
-from tuned.repository.exceptions import AlreadyExists, DatabaseError
+from tuned.core.logging import get_logger
 
-logger = logging.getLogger(__name__)
+logger: logging.Logger = get_logger(__name__)
 
 
 def _build_service_map() -> dict[str, str]:
@@ -25,15 +18,13 @@ def _build_service_map() -> dict[str, str]:
 
 
 def _build_user_map() -> dict[str, str]:
-    """Return {username: user_id} for all users."""
     return {u.username: u.id for u in db.session.query(User).all()}
 
 
 @click.command("create-testimonials")
 @with_appcontext
 def create_testimonials() -> None:
-    """Seed approved client testimonials."""
-    services = Services()
+    services = get_services()
     service_map = _build_service_map()
     user_map = _build_user_map()
 
@@ -48,8 +39,8 @@ def create_testimonials() -> None:
     click.echo("Seeding testimonials…")
 
     for entry in testimonials_dict:
-        service_name = entry.get("service_name", "")
-        author_username = entry.get("author_username", "")
+        service_name = str(entry.get("service_name", ""))
+        author_username = str(entry.get("author_username", ""))
 
         service_id = service_map.get(service_name)
         user_id = user_map.get(author_username)
@@ -67,13 +58,13 @@ def create_testimonials() -> None:
 
         try:
             dto = TestimonialDTO(
-                user_id=user_id,
-                service_id=service_id,
-                content=entry["content"],
-                rating=entry["rating"],
-                is_approved=entry.get("is_approved", False),
+                user_id=str(user_id),
+                service_id=str(service_id),
+                content=str(entry["content"]),
+                rating=int(cast(Any, entry["rating"])),
+                is_approved=bool(entry.get("is_approved", False)),
             )
-            services.testimonial.submit_testimonial(dto)
+            services.testimonial.create_testimonial(dto)
             click.echo(
                 f"  ✓ Created testimonial by '{author_username}' for '{service_name}'"
             )

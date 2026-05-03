@@ -1,12 +1,13 @@
 from sqlalchemy.orm import Session
+from sqlalchemy import select, func
 from sqlalchemy.exc import SQLAlchemyError
 from tuned.models import PriceHistory
 from tuned.dtos import PriceHistoryCreateDTO, PriceHistoryResponseDTO
 from tuned.repository.exceptions import DatabaseError, NotFound
 
 class CreatePriceHistory:
-    def __init__(self, db: Session) -> None:
-        self.db = db
+    def __init__(self, session: Session) -> None:
+        self.session = session
 
     def execute(self, data: PriceHistoryCreateDTO) -> PriceHistoryResponseDTO:
         try:
@@ -17,21 +18,20 @@ class CreatePriceHistory:
                 reason=data.reason,
                 created_by=data.created_by
             )
-            self.db.add(history)
-            self.db.commit()
-            self.db.refresh(history)
+            self.session.add(history)
+            self.session.flush()
             return PriceHistoryResponseDTO.from_model(history)
         except SQLAlchemyError as e:
-            self.db.rollback()
             raise DatabaseError(f"Database error while creating price history: {str(e)}") from e
 
 class GetPriceHistoryByID:
-    def __init__(self, db: Session) -> None:
-        self.db = db
+    def __init__(self, session: Session) -> None:
+        self.session = session
 
     def execute(self, history_id: str) -> PriceHistoryResponseDTO:
         try:
-            history = self.db.query(PriceHistory).filter_by(id=history_id).first()
+            stmt = select(PriceHistory).where(PriceHistory.id == history_id)
+            history = self.session.scalar(stmt)
             if not history:
                 raise NotFound("Price history record not found.")
             return PriceHistoryResponseDTO.from_model(history)
@@ -39,14 +39,20 @@ class GetPriceHistoryByID:
             raise DatabaseError(f"Database error while fetching price history: {str(e)}") from e
 
 class GetPriceHistoryByRate:
-    def __init__(self, db: Session) -> None:
-        self.db = db
+    def __init__(self, session: Session) -> None:
+        self.session = session
 
     def execute(self, rate_id: str, page: int = 1, per_page: int = 20) -> tuple[list[PriceHistoryResponseDTO], int]:
         try:
-            query = self.db.query(PriceHistory).filter_by(price_rate_id=rate_id).order_by(PriceHistory.created_at.desc())
-            total = query.count()
-            items = query.offset((page - 1) * per_page).limit(per_page).all()
+            stmt = select(PriceHistory).where(PriceHistory.price_rate_id == rate_id)
+            
+            # Count total
+            count_stmt = select(func.count()).select_from(stmt.subquery())
+            total = self.session.scalar(count_stmt) or 0
+            
+            stmt = stmt.order_by(PriceHistory.created_at.desc()).offset((page - 1) * per_page).limit(per_page)
+            items = self.session.scalars(stmt).all()
+            
             return [PriceHistoryResponseDTO.from_model(i) for i in items], total
         except SQLAlchemyError as e:
             raise DatabaseError(f"Database error while fetching history for price rate: {str(e)}") from e

@@ -12,7 +12,7 @@ def _configure_logging(config: BaseConfig) -> None:
 
     if config.LOG_FORMAT == "json":
         try:
-            from pythonjsonlogger.json import JsonFormatter  # type: ignore
+            from pythonjsonlogger.json import JsonFormatter
 
             handler = logging.StreamHandler(sys.stdout)
             handler.setFormatter(

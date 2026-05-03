@@ -1,6 +1,13 @@
 from tuned.dtos.base import BaseDTO, PaginationDTO
+from tuned.dtos.user import UserResponseDTO
 from dataclasses import dataclass
-from typing import Optional, List
+from typing import Optional, List, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from tuned.models.service import AcademicLevel, Deadline, Service
+    from tuned.models.content import Sample, Testimonial, FAQ
+    from tuned.models.tag import Tag
+
 
 @dataclass
 class DeadlineDTO(BaseDTO):
@@ -8,11 +15,22 @@ class DeadlineDTO(BaseDTO):
     hours: int
     order: int = 0
 
+@dataclass
+class DeadlineUpdateDTO:
+    name: Optional[str] = None
+    hours: Optional[int] = None
+    order: Optional[int] = None
+
 
 @dataclass
 class AcademicLevelDTO(BaseDTO):
     name: str
     order: int = 0
+
+@dataclass
+class AcademicLevelUpdateDTO:
+    name: Optional[str] = None
+    order: Optional[int] = None
 
 
 @dataclass
@@ -26,6 +44,17 @@ class SampleDTO(BaseDTO):
     image: str = ""
     slug: Optional[str] = None
 
+@dataclass
+class SampleUpdateDTO:
+    title: Optional[str] = None
+    content: Optional[str] = None
+    service_id: Optional[str] = None
+    excerpt: Optional[str] = None
+    word_count: Optional[int] = None
+    featured: Optional[bool] = None
+    image: Optional[str] = None
+    slug: Optional[str] = None
+
 
 @dataclass
 class TestimonialDTO(BaseDTO):
@@ -36,6 +65,12 @@ class TestimonialDTO(BaseDTO):
     order_id: Optional[str] = None
     is_approved: bool = False
 
+@dataclass
+class TestimonialUpdateDTO:
+    content: Optional[str] = None
+    rating: Optional[int] = None
+    is_approved: Optional[bool] = None
+
 
 @dataclass
 class FaqDTO(BaseDTO):
@@ -43,6 +78,13 @@ class FaqDTO(BaseDTO):
     answer: str
     category: str = "General"
     order: int = 0
+
+@dataclass
+class FaqUpdateDTO:
+    question: Optional[str] = None
+    answer: Optional[str] = None
+    category: Optional[str] = None
+    order: Optional[int] = None
 
 @dataclass
 class TagDTO(BaseDTO):
@@ -58,7 +100,7 @@ class AcademicLevelResponseDTO(BaseDTO):
     order: int
 
     @classmethod
-    def from_model(cls, obj) -> "AcademicLevelResponseDTO":
+    def from_model(cls, obj: "AcademicLevel") -> "AcademicLevelResponseDTO":
         return cls(
             id=obj.id,
             name=obj.name,
@@ -73,7 +115,7 @@ class DeadlineResponseDTO(BaseDTO):
     order: int
 
     @classmethod
-    def from_model(cls, obj) -> "DeadlineResponseDTO":
+    def from_model(cls, obj: "Deadline") -> "DeadlineResponseDTO":
         return cls(
             id=obj.id,
             name=obj.name,
@@ -88,7 +130,7 @@ class SampleServiceResponseDTO:
     slug: str
 
     @classmethod
-    def from_model(cls, obj) -> "SampleServiceResponseDTO":
+    def from_model(cls, obj: "Service") -> "SampleServiceResponseDTO":
         return cls(
             id=obj.id,
             name=obj.name,
@@ -102,15 +144,15 @@ class SampleResponseDTO(BaseDTO):
     title: str
     slug: str
     excerpt: str
-    service_id: str
+    service_id: Optional[str]
     word_count: int
     featured: bool
     image: str
     tags: List[TagResponseDTO]
-    service: SampleServiceResponseDTO
+    service: Optional[SampleServiceResponseDTO]
 
     @classmethod
-    def from_model(cls, obj) -> "SampleResponseDTO":
+    def from_model(cls, obj: "Sample") -> "SampleResponseDTO":
         return cls(
             id=obj.id,
             title=obj.title,
@@ -121,7 +163,7 @@ class SampleResponseDTO(BaseDTO):
             featured=obj.featured,
             image=obj.image or "",
             tags=[TagResponseDTO.from_model(tag) for tag in obj.tag_list],
-            service=SampleServiceResponseDTO.from_model(obj.service),
+            service=SampleServiceResponseDTO.from_model(obj.service) if obj.service else None,
         )
 
 @dataclass
@@ -130,7 +172,7 @@ class SampleListResponseDTO(PaginationDTO):
     total: int
 
     @classmethod
-    def from_model(cls, obj) -> "SampleListResponseDTO":
+    def from_model(cls, obj: "Sample") -> "SampleListResponseDTO":
         return cls(
             samples=[SampleResponseDTO.from_model(sample) for sample in obj.samples],
             total=obj.total,
@@ -146,18 +188,20 @@ class SampleListRequestDTO(PaginationDTO):
     service_id: Optional[str] = None
     featured: Optional[bool] = None
     
-@dataclass
+@dataclass(kw_only=True)
 class TestimonialResponseDTO(BaseDTO):
     id: str
-    user_id: str
-    service_id: str
-    order_id: str
+    user_id: Optional[str] = None
+    service_id: Optional[str] = None
+    order_id: Optional[str] = None
     content: str
     rating: int
     is_approved: bool
+    user: Optional[UserResponseDTO] = None
+    service: Optional[SampleServiceResponseDTO] = None
 
     @classmethod
-    def from_model(cls, obj) -> "TestimonialResponseDTO":
+    def from_model(cls, obj: "Testimonial") -> "TestimonialResponseDTO":
         return cls(
             id=obj.id,
             user_id=obj.user_id,
@@ -166,7 +210,19 @@ class TestimonialResponseDTO(BaseDTO):
             content=obj.content,
             rating=obj.rating,
             is_approved=obj.is_approved,
+            user=UserResponseDTO.from_model(obj.author) if obj.author else None,
+            service=SampleServiceResponseDTO.from_model(obj.service) if obj.service else None,
+            created_at=obj.created_at
         )
+
+@dataclass
+class TestimonialListResponseDTO(PaginationDTO):
+    testimonials: List[TestimonialResponseDTO]
+    total: int
+
+@dataclass
+class TestimonialListRequestDTO(PaginationDTO):
+    service_id: Optional[str] = None
 
 
 @dataclass
@@ -178,7 +234,7 @@ class FaqResponseDTO(BaseDTO):
     order: int
 
     @classmethod
-    def from_model(cls, obj) -> "FaqResponseDTO":
+    def from_model(cls, obj: "FAQ") -> "FaqResponseDTO":
         return cls(
             id=obj.id,
             question=obj.question,
@@ -191,12 +247,12 @@ class FaqResponseDTO(BaseDTO):
 class TagResponseDTO(BaseDTO):
     id: str
     name: str
-    description: str
+    description: Optional[str]
     slug: str
     usage_count: int
 
     @classmethod
-    def from_model(cls, obj) -> "TagResponseDTO":
+    def from_model(cls, obj: "Tag") -> "TagResponseDTO":
         return cls(
             id=obj.id,
             name=obj.name,

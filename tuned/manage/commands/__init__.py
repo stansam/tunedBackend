@@ -9,3 +9,17 @@ from tuned.manage.commands.create_faqs import create_faqs
 from tuned.manage.commands.create_blogs import create_blogs
 from tuned.manage.commands.seed_db import seed_db
 from tuned.manage.commands.manage_tables import manage_tables
+
+__all__ = [
+    "create_superuser",
+    "create_users",
+    "create_content",
+    "create_prices",
+    "create_services",
+    "create_samples",
+    "create_testimonials",
+    "create_faqs",
+    "create_blogs",
+    "seed_db",
+    "manage_tables",
+]

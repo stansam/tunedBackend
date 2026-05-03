@@ -1,35 +1,36 @@
-from tuned.models import CommentReaction
+from typing import List
+from tuned.models import CommentReaction, BlogReactionType
 from tuned.dtos import CommentReactionDTO, CommentReactionResponseDTO
 from tuned.repository.exceptions import NotFound, DatabaseError, AlreadyExists
 from sqlalchemy.orm import Session
+from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 
 class CreateCommentReaction:
-    def __init__(self, db:Session):
-        self.db = db
-    def execute(self, data: CommentReactionDTO)-> CommentReactionResponseDTO:
-        try:
-            reaction = CommentReaction(**data)
+    def __init__(self, session: Session):
+        self.session = session
 
-            self.db.add(reaction)
-            self.db.commit()
-            self.db.refresh(reaction)
+    def execute(self, data: CommentReactionDTO) -> CommentReactionResponseDTO:
+        try:
+            reaction = CommentReaction(**data.__dict__)
+
+            self.session.add(reaction)
+            self.session.flush()
             return CommentReactionResponseDTO.from_model(reaction)
 
         except IntegrityError as e:
-            self.db.rollback()
             raise AlreadyExists("reaction already exists")
         except SQLAlchemyError as e:
-            self.db.rollback()
             raise DatabaseError("Database error while creating reaction") from e
 
 class GetCommentReaction:
-    def __init__(self, db: Session) -> None:
-        self.db = db
+    def __init__(self, session: Session) -> None:
+        self.session = session
 
     def execute(self, id: str) -> CommentReactionResponseDTO:
         try:
-            comment_reaction = self.db.query(CommentReaction).filter_by(id=id)
+            stmt = select(CommentReaction).where(CommentReaction.id == id)
+            comment_reaction = self.session.scalar(stmt)
             if not comment_reaction:
                 raise NotFound("reaction not found")
 
@@ -39,17 +40,18 @@ class GetCommentReaction:
             raise DatabaseError(f"Database error while fetching reaction: {str(e)}") from e
 
 class UpdateOrDeleteCommentReaction:
-    def __init__(self, db: Session) -> None:
-        self.db = db
+    def __init__(self, session: Session) -> None:
+        self.session = session
 
     def execute(self, id: str, data: CommentReactionDTO) -> CommentReactionResponseDTO:
         try:
-            comment_reaction = self.db.query(CommentReaction).filter_by(id=id).first()
+            stmt = select(CommentReaction).where(CommentReaction.id == id)
+            comment_reaction = self.session.scalar(stmt)
             if not comment_reaction:
                 raise NotFound("reaction not found")
             
             if data.reaction_type:
-                comment_reaction.reaction_type = data.reaction_type
+                comment_reaction.reaction_type = BlogReactionType(data.reaction_type.lower()) if isinstance(data.reaction_type, str) else data.reaction_type
             if data.is_deleted:
                 comment_reaction.is_deleted = data.is_deleted
                 comment_reaction.deleted_at = data.deleted_at
@@ -59,24 +61,21 @@ class UpdateOrDeleteCommentReaction:
             if data.updated_by:
                 comment_reaction.updated_by = data.updated_by
 
-            self.db.add(comment_reaction)            
-            self.db.commit()
-            self.db.refresh(comment_reaction)
+            self.session.add(comment_reaction)            
+            self.session.flush()
             return CommentReactionResponseDTO.from_model(comment_reaction)
 
         except SQLAlchemyError as e:
-            self.db.rollback()
             raise DatabaseError(f"Database error while updating reaction: {str(e)}") from e
 
-class  GetCommentReactions:
-    def __init__(self, db: Session) -> None:
-        self.db = db
+class GetCommentReactions:
+    def __init__(self, session: Session) -> None:
+        self.session = session
 
     def execute(self, comment_id: str) -> List[CommentReactionResponseDTO]:
         try:
-            comment_reactions = self.db.query(CommentReaction).filter_by(comment_id=comment_id)
-            if not comment_reactions:
-                return []
+            stmt = select(CommentReaction).where(CommentReaction.comment_id == comment_id)
+            comment_reactions = self.session.scalars(stmt).all()
             return [CommentReactionResponseDTO.from_model(reaction) for reaction in comment_reactions]
         except SQLAlchemyError as e:
             raise DatabaseError(f"Database error while fetching reactions: {str(e)}") from e

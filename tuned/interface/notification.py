@@ -1,27 +1,40 @@
+from __future__ import annotations
 import logging
-from dataclasses import asdict
-from tuned.repository.user.notification import NotificationRepository
+from typing import Optional, TYPE_CHECKING
 from tuned.dtos.notification import NotificationCreateDTO, NotificationResponseDTO
-from tuned.extensions import db
+
+if TYPE_CHECKING:
+    from tuned.repository import Repository
+    from tuned.repository.user.notification import NotificationRepository
 
 logger = logging.getLogger(__name__)
 
 class NotificationInterface:
-    def __init__(self):
-        self._repo = NotificationRepository(db.session)
+    def __init__(self, repos: Repository) -> None:
+        self._repo = repos.notification
 
     def create_notification(self, data: NotificationCreateDTO) -> NotificationResponseDTO:
-        return self._repo.create(data)
+        notification = self._repo.create(data)
+        self._repo.save()
+        return notification
 
-    def mark_read(self, notification_id: str) -> bool:
-        return self._repo.mark_read(notification_id)
+    def mark_read(self, notification_id: str, user_id: str) -> NotificationResponseDTO:
+        notification = self._repo.mark_read(notification_id, user_id)
+        self._repo.save()
+        return notification
 
     def mark_all_read(self, user_id: str) -> int:
-        return self._repo.mark_all_read(user_id)
+        updated_count = self._repo.mark_all_read(user_id)
+        self._repo.save()
+        return updated_count
 
     def get_unread_count(self, user_id: str) -> int:
         return self._repo.get_unread_count(user_id)
 
-    def get_user_notifications(self, user_id: str, limit: int = 20, offset: int = 0) -> list[dict]:
-        notifications = self._repo.get_user_notifications(user_id, limit, offset)
-        return [asdict(NotificationResponseDTO.from_model(n)) for n in notifications]
+    def get_user_notifications(
+        self,
+        user_id: str,
+        limit: int = 20,
+        offset: int = 0,
+    ) -> list[NotificationResponseDTO]:
+        return self._repo.get_user_notifications(user_id, limit, offset)

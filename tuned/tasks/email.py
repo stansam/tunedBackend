@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, cast
+from celery import Task
 
 from celery.utils.log import get_task_logger
 
@@ -12,7 +13,7 @@ from tuned.services.email_service import send_welcome_email
 logger = get_task_logger(__name__)
 
 
-@celery_app.task(
+@celery_app.task(  # type: ignore[untyped-decorator]
     name='tuned.tasks.email.send_transactional_email',
     bind=True,
     queue='email',
@@ -23,7 +24,7 @@ logger = get_task_logger(__name__)
     acks_late=True,
 )
 def send_transactional_email(
-    self,
+    self: Task,
     to: str,
     subject: str,
     template: str,
@@ -45,19 +46,19 @@ def send_transactional_email(
         raise self.retry(exc=exc, countdown=delay)
 
 
-@celery_app.task(
+@celery_app.task(  # type: ignore[untyped-decorator]
     name='tuned.tasks.email.send_welcome_task',
     bind=True,
     queue='email',
     max_retries=2,
     acks_late=True,
 )
-def send_welcome_task(self, user_id: str) -> None:
+def send_welcome_task(self: Task, user_id: str) -> None:
     from tuned.repository.user.get import GetUserByID
     from tuned.repository.exceptions import NotFound
     from tuned.extensions import db
     try:
-        user: User = GetUserByID(db.session).execute(user_id)
+        user: User = GetUserByID(cast(Any, db.session)).execute(user_id)
         send_welcome_email(user)
     except NotFound:
         logger.warning(f"[email] send_welcome_task: user {user_id} not found — skipping")

@@ -1,26 +1,28 @@
+from __future__ import annotations
 import logging
-
+from typing import Optional, TYPE_CHECKING
 from tuned.dtos import (
     PriceRateDTO,
     PriceRateResponseDTO,
+    PriceRateUpdateDTO,
     PriceRateLookupDTO,
     CalculatePriceRequestDTO,
     CalculatePriceResponseDTO,
 )
-from tuned.repository import repositories
 from tuned.repository.exceptions import AlreadyExists, DatabaseError, NotFound
 from tuned.interface.price.helper import CalculatePriceService
 from tuned.core.logging import get_logger
-from typing import TYPE_CHECKING
-
-logger: logging.Logger = get_logger(__name__)
 
 if TYPE_CHECKING:
     from tuned.interface import Services
+    from tuned.repository import Repository
+    from tuned.repository.protocols import PriceRateRepositoryProtocol
+
+logger: logging.Logger = get_logger(__name__)
 
 class PriceRateService:
-    def __init__(self, interfaces: "Services") -> None:
-        self._repo = repositories.price_rate
+    def __init__(self, interfaces: Services, repos: Repository) -> None:
+        self._repo = repos.price_rate
         self._interfaces = interfaces
 
     def create_rate(self, data: PriceRateDTO) -> PriceRateResponseDTO:
@@ -36,7 +38,7 @@ class PriceRateService:
             logger.info("Price rate created: id=%s", result.id)
             return result
         except AlreadyExists:
-            logger.error("Price rate already exists: %s", data.name)
+            logger.error("Price rate already exists for category %s", data.pricing_category_id)
             raise AlreadyExists("Price rate already exists")
         except DatabaseError:
             logger.error("Database error while creating price rate")
@@ -66,17 +68,15 @@ class PriceRateService:
         self, pricing_category_id: str, active_only: bool = True
     ) -> list[PriceRateResponseDTO]:
         try:
-            return self._repo.get_by_category(pricing_category_id, active_only)
+            return list(self._repo.get_by_category(pricing_category_id, active_only))
         except DatabaseError:
             logger.error("Database error while fetching price rate")
             raise DatabaseError("Database error while fetching price rate")
 
-    def update_rate(self, rate_id: str, updates: dict) -> PriceRateResponseDTO:
+    def update_rate(self, rate_id: str, data: PriceRateUpdateDTO) -> PriceRateResponseDTO:
         try:
-            allowed = {"price_per_page", "is_active"}
-            safe_updates = {k: v for k, v in updates.items() if k in allowed}
-            logger.info("Updating price rate id=%s fields=%s", rate_id, list(safe_updates.keys()))
-            result = self._repo.update(rate_id, safe_updates)
+            logger.info("Updating price rate id=%s", rate_id)
+            result = self._repo.update(rate_id, data)
             logger.info("Price rate updated: id=%s", rate_id)
             return result
         except NotFound:

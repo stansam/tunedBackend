@@ -22,12 +22,12 @@ def _hash_token(raw_token: str) -> str:
 
 
 class GenerateAndStoreVerificationToken:
-    def __init__(self, db: Session) -> None:
-        self.db = db
+    def __init__(self, session: Session) -> None:
+        self.session = session
 
     def execute(self, user_id: str) -> tuple[User, str]:
         try:
-            user: User | None = GetUserByID(self.db).execute(user_id)
+            user: User = GetUserByID(self.session).execute(user_id)
         except NotFound:
             raise NotFound("User not found") from None
 
@@ -41,11 +41,9 @@ class GenerateAndStoreVerificationToken:
         try:
             user.email_verification_token = hashed
             user.email_verification_token_expires_at = expires_at
-            self.db.add(user)
-            self.db.commit()
-            self.db.refresh(user)
+            self.session.add(user)
+            self.session.flush()
         except SQLAlchemyError as exc:
-            self.db.rollback()
             raise DatabaseError(
                 f"DB error while generating verification token for user {user_id}: {exc}"
             ) from exc
@@ -54,12 +52,12 @@ class GenerateAndStoreVerificationToken:
 
 
 class ConfirmEmailVerification:
-    def __init__(self, db: Session) -> None:
-        self.db = db
+    def __init__(self, session: Session) -> None:
+        self.session = session
 
     def execute(self, user_id: str, raw_token: str) -> User:
         try:
-            user: User | None = GetUserByID(self.db).execute(user_id)
+            user: User = GetUserByID(self.session).execute(user_id)
         except NotFound:
             raise NotFound("User not found") from None
 
@@ -85,11 +83,9 @@ class ConfirmEmailVerification:
             user.email_verified = True
             user.email_verification_token = None
             user.email_verification_token_expires_at = None
-            self.db.add(user)
-            self.db.commit()
-            self.db.refresh(user)
+            self.session.add(user)
+            self.session.flush()
         except SQLAlchemyError as exc:
-            self.db.rollback()
             raise DatabaseError(
                 f"DB error while confirming verification for user {user_id}: {exc}"
             ) from exc
@@ -98,11 +94,11 @@ class ConfirmEmailVerification:
 
 
 class GetUserForResend:
-    def __init__(self, db: Session) -> None:
-        self.db = db
+    def __init__(self, session: Session) -> None:
+        self.session = session
 
     def execute(self, email: str) -> User | None:
         try:
-            return GetUserByEmail(self.db).execute(email)
+            return GetUserByEmail(self.session).execute(email)
         except NotFound:
             return None

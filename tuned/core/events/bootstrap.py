@@ -1,6 +1,6 @@
 _initialized = False
 
-def init_events():
+def init_events() -> None:
     global _initialized
     if _initialized:
         return

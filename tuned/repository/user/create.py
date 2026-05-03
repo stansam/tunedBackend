@@ -5,8 +5,8 @@ from tuned.repository.exceptions import AlreadyExists, DatabaseError
 from tuned.dtos import CreateUserDTO
 from datetime import datetime, timezone
 class CreateUser:
-    def __init__(self, db: Session) -> None:
-        self.db = db
+    def __init__(self, session: Session) -> None:
+        self.session = session
 
     def execute(self, user_data: CreateUserDTO) -> User:
         try:
@@ -18,19 +18,14 @@ class CreateUser:
             if password:
                 new_user.set_password(password)
             
-            self.db.add(new_user)
-            self.db.flush()
+            self.session.add(new_user)
+            self.session.flush()
 
             new_user.created_at = datetime.now(timezone.utc)
             new_user.created_by = new_user.id
 
-            self.db.commit()
-            self.db.refresh(new_user)
-
             return new_user
         except IntegrityError as e:
-            self.db.rollback()
             raise AlreadyExists("User already exists")
         except SQLAlchemyError as e:
-            self.db.rollback()
             raise DatabaseError("Database error while creating user") from e

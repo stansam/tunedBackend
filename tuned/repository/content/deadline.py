@@ -1,37 +1,37 @@
+from typing import Any
 from sqlalchemy.orm import Session
+from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 
-from tuned.extensions import db
 from tuned.models import Deadline
-from tuned.dtos.content import DeadlineDTO, DeadlineResponseDTO
+from tuned.dtos.content import DeadlineDTO, DeadlineResponseDTO, DeadlineUpdateDTO
 from tuned.repository.exceptions import AlreadyExists, DatabaseError, NotFound
 
 
 class CreateDeadline:
-    def __init__(self, db: Session) -> None:
-        self.db = db
+    def __init__(self, session: Session) -> None:
+        self.session = session
 
     def execute(self, data: DeadlineDTO) -> DeadlineResponseDTO:
         try:
             deadline = Deadline(name=data.name, hours=data.hours, order=data.order)
-            self.db.session.add(deadline)
-            self.db.session.commit()
+            self.session.add(deadline)
+            self.session.flush()
             return DeadlineResponseDTO.from_model(deadline)
         except IntegrityError:
-            self.db.session.rollback()
             raise AlreadyExists("A deadline with this name already exists.")
         except SQLAlchemyError as e:
-            self.db.session.rollback()
             raise DatabaseError("Database error while creating deadline.") from e
 
 
 class GetDeadlineByID:
-    def __init__(self, db: Session) -> None:
-        self.db = db
+    def __init__(self, session: Session) -> None:
+        self.session = session
 
     def execute(self, deadline_id: str) -> DeadlineResponseDTO:
         try:
-            deadline = self.db.session.query(Deadline).filter_by(id=deadline_id).first()
+            stmt = select(Deadline).where(Deadline.id == deadline_id)
+            deadline = self.session.scalar(stmt)
             if not deadline:
                 raise NotFound("Deadline not found.")
             return DeadlineResponseDTO.from_model(deadline)
@@ -40,74 +40,73 @@ class GetDeadlineByID:
 
 
 class GetAllDeadlines:
-    def __init__(self, db: Session) -> None:
-        self.db = db
+    def __init__(self, session: Session) -> None:
+        self.session = session
 
     def execute(self) -> list[DeadlineResponseDTO]:
         try:
-            deadline = (
-                self.db.session.query(Deadline)
-                .order_by(Deadline.order.asc(), Deadline.hours.asc())
-                .all()
-            )
-            return [DeadlineResponseDTO.from_model(d) for d in deadline]
+            stmt = select(Deadline).order_by(Deadline.order.asc(), Deadline.hours.asc())
+            deadlines = self.session.scalars(stmt).all()
+            return [DeadlineResponseDTO.from_model(d) for d in deadlines]
         except SQLAlchemyError as e:
             raise DatabaseError(f"Database error while fetching deadlines: {str(e)}") from e
 
 
 class UpdateDeadline:
-    def __init__(self, db: Session) -> None:
-        self.db = db
+    def __init__(self, session: Session) -> None:
+        self.session = session
 
-    def execute(self, deadline_id: str, updates: dict) -> DeadlineResponseDTO:
+    def execute(self, deadline_id: str, updates: DeadlineUpdateDTO) -> DeadlineResponseDTO:
         try:
-            deadline = self.db.session.query(Deadline).filter_by(id=deadline_id).first()
+            stmt = select(Deadline).where(Deadline.id == deadline_id)
+            deadline = self.session.scalar(stmt)
             if not deadline:
                 raise NotFound("Deadline not found.")
-            for key, value in updates.items():
+            update_data = {k: v for k, v in updates.__dict__.items() if v is not None}
+            for key, value in update_data.items():
                 if hasattr(deadline, key):
                     setattr(deadline, key, value)
-            self.db.session.commit()
+            self.session.flush()
             return DeadlineResponseDTO.from_model(deadline)
         except IntegrityError:
-            self.db.session.rollback()
             raise AlreadyExists("A deadline with that name already exists.")
         except SQLAlchemyError as e:
-            self.db.session.rollback()
             raise DatabaseError("Database error while updating deadline.") from e
 
 
 class DeleteDeadline:
-    def __init__(self, db: Session) -> None:
-        self.db = db
+    def __init__(self, session: Session) -> None:
+        self.session = session
 
     def execute(self, deadline_id: str) -> None:
         try:
-            deadline = self.db.session.query(Deadline).filter_by(id=deadline_id).first()
+            stmt = select(Deadline).where(Deadline.id == deadline_id)
+            deadline = self.session.scalar(stmt)
             if not deadline:
                 raise NotFound("Deadline not found.")
-            self.db.session.delete(deadline)
-            self.db.session.commit()
+            self.session.delete(deadline)
+            self.session.flush()
         except SQLAlchemyError as e:
-            self.db.session.rollback()
             raise DatabaseError("Database error while deleting deadline.") from e
 
 
-class DeadlineRepository:
-    def __init__(self) -> None:
-        self.db = db
+from tuned.repository.protocols import DeadlineRepositoryProtocol
+
+class DeadlineRepository(DeadlineRepositoryProtocol):
+    def __init__(self, session: Session) -> None:
+        self.session = session
 
     def create(self, data: DeadlineDTO) -> DeadlineResponseDTO:
-        return CreateDeadline(self.db).execute(data)
+        return CreateDeadline(self.session).execute(data)
 
     def get_by_id(self, deadline_id: str) -> DeadlineResponseDTO:
-        return GetDeadlineByID(self.db).execute(deadline_id)
+        return GetDeadlineByID(self.session).execute(deadline_id)
 
     def get_all(self) -> list[DeadlineResponseDTO]:
-        return GetAllDeadlines(self.db).execute()
+        return GetAllDeadlines(self.session).execute()
 
-    def update(self, deadline_id: str, updates: dict) -> DeadlineResponseDTO:
-        return UpdateDeadline(self.db).execute(deadline_id, updates)
+    def update(self, deadline_id: str, updates: DeadlineUpdateDTO) -> DeadlineResponseDTO:
+        return UpdateDeadline(self.session).execute(deadline_id, updates)
 
     def delete(self, deadline_id: str) -> None:
-        return DeleteDeadline(self.db).execute(deadline_id)
+        return DeleteDeadline(self.session).execute(deadline_id)

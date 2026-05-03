@@ -1,34 +1,14 @@
-"""
-Auth-specific decorators for route protection.
-
-Provides decorators for:
-- JWT token verification with freshness
-- Admin role requirement
-- Email verification requirement
-- Active user requirement
-"""
 from functools import wraps
 from flask import g
 from flask_jwt_extended import verify_jwt_in_request, get_jwt_identity, get_jwt
 from tuned.models.user import User
 from tuned.utils.responses import error_response, unauthorized_response, forbidden_response
-from typing import Callable
+from typing import Callable, Any
 
 
-def jwt_required_fresh(f: Callable):
-    """
-    Require a fresh JWT token (recently authenticated).
-    
-    Use this for sensitive operations like password changes.
-    
-    Example:
-        @jwt_required_fresh
-        @app.route('/api/change-password')
-        def change_password():
-            pass
-    """
+def jwt_required_fresh(f: Callable[..., Any]) -> Callable[..., Any]:
     @wraps(f)
-    def wrapped(*args, **kwargs):
+    def wrapped(*args: Any, **kwargs: Any) -> Any:
         # Verify JWT and check freshness
         verify_jwt_in_request(fresh=True)
         
@@ -45,23 +25,9 @@ def jwt_required_fresh(f: Callable):
     return wrapped
 
 
-def admin_required(f: Callable):
-    """
-    Require user to have admin privileges.
-    
-    Must be used after @jwt_required() or similar decorator.
-    
-    Example:
-        from flask_jwt_extended import jwt_required
-        
-        @jwt_required()
-        @admin_required
-        @app.route('/api/admin/users')
-        def manage_users():
-            pass
-    """
+def admin_required(f: Callable[..., Any]) -> Callable[..., Any]:
     @wraps(f)
-    def wrapped(*args, **kwargs):
+    def wrapped(*args: Any, **kwargs: Any) -> Any:
         # Get current user from JWT
         user_id = get_jwt_identity()
         user = User.query.get(int(user_id))
@@ -79,23 +45,9 @@ def admin_required(f: Callable):
     return wrapped
 
 
-def verified_email_required(f: Callable):
-    """
-    Require user to have verified email address.
-    
-    Must be used after @jwt_required() or similar decorator.
-    
-    Example:
-        from flask_jwt_extended import jwt_required
-        
-        @jwt_required()
-        @verified_email_required
-        @app.route('/api/orders')
-        def create_order():
-            pass
-    """
+def verified_email_required(f: Callable[..., Any]) -> Callable[..., Any]:
     @wraps(f)
-    def wrapped(*args, **kwargs):
+    def wrapped(*args: Any, **kwargs: Any) -> Any:
         # Get current user from JWT
         user_id = get_jwt_identity()
         user = User.query.get(int(user_id))
@@ -116,23 +68,9 @@ def verified_email_required(f: Callable):
     return wrapped
 
 
-def active_user_required(f: Callable):
-    """
-    Require user account to be active (not soft-deleted).
-    
-    Must be used after @jwt_required() or similar decorator.
-    
-    Example:
-        from flask_jwt_extended import jwt_required
-        
-        @jwt_required()
-        @active_user_required
-        @app.route('/api/profile')
-        def get_profile():
-            pass
-    """
+def active_user_required(f: Callable[..., Any]) -> Callable[..., Any]:
     @wraps(f)
-    def wrapped(*args, **kwargs):
+    def wrapped(*args: Any, **kwargs: Any) -> Any:
         # Get current user from JWT
         user_id = get_jwt_identity()
         user = User.query.get(int(user_id))
@@ -150,26 +88,10 @@ def active_user_required(f: Callable):
     return wrapped
 
 
-def combined_auth_check(require_verified: bool = True, require_admin: bool = False):
-    """
-    Combined auth decorator with configurable checks.
-    
-    Verifies JWT and checks user status in one decorator.
-    
-    Args:
-        require_verified: Require email verification
-        require_admin: Require admin privileges
-        
-    Example:
-        @combined_auth_check(require_verified=True, require_admin=False)
-        @app.route('/api/dashboard')
-        def dashboard():
-            # User is authenticated, active, and email verified
-            pass
-    """
-    def decorator(f: Callable):
+def combined_auth_check(require_verified: bool = True, require_admin: bool = False) -> Callable[..., Any]:
+    def decorator(f: Callable[..., Any]) -> Callable[..., Any]:
         @wraps(f)
-        def wrapped(*args, **kwargs):
+        def wrapped(*args: Any, **kwargs: Any) -> Any:
             # Verify JWT
             verify_jwt_in_request()
             

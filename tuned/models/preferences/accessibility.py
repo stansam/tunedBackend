@@ -1,44 +1,16 @@
-"""
-User accessibility preferences model.
-
-This module defines the UserAccessibilityPreferences model for storing
-user accessibility and usability settings.
-"""
-
-from datetime import datetime, timezone
 from tuned.extensions import db
 from tuned.models.base import BaseModel
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+from typing import TYPE_CHECKING, Any
+from decimal import Decimal
 
+if TYPE_CHECKING:
+    from tuned.models.user import User
 
 class UserAccessibilityPreferences(BaseModel):
-    """
-    User accessibility and usability preferences.
-    
-    Stores user-specific settings for accessibility features to improve
-    usability for users with disabilities or specific needs.
-    One-to-one relationship with User model.
-    
-    Attributes:
-        user_id: Foreign key to User.id
-        font_size_multiplier: Font size multiplier (0.8 to 2.0, default 1.0)
-        high_contrast_mode: Enable high contrast mode
-        reduced_motion: Reduce animations and transitions
-        screen_reader_optimized: Optimize for screen readers
-        keyboard_navigation_enhanced: Enhanced keyboard navigation
-        color_blind_mode: Color blind assistance mode
-        focus_indicators_enhanced: Enhanced focus indicators
-        text_spacing_increased: Increase text spacing
-        created_at: Timestamp of preference creation
-        updated_at: Timestamp of last update
-    
-    Relationships:
-        user: The User who owns these preferences
-    """
-    
     __tablename__ = 'user_accessibility_preferences'
         
-    # Foreign Key (CASCADE delete, one-to-one)
-    user_id = db.Column(
+    user_id: Mapped[str] = mapped_column(
         db.String(36),
         db.ForeignKey('users.id', ondelete='CASCADE'),
         unique=True,
@@ -46,37 +18,25 @@ class UserAccessibilityPreferences(BaseModel):
         index=True
     )
     
-    # Font and text settings
-    font_size_multiplier = db.Column(
+    font_size_multiplier: Mapped[Decimal] = mapped_column(
         db.Numeric(3, 2),
-        default=1.0,
+        default=Decimal('1.00'),
         nullable=False
     )  # 0.8 to 2.0
-    text_spacing_increased = db.Column(db.Boolean, default=False, nullable=False)
+    text_spacing_increased: Mapped[bool] = mapped_column(db.Boolean, default=False, nullable=False)
     
-    # Visual modes
-    high_contrast_mode = db.Column(db.Boolean, default=False, nullable=False)
-    color_blind_mode = db.Column(db.Boolean, default=False, nullable=False)
+    high_contrast_mode: Mapped[bool] = mapped_column(db.Boolean, default=False, nullable=False)
+    color_blind_mode: Mapped[bool] = mapped_column(db.Boolean, default=False, nullable=False)
     
-    # Motion and animation
-    reduced_motion = db.Column(db.Boolean, default=False, nullable=False)
+    reduced_motion: Mapped[bool] = mapped_column(db.Boolean, default=False, nullable=False)
     
-    # Navigation and interaction
-    screen_reader_optimized = db.Column(db.Boolean, default=False, nullable=False)
-    keyboard_navigation_enhanced = db.Column(db.Boolean, default=False, nullable=False)
-    focus_indicators_enhanced = db.Column(db.Boolean, default=False, nullable=False)
+    screen_reader_optimized: Mapped[bool] = mapped_column(db.Boolean, default=False, nullable=False)
+    keyboard_navigation_enhanced: Mapped[bool] = mapped_column(db.Boolean, default=False, nullable=False)
+    focus_indicators_enhanced: Mapped[bool] = mapped_column(db.Boolean, default=False, nullable=False)
     
+    user: Mapped["User"] = relationship('User', foreign_keys=[user_id], back_populates='accessibility_preferences')
     
-    # Relationships
-    user = db.relationship('User', foreign_keys=[user_id], backref=db.backref('accessibility_preferences', uselist=False, lazy=True))
-    
-    def to_dict(self):
-        """
-        Serialize to dictionary for API responses.
-        
-        Returns:
-            dict: Dictionary representation of accessibility preferences
-        """
+    def to_dict(self) -> dict[str, Any]:
         return {
             'font_size_multiplier': float(self.font_size_multiplier) if self.font_size_multiplier else 1.0,
             'text_spacing_increased': self.text_spacing_increased,
@@ -90,5 +50,5 @@ class UserAccessibilityPreferences(BaseModel):
             'updated_at': self.updated_at.isoformat() if self.updated_at else None
         }
     
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f'<UserAccessibilityPreferences user_id={self.user_id}>'

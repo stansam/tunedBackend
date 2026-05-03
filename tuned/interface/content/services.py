@@ -1,27 +1,30 @@
+from __future__ import annotations
 import logging
-from collections import defaultdict
-from tuned.dtos import(
-    ServiceDTO, ServiceResponseDTO
-)
-from tuned.repository import repositories
+from typing import Optional, TYPE_CHECKING, List, Tuple
+
+from tuned.dtos import ServiceDTO, ServiceResponseDTO, ServiceUpdateDTO
 from tuned.repository.exceptions import AlreadyExists, DatabaseError, NotFound
 from tuned.core.logging import get_logger
 
+if TYPE_CHECKING:
+    from tuned.repository import Repository
+
 logger: logging.Logger = get_logger(__name__)
 
+
 class ServiceService:
-    def __init__(self) -> None:
-        self._repo = repositories.service
+    def __init__(self, repos: Repository) -> None:
+        self._repo = repos.service
 
     def create_service(self, data: ServiceDTO) -> ServiceResponseDTO:
         try:
             logger.info("Creating service: %s", data.name)
-            service = self._repo.create(data)
-            logger.info("Service created: id=%s slug=%s", service.id, service.slug)
-            return service
+            result = self._repo.create(data)
+            logger.info("Service created: id=%s", result.id)
+            return result
         except AlreadyExists:
-            logger.error("service already exists")
-            raise AlreadyExists("service already exists")
+            logger.error("Service already exists: %s", data.name)
+            raise AlreadyExists("Service already exists")
         except DatabaseError:
             logger.error("Database error while creating service")
             raise DatabaseError("Database error while creating service")
@@ -30,8 +33,8 @@ class ServiceService:
         try:
             return self._repo.get_by_id(service_id)
         except NotFound:
-            logger.error("service not found: %s", service_id)
-            raise NotFound("service not found")
+            logger.error("Service not found: %s", service_id)
+            raise NotFound("Service not found")
         except DatabaseError:
             logger.error("Database error while fetching service")
             raise DatabaseError("Database error while fetching service")
@@ -40,18 +43,15 @@ class ServiceService:
         try:
             return self._repo.get_by_slug(slug)
         except NotFound:
-            logger.error("service not found: %s", slug)
-            raise NotFound("service not found")
+            logger.error("Service not found with slug: %s", slug)
+            raise NotFound("Service not found")
         except DatabaseError:
-            logger.error("Database error while fetching service")
-            raise DatabaseError("Database error while fetching service")
+            logger.error("Database error while fetching service by slug")
+            raise DatabaseError("Database error while fetching service by slug")
 
     def list_services(self, active_only: bool = True) -> list[ServiceResponseDTO]:
         try:
             return self._repo.get_all(active_only=active_only)
-        except NotFound:
-            logger.error("services not found")
-            raise NotFound("services not found")
         except DatabaseError:
             logger.error("Database error while fetching services")
             raise DatabaseError("Database error while fetching services")
@@ -59,54 +59,45 @@ class ServiceService:
     def list_featured_services(self) -> list[ServiceResponseDTO]:
         try:
             return self._repo.get_featured()
-        except NotFound:
-            logger.error("services not found")
-            raise NotFound("services not found")
         except DatabaseError:
-            logger.error("Database error while fetching services")
-            raise DatabaseError("Database error while fetching services")
-    
-    def list_services_by_category(self) -> dict[str, list[ServiceResponseDTO]]:
-        try:
-            services: list[ServiceResponseDTO] = self._repo.get_all(active_only=True)
-            services_by_category: dict[str, list[ServiceResponseDTO]] = defaultdict(list)
-            for service in services:
-                services_by_category[service.category_id].append(service)
-            return services_by_category
-        except NotFound:
-            logger.error("services not found")
-            raise NotFound("services not found")
-        except DatabaseError:
-            logger.error("Database error while fetching services")
-            raise DatabaseError("Database error while fetching services")
+            logger.error("Database error while fetching featured services")
+            raise DatabaseError("Database error while fetching featured services")
 
-    def update_service(self, service_id: str, updates: dict) -> ServiceResponseDTO:
+    def list_services_by_category(self, category_id: str) -> list[ServiceResponseDTO]:
         try:
-            allowed_fields = {"name", "description", "category_id", "featured",
-                            "pricing_category_id", "slug", "is_active"}
-            safe_updates = {k: v for k, v in updates.items() if k in allowed_fields}
-            logger.info("Updating service id=%s fields=%s", service_id, list(safe_updates.keys()))
-            service = self._repo.update(service_id, safe_updates)
+            return self._repo.get_services_by_category(category_id)
+        except DatabaseError:
+            logger.error("Database error while fetching services by category")
+            raise DatabaseError("Database error while fetching services by category")
+
+    def update_service(self, service_id: str, updates: ServiceUpdateDTO) -> ServiceResponseDTO:
+        try:
+            logger.info("Updating service id=%s", service_id)
+            result = self._repo.update(service_id, updates)
             logger.info("Service updated: id=%s", service_id)
-            return service
+            return result
         except NotFound:
-            logger.error("service not found: %s", service_id)
-            raise NotFound("service not found")
+            logger.error("Service not found: %s", service_id)
+            raise NotFound("Service not found")
         except DatabaseError:
             logger.error("Database error while updating service")
             raise DatabaseError("Database error while updating service")
 
     def delete_service(self, service_id: str) -> None:
-        logger.info("Deleting service id=%s", service_id)
-        self._repo.delete(service_id)
-        logger.info("Service deleted: id=%s", service_id)
-    
-    def get_services_by_category(self, category_id: str) -> list[ServiceResponseDTO]:
         try:
-            return self._repo.get_services_by_category(category_id)
+            logger.info("Deleting service id=%s", service_id)
+            self._repo.delete(service_id)
+            logger.info("Service deleted: id=%s", service_id)
         except NotFound:
-            logger.error("services not found: %s", category_id)
-            raise NotFound("services not found")
+            logger.error("Service not found: %s", service_id)
+            raise NotFound("Service not found")
         except DatabaseError:
-            logger.error("Database error while fetching services")
-            raise DatabaseError("Database error while fetching services")
+            logger.error("Database error while deleting service")
+            raise DatabaseError("Database error while deleting service")
+
+    def get_service_mix(self, client_id: str) -> List[Tuple[str, int]]:
+        try:
+            return self._repo.get_service_mix(client_id)
+        except DatabaseError:
+            logger.error("Database error while fetching service mix for client %s", client_id)
+            raise DatabaseError("Database error while fetching service mix")

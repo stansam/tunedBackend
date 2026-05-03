@@ -1,8 +1,4 @@
-"""
-Newsletter service module.
-
-Handles newsletter subscription email operations.
-"""
+from typing import Optional
 from flask import current_app
 from tuned.utils.email import send_async_email
 from datetime import datetime
@@ -11,21 +7,12 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-def send_newsletter_subscription_email(email: str, name: str = None) -> None:
-    """
-    Send newsletter subscription confirmation email.
-    
-    Args:
-        email: Subscriber email address
-        name: Subscriber name (optional, defaults to "Subscriber")
-    """
-    # Build URLs
+def send_newsletter_subscription_email(email: str, name: Optional[str] = None) -> None:
     frontend_url = current_app.config.get('FRONTEND_URL', 'http://localhost:3000')
     blog_url = f"{frontend_url}/blog"
     services_url = f"{frontend_url}/services"
     unsubscribe_url = f"{frontend_url}/newsletter/unsubscribe?email={email}"
     
-    # Send email asynchronously
     send_async_email(
         to=email,
         subject='Welcome to Tuned Essays Newsletter!',

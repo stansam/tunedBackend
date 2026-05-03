@@ -1,47 +1,16 @@
-"""
-User localization settings model.
-
-This module defines the UserLocalizationSettings model for storing
-user language, timezone, and formatting preferences.
-"""
-
-from datetime import datetime, timezone
 from tuned.extensions import db
 from tuned.models.enums import DateFormat, TimeFormat, NumberFormat, WeekStart
 from tuned.models.base import BaseModel
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+from typing import TYPE_CHECKING, Optional, Any
+
+if TYPE_CHECKING:
+    from tuned.models.user import User
 
 class UserLocalizationSettings(BaseModel):
-    """
-    User language, timezone, and formatting preferences.
-    
-    Stores user-specific settings for language, locale, timezone,
-    and various formatting options (date, time, numbers, currency).
-    One-to-one relationship with User model.
-    
-    Note: User.language and User.timezone fields act as cached values
-    for performance. This model is the authoritative source.
-    
-    Attributes:
-        user_id: Foreign key to User.id
-        language: Language code (ISO 639-1, e.g., 'en', 'es')
-        country_code: Country code (ISO 3166-1 alpha-2, e.g., 'US', 'GB')
-        timezone: Timezone (IANA timezone, e.g., 'America/New_York')
-        date_format: Date format preference (MM/DD/YYYY, DD/MM/YYYY, YYYY-MM-DD)
-        time_format: Time format preference (12h, 24h)
-        currency: Currency code (ISO 4217, e.g., 'USD', 'EUR')
-        number_format: Number format preference (1,234.56, 1.234,56, 1 234,56)
-        week_start: First day of week (sunday, monday)
-        created_at: Timestamp of preference creation
-        updated_at: Timestamp of last update
-    
-    Relationships:
-        user: The User who owns these preferences
-    """
-    
     __tablename__ = 'user_localization_settings'
     
-    # Foreign Key (CASCADE delete, one-to-one)
-    user_id = db.Column(
+    user_id: Mapped[str] = mapped_column(
         db.String(36),
         db.ForeignKey('users.id', ondelete='CASCADE'),
         unique=True,
@@ -49,50 +18,38 @@ class UserLocalizationSettings(BaseModel):
         index=True
     )
     
-    # Language & Locale
-    language = db.Column(db.String(10), default='en', nullable=False)  # ISO 639-1
-    country_code = db.Column(db.String(2), default='US', nullable=True)  # ISO 3166-1 alpha-2
+    language: Mapped[str] = mapped_column(db.String(10), default='en', nullable=False)  # ISO 639-1
+    country_code: Mapped[Optional[str]] = mapped_column(db.String(2), default='US', nullable=True)  # ISO 3166-1 alpha-2
     
-    # Timezone
-    timezone = db.Column(db.String(50), default='UTC', nullable=False)  # IANA timezone
+    timezone: Mapped[str] = mapped_column(db.String(50), default='UTC', nullable=False)  # IANA timezone
     
-    # Date & Time formatting
-    date_format = db.Column(
+    date_format: Mapped[DateFormat] = mapped_column(
         db.Enum(DateFormat),
         default=DateFormat.MM_DD_YYYY,
         nullable=False
     )
-    time_format = db.Column(
+    time_format: Mapped[TimeFormat] = mapped_column(
         db.Enum(TimeFormat),
         default=TimeFormat.TWELVE_HOUR,
         nullable=False
     )
     
-    # Number & Currency formatting
-    currency = db.Column(db.String(3), default='USD', nullable=False)  # ISO 4217
-    number_format = db.Column(
+    currency: Mapped[str] = mapped_column(db.String(3), default='USD', nullable=False)  # ISO 4217
+    number_format: Mapped[NumberFormat] = mapped_column(
         db.Enum(NumberFormat),
         default=NumberFormat.COMMA_DOT,
         nullable=False
     )
     
-    # Calendar preferences
-    week_start = db.Column(
+    week_start: Mapped[WeekStart] = mapped_column(
         db.Enum(WeekStart),
         default=WeekStart.SUNDAY,
         nullable=False
     )
         
-    # Relationships
-    user = db.relationship('User', foreign_keys=[user_id], backref=db.backref('localization_settings', uselist=False, lazy=True))
+    user: Mapped["User"] = relationship('User', foreign_keys=[user_id], back_populates='localization_settings')
     
-    def to_dict(self):
-        """
-        Serialize to dictionary for API responses.
-        
-        Returns:
-            dict: Dictionary representation of localization settings
-        """
+    def to_dict(self) -> dict[str, Any]:
         return {
             'language': self.language,
             'country_code': self.country_code,
@@ -106,5 +63,5 @@ class UserLocalizationSettings(BaseModel):
             'updated_at': self.updated_at.isoformat() if self.updated_at else None
         }
     
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f'<UserLocalizationSettings user_id={self.user_id} language={self.language} timezone={self.timezone}>'

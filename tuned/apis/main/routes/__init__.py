@@ -1,5 +1,6 @@
 from tuned.apis.main.routes.homepage import(
-    GetFeaturedContent, GetQuoteFormOptions, CalculatePrice
+    GetFeaturedContent, GetQuoteFormOptions, CalculatePrice, NewsletterSubscribeView,
+    GlobalSearchView
 )
 from tuned.apis.main.routes.services.list import(
     GetServicesList, GetServicesBySlug, GetServicesByCategory,
@@ -10,14 +11,21 @@ from tuned.apis.main.routes.blogs import(
     ListBlogCategories, GetRelatedBlogPosts
 )
 from tuned.apis.main.routes.content import(
-    GetAcademicLevels, SampleListView, SampleDetailView, SampleServiceView, SampleRelatedView, GetTagsList
+    GetAcademicLevels, SampleListView, SampleDetailView,
+    SampleServiceView, SampleRelatedView, GetTagsList,
+    TestimonialsView
 )
 
 
-ROUTES = [
+from typing import Any
+
+ROUTES: list[dict[str, Any]] = [
     {"url_rule": "/featured/contents", "view_func": GetFeaturedContent.as_view("featured_contents"), 'methods': ['GET']},
     {"url_rule": "/quote/options", "view_func": GetQuoteFormOptions.as_view("quote_form_options"), 'methods': ['GET']},
     {"url_rule": "/calculate-price", "view_func": CalculatePrice.as_view("calculate_price"), 'methods': ['POST']},
+    {"url_rule": "/testimonials", "view_func": TestimonialsView.as_view("testimonials_list"), 'methods': ['GET']},
+    {"url_rule": "/newsletter/subscribe", "view_func": NewsletterSubscribeView.as_view("newsletter_subscribe"), 'methods': ['POST']},
+    {"url_rule": "/search", "view_func": GlobalSearchView.as_view("global_search"), 'methods': ['GET']},
 
     {"url_rule": "/services", "view_func": GetServicesList.as_view("services"), 'methods': ['GET']},
     {"url_rule": "/services/<string:slug>", "view_func": GetServicesBySlug.as_view("service_by_slug"), 'methods': ['GET']},

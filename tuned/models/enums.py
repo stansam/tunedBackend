@@ -1,11 +1,11 @@
-import enum
+from enum import Enum
 
-class GenderEnum(enum.Enum):
+class GenderEnum(str, Enum):
     MALE = "male"
     FEMALE = "female"
     UNKNOWN = "unknown"
 
-class OrderStatus(enum.Enum):
+class OrderStatus(str, Enum):
     PENDING = "pending"
     ACTIVE = "active"
     COMPLETED_PENDING_REVIEW = "completed pending review"
@@ -15,75 +15,84 @@ class OrderStatus(enum.Enum):
     REVISION = "revision"
 
 
-class PaymentStatus(enum.Enum):
+class PaymentStatus(str, Enum):
     PENDING = "pending"
+    PENDING_VERIFICATION = "pending_verification"
     COMPLETED = "completed"
     FAILED = "failed"
     REFUNDED = "refunded"
 
 
-class PaymentMethod(enum.Enum):
+class PaymentMethod(str, Enum):
     CREDIT_CARD = "credit_card"
     PAYPAL = "paypal"
     APPLE_PAY = "apple_pay"
     GOOGLE_PAY = "google_pay"
 
 
-class TransactionType(enum.Enum):
+class MethodCategory(str, Enum):
+    BANK_TRANSFER = "bank_transfer"
+    DIGITAL_WALLET = "digital_wallet"
+    CRYPTO = "crypto"
+    CREDIT_CARD = "credit_card"
+    OTHER = "other"
+
+
+class TransactionType(str, Enum):
     PAYMENT = "payment"
     REFUND = "refund"
     CHARGEBACK = "chargeback"
 
 
-class RefundStatus(enum.Enum):
+class RefundStatus(str, Enum):
     PENDING = "pending"
     PROCESSED = "processed"
     DENIED = "denied"
 
 
-class NotificationType(enum.Enum):
+class NotificationType(str, Enum):
     INFO = "info"
     SUCCESS = "success"
     WARNING = "warning"
     ERROR = "error"
 
 
-class ChatStatus(enum.Enum):
+class ChatStatus(str, Enum):
     ACTIVE = "active"
     CLOSED = "closed"
 
 
-class FileType(enum.Enum):
+class FileType(str, Enum):
     DELIVERY = "delivery"
     PLAGIARISM_REPORT = "plagiarism_report"
     SUPPLEMENTARY = "supplementary"
 
 
-class DeliveryStatus(enum.Enum):
+class DeliveryStatus(str, Enum):
     DELIVERED = "delivered"
     REVISED = "revised"
     REDELIVERED = "redelivered"
 
 
-class SupportTicketStatus(enum.Enum):
+class SupportTicketStatus(str, Enum):
     OPEN = "open"
     CLOSED = "closed"
     IN_PROGRESS = "in_progress"
 
 
-class ReferralStatus(enum.Enum):
+class ReferralStatus(str, Enum):
     PENDING = "pending"
     ACTIVE = "active"
     COMPLETED = "completed"
     EXPIRED = "expired"
 
 
-class DiscountType(enum.Enum):
+class DiscountType(str, Enum):
     PERCENTAGE = "percentage"
     FIXED = "fixed"
 
 
-class Currency(enum.Enum):
+class Currency(str, Enum):
     USD = "USD"
     EUR = "EUR"
     GBP = "GBP"
@@ -91,7 +100,7 @@ class Currency(enum.Enum):
     AUD = "AUD"
 
 
-class RevisionRequestStatus(enum.Enum):
+class RevisionRequestStatus(str, Enum):
     PENDING = "pending"
     IN_PROGRESS = "in_progress"
     COMPLETED = "completed"
@@ -99,89 +108,103 @@ class RevisionRequestStatus(enum.Enum):
     CANCELLED = "cancelled"
 
 
-class ExtensionRequestStatus(enum.Enum):
+class ExtensionRequestStatus(str, Enum):
     PENDING = "pending"
     APPROVED = "approved"
     REJECTED = "rejected"
     CANCELLED = "cancelled"
 
 
-class Priority(enum.Enum):
+class Priority(str, Enum):
     LOW = "low"
     NORMAL = "normal"
     HIGH = "high"
     URGENT = "urgent"
 
-class EmailFrequency(enum.Enum):
+class EmailFrequency(str, Enum):
     INSTANT = "instant"
     DAILY = "daily"
     WEEKLY = "weekly"
 
 
-class ProfileVisibility(enum.Enum):
+class ProfileVisibility(str, Enum):
     PUBLIC = "public"
     PRIVATE = "private"
     FRIENDS_ONLY = "friends_only"
 
 
-class DateFormat(enum.Enum):
+class DateFormat(str, Enum):
     MM_DD_YYYY = "MM/DD/YYYY"
     DD_MM_YYYY = "DD/MM/YYYY"
     YYYY_MM_DD = "YYYY-MM-DD"
 
 
-class TimeFormat(enum.Enum):
+class TimeFormat(str, Enum):
     TWELVE_HOUR = "12h"
     TWENTY_FOUR_HOUR = "24h"
 
 
-class NumberFormat(enum.Enum):
+class NumberFormat(str, Enum):
     COMMA_DOT = "1,234.56"
     DOT_COMMA = "1.234,56"
     SPACE_COMMA = "1 234,56"
 
 
-class WeekStart(enum.Enum):
+class WeekStart(str, Enum):
     SUNDAY = "sunday"
     MONDAY = "monday"
 
 
-class NewsletterFrequency(enum.Enum):
+class NewsletterFrequency(str, Enum):
     DAILY = "daily"
     WEEKLY = "weekly"
     BIWEEKLY = "biweekly"
     MONTHLY = "monthly"
 
 
-class NewsletterFormat(enum.Enum):
+class NewsletterFormat(str, Enum):
     HTML = "html"
     TEXT = "text"
 
 
-class InvoiceDeliveryMethod(enum.Enum):
+class InvoiceDeliveryMethod(str, Enum):
     EMAIL = "email"
     DOWNLOAD_ONLY = "download_only"
 
 
-class RuleType(enum.Enum):
+class RuleType(str, Enum):
     NOTIFICATION = "notification"
     EMAIL = "email"
 
 
-class ExperimentStatus(enum.Enum):
+class ExperimentStatus(str, Enum):
     DRAFT = "draft"
     ACTIVE = "active"
     PAUSED = "paused"
     COMPLETED = "completed"
 
 
-class SuggestionStatus(enum.Enum):
+class SuggestionStatus(str, Enum):
     PENDING = "pending"
     ACCEPTED = "accepted"
     REJECTED = "rejected"
     DISMISSED = "dismissed"
 
-class BlogReactionType(enum.Enum):
+class BlogReactionType(str, Enum):
     LIKE = "like"
     DISLIKE = "dislike"
 
+class ActionableAlertType(str, Enum):
+    EXTENSION_REQUEST = "EXTENSION_REQUEST"
+    PENDING_REVIEW    = "PENDING_REVIEW"
+
+
+class EmailStatus(str, Enum):
+    PENDING = "pending"
+    SENT = "sent"
+    FAILED = "failed"
+
+class TransactionStatus(str, Enum):
+    PENDING = "pending"
+    COMPLETED = "completed"
+    FAILED = "failed"

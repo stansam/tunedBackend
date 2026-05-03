@@ -3,10 +3,10 @@ from tuned.repository.audit.price_history import PriceHistoryRepository
 from tuned.repository.audit.order_status_history import OrderStatusHistoryRepository
 from tuned.repository.audit.activity_log import ActivityLogRepository
 from tuned.repository.audit.email_log import EmailLogRepository
-from tuned.extensions import db
+
 class AuditRepository:
-    def __init__(self) -> None:
-        self.session = db.session
+    def __init__(self, session: Session) -> None:
+        self.session = session
         self._price_history: PriceHistoryRepository | None = None
         self._order_status_history: OrderStatusHistoryRepository | None = None
         self._activity_log: ActivityLogRepository | None = None

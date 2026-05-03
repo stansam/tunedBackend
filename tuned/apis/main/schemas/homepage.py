@@ -1,18 +1,10 @@
-"""
-Validation schemas for homepage-related endpoints.
-
-Includes schemas for:
-- Newsletter subscription
-- Search queries
-- Quote form options (GET endpoint - no validation needed)
-"""
 from marshmallow import Schema, fields, validate, validates, ValidationError
 import re
 
 
+from typing import Any
+
 class NewsletterSubscribeSchema(Schema):
-    """Schema for newsletter subscription."""
-    
     email = fields.Email(
         required=True,
         error_messages={
@@ -32,14 +24,11 @@ class NewsletterSubscribeSchema(Schema):
     )
     
     @validates('email')
-    def validate_email(self, value, **kwargs):
-        """Additional email validation."""
-        # Basic email regex
+    def validate_email(self, value: str, **kwargs: Any) -> str:
         email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
         if not re.match(email_pattern, value):
             raise ValidationError('Invalid email address format')
         
-        # Check for common disposable email domains
         disposable_domains = ['tempmail.com', 'throwaway.email', '10minutemail.com']
         domain = value.split('@')[1].lower()
         if domain in disposable_domains:
@@ -49,8 +38,6 @@ class NewsletterSubscribeSchema(Schema):
 
 
 class SearchQuerySchema(Schema):
-    """Schema for global search queries."""
-    
     q = fields.Str(
         required=True,
         validate=validate.Length(min=2, max=200),
@@ -94,7 +81,6 @@ class SearchQuerySchema(Schema):
     )
 
 class CalculatePriceSchema(Schema):
-    """Schema for price calculation."""
     service_id = fields.Str(
         required=True,
         error_messages={
@@ -143,5 +129,33 @@ class CalculatePriceSchema(Schema):
         error_messages={
             'invalid': 'Invalid report type',
             'validator_failed': 'Report type must be one of: standard, turnitin'
+        }
+    )
+
+class TestimonialListSchema(Schema):
+    service_id = fields.Str(
+        required=False,
+        error_messages={
+            'invalid': 'Service ID must be a string',
+        }
+    )
+    
+    page = fields.Int(
+        required=False,
+        validate=validate.Range(min=1),
+        load_default=1,
+        error_messages={
+            'invalid': 'Page must be an integer',
+            'validator_failed': 'Page must be at least 1'
+        }
+    )
+    
+    per_page = fields.Int(
+        required=False,
+        validate=validate.Range(min=1, max=100),
+        load_default=10,
+        error_messages={
+            'invalid': 'Items per page must be an integer',
+            'validator_failed': 'Items per page must be between 1 and 100'
         }
     )

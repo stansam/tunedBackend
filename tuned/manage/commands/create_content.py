@@ -1,34 +1,27 @@
-"""
-create_content — seed academic levels and deadlines.
-
-Usage:
-    flask create-content
-"""
 import logging
 import click
 from flask.cli import with_appcontext
-
+from typing import cast, Any
 from tuned.dtos import AcademicLevelDTO, DeadlineDTO
-from tuned.interface import Services
+from tuned.utils.dependencies import get_services
 from tuned.manage.data import academic_levels_dict, deadlines_dict
-from tuned.repository.exceptions import AlreadyExists, DatabaseError
+from tuned.repository.exceptions import AlreadyExists #, DatabaseError
+from tuned.core.logging import get_logger
 
-logger = logging.getLogger(__name__)
+logger: logging.Logger = get_logger(__name__)
 
 
 @click.command("create-content")
 @with_appcontext
 def create_content() -> None:
-    """Seed academic levels and deadline options."""
-    services = Services()
+    services = get_services()
 
-    # --- Academic Levels ---
     al_created = al_skipped = al_failed = 0
     click.echo("Seeding academic levels…")
     for entry in academic_levels_dict:
         try:
-            dto = AcademicLevelDTO(name=entry["name"], order=entry.get("order", 0))
-            services.academic_level.create_academic_level(dto)
+            al_dto = AcademicLevelDTO(name=str(entry["name"]), order=int(cast(Any, entry.get("order", 0))))
+            services.academic_level.create_academic_level(al_dto)
             click.echo(f"  ✓ Created academic level: {entry['name']}")
             al_created += 1
         except AlreadyExists:
@@ -43,17 +36,16 @@ def create_content() -> None:
         f"Academic Levels — created: {al_created}, skipped: {al_skipped}, failed: {al_failed}"
     )
 
-    # --- Deadlines ---
     dl_created = dl_skipped = dl_failed = 0
     click.echo("\nSeeding deadlines…")
     for entry in deadlines_dict:
         try:
-            dto = DeadlineDTO(
-                name=entry["name"],
-                hours=entry["hours"],
-                order=entry.get("order", 0),
+            dl_dto = DeadlineDTO(
+                name=str(entry["name"]),
+                hours=int(cast(Any, entry["hours"])),
+                order=int(cast(Any, entry.get("order", 0))),
             )
-            services.deadline.create_deadline(dto)
+            services.deadline.create_deadline(dl_dto)
             click.echo(f"  ✓ Created deadline: {entry['name']}")
             dl_created += 1
         except AlreadyExists:

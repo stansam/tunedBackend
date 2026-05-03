@@ -5,6 +5,7 @@ from tuned.repository.content.service_category import ServiceCategoryRepository
 from tuned.repository.content.sample import SampleRepository
 from tuned.repository.content.testimonial import TestimonialRepository
 from tuned.repository.content.faqs import FAQRepository
+from tuned.repository.content.tag import TagRepository
 
 __all__ = [
     "AcademicLevelRepository",
@@ -14,4 +15,5 @@ __all__ = [
     "SampleRepository",
     "TestimonialRepository",
     "FAQRepository",
+    "TagRepository",
 ]

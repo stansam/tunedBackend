@@ -1,19 +1,22 @@
+from __future__ import annotations
 import logging
-
+from typing import Optional, TYPE_CHECKING
 from tuned.dtos import (
     PricingCategoryDTO,
     PricingCategoryResponseDTO,
+    PricingCategoryUpdateDTO
 )
-from tuned.repository import repositories
 from tuned.repository.exceptions import AlreadyExists, DatabaseError, NotFound
 from tuned.core.logging import get_logger
 
+if TYPE_CHECKING:
+    from tuned.repository import Repository
+
 logger: logging.Logger = get_logger(__name__)
 
-
 class PricingCategoryService:
-    def __init__(self) -> None:
-        self._repo = repositories.pricing_category
+    def __init__(self, repos: Repository) -> None:
+        self._repo = repos.pricing_category
 
     def create_category(self, data: PricingCategoryDTO) -> PricingCategoryResponseDTO:
         try:
@@ -45,12 +48,10 @@ class PricingCategoryService:
             logger.error("Database error while fetching pricing categories")
             raise DatabaseError("Database error while fetching pricing categories")
 
-    def update_category(self, category_id: str, updates: dict) -> PricingCategoryResponseDTO:
+    def update_category(self, category_id: str, data: PricingCategoryUpdateDTO) -> PricingCategoryResponseDTO:
         try:
-            allowed = {"name", "description", "display_order"}
-            safe_updates = {k: v for k, v in updates.items() if k in allowed}
-            logger.info("Updating pricing category id=%s fields=%s", category_id, list(safe_updates.keys()))
-            result = self._repo.update(category_id, safe_updates)
+            logger.info("Updating pricing category id=%s", category_id)
+            result = self._repo.update(category_id, data)
             logger.info("Pricing category updated: id=%s", category_id)
             return result
         except NotFound:

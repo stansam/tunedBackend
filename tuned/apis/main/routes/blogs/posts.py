@@ -1,7 +1,7 @@
 # from tuned.apis.main.schemas.blogs import PostByCategorySchema
 from flask import request
 from flask.views import MethodView
-from tuned.interface import blog_post as _interface
+from tuned.utils.dependencies import get_services
 from tuned.utils.responses import paginated_response, error_response, validation_error_response, success_response
 from tuned.redis_client import redis_client
 from tuned.apis.main.schemas import BlogFilterSchema
@@ -12,6 +12,7 @@ from marshmallow import ValidationError
 from dataclasses import asdict
 import json
 import logging
+from typing import Any
 
 logger: logging.Logger = get_logger(__name__)
 
@@ -19,10 +20,10 @@ CACHE_KEY = 'blogs:all'
 CACHE_TTL = 300
 
 class ListBlogPosts(MethodView):
-    def __init__(self):
+    def __init__(self) -> None:
         self._schema = BlogFilterSchema()
 
-    def get(self):
+    def get(self) -> tuple[Any, int]:
         try:
             params = {}
             if request.args:
@@ -34,19 +35,20 @@ class ListBlogPosts(MethodView):
 
         try:
             cache_key = f'{CACHE_KEY}:{json.dumps(params)}'
-            cached_data = redis_client.get(cache_key)
-            if cached_data:
+            raw = redis_client.get(cache_key)
+            if raw is not None and isinstance(raw, (str, bytes, bytearray)):
                 logger.debug(f'Returning blogs from cache')
-                data = json.loads(cached_data)
+                data = json.loads(raw)
                 return paginated_response(
-                    items=data.get("blogs"),
+                    items=data.get("blogs", []),
                     page=data.get("page", 1),
                     per_page=data.get("per_page", 12),
-                    total=data.get("total")
+                    total=data.get("total", 0)
                     )
-            req = BlogPostListRequestDTO(**params)
-            blogs = _interface.list_published(req)
-            data = asdict(blogs)
+            
+            blog_req = BlogPostListRequestDTO(**params)
+            blogs_dto = get_services().blogs.post.list_published(blog_req)
+            data = asdict(blogs_dto)
 
             redis_client.setex(
                 cache_key,
@@ -55,29 +57,26 @@ class ListBlogPosts(MethodView):
             )
             
             return paginated_response(
-                items=data.get("blogs"),
+                items=data.get("blogs", []),
                 page=data.get("page", 1),
                 per_page=data.get("per_page", 12),
-                total=data.get("total")
+                total=data.get("total", 0)
                 )
         except Exception as e:
             logger.error(f'Error fetching blogs: {str(e)}')
-            return error_response(
-                'Failed to fetch blogs',
-                status=500
-            )
+            return error_response('Failed to fetch blogs', status=500)
 
 class GetBlogPost(MethodView):
 
-    def get(self, slug):
+    def get(self, slug: str) -> tuple[Any, int]:
         try:
-            cached_data = redis_client.get(f'blog:{slug}')
-            if cached_data:
+            raw = redis_client.get(f'blog:{slug}')
+            if raw is not None and isinstance(raw, (str, bytes, bytearray)):
                 logger.debug('Returning blog from cache')
-                return success_response(json.loads(cached_data))
+                return success_response(json.loads(raw))
             
-            blog = _interface.get_by_slug(slug)
-            data = asdict(blog)
+            blog_dto = get_services().blogs.post.get_by_slug(slug)
+            data = asdict(blog_dto)
 
             redis_client.setex(
                 f'blog:{slug}',
@@ -88,22 +87,19 @@ class GetBlogPost(MethodView):
             return success_response(data)
         except Exception as e:
             logger.error(f'Error fetching blog: {str(e)}')
-            return error_response(
-                'Failed to fetch blog',
-                status=500
-            )
+            return error_response('Failed to fetch blog post details', status=500)
 
 class GetRelatedBlogPosts(MethodView):
 
-    def get(self, slug):
+    def get(self, slug: str) -> tuple[Any, int]:
         try:
-            cached_data = redis_client.get(f'blog:{slug}:related')
-            if cached_data:
+            raw = redis_client.get(f'blog:{slug}:related')
+            if raw is not None and isinstance(raw, (str, bytes, bytearray)):
                 logger.debug('Returning blogs from cache')
-                return success_response(json.loads(cached_data))
+                return success_response(json.loads(raw))
 
-            blog = _interface.get_related(slug)
-            data = [asdict(b) for b in blog]
+            related_blogs = get_services().blogs.post.get_related(slug)
+            data = [asdict(b) for b in related_blogs]
 
             redis_client.setex(
                 f'blog:{slug}:related',
@@ -113,8 +109,5 @@ class GetRelatedBlogPosts(MethodView):
             
             return success_response(data)
         except Exception as e:
-            logger.error(f'Error fetching blogs: {str(e)}')
-            return error_response(
-                'Failed to fetch blogs',
-                status=500
-            )
+            logger.error(f'Error fetching related blogs: {str(e)}')
+            return error_response('Failed to fetch related blogs', status=500)

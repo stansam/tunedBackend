@@ -1,19 +1,13 @@
-"""
-Client blueprint.
-
-Routes for client-facing functionality:
-- Dashboard
-- Orders
-- Payments
-- Profile management
-- Revision requests
-- Deadline extensions
-"""
 from flask import Blueprint
 
-client_bp = Blueprint('client', __name__)
+client_bp = Blueprint("client", __name__)
 
-# Import routes at the end to avoid circular imports
-from tuned.client.routes import revision_requests, deadline_extensions
+from tuned.apis.client.routes import CLIENT_ROUTES
 
+for route in CLIENT_ROUTES:
+    client_bp.add_url_rule(
+        rule=route["rule"],
+        view_func=route["view_func"],
+        methods=route["methods"]
+    )
 

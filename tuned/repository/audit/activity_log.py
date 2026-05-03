@@ -1,12 +1,13 @@
 from sqlalchemy.orm import Session
+from sqlalchemy import select, func
 from sqlalchemy.exc import SQLAlchemyError
 from tuned.models import ActivityLog
 from tuned.dtos import ActivityLogCreateDTO, ActivityLogResponseDTO, ActivityLogFilterDTO
 from tuned.repository.exceptions import DatabaseError, NotFound
 
 class CreateActivityLog:
-    def __init__(self, db: Session) -> None:
-        self.db = db
+    def __init__(self, session: Session) -> None:
+        self.session = session
 
     def execute(self, data: ActivityLogCreateDTO) -> ActivityLogResponseDTO:
         try:
@@ -20,21 +21,20 @@ class CreateActivityLog:
                 ip_address=data.ip_address,
                 user_agent=data.user_agent
             )
-            self.db.add(log)
-            self.db.commit()
-            self.db.refresh(log)
+            self.session.add(log)
+            self.session.flush()
             return ActivityLogResponseDTO.from_model(log)
         except SQLAlchemyError as e:
-            self.db.rollback()
             raise DatabaseError(f"Database error while creating activity log: {str(e)}") from e
 
 class GetActivityLogByID:
-    def __init__(self, db: Session) -> None:
-        self.db = db
+    def __init__(self, session: Session) -> None:
+        self.session = session
 
     def execute(self, log_id: str) -> ActivityLogResponseDTO:
         try:
-            log = self.db.query(ActivityLog).filter_by(id=log_id).first()
+            stmt = select(ActivityLog).where(ActivityLog.id == log_id)
+            log = self.session.scalar(stmt)
             if not log:
                 raise NotFound("Activity log record not found.")
             return ActivityLogResponseDTO.from_model(log)
@@ -42,36 +42,42 @@ class GetActivityLogByID:
             raise DatabaseError(f"Database error while fetching log: {str(e)}") from e
 
 class GetActivityLogsFiltered:
-    def __init__(self, db: Session) -> None:
-        self.db = db
+    def __init__(self, session: Session) -> None:
+        self.session = session
 
     def execute(self, filters: ActivityLogFilterDTO) -> tuple[list[ActivityLogResponseDTO], int]:
         try:
-            query = self.db.query(ActivityLog)
+            stmt = select(ActivityLog)
             
             if filters.user_id:
-                query = query.filter_by(user_id=filters.user_id)
+                stmt = stmt.where(ActivityLog.user_id == filters.user_id)
             if filters.action:
-                query = query.filter_by(action=filters.action)
+                stmt = stmt.where(ActivityLog.action == filters.action)
             if filters.entity_type:
-                query = query.filter_by(entity_type=filters.entity_type)
+                stmt = stmt.where(ActivityLog.entity_type == filters.entity_type)
             if filters.entity_id:
-                query = query.filter_by(entity_id=filters.entity_id)
-                
-            total = query.count()
+                stmt = stmt.where(ActivityLog.entity_id == filters.entity_id)
+            
+            # Count total
+            count_stmt = select(func.count()).select_from(stmt.subquery())
+            total = self.session.scalar(count_stmt) or 0
             
             sort_attr = getattr(ActivityLog, filters.sort, ActivityLog.created_at)
             if filters.order == "desc":
-                query = query.order_by(sort_attr.desc())
+                stmt = stmt.order_by(sort_attr.desc())
             else:
-                query = query.order_by(sort_attr.asc())
+                stmt = stmt.order_by(sort_attr.asc())
                 
-            items = query.offset((filters.page - 1) * filters.per_page).limit(filters.per_page).all()
+            stmt = stmt.offset((filters.page - 1) * filters.per_page).limit(filters.per_page)
+            items = self.session.scalars(stmt).all()
+            
             return [ActivityLogResponseDTO.from_model(i) for i in items], total
         except SQLAlchemyError as e:
             raise DatabaseError(f"Database error while fetching activity logs: {str(e)}") from e
 
-class ActivityLogRepository:
+from tuned.repository.protocols import ActivityLogRepositoryProtocol
+
+class ActivityLogRepository(ActivityLogRepositoryProtocol):
     def __init__(self, session: Session) -> None:
         self.session = session
 

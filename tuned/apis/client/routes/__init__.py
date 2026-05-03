@@ -1,30 +1,107 @@
-"""
-Client blueprint routes initialization.
+from tuned.apis.client.routes.dashboard import (
+    NavStats,
+    DashboardKPIs,
+    DashboardAnalytics,
+    DashboardTracking,
+    DashboardAlerts
+)
+from tuned.apis.client.routes.orders import ReorderOrder
+from tuned.apis.client.routes.profile import (
+    ProfileView,
+    AvatarUploadView,
+    VerifyEmailView,
+    ChangePasswordView
+)
+from tuned.apis.client.routes.settings import SettingsView, SettingsCategoryView
+from tuned.apis.client.routes.referrals import (
+    ReferralListView,
+    ReferralStatsView,
+    ReferralShareView,
+    ReferralRedeemView
+)
 
-This module imports all client route modules to register them with the blueprint.
-All routes are automatically registered when imported.
-"""
 
-# Order routes
-from tuned.client.routes import orders
+from typing import Any
 
-# Payment routes  
-from tuned.client.routes import payments
-
-# Settings routes
-from tuned.client.routes import settings
-
-# Referral routes
-from tuned.client.routes import referrals
-
-# Deadline extension routes
-from tuned.client.routes import deadline_extensions, revision_requests
-
-__all__ = [
-    'orders',
-    'payments',
-    'settings',
-    'referrals',
-    'deadline_extensions',
-    'revision_requests'
+CLIENT_ROUTES: list[dict[str, Any]] = [
+    {
+        "rule": "/nav-stats",
+        "view_func": NavStats.as_view("client_nav_stats"),
+        "methods": ["GET"],
+    },
+    {
+        "rule": "/dashboard/kpis",
+        "view_func": DashboardKPIs.as_view("dashboard_kpis"),
+        "methods": ["GET"],
+    },
+    {
+        "rule": "/dashboard/analytics",
+        "view_func": DashboardAnalytics.as_view("dashboard_analytics"),
+        "methods": ["GET"],
+    },
+    {
+        "rule": "/dashboard/tracking",
+        "view_func": DashboardTracking.as_view("dashboard_tracking"),
+        "methods": ["GET"],
+    },
+    {
+        "rule": "/dashboard/alerts",
+        "view_func": DashboardAlerts.as_view("dashboard_alerts"),
+        "methods": ["GET"],
+    },
+    {
+        "rule": "/orders/<string:order_id>/reorder",
+        "view_func": ReorderOrder.as_view("order_reorder"),
+        "methods": ["POST"],
+    },
+    {
+        "rule": "/profile",
+        "view_func": ProfileView.as_view("profile_view"),
+        "methods": ["GET", "PATCH"],
+    },
+    {
+        "rule": "/profile/avatar",
+        "view_func": AvatarUploadView.as_view("avatar_upload_view"),
+        "methods": ["POST", "DELETE"],
+    },
+    {
+        "rule": "/profile/verify-email",
+        "view_func": VerifyEmailView.as_view("verify_email_view"),
+        "methods": ["POST"],
+    },
+    {
+        "rule": "/profile/change-password",
+        "view_func": ChangePasswordView.as_view("change_password_view"),
+        "methods": ["POST"],
+    },
+    {
+        "rule": "/settings",
+        "view_func": SettingsView.as_view("settings_view"),
+        "methods": ["GET"],
+    },
+    {
+        "rule": "/settings/<string:category>",
+        "view_func": SettingsCategoryView.as_view("settings_category_view"),
+        "methods": ["PATCH"],
+    },
+    {
+        "rule": "/referrals",
+        "view_func": ReferralListView.as_view("referral_list_view"),
+        "methods": ["GET"],
+    },
+    {
+        "rule": "/referrals/stats",
+        "view_func": ReferralStatsView.as_view("referral_stats_view"),
+        "methods": ["GET"],
+    },
+    {
+        "rule": "/referrals/share",
+        "view_func": ReferralShareView.as_view("referral_share_view"),
+        "methods": ["POST"],
+    },
+    {
+        "rule": "/referrals/redeem",
+        "view_func": ReferralRedeemView.as_view("referral_redeem_view"),
+        "methods": ["POST"],
+    },
 ]

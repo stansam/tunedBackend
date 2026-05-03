@@ -5,7 +5,7 @@ from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 from tuned.repository.blogs.posts import (
     CreateBlog, GetBlogPostBySlug, GetBlogsByCategory,
     GetFeaturedBlogPosts, GetPublishedBlogPosts,
-    UpdateOrDeleteBlogPost, GetBlogPostByID, PostByCategoryRequestDTO,
+    UpdateOrDeleteBlogPost, GetBlogPostByID,
 )
 from tuned.repository.blogs.categories import (
     CreateBlogCategory, GetBlogCategoryBySlug, ListBlogCategories,
@@ -23,15 +23,17 @@ from tuned.dtos import (
     BlogCategoryDTO, BlogCommentDTO,
     BlogPostDTO, CommentReactionDTO, BlogPostListRequestDTO,
     BlogPostResponseDTO, BlogCategoryResponseDTO,
-    BlogCommentResponseDTO, CommentReactionResponseDTO
+    BlogCommentResponseDTO, CommentReactionResponseDTO,
+    PostByCategoryRequestDTO, BlogPostListResponseDTO
 )
 from tuned.extensions import db
 
 
-class BlogRepository:
-    def __init__(self):
-        self.db = db
-        self.session = db.session
+from tuned.repository.protocols import BlogRepositoryProtocol
+
+class BlogRepository(BlogRepositoryProtocol):
+    def __init__(self, session: Session) -> None:
+        self.session = session
 
     # Blog posts
     def create_blog(self, data: BlogPostDTO) -> BlogPostResponseDTO:
@@ -46,13 +48,13 @@ class BlogRepository:
     def get_featured(self) -> List[BlogPostResponseDTO]:
         return GetFeaturedBlogPosts(self.session).execute()
     
-    def get_published(self, req: BlogPostListRequestDTO) -> BlogPostResponseDTO:
+    def get_published(self, req: BlogPostListRequestDTO) -> BlogPostListResponseDTO:
         return GetPublishedBlogPosts(self.session, req).execute()
     
     def update_or_delete_post(self, id: str, data: BlogPostDTO) -> BlogPostResponseDTO:
         return UpdateOrDeleteBlogPost(self.session).execute(id, data)
     
-    def get_by_category(self, req: PostByCategoryRequestDTO) -> BlogPostResponseDTO:
+    def get_by_category(self, req: PostByCategoryRequestDTO) -> list[BlogPostResponseDTO]:
         return GetBlogsByCategory(self.session, req).execute()
 
     # Blog categories

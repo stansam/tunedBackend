@@ -5,6 +5,8 @@ from tuned.interface.content.service_category import ServiceCategoryService
 from tuned.interface.content.sample import SampleService
 from tuned.interface.content.testimonial import TestimonialService
 from tuned.interface.content.faqs import FAQService
+from tuned.interface.content.tag import TagService
+from tuned.interface.content.search import SearchService
 
 __all__ = [
     "AcademicLevelService",
@@ -14,4 +16,6 @@ __all__ = [
     "SampleService",
     "TestimonialService",
     "FAQService",
+    "TagService",
+    "SearchService",
 ]

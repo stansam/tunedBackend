@@ -1,42 +1,17 @@
-"""
-User billing preferences model.
-
-This module defines the UserBillingPreferences model for storing
-user billing and invoice preferences.
-"""
-
-from datetime import datetime, timezone
 from tuned.extensions import db
 from tuned.models.enums import InvoiceDeliveryMethod
 from tuned.models.base import BaseModel
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+from typing import TYPE_CHECKING, Optional, Any
+from decimal import Decimal
+
+if TYPE_CHECKING:
+    from tuned.models.user import User
 
 class UserBillingPreferences(BaseModel):
-    """
-    User billing and invoice preferences.
-    
-    Stores user-specific settings for billing, invoicing, and payment reminders.
-    Future-proofed for payment provider integration (auto-reload fields nullable).
-    One-to-one relationship with User model.
-    
-    Attributes:
-        user_id: Foreign key to User.id
-        invoice_email: Custom email for invoices (separate from user email)
-        invoice_delivery: Invoice delivery method (email, download_only)
-        payment_reminders: Enable payment reminder notifications
-        reminder_days_before: Days before due date to send reminders
-        auto_reload_enabled: Enable automatic balance reload (future feature)
-        auto_reload_threshold: Balance threshold for auto-reload (future feature)
-        created_at: Timestamp of preference creation
-        updated_at: Timestamp of last update
-    
-    Relationships:
-        user: The User who owns these preferences
-    """
-    
     __tablename__ = 'user_billing_preferences'
     
-    # Foreign Key (CASCADE delete, one-to-one)
-    user_id = db.Column(
+    user_id: Mapped[str] = mapped_column(
         db.String(36),
         db.ForeignKey('users.id', ondelete='CASCADE'),
         unique=True,
@@ -44,32 +19,22 @@ class UserBillingPreferences(BaseModel):
         index=True
     )
     
-    # Invoice settings (current features)
-    invoice_email = db.Column(db.String(120), nullable=True)  # Custom invoice email
-    invoice_delivery = db.Column(
+    invoice_email: Mapped[Optional[str]] = mapped_column(db.String(120), nullable=True)
+    invoice_delivery: Mapped[InvoiceDeliveryMethod] = mapped_column(
         db.Enum(InvoiceDeliveryMethod),
         default=InvoiceDeliveryMethod.EMAIL,
         nullable=False
     )
     
-    # Payment reminders
-    payment_reminders = db.Column(db.Boolean, default=True, nullable=False)
-    reminder_days_before = db.Column(db.Integer, default=3, nullable=False)  # Days before due date
+    payment_reminders: Mapped[bool] = mapped_column(db.Boolean, default=True, nullable=False)
+    reminder_days_before: Mapped[int] = mapped_column(db.Integer, default=3, nullable=False)
     
-    # Future features (payment provider integration)
-    auto_reload_enabled = db.Column(db.Boolean, default=False, nullable=True)
-    auto_reload_threshold = db.Column(db.Numeric(10, 2), nullable=True)
+    auto_reload_enabled: Mapped[Optional[bool]] = mapped_column(db.Boolean, default=False, nullable=True)
+    auto_reload_threshold: Mapped[Optional[Decimal]] = mapped_column(db.Numeric(10, 2), nullable=True)
     
-    # Relationships
-    user = db.relationship('User', foreign_keys=[user_id], backref=db.backref('billing_preferences', uselist=False, lazy=True))
+    user: Mapped["User"] = relationship('User', foreign_keys=[user_id], back_populates='billing_preferences')
     
-    def to_dict(self):
-        """
-        Serialize to dictionary for API responses.
-        
-        Returns:
-            dict: Dictionary representation of billing preferences
-        """
+    def to_dict(self) -> dict[str, Any]:
         return {
             'invoice_email': self.invoice_email,
             'invoice_delivery': self.invoice_delivery.value if self.invoice_delivery else 'email',
@@ -81,5 +46,5 @@ class UserBillingPreferences(BaseModel):
             'updated_at': self.updated_at.isoformat() if self.updated_at else None
         }
     
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f'<UserBillingPreferences user_id={self.user_id}>'

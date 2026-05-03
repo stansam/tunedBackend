@@ -1,220 +1,8 @@
-# """
-# Samples listing and detail endpoints.
-
-# GET /api/samples - List all samples with filtering
-# GET /api/samples/<slug> - Get sample details
-# """
-# from flask import request
-# from sqlalchemy import or_, desc, asc
-# from tuned.main import main_bp
-# from tuned.main.schemas import SampleFilterSchema
-# from tuned.models.content import Sample
-# from tuned.utils.responses import (
-#     success_response,
-#     error_response,
-#     not_found_response,
-#     validation_error_response,
-#     paginated_response
-# )
-# from tuned.redis_client import redis_client
-# from marshmallow import ValidationError
-# import json
-# import logging
-
-# logger = logging.getLogger(__name__)
-
-# CACHE_TTL = 600  # 10 minutes
-
-
-# @main_bp.route('/api/samples', methods=['GET'])
-# def list_samples():
-#     """
-#     List all samples with filtering, search, and pagination.
-    
-#     Query parameters:
-#         - service_id: Filter by service
-#         - featured: Filter by featured status
-#         - q: Search query (searches title, excerpt, content)
-#         - sort: Sort field (created_at, word_count, title)
-#         - order: Sort order (asc, desc)
-#         - page: Page number
-#         - per_page: Items per page
-    
-#     Returns:
-#         JSON response with paginated samples
-#     """
-#     try:
-#         # Validate query parameters
-#         schema = SampleFilterSchema()
-#         params = schema.load(request.args)
-        
-#     except ValidationError as err:
-#         return validation_error_response(err.messages)
-    
-#     try:
-#         # Build query
-#         query = Sample.query
-        
-#         # Filter by service
-#         if params.get('service_id'):
-#             query = query.filter_by(service_id=params['service_id'])
-        
-#         # Filter by featured status
-#         if params.get('featured') is not None:
-#             query = query.filter_by(featured=params['featured'])
-        
-#         # Search by title/excerpt/content
-#         if params.get('q'):
-#             search_pattern = f"%{params['q']}%"
-#             query = query.filter(
-#                 or_(
-#                     Sample.title.ilike(search_pattern),
-#                     Sample.excerpt.ilike(search_pattern),
-#                     Sample.content.ilike(search_pattern)
-#                 )
-#             )
-        
-#         # Sorting
-#         sort_field = params.get('sort', 'created_at')
-#         sort_order = params.get('order', 'desc')
-        
-#         if sort_field == 'created_at':
-#             query = query.order_by(
-#                 asc(Sample.created_at) if sort_order == 'asc' else desc(Sample.created_at)
-#             )
-#         elif sort_field == 'word_count':
-#             query = query.order_by(
-#                 asc(Sample.word_count) if sort_order == 'asc' else desc(Sample.word_count)
-#             )
-#         elif sort_field == 'title':
-#             query = query.order_by(
-#                 asc(Sample.title) if sort_order == 'asc' else desc(Sample.title)
-#             )
-        
-#         # Get total count
-#         total = query.count()
-        
-#         # Paginate
-#         page = params.get('page', 1)
-#         per_page = params.get('per_page', 20)
-        
-#         samples = query.paginate(
-#             page=page,
-#             per_page=per_page,
-#             error_out=False
-#         )
-        
-#         # Serialize data
-#         items = [
-#             {
-#                 'id': s.id,
-#                 'title': s.title,
-#                 'excerpt': s.excerpt,
-#                 'slug': s.slug,
-#                 'word_count': s.word_count,
-#                 'featured': s.featured,
-#                 'image': s.image,
-#                 'created_at': s.created_at.isoformat() if s.created_at else None,
-#                 'service': {
-#                     'id': s.service.id,
-#                     'name': s.service.name,
-#                     'slug': s.service.slug
-#                 } if s.service else None
-#             }
-#             for s in samples.items
-#         ]
-        
-#         logger.info(f'Samples listed: page {page}, total {total}')
-#         return paginated_response(
-#             items=items,
-#             page=page,
-#             per_page=per_page,
-#             total=total
-#         )
-        
-#     except Exception as e:
-#         logger.error(f'Error listing samples: {str(e)}')
-#         return error_response(
-#             'Failed to fetch samples',
-#             status=500
-#         )
-
-
-# @main_bp.route('/api/samples/<slug>', methods=['GET'])
-# def get_sample_details(slug):
-#     """
-#     Get sample details by slug.
-    
-#     Includes full content, service details, tags, and related samples.
-    
-#     Args:
-#         slug: Sample slug
-    
-#     Returns:
-#         JSON response with sample details
-#     """
-#     try:
-#         # Query sample
-#         sample = Sample.query.filter_by(slug=slug).first()
-        
-#         if not sample:
-#             logger.warning(f'Sample not found: {slug}')
-#             return not_found_response('Sample not found')
-        
-#         # Get related samples from same service (limit 3, exclude current)
-#         related_samples = []
-#         if sample.service:
-#             related = Sample.query.filter(
-#                 Sample.service_id == sample.service_id,
-#                 Sample.id != sample.id
-#             ).limit(3).all()
-            
-#             related_samples = [
-#                 {
-#                     'id': s.id,
-#                     'title': s.title,
-#                     'excerpt': s.excerpt,
-#                     'slug': s.slug,
-#                     'image': s.image
-#                 }
-#                 for s in related
-#             ]
-        
-#         # Serialize data
-#         data = {
-#             'id': sample.id,
-#             'title': sample.title,
-#             'content': sample.content,
-#             'excerpt': sample.excerpt,
-#             'slug': sample.slug,
-#             'word_count': sample.word_count,
-#             'featured': sample.featured,
-#             'tags': [tag.name for tag in sample.tag_list.all()],
-#             'image': sample.image,
-#             'created_at': sample.created_at.isoformat() if sample.created_at else None,
-#             'service': {
-#                 'id': sample.service.id,
-#                 'name': sample.service.name,
-#                 'slug': sample.service.slug,
-#                 'description': sample.service.description
-#             } if sample.service else None,
-#             'related_samples': related_samples
-#         }
-        
-#         logger.info(f'Sample details fetched: {slug}')
-#         return success_response(data)
-        
-#     except Exception as e:
-#         logger.error(f'Error fetching sample details: {str(e)}')
-#         return error_response(
-#             'Failed to fetch sample details',
-#             status=500
-#         )
 from tuned.dtos import SampleListRequestDTO
 from tuned.core.logging import get_logger
 from flask.views import MethodView
 from flask import request
-from tuned.interface import sample as interface
+from tuned.utils.dependencies import get_services
 from tuned.utils.responses import success_response, error_response, paginated_response, validation_error_response
 from tuned.apis.main.schemas import SampleFilterSchema
 from tuned.redis_client import redis_client
@@ -222,6 +10,7 @@ from marshmallow import ValidationError
 from dataclasses import asdict
 import json
 import logging
+from typing import Any
 
 logger: logging.Logger = get_logger(__name__)
 
@@ -230,10 +19,10 @@ CACHE_KEY_SAMPLES = 'samples:list'
 
 
 class SampleListView(MethodView):
-    def __init__(self):
+    def __init__(self) -> None:
         self._schema = SampleFilterSchema()
 
-    def get(self):
+    def get(self) -> tuple[Any, int]:
         try:
             params = {}
             if request.args:
@@ -245,53 +34,50 @@ class SampleListView(MethodView):
 
         try:
             cache_key = f"{CACHE_KEY_SAMPLES}:{json.dumps(params)}"
-            cached_data = redis_client.get(cache_key)
-            if cached_data:
-                data = json.loads(cached_data)
+            raw = redis_client.get(cache_key)
+            if raw is not None and isinstance(raw, (str, bytes, bytearray)):
+                data = json.loads(raw)
                 logger.info(f'Samples fetched from cache: page {data.get("page")}, total {data.get("total")}')
 
                 return paginated_response(
-                    items=data.get("samples"),
+                    items=data.get("samples", []),
                     page=data.get("page", 1),
                     per_page=data.get("per_page", 12),
-                    total=data.get("total")
+                    total=data.get("total", 0)
                 )
 
-            samples_dto = SampleListRequestDTO(**params)
-            samples = interface.list_samples(samples_dto)
-            samples_data = asdict(samples)
+            samples_req = SampleListRequestDTO(**params)
+            samples_dto = get_services().sample.list_samples(samples_req)
+            samples_data = asdict(samples_dto)
 
             redis_client.set(
-                CACHE_KEY_SAMPLES,
+                cache_key,
                 json.dumps(samples_data),
                 ex=CACHE_TTL
             )
 
             return paginated_response(
-                items=samples_data.get("samples"),
+                items=samples_data.get("samples", []),
                 page=samples_data.get("page", 1),
                 per_page=samples_data.get("per_page", 12),
-                total=samples_data.get("total")
+                total=samples_data.get("total", 0)
             )
         except Exception as e:
             logger.error(f'Error fetching samples: {str(e)}')
-            return error_response(
-                'Failed to fetch samples',
-                status=500
-            )
+            return error_response('Failed to fetch samples', status=500)
             
 
 class SampleDetailView(MethodView):
-    def get(self, slug):
+    def get(self, slug: str) -> tuple[Any, int]:
         try:
-            cached_data = redis_client.get(f'sample:{slug}')
-            if cached_data:
-                data = json.loads(cached_data)
+            raw = redis_client.get(f'sample:{slug}')
+            if raw is not None and isinstance(raw, (str, bytes, bytearray)):
+                data = json.loads(raw)
                 logger.info(f'Sample fetched from cache: {slug}')
                 return success_response(data)
             
-            sample_data = interface.get_sample_by_slug(slug)
-            sample_data = asdict(sample_data)
+            sample_dto = get_services().sample.get_sample_by_slug(slug)
+            sample_data = asdict(sample_dto)
 
             redis_client.set(
                 f'sample:{slug}',
@@ -302,34 +88,28 @@ class SampleDetailView(MethodView):
             return success_response(sample_data)
         except Exception as e:
             logger.error(f'Error fetching sample: {str(e)}')
-            return error_response(
-                'Failed to fetch sample',
-                status=500
-            )
+            return error_response('Failed to fetch sample', status=500)
 
 class SampleServiceView(MethodView):
-    def get(self):
+    def get(self) -> tuple[Any, int]:
         try:
-            services = interface.get_sample_services()
+            services = get_services().sample.get_sample_services()
             services_data = [asdict(s) for s in services]
             return success_response(services_data)
         except Exception as e:
             logger.error(f'Error fetching sample services: {str(e)}')
-            return error_response(
-                'Failed to fetch sample services',
-                status=500
-            )
+            return error_response('Failed to fetch sample services', status=500)
 
 class SampleRelatedView(MethodView):
-    def get(self, slug):
+    def get(self, slug: str) -> tuple[Any, int]:
         try:
-            cached_data = redis_client.get(f'sample:{slug}:related')
-            if cached_data:
-                data = json.loads(cached_data)
+            raw = redis_client.get(f'sample:{slug}:related')
+            if raw is not None and isinstance(raw, (str, bytes, bytearray)):
+                data = json.loads(raw)
                 logger.info(f'Sample related fetched from cache: {slug}')
                 return success_response(data)
             
-            related_samples = interface.get_related(slug)
+            related_samples = get_services().sample.get_related_samples(slug)
             related_samples_data = [asdict(s) for s in related_samples]
 
             redis_client.set(
@@ -341,7 +121,4 @@ class SampleRelatedView(MethodView):
             return success_response(related_samples_data)
         except Exception as e:
             logger.error(f'Error fetching related samples: {str(e)}')
-            return error_response(
-                'Failed to fetch related samples',
-                status=500
-            )
+            return error_response('Failed to fetch related samples', status=500)

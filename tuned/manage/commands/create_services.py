@@ -1,17 +1,9 @@
-"""
-create_services — seed service categories and individual services.
-
-Requires pricing categories to already exist (run create-prices first).
-
-Usage:
-    flask create-services
-"""
 import logging
 import click
 from flask.cli import with_appcontext
 
 from tuned.dtos import ServiceCategoryDTO, ServiceDTO
-from tuned.interface import Services
+from tuned.utils.dependencies import get_services
 from tuned.manage.data import (
     service_categories_dict,
     service_category_descriptions_dict,
@@ -19,26 +11,28 @@ from tuned.manage.data import (
 )
 from tuned.models import PricingCategory, ServiceCategory
 from tuned.extensions import db
-from tuned.repository.exceptions import AlreadyExists, DatabaseError
+from tuned.repository.exceptions import AlreadyExists #, DatabaseError
+from tuned.core.logging import get_logger
 
-logger = logging.getLogger(__name__)
+logger: logging.Logger = get_logger(__name__)
 
+
+from typing import cast, Any
 
 def _build_pricing_cat_map() -> dict[str, str]:
     cats = db.session.query(PricingCategory).all()
-    return {c.name: c.id for c in cats}
+    return {str(c.name): str(c.id) for c in cats}
 
 
 def _build_service_cat_map() -> dict[str, str]:
     cats = db.session.query(ServiceCategory).all()
-    return {c.name: c.id for c in cats}
+    return {str(c.name): str(c.id) for c in cats}
 
 
 @click.command("create-services")
 @with_appcontext
 def create_services() -> None:
-    """Seed service categories and services."""
-    services = Services()
+    services = get_services()
 
     pricing_cat_map = _build_pricing_cat_map()
     if not pricing_cat_map:
@@ -52,12 +46,12 @@ def create_services() -> None:
     for order_idx, (cat_name, _) in enumerate(service_categories_dict.items(), start=1):
         description = service_category_descriptions_dict.get(cat_name, "")
         try:
-            dto = ServiceCategoryDTO(
-                name=cat_name,
-                description=description,
-                order=order_idx,
+            sc_dto = ServiceCategoryDTO(
+                name=str(cat_name),
+                description=str(description),
+                order=int(order_idx),
             )
-            services.service_category.create_category(dto)
+            services.service_category.create_category(sc_dto)
             click.echo(f"  ✓ Created service category: {cat_name}")
             sc_created += 1
         except AlreadyExists:
@@ -94,15 +88,15 @@ def create_services() -> None:
                 continue
 
             try:
-                dto = ServiceDTO(
-                    name=svc_name,
-                    description=svc_description,
-                    category_id=category_id,
+                svc_dto = ServiceDTO(
+                    name=str(svc_name),
+                    description=str(svc_description),
+                    category_id=str(category_id),
                     featured=False,
-                    pricing_category_id=pricing_cat_id,
+                    pricing_category_id=str(pricing_cat_id),
                     is_active=True,
                 )
-                services.service.create_service(dto)
+                services.service.create_service(svc_dto)
                 click.echo(f"  ✓ Created service: {svc_name}")
                 svc_created += 1
             except AlreadyExists:

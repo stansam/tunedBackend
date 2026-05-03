@@ -1,10 +1,13 @@
 import os
 import logging
+from typing import Optional, Any, TYPE_CHECKING
+if TYPE_CHECKING:
+    from tuned.models.user import User
 from flask import Flask
 from tuned.core.config import config
 from tuned.core.logging import _configure_logging, get_logger
 
-def create_app(config_name=None):
+def create_app(config_name: Optional[str] = None) -> Flask:
     app = Flask(__name__)
     
     if config_name is None:
@@ -46,37 +49,41 @@ def create_app(config_name=None):
     from tuned.core.events.bootstrap import init_events
     init_celery(app)
     init_events()
-    app.celery = celery_app
+    # app.celery = celery_app  # Removed: Flask has no .celery attribute, already in extensions
     app.extensions['celery'] = celery_app
+    
+    with app.app_context():
+        from tuned.repository import Repository
+        from tuned.interface import Services
+        from tuned.extensions import db
+        repos = Repository(db.session)
+        services = Services(repos=repos)
+        app.extensions['services'] = services
     
     login_manager.login_view = 'auth.login'
     login_manager.login_message = 'Please log in to access this page.'
     login_manager.session_protection = 'strong'
     
-    @login_manager.user_loader
-    def load_user(user_id):
-        """Load user by ID for Flask-Login."""
+    @login_manager.user_loader  # type: ignore[untyped-decorator]
+    def load_user(user_id: str) -> Optional["User"]:
         from tuned.models.user import User
-        from tuned.models.base import db
+        from tuned.extensions import db
         return db.session.query(User).filter(User.id == user_id).first()
     
     @jwt.token_in_blocklist_loader
-    def check_if_token_revoked(jwt_header, jwt_payload):
-        """Check if JWT token is blacklisted (logout functionality)."""
+    def check_if_token_revoked(jwt_header: dict[str, Any], jwt_payload: dict[str, Any]) -> bool:
         from tuned.redis_client import is_token_blacklisted
         jti = jwt_payload['jti']
         return is_token_blacklisted(jti)
     
     from tuned.apis import(
-        main_bp, auth_bp, notifications_bp
-        # ,  client_bp, admin_bp 
+        main_bp, auth_bp, notification_bp, client_bp
     ) 
     from tuned.manage import manage_bp
     
-    # app.register_blueprint(admin_bp, url_prefix='/api/admin')
     app.register_blueprint(auth_bp, url_prefix='/api')
-    app.register_blueprint(notifications_bp, url_prefix='/api/notifications')
-    # app.register_blueprint(client_bp, url_prefix='/api/client')
+    app.register_blueprint(notification_bp, url_prefix='/api/notifications')
+    app.register_blueprint(client_bp, url_prefix='/api/client')
     app.register_blueprint(manage_bp)
     
     # from tuned.apis.client.routes.settings.preferences import preferences_bp
@@ -87,7 +94,7 @@ def create_app(config_name=None):
     
     if app.config.get('PROXY_FIX'):
         from werkzeug.middleware.proxy_fix import ProxyFix
-        app.wsgi_app = ProxyFix(
+        app.wsgi_app = ProxyFix(  # type: ignore[method-assign]
             app.wsgi_app,
             x_for=1,      # Trust X-Forwarded-For
             x_proto=1,    # Trust X-Forwarded-Proto
@@ -104,25 +111,21 @@ def create_app(config_name=None):
     return app
 
 
-def register_error_handlers(app):
-    """Register error handlers for common HTTP errors."""
-    
+def register_error_handlers(app: Flask) -> None:
     @app.errorhandler(404)
-    def not_found_error(error):
+    def not_found_error(error: Exception) -> tuple[dict[str, str], int]:
         return {'error': 'Resource not found'}, 404
     
     @app.errorhandler(500)
-    def internal_error(error):
+    def internal_error(error: Exception) -> tuple[dict[str, str], int]:
         from tuned.extensions import db
         db.session.rollback()
         return {'error': 'Internal server error'}, 500
 
 
-def register_shell_context(app):
-    """Register shell context for flask shell command."""
-    
+def register_shell_context(app: Flask) -> None:
     @app.shell_context_processor
-    def make_shell_context():
+    def make_shell_context() -> dict[str, Any]:
         from tuned.extensions import db
         from tuned import models
         return {

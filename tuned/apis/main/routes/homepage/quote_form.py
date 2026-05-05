@@ -85,7 +85,7 @@ class CalculatePrice(MethodView):
             pricing_category_id=cast(str, data.get('pricing_category_id')),
             academic_level_id=cast(str, data.get('level_id')),
             word_count=cast(int, data.get('word_count')),
-            report_type= ReportType(data.get('report_type')) #cast(Optional[str], data.get('report_type'))
+            report_type= ReportType(data.get('report_type')) if data.get('report_type') else None #cast(Optional[str], data.get('report_type'))
         )
 
     def _get_service_pricing_category(self, service_id: str) -> str:

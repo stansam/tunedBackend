@@ -1,7 +1,7 @@
 from tuned.extensions import db
 from tuned.models.base import BaseModel
 from datetime import datetime, timezone
-from tuned.models.enums import OrderStatus, SupportTicketStatus, Currency, ReportType, LineSpacing
+from tuned.models.enums import OrderStatus, SupportTicketStatus, Currency, ReportType, LineSpacing, FormatStyle
 from sqlalchemy import event
 from sqlalchemy.orm import validates, Mapped, mapped_column, relationship, Session
 from tuned.utils.orders import generate_public_order_number
@@ -29,7 +29,7 @@ class Order(BaseModel):
     description: Mapped[str] = mapped_column(db.Text, nullable=False)
     word_count: Mapped[int] = mapped_column(db.Integer, nullable=False)
     page_count: Mapped[float] = mapped_column(db.Float, nullable=False)
-    format_style: Mapped[Optional[str]] = mapped_column(db.String(50), nullable=True, default=None)
+    format_style: Mapped[FormatStyle] = mapped_column(db.Enum(FormatStyle), nullable=False, default=FormatStyle.APA)
     sources: Mapped[int] = mapped_column(db.Integer, nullable=False)
     line_spacing: Mapped[LineSpacing] = mapped_column(db.Enum(LineSpacing), default=LineSpacing.DOUBLE, nullable=False)
     report_type: Mapped[Optional[ReportType]] = mapped_column(db.Enum(ReportType), nullable=True, default=None)

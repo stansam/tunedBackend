@@ -98,6 +98,12 @@ class DiscountType(str, Enum):
     PERCENTAGE = "percentage"
     FIXED = "fixed"
 
+class FormatStyle(str, Enum):
+    APA = "APA"
+    MLA = "MLA"
+    CHICAGO = "Chicago"
+    HARVARD = "Harvard"
+    OTHER = "Other"
 
 class Currency(str, Enum):
     USD = "USD"

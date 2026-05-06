@@ -22,34 +22,34 @@ class Order(BaseModel):
     __tablename__ = 'order'
     order_number: Mapped[str] = mapped_column(db.String(20), unique=True, nullable=False, index=True)
     client_id: Mapped[str] = mapped_column(db.String(36), db.ForeignKey('users.id'), nullable=False)
-    service_id: Mapped[str] = mapped_column(db.String(36), db.ForeignKey('service.id'), nullable=False)
-    academic_level_id: Mapped[str] = mapped_column(db.String(36), db.ForeignKey('academic_level.id'), nullable=False)
-    deadline_id: Mapped[str] = mapped_column(db.String(36), db.ForeignKey('deadline.id'), nullable=False)
-    title: Mapped[str] = mapped_column(db.String(255), nullable=False)
-    description: Mapped[str] = mapped_column(db.Text, nullable=False)
-    word_count: Mapped[int] = mapped_column(db.Integer, nullable=False)
-    page_count: Mapped[float] = mapped_column(db.Float, nullable=False)
-    format_style: Mapped[FormatStyle] = mapped_column(db.Enum(FormatStyle), nullable=False, default=FormatStyle.APA)
-    sources: Mapped[int] = mapped_column(db.Integer, nullable=False)
-    line_spacing: Mapped[LineSpacing] = mapped_column(db.Enum(LineSpacing), default=LineSpacing.DOUBLE, nullable=False)
+    service_id: Mapped[Optional[str]] = mapped_column(db.String(36), db.ForeignKey('service.id'), nullable=True)
+    academic_level_id: Mapped[Optional[str]] = mapped_column(db.String(36), db.ForeignKey('academic_level.id'), nullable=True)
+    deadline_id: Mapped[Optional[str]] = mapped_column(db.String(36), db.ForeignKey('deadline.id'), nullable=True)
+    title: Mapped[Optional[str]] = mapped_column(db.String(255), nullable=True)
+    description: Mapped[Optional[str]] = mapped_column(db.Text, nullable=True)
+    word_count: Mapped[Optional[int]] = mapped_column(db.Integer, nullable=True)
+    page_count: Mapped[Optional[float]] = mapped_column(db.Float, nullable=True)
+    format_style: Mapped[Optional[FormatStyle]] = mapped_column(db.Enum(FormatStyle), nullable=True, default=FormatStyle.APA)
+    sources: Mapped[Optional[int]] = mapped_column(db.Integer, nullable=True)
+    line_spacing: Mapped[Optional[LineSpacing]] = mapped_column(db.Enum(LineSpacing), default=LineSpacing.DOUBLE, nullable=True)
     report_type: Mapped[Optional[ReportType]] = mapped_column(db.Enum(ReportType), nullable=True, default=None)
-    total_price: Mapped[float] = mapped_column(db.Float, nullable=False)
+    total_price: Mapped[Optional[float]] = mapped_column(db.Float, nullable=True)
     status: Mapped[OrderStatus] = mapped_column(db.Enum(OrderStatus), default=OrderStatus.PENDING, nullable=False)
     paid: Mapped[bool] = mapped_column(db.Boolean, default=False, nullable=False)
     delivered_at: Mapped[Optional[datetime]] = mapped_column(db.DateTime, nullable=True, default=None)
     extension_requested: Mapped[bool] = mapped_column(db.Boolean, default=False, nullable=False)
     extension_requested_at: Mapped[Optional[datetime]] = mapped_column(db.DateTime, nullable=True, default=None)
     due_date: Mapped[Optional[datetime]] = mapped_column(db.DateTime, nullable=True, default=None)
-    price_per_page: Mapped[float] = mapped_column(db.Float, nullable=False)
-    subtotal: Mapped[float] = mapped_column(db.Float, nullable=False)
+    price_per_page: Mapped[Optional[float]] = mapped_column(db.Float, nullable=True)
+    subtotal: Mapped[Optional[float]] = mapped_column(db.Float, nullable=True)
     discount_amount: Mapped[Optional[float]] = mapped_column(db.Float, nullable=True, default=0.0)
     currency: Mapped[Currency] = mapped_column(db.Enum(Currency), default=Currency.USD, nullable=False)
     additional_materials: Mapped[Optional[str]] = mapped_column(db.Text, nullable=True, default=None)
     
     client: Mapped["User"] = relationship('User', foreign_keys=[client_id], back_populates='orders')
-    service: Mapped["Service"] = relationship('Service', foreign_keys=[service_id], back_populates='orders')
-    academic_level: Mapped["AcademicLevel"] = relationship('AcademicLevel', foreign_keys=[academic_level_id], back_populates='orders')
-    deadline: Mapped["Deadline"] = relationship('Deadline', foreign_keys=[deadline_id], back_populates='orders')
+    service: Mapped[Optional["Service"]] = relationship('Service', foreign_keys=[service_id], back_populates='orders')
+    academic_level: Mapped[Optional["AcademicLevel"]] = relationship('AcademicLevel', foreign_keys=[academic_level_id], back_populates='orders')
+    deadline: Mapped[Optional["Deadline"]] = relationship('Deadline', foreign_keys=[deadline_id], back_populates='orders')
     testimonials: Mapped[list["Testimonial"]] = relationship('Testimonial', foreign_keys='Testimonial.order_id', back_populates='order', lazy=True, cascade='all, delete-orphan')
     files: Mapped[list["OrderFile"]] = relationship('OrderFile', foreign_keys='OrderFile.order_id', back_populates='order', lazy=True, cascade='all, delete-orphan')
     payments: Mapped[list["Payment"]] = relationship('Payment', foreign_keys='Payment.order_id', back_populates='order', lazy=True, cascade='all, delete-orphan')
@@ -66,12 +66,13 @@ class Order(BaseModel):
 
     __table_args__ = (
         db.Index('ix_order_client_status_created', 'client_id', 'status', 'created_at'),
-        db.CheckConstraint('word_count > 0', name='valid_word_count'),
-        db.CheckConstraint('page_count > 0', name='valid_page_count'),
-        db.CheckConstraint('total_price > 0', name='valid_total_price'),
+        db.CheckConstraint("status = 'draft' OR word_count > 0", name='valid_word_count'),
+        db.CheckConstraint("status = 'draft' OR page_count > 0", name='valid_page_count'),
+        db.CheckConstraint("status = 'draft' OR total_price >= 0", name='valid_total_price'),
     )
     
     VALID_STATUS_TRANSITIONS = {
+        OrderStatus.DRAFT: [OrderStatus.PENDING, OrderStatus.CANCELED],
         OrderStatus.PENDING: [OrderStatus.ACTIVE, OrderStatus.CANCELED],
         OrderStatus.ACTIVE: [OrderStatus.COMPLETED_PENDING_REVIEW, OrderStatus.OVERDUE, OrderStatus.CANCELED],
         OrderStatus.COMPLETED_PENDING_REVIEW: [OrderStatus.COMPLETED, OrderStatus.REVISION],
@@ -101,6 +102,7 @@ class Order(BaseModel):
     @property
     def status_color(self: "Order") -> str:
         colors = {
+            OrderStatus.DRAFT: 'secondary',
             OrderStatus.PENDING: 'secondary',
             OrderStatus.ACTIVE: 'primary',
             OrderStatus.COMPLETED_PENDING_REVIEW: 'success',

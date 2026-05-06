@@ -5,7 +5,9 @@ from typing import Optional
 from sqlalchemy.orm import Session
 from sqlalchemy import select, func
 from sqlalchemy.exc import SQLAlchemyError
-from tuned.models import Order
+from tuned.models import Order, OrderFile
+from tuned.models.payment import Discount
+from tuned.dtos.order import CreateOrderRequestDTO, OrderDraftCreateDTO
 from tuned.repository.order.queries import (
     GetActiveOrdersByClient,
     GetLatestActiveOrderByClient,
@@ -14,6 +16,14 @@ from tuned.repository.order.queries import (
     GetOrderByClient,
     GetOrderForReorder,
     CreateOrderFromReorder,
+)
+from tuned.repository.order.create import (
+    CreateOrder,
+    LinkDiscountToOrder,
+    CreateOrderFile,
+    GetDiscountByCode,
+    UpsertDraftOrder,
+    GetDraftOrder,
 )
 from tuned.repository.exceptions import DatabaseError
 from tuned.repository.protocols import OrderRepositoryProtocol
@@ -60,6 +70,24 @@ class OrderRepository(OrderRepositoryProtocol):
 
     def create_reorder(self, source: Order, client_id: str) -> Order:
         return CreateOrderFromReorder(self.session).execute(source, client_id)
+
+    def create_order(self, client_id: str, dto: CreateOrderRequestDTO, total_price: float, subtotal: float) -> Order:
+        return CreateOrder(self.session).execute(client_id, dto, total_price, subtotal)
+
+    def get_discount_by_code(self, code: str) -> Optional[Discount]:
+        return GetDiscountByCode(self.session).execute(code)
+
+    def link_discount_to_order(self, order: Order, discount: Discount, amount: float) -> None:
+        return LinkDiscountToOrder(self.session).execute(order, discount, amount)
+
+    def create_order_file(self, order_id: str, filename: str, file_path: str) -> OrderFile:
+        return CreateOrderFile(self.session).execute(order_id, filename, file_path)
+
+    def upsert_draft(self, dto: OrderDraftCreateDTO) -> Order:
+        return UpsertDraftOrder(self.session).execute(dto)
+
+    def get_draft(self, user_id: str) -> Optional[Order]:
+        return GetDraftOrder(self.session).execute(user_id)
 
     def save(self) -> None:
         try:

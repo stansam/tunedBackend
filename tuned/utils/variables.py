@@ -45,5 +45,19 @@ class Variables:
     # ALREADY_EXISTS = "already_exists"
     # INVALID = "invalid"
     # NO_TOKEN = "no_token"
+
+    ENTITY_TYPE_ORDER_FILE = "OrderFile"
+    ENTITY_TYPE_ORDER = "Order"
+    ORDER_REORDERED = "order_reordered"
+    ORDER_CREATED = "order_created"
+    ORDER_FILES_UPLOADED = "order_files_uploaded"
+    ORDER_PAID = "order_paid"
+    ORDER_CANCELLED = "order_cancelled"
+    ORDER_DELIVERED = "order_delivered"
+    ORDER_COMPLETED = "order_completed"
+    ORDER_REFUNDED = "refunded"
+    ORDER_PARTIALLY_REFUNDED = "partially_refunded"
+    ORDER_LATE = "late"
+    ORDER_LATE_COMPLETED = "late_completed"
     
     

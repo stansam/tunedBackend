@@ -14,6 +14,7 @@ class OrderEventHandlers:
     def register(self) -> None:
         self._bus.on("order.status_changed", self._on_status_changed)
         self._bus.on("order.created",        self._on_created)
+        self._bus.on("order.draft_saved",    self._on_draft_saved)
         logger.info("[OrderEventHandlers] registered")
 
     def _on_status_changed(self, payload: EventPayload) -> None:
@@ -86,4 +87,22 @@ class OrderEventHandlers:
         except Exception as exc:
             logger.error(
                 "[OrderEventHandlers._on_created] Notification task failed: %r", exc
+            )
+
+    def _on_draft_saved(self, payload: EventPayload) -> None:
+        user_id  = payload.get("user_id")
+        order_id = payload.get("order_id", "")
+
+        try:
+            from tuned.extensions import socketio
+            socketio.emit(
+                "order.draft_saved",
+                {
+                    "draft_id": str(order_id),
+                },
+                room=f"user_{user_id}",
+            )
+        except Exception as exc:
+            logger.error(
+                "[OrderEventHandlers._on_draft_saved] Socket emit failed: %r", exc
             )

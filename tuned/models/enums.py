@@ -6,6 +6,7 @@ class GenderEnum(str, Enum):
     UNKNOWN = "unknown"
 
 class OrderStatus(str, Enum):
+    DRAFT = "draft"
     PENDING = "pending"
     ACTIVE = "active"
     COMPLETED_PENDING_REVIEW = "completed pending review"

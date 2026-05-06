@@ -7,7 +7,10 @@ from sqlalchemy import select, func
 from sqlalchemy.exc import SQLAlchemyError
 from tuned.models import Order, OrderFile
 from tuned.models.payment import Discount
-from tuned.dtos.order import CreateOrderRequestDTO, OrderDraftCreateDTO
+from tuned.dtos import(
+    OrderListRequestDTO, OrderListResponseDTO,
+    CreateOrderRequestDTO, OrderDraftCreateDTO
+)
 from tuned.repository.order.queries import (
     GetActiveOrdersByClient,
     GetLatestActiveOrderByClient,
@@ -15,7 +18,7 @@ from tuned.repository.order.queries import (
     GetProjectLifecycle,
     GetOrderByClient,
     GetOrderForReorder,
-    CreateOrderFromReorder,
+    GetClientOrders,
 )
 from tuned.repository.order.create import (
     CreateOrder,
@@ -24,6 +27,7 @@ from tuned.repository.order.create import (
     GetDiscountByCode,
     UpsertDraftOrder,
     GetDraftOrder,
+    CreateOrderFromReorder,
 )
 from tuned.repository.exceptions import DatabaseError
 from tuned.repository.protocols import OrderRepositoryProtocol
@@ -60,6 +64,9 @@ class OrderRepository(OrderRepositoryProtocol):
 
     def get_order_for_reorder(self, order_id: str, client_id: str) -> Order:
         return GetOrderForReorder(self.session).execute(order_id, client_id)
+
+    def list_client_orders(self, client_id: str, req: OrderListRequestDTO) -> OrderListResponseDTO:
+        return GetClientOrders(self.session).execute(client_id, req)
 
     def apply_discount(self, order_id: str, client_id: str, discount_amount: float) -> Order:
         order = self._get_order_by_id_for_client(order_id, client_id)

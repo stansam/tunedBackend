@@ -35,6 +35,9 @@ from tuned.dtos.notification import (
 from tuned.dtos.order import (
     OrderProgressDTO, UpcomingDeadlineDTO, ReorderResponseDTO,
     derive_progress, derive_priority,
+    CreateOrderRequestDTO, CreateOrderResponseDTO, OrderFileUploadResponseDTO,
+    OrderDraftCreateDTO, OrderDraftResponseDTO, OrderResponseDTO,
+    OrderListRequestDTO, OrderListResponseDTO
 )
 from tuned.dtos.dashboard import (
     NavStatsDTO, DashboardKPIDTO, SpendingVelocityDTO, ChartDataDTO,
@@ -47,7 +50,8 @@ from tuned.dtos.payment import (
     TransactionCreateDTO, TransactionResponseDTO,
     DiscountCreateDTO, DiscountUpdateDTO, DiscountResponseDTO,
     RefundCreateDTO, RefundUpdateDTO, RefundResponseDTO,
-    AcceptedMethodCreateDTO, AcceptedMethodUpdateDTO, AcceptedMethodResponseDTO
+    AcceptedMethodCreateDTO, AcceptedMethodUpdateDTO, AcceptedMethodResponseDTO,
+    ValidateDiscountRequestDTO, ValidateDiscountResponseDTO
 )
 
 from tuned.dtos.referral import(
@@ -107,5 +111,8 @@ __all__ = [
     "PrivacyUpdateDTO", "AccessibilityUpdateDTO", "BillingPreferenceUpdateDTO",
     "PreferenceUpdateDTO", "PreferenceResponseDTO", "build_preference_update_dto",
     "SearchResponseDTO", "SearchResultItemDTO", "SearchCountsDTO",
-    "NewsletterSubscribeDTO", "NewsletterSubscriberResponseDTO"
+    "NewsletterSubscribeDTO", "NewsletterSubscriberResponseDTO",
+    "CreateOrderRequestDTO", "CreateOrderResponseDTO", "OrderFileUploadResponseDTO",
+    "OrderDraftCreateDTO", "OrderDraftResponseDTO", "OrderResponseDTO", "OrderListRequestDTO", "OrderListResponseDTO"
+    "ValidateDiscountRequestDTO", "ValidateDiscountResponseDTO"
 ]

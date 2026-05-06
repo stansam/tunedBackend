@@ -6,7 +6,10 @@ from dataclasses import asdict
 from marshmallow import ValidationError
 import logging
 from tuned.utils.responses import error_response
-from tuned.apis.orders.schemas.order import CreateOrderSchema, ValidateDiscountSchema, SaveDraftSchema
+from tuned.apis.orders.schemas.order import(
+    CreateOrderSchema, ValidateDiscountSchema,
+    SaveDraftSchema, OrderListRequestSchema
+)
 from tuned.core.logging import get_logger
 from tuned.utils.auth import get_user_ip, get_user_agent
 from tuned.utils.dependencies import get_services
@@ -123,5 +126,24 @@ class GetDraftView(MethodView):
             logger.error(f"Failed to fetch draft: {e}")
             return error_response(message="Failed to fetch draft", status=500)
 
+class ListClientOrders(MethodView):
+    decorators = [login_required]
+    def get(self):
+        try:
+            user_id = current_user.id
+            data = request.get_json()
+            if not data:
+                logger.error(f"No input data provided")
+                return error_response(message="No input data provided", status=400)
+            
+            try:
+                dto = OrderListRequestSchema().load(data)
+            except ValidationError as err:
+                logger.error(f"Validation failed: {err}")
+                return error_response(message="Validation failed", status=400)
 
-
+            response_dto = get_services().order.list_client_orders(user_id, dto)
+            return success_response(data=asdict(response_dto), message="Orders fetched successfully", status=200)
+        except Exception as e:
+            logger.error(f"Failed to fetch orders: {e}")
+            return error_response(message="Failed to fetch orders", status=500)

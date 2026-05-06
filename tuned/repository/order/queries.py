@@ -3,14 +3,16 @@ from __future__ import annotations
 import logging
 from typing import Optional
 
-from sqlalchemy import func, select
+from sqlalchemy import func, select, asc, desc, or_
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
+from typing import Any, Optional, Sequence
 
 from tuned.models import Order
 from tuned.models.enums import OrderStatus
 from tuned.repository.exceptions import NotFound, DatabaseError
 from tuned.core.logging import get_logger
+from tuned.dtos import OrderListRequestDTO, OrderListResponseDTO, OrderResponseDTO
 
 logger: logging.Logger = get_logger(__name__)
 
@@ -137,36 +139,71 @@ class GetOrderForReorder:
             logger.error("[GetOrderForReorder] DB error: %s", exc)
             raise DatabaseError(str(exc)) from exc
 
+def getOrderListResponse(
+    session: Session, stmt: Any, req: OrderListRequestDTO
+) -> OrderListResponseDTO:
+    if req.service_id:
+        stmt = stmt.where(Order.service_id == req.service_id)
+        
+    if req.q:
+        search_pattern = f"%{req.q}%"
+        stmt = stmt.where(
+            or_(
+                Order.title.ilike(search_pattern),
+                Order.instructions.ilike(search_pattern),
+                # Order.content.ilike(search_pattern)
+            )
+        )
+    
+    if req.academic_level_id:
+        stmt = stmt.where(Order.academic_level_id == req.academic_level_id)
+        
+    # if req.deadline_id:
+    #     stmt = stmt.where(Order.deadline_id == req.deadline_id)
+    
+    if req.status:
+        stmt = stmt.where(Order.status == req.status)
 
-class CreateOrderFromReorder:
+    sort_map = {
+        "due_date": Order.due_date,
+        "created_at": Order.created_at,
+        "title": Order.title,
+    }
+
+    sort_field = sort_map.get(req.sort or "created_at", Order.created_at)
+    order_func = asc if req.order == "asc" else desc
+
+    stmt = stmt.order_by(order_func(sort_field))
+
+    count_stmt = select(func.count()).select_from(stmt.subquery())
+    total = session.execute(count_stmt).scalar() or 0
+
+    page = max(req.page or 1, 1)
+    per_page = min(req.per_page or 10, 100)
+
+    stmt = stmt.offset((page - 1) * per_page).limit(per_page)
+    items: Sequence[Order] = session.scalars(stmt).all()
+
+    return OrderListResponseDTO(
+        orders=[OrderResponseDTO.from_model(s) for s in items],
+        total=total,
+        page=page,
+        per_page=per_page,
+        sort=req.sort,
+        order=req.order,
+    )
+
+class GetClientOrders:
     def __init__(self, session: Session) -> None:
         self.session = session
 
-    def execute(self, source: Order, client_id: str) -> Order:
+    def execute(self, client_id: str, req: OrderListRequestDTO) -> OrderListResponseDTO:
         try:
-            new_order = Order(
-                client_id=client_id,
-                service_id=source.service_id,
-                academic_level_id=source.academic_level_id,
-                deadline_id=source.deadline_id,
-                title=source.title,
-                description=source.description,
-                word_count=source.word_count,
-                page_count=source.page_count,
-                format_style=source.format_style,
-                sources=source.sources,
-                line_spacing=source.line_spacing,
-                report_type=source.report_type,
-                total_price=source.total_price,
-                price_per_page=source.price_per_page,
-                subtotal=source.subtotal,
-                discount_amount=source.discount_amount or 0,
-                status=OrderStatus.PENDING,
-                paid=False,
+            stmt = (
+                select(Order)
+                .where(Order.client_id == client_id)
             )
-            self.session.add(new_order)
-            self.session.flush()
-            return new_order
+            return getOrderListResponse(self.session, stmt, req)
         except SQLAlchemyError as exc:
-            logger.error("[CreateOrderFromReorder] DB error: %s", exc)
+            logger.error("[GetClientOrders] DB error: %s", exc)
             raise DatabaseError(str(exc)) from exc

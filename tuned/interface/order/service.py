@@ -4,10 +4,11 @@ import os, uuid
 from typing import Optional, TYPE_CHECKING
 from tuned.core.logging import get_logger
 from tuned.dtos.audit import ActivityLogCreateDTO
-from tuned.dtos.order import (
+from tuned.dtos import (
     ReorderResponseDTO, CreateOrderRequestDTO, CreateOrderResponseDTO,
     ValidateDiscountRequestDTO, ValidateDiscountResponseDTO,
-    OrderFileUploadResponseDTO, OrderDraftCreateDTO, OrderDraftResponseDTO
+    OrderFileUploadResponseDTO, OrderDraftCreateDTO, OrderDraftResponseDTO,
+    OrderListRequestDTO, OrderListResponseDTO
 )
 from tuned.dtos.user import UpdateUserDTO
 from tuned.dtos.price import CalculatePriceRequestDTO
@@ -46,6 +47,9 @@ class OrderService:
         from tuned.interface.audit import AuditService as AuditAggregator
         self._audit = AuditAggregator(repos=repos)
         self._audit_service = audit_service or self._audit.activity_log
+
+    def list_client_orders(self, client_id: str, req: OrderListRequestDTO) -> OrderListResponseDTO:
+        return self._repo.list_client_orders(client_id, req)
 
     def reorder(self, order_id: str, user_id: str) -> ReorderResponseDTO:
         try:

@@ -1,6 +1,6 @@
 from marshmallow import Schema, fields, validate, post_load
-from tuned.models.enums import FormatStyle, LineSpacing, ReportType
-from tuned.dtos.order import CreateOrderRequestDTO, ValidateDiscountRequestDTO, OrderDraftCreateDTO
+from tuned.models.enums import FormatStyle, LineSpacing, ReportType, OrderStatus
+from tuned.dtos import CreateOrderRequestDTO, ValidateDiscountRequestDTO, OrderDraftCreateDTO, OrderListRequestDTO
 
 class CreateOrderSchema(Schema):
     service_id = fields.String(required=True)
@@ -64,3 +64,16 @@ class SaveDraftSchema(Schema):
     @post_load
     def make_dto(self, data, **kwargs):
         return OrderDraftCreateDTO(user_id="", **data)
+
+class OrderListRequestSchema(Schema):
+    status = fields.String(required=False, allow_none=True, validate=validate.OneOf([e.value for e in OrderStatus]))
+    service_id = fields.String(required=False, allow_none=True)
+    # deadl = fields.String(required=False, allow_none=True, validate=validate.OneOf([e.value for e in ReportType]))
+    academic_level_id = fields.String(required=False, allow_none=True)
+    q = fields.String(required=False, allow_none=True)
+    page = fields.Integer(required=False, validate=validate.Range(min=1), load_default=1)
+    per_page = fields.Integer(required=False, validate=validate.Range(min=1), load_default=10)
+    
+    @post_load
+    def make_dto(self, data, **kwargs):
+        return OrderListRequestDTO(**data)

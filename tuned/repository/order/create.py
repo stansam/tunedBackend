@@ -147,3 +147,37 @@ class GetDraftOrder:
         except SQLAlchemyError as exc:
             logger.error("[GetDraftOrder] DB error: %s", exc)
             raise DatabaseError(str(exc)) from exc
+
+class CreateOrderFromReorder:
+    def __init__(self, session: Session) -> None:
+        self.session = session
+
+    def execute(self, source: Order, client_id: str) -> Order:
+        try:
+            new_order = Order(
+                client_id=client_id,
+                service_id=source.service_id,
+                academic_level_id=source.academic_level_id,
+                deadline_id=source.deadline_id,
+                title=source.title,
+                instructions=source.instructions,
+                word_count=source.word_count,
+                page_count=source.page_count,
+                format_style=source.format_style,
+                sources=source.sources,
+                line_spacing=source.line_spacing,
+                report_type=source.report_type,
+                due_date=source.due_date,
+                total_price=source.total_price,
+                price_per_page=source.price_per_page,
+                subtotal=source.subtotal,
+                discount_amount=source.discount_amount or 0,
+                status=OrderStatus.PENDING,
+                paid=False,
+            )
+            self.session.add(new_order)
+            self.session.flush()
+            return new_order
+        except SQLAlchemyError as exc:
+            logger.error("[CreateOrderFromReorder] DB error: %s", exc)
+            raise DatabaseError(str(exc)) from exc

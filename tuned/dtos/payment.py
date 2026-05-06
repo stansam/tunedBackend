@@ -277,3 +277,14 @@ class RefundResponseDTO(BaseDTO):
             updated_at=model.updated_at,
             is_deleted=getattr(model, 'is_deleted', False)
         )
+
+@dataclass
+class ValidateDiscountRequestDTO:
+    code: str
+    subtotal: float
+
+@dataclass
+class ValidateDiscountResponseDTO:
+    valid: bool
+    discount_amount: float
+    description: Optional[str] = None

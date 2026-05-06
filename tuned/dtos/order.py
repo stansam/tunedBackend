@@ -45,6 +45,119 @@ def derive_priority(due_date: Optional[datetime]) -> Priority:
 def _status_to_string(status: OrderStatus) -> str:
     return status.name
 
+class OrderResponseDTO:
+    id: str
+    order_number: str
+    client_id: str
+    status: OrderStatus
+    paid: bool
+    total_price: float
+    service_id: str
+    academic_level_id: str
+    deadline_id: str
+    title: str
+    instructions: str
+    word_count: int
+    page_count: float
+    format_style: FormatStyle
+    sources: int
+    line_spacing: LineSpacing
+    due_date: datetime
+    report_type: Optional[ReportType]
+    discount_amount: Optional[float]
+
+    @classmethod
+    def from_model(cls, order: "Order") -> "OrderResponseDTO":
+        return cls(
+            id=str(order.id),
+            order_number=order.order_number,
+            client_id=str(order.client_id),
+            status=order.status.value,
+            paid=order.paid,
+            total_price=order.total_price,
+            service_id=str(order.service_id),
+            academic_level_id=str(order.academic_level_id),
+            deadline_id=str(order.deadline_id),
+            title=order.title,
+            instructions=order.instructions,
+            word_count=order.word_count,
+            page_count=order.page_count,
+            format_style=order.format_style.value,
+            sources=order.sources,
+            line_spacing=order.line_spacing.value,
+            due_date=order.due_date.isoformat() if order.due_date else None,
+            report_type=order.report_type.value if order.report_type else None,
+            discount_amount=order.discount_amount
+        )
+
+class OrderListRequestDTO:
+    # user_id: str
+    status: Optional[str] = None
+    q: Optional[str] = None
+    sort: Optional[str] = "created_at"
+    order: Optional[str] = "desc"
+    page: Optional[int] = 1
+    per_page: Optional[int] = 10
+    service_id: Optional[str] = None
+    academic_level_id: Optional[str] = None
+    # deadline_id: Optional[str] = None
+
+    def __post_init__(self):
+        if isinstance(self.status, str):
+            self.status = OrderStatus(self.status)
+        if isinstance(self.sort, str):
+            self.sort = self.sort.strip()
+        if isinstance(self.order, str):
+            self.order = self.order.strip().lower()
+        if isinstance(self.page, str):
+            self.page = int(self.page)
+        if isinstance(self.per_page, str):
+            self.per_page = int(self.per_page)
+        if isinstance(self.service_id, str):
+            self.service_id = self.service_id.strip()
+        if isinstance(self.academic_level_id, str):
+            self.academic_level_id = self.academic_level_id.strip()
+        # if isinstance(self.deadline_id, str):
+        #     self.deadline_id = self.deadline_id.strip()
+
+    # def to_dict(self) -> dict[str, Any]:
+    #     return {
+    #         "user_id": self.user_id,
+    #         "status": self.status,
+    #         "q": self.q,
+    #         "sort": self.sort,
+    #         "order": self.order,
+    #         "page": self.page,
+    #         "per_page": self.per_page,
+    #         "service_id": self.service_id,
+    #         "academic_level_id": self.academic_level_id,
+    #         "deadline_id": self.deadline_id,
+    #     }
+
+class OrderListResponseDTO:
+    orders: list[OrderResponseDTO]
+    total: int
+    page: int
+    per_page: int
+    sort: str
+    order: str
+
+    def __init__(
+        self,
+        orders: list[OrderResponseDTO],
+        total: int,
+        page: int,
+        per_page: int,
+        sort: str,
+        order: str,
+    ) -> None:
+        self.orders = orders
+        self.total = total
+        self.page = page
+        self.per_page = per_page
+        self.sort = sort
+        self.order = order
+
 @dataclass
 class OrderProgressDTO:
     id:           str
@@ -66,7 +179,6 @@ class OrderProgressDTO:
             ),
         )
 
-
 @dataclass
 class UpcomingDeadlineDTO:
     id:           str
@@ -86,13 +198,11 @@ class UpcomingDeadlineDTO:
             priority=derive_priority(due_date_dt).name,
         )
 
-
 @dataclass
 class ReorderResponseDTO:
     order_id:     str
     order_number: str
     redirect_url: str
-
 
 @dataclass
 class CreateOrderRequestDTO:
@@ -120,7 +230,6 @@ class CreateOrderRequestDTO:
         if isinstance(self.report_type, str):
             self.report_type = ReportType(self.report_type)
 
-
 @dataclass
 class CreateOrderResponseDTO:
     order_id: str
@@ -128,25 +237,10 @@ class CreateOrderResponseDTO:
     # success: bool
     # message: str
 
-
-@dataclass
-class ValidateDiscountRequestDTO:
-    code: str
-    subtotal: float
-
-
-@dataclass
-class ValidateDiscountResponseDTO:
-    valid: bool
-    discount_amount: float
-    description: Optional[str] = None
-
-
 @dataclass
 class OrderFileUploadResponseDTO:
     uploaded_count: int
     file_ids: list[str]
-
 
 @dataclass
 class OrderDraftCreateDTO:
@@ -173,7 +267,6 @@ class OrderDraftCreateDTO:
             self.line_spacing = LineSpacing(self.line_spacing)
         if isinstance(self.report_type, str) and self.report_type:
             self.report_type = ReportType(self.report_type)
-
 
 @dataclass
 class OrderDraftResponseDTO:

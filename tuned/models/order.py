@@ -3,7 +3,7 @@ from tuned.models.base import BaseModel
 from datetime import datetime, timezone
 from tuned.models.enums import OrderStatus, SupportTicketStatus, Currency, ReportType, LineSpacing, FormatStyle
 from sqlalchemy import event
-from sqlalchemy.orm import validates, Mapped, mapped_column, relationship, Session
+from sqlalchemy.orm import validates, Mapped, mapped_column, relationship, Session, Mapper
 from tuned.utils.orders import generate_public_order_number
 from typing import TYPE_CHECKING, Optional, Any
 
@@ -26,7 +26,7 @@ class Order(BaseModel):
     academic_level_id: Mapped[Optional[str]] = mapped_column(db.String(36), db.ForeignKey('academic_level.id'), nullable=True)
     deadline_id: Mapped[Optional[str]] = mapped_column(db.String(36), db.ForeignKey('deadline.id'), nullable=True)
     title: Mapped[Optional[str]] = mapped_column(db.String(255), nullable=True)
-    description: Mapped[Optional[str]] = mapped_column(db.Text, nullable=True)
+    instructions: Mapped[Optional[str]] = mapped_column(db.Text, nullable=True)
     word_count: Mapped[Optional[int]] = mapped_column(db.Integer, nullable=True)
     page_count: Mapped[Optional[float]] = mapped_column(db.Float, nullable=True)
     format_style: Mapped[Optional[FormatStyle]] = mapped_column(db.Enum(FormatStyle), nullable=True, default=FormatStyle.APA)
@@ -125,10 +125,10 @@ class Order(BaseModel):
     def is_delivered(self: "Order") -> bool:
         return self.latest_delivery is not None
         
-    def __init__(self: "Order", **kwargs: Any) -> None:
-        super().__init__(**kwargs)
-        if not self.order_number:
-            self.order_number = generate_public_order_number(db.session())
+    # def __init__(self: "Order", **kwargs: Any) -> None:
+    #     super().__init__(**kwargs)
+    #     if not self.order_number:
+    #         self.order_number = generate_public_order_number(db.session())
        
     def __repr__(self: "Order") -> str:
         return f'<Order {self.order_number}>'
@@ -192,7 +192,7 @@ class SupportTicket(BaseModel):
 
 
 @event.listens_for(Order, "before_insert")
-def set_public_order_number(connection: Session, target: Order) -> None:
+def set_public_order_number(mapper: Mapper, connection: Session, target: Order) -> None:
     if target.order_number:
         return
     target.order_number = generate_public_order_number(connection)

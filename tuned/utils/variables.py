@@ -46,8 +46,8 @@ class Variables:
     # INVALID = "invalid"
     # NO_TOKEN = "no_token"
 
-    ENTITY_TYPE_ORDER_FILE = "OrderFile"
-    ENTITY_TYPE_ORDER = "Order"
+    ORDER_FILE_ENTITY_TYPE = "OrderFile"
+    ORDER_ENTITY_TYPE = "Order"
     ORDER_REORDERED = "order_reordered"
     ORDER_CREATED = "order_created"
     ORDER_FILES_UPLOADED = "order_files_uploaded"

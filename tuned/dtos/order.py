@@ -97,15 +97,16 @@ class ReorderResponseDTO:
 @dataclass
 class CreateOrderRequestDTO:
     service_id: str
-    academic_level_id: str
-    deadline_id: str
+    level_id: str
     title: str
-    description: str
+    # description: str
     word_count: int
     page_count: float
     format_style: FormatStyle
     sources: int
     line_spacing: LineSpacing
+    due_date: datetime
+    deadline_id: Optional[str] = ""
     instructions: Optional[str] = None
     report_type: Optional[ReportType] = None
     discount_code: Optional[str] = None
@@ -124,8 +125,8 @@ class CreateOrderRequestDTO:
 class CreateOrderResponseDTO:
     order_id: str
     order_number: str
-    success: bool
-    message: str
+    # success: bool
+    # message: str
 
 
 @dataclass
@@ -154,12 +155,13 @@ class OrderDraftCreateDTO:
     academic_level_id: Optional[str] = None
     deadline_id: Optional[str] = None
     title: Optional[str] = None
-    description: Optional[str] = None
+    instructions: Optional[str] = None
     word_count: Optional[int] = None
     page_count: Optional[float] = None
     format_style: Optional[FormatStyle] = None
     sources: Optional[int] = None
     line_spacing: Optional[LineSpacing] = None
+    due_date: Optional[datetime] = None
     report_type: Optional[ReportType] = None
     discount_code: Optional[str] = None
     points_to_redeem: int = 0
@@ -181,12 +183,13 @@ class OrderDraftResponseDTO:
     academic_level_id: Optional[str]
     deadline_id: Optional[str]
     title: Optional[str]
-    description: Optional[str]
+    instructions: Optional[str]
     word_count: Optional[int]
     page_count: Optional[float]
     format_style: Optional[str]
     sources: Optional[int]
     line_spacing: Optional[str]
+    due_date: Optional[datetime]
     report_type: Optional[str]
     discount_amount: Optional[float]
 
@@ -199,12 +202,13 @@ class OrderDraftResponseDTO:
             academic_level_id=str(order.academic_level_id) if order.academic_level_id else None,
             deadline_id=str(order.deadline_id) if order.deadline_id else None,
             title=order.title,
-            description=order.description,
+            instructions=order.instructions,
             word_count=order.word_count,
             page_count=order.page_count,
             format_style=order.format_style.value if order.format_style else None,
             sources=order.sources,
             line_spacing=order.line_spacing.value if order.line_spacing else None,
+            due_date=order.due_date.isoformat() if order.due_date else None,
             report_type=order.report_type.value if order.report_type else None,
             discount_amount=order.discount_amount
         )

@@ -1,5 +1,6 @@
 from __future__ import annotations
 import logging
+import os, uuid
 from typing import Optional, TYPE_CHECKING
 from tuned.core.logging import get_logger
 from tuned.dtos.audit import ActivityLogCreateDTO
@@ -13,6 +14,8 @@ from tuned.dtos.price import CalculatePriceRequestDTO
 from tuned.repository.exceptions import DatabaseError, NotFound
 from tuned.repository.protocols import OrderRepositoryProtocol
 from tuned.models.enums import DiscountType
+from tuned.utils.variables import Variables
+from tuned.utils.dependencies import get_services
 
 if TYPE_CHECKING:
     from tuned.interface import Services
@@ -53,7 +56,7 @@ class OrderService:
                 self._audit_service.log(ActivityLogCreateDTO(
                     action=Variables.ORDER_REORDERED,
                     user_id=user_id,
-                    entity_type="Order",
+                    entity_type=Variables.ORDER_ENTITY_TYPE,
                     entity_id=str(new_order.id),
                     after=new_order,
                     created_by=user_id,
@@ -116,19 +119,26 @@ class OrderService:
                 raise ValueError("Insufficient reward points")
 
             # 2. Calculate price
-            if not self._interfaces:
-                raise RuntimeError("Services not injected")
+            service = self._repos.service.get_by_id(dto.service_id)
+            if not service:
+                raise ValueError("Service not found")
+            academic_level = self._repos.academic_level.get_by_id(dto.level_id)
+            if not academic_level:
+                raise ValueError("Academic level not found")
+            # if not self._interfaces:
+            #     raise RuntimeError("Services not injected")
             
             calc_request = CalculatePriceRequestDTO(
-                service_id=dto.service_id,
-                academic_level_id=dto.academic_level_id,
-                deadline_id=dto.deadline_id,
+                deadline=dto.due_date,
+                pricing_category_id=service.pricing_category_id,
+                academic_level_id=academic_level.id,
                 word_count=dto.word_count,
-                page_count=dto.page_count,
+                # page_count=dto.page_count,
                 report_type=dto.report_type.value if dto.report_type else None,
-                line_spacing=dto.line_spacing.value if dto.line_spacing else None,
+                # line_spacing=dto.line_spacing if dto.line_spacing else None,
             )
-            price_resp = self._interfaces.price_rate.calculate_price(calc_request)
+            price_resp = get_services().price_rate.calculate_price(calc_request)
+            dto.deadline_id = price_resp.selected_deadline.id
             
             subtotal = price_resp.total_price
             # TODO: Seperate discount and points redemption
@@ -167,8 +177,9 @@ class OrderService:
                 self._audit_service.log(ActivityLogCreateDTO(
                     action=Variables.ORDER_CREATED,
                     user_id=user_id,
-                    entity_type="Order",
+                    entity_type=Variables.ORDER_ENTITY_TYPE,
                     entity_id=str(order.id),
+                    after=order,
                     created_by=user_id,
                     ip_address=ip_address,
                     user_agent=user_agent
@@ -197,9 +208,7 @@ class OrderService:
             self._repo.save()
             return CreateOrderResponseDTO(
                 order_id=str(order.id),
-                order_number=order.order_number,
-                success=True,
-                message="Order created successfully"
+                order_number=order.order_number
             )
 
         except ValueError as e:
@@ -243,7 +252,7 @@ class OrderService:
     def upload_order_files(self, order_id: str, user_id: str, files: list[FileStorage], ip_address: str, user_agent: str) -> OrderFileUploadResponseDTO:
         try:
             order = self._repo.get_order_by_id_for_client(order_id, user_id)
-            import os, uuid
+            existing = order
             from flask import current_app
 
             upload_dir = os.path.join(current_app.root_path, 'static', 'client', 'assets', 'order_files', order_id)
@@ -266,6 +275,8 @@ class OrderService:
                     user_id=user_id,
                     entity_type=Variables.ENTITY_TYPE_ORDER,
                     entity_id=order_id,
+                    before=existing,
+                    after=order,
                     created_by=user_id,
                     ip_address=ip_address,
                     user_agent=user_agent
@@ -280,9 +291,23 @@ class OrderService:
             logger.error("[OrderService.upload_order_files] Failed: %r", e)
             raise e
 
-    def save_draft(self, dto: OrderDraftCreateDTO) -> OrderDraftResponseDTO:
+    def save_draft(self, dto: OrderDraftCreateDTO, ip_address: str, user_agent: str) -> OrderDraftResponseDTO:
         try:
             draft = self._repo.upsert_draft(dto)
+
+            try:
+                self._audit_service.log(ActivityLogCreateDTO(
+                    action=Variables.ORDER_DRAFT_CREATED,
+                    user_id=dto.user_id,
+                    entity_type=Variables.ORDER_ENTITY_TYPE,
+                    entity_id=draft.id,
+                    after=draft,
+                    created_by=dto.user_id,
+                    ip_address=ip_address,
+                    user_agent=user_agent
+                ))
+            except Exception as audit_exc:
+                logger.error("[OrderService.upload_order_files] Audit failed: %r", audit_exc)
 
             # Emit event
             try:

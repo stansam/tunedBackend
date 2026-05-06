@@ -1,7 +1,7 @@
 from flask import Blueprint
 from typing import cast, Callable, Any
 
-notification_bp = Blueprint('notifications', __name__, url_prefix='/notifications')
+notification_bp = Blueprint('notifications', __name__)
 
 from tuned.apis.notifications.routes import ROUTES
 

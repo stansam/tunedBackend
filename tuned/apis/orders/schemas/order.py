@@ -4,23 +4,39 @@ from tuned.dtos.order import CreateOrderRequestDTO, ValidateDiscountRequestDTO, 
 
 class CreateOrderSchema(Schema):
     service_id = fields.String(required=True)
-    academic_level_id = fields.String(required=True)
-    deadline_id = fields.String(required=True)
+    level_id = fields.String(required=True)
+    # deadline_id = fields.String(required=True)
+    deadline = fields.AwareDateTime(required=True)
     title = fields.String(required=True, validate=validate.Length(min=1))
-    description = fields.String(required=True, validate=validate.Length(min=1))
+    instructions = fields.String(required=True, validate=validate.Length(min=1))
     word_count = fields.Integer(required=True, validate=validate.Range(min=1))
     page_count = fields.Float(required=True, validate=validate.Range(min=0.1))
     format_style = fields.String(required=True, validate=validate.OneOf([e.value for e in FormatStyle]))
     sources = fields.Integer(required=True, validate=validate.Range(min=0))
     line_spacing = fields.String(required=True, validate=validate.OneOf([e.value for e in LineSpacing]))
-    instructions = fields.String(required=False, allow_none=True)
+    # description = fields.String(required=False, allow_none=True)
     report_type = fields.String(required=False, allow_none=True, validate=validate.OneOf([e.value for e in ReportType]))
     discount_code = fields.String(required=False, allow_none=True)
     points_to_redeem = fields.Integer(required=False, load_default=0)
 
     @post_load
     def make_dto(self, data, **kwargs):
-        return CreateOrderRequestDTO(**data)
+        return CreateOrderRequestDTO(
+            service_id=data["service_id"],
+            level_id=data["level_id"],
+            # deadline_id="",
+            title=data["title"],
+            instructions=data["instructions"],
+            word_count=data["word_count"],
+            page_count=data["page_count"],
+            format_style=FormatStyle(data["format_style"]) if data.get("format_style") else FormatStyle.APA,
+            sources=data["sources"],
+            line_spacing=LineSpacing(data["line_spacing"]) if data.get("line_spacing") else LineSpacing.DOUBLE,
+            due_date=data["deadline"],
+            report_type=ReportType(data["report_type"]) if data.get("report_type") else None,
+            discount_code=data.get("discount_code"),
+            points_to_redeem=data.get("points_to_redeem")
+            )
 
 class ValidateDiscountSchema(Schema):
     code = fields.String(required=True)

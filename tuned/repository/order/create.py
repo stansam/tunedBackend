@@ -26,15 +26,16 @@ class CreateOrder:
             new_order = Order(
                 client_id=client_id,
                 service_id=dto.service_id,
-                academic_level_id=dto.academic_level_id,
+                academic_level_id=dto.level_id,
                 deadline_id=dto.deadline_id,
                 title=dto.title,
-                description=dto.description,
+                instructions=dto.instructions,
                 word_count=dto.word_count,
                 page_count=dto.page_count,
                 format_style=dto.format_style,
                 sources=dto.sources,
                 line_spacing=dto.line_spacing,
+                due_date=dto.due_date,
                 report_type=dto.report_type,
                 total_price=total_price,
                 subtotal=subtotal,
@@ -119,12 +120,13 @@ class UpsertDraftOrder:
             if dto.academic_level_id is not None: order.academic_level_id = dto.academic_level_id
             if dto.deadline_id is not None: order.deadline_id = dto.deadline_id
             if dto.title is not None: order.title = dto.title
-            if dto.description is not None: order.description = dto.description
+            if dto.instructions is not None: order.instructions = dto.instructions
             if dto.word_count is not None: order.word_count = dto.word_count
             if dto.page_count is not None: order.page_count = dto.page_count
             if dto.format_style is not None: order.format_style = dto.format_style
             if dto.sources is not None: order.sources = dto.sources
             if dto.line_spacing is not None: order.line_spacing = dto.line_spacing
+            if dto.due_date is not None: order.due_date = dto.due_date
             if dto.report_type is not None: order.report_type = dto.report_type
 
             self.session.flush()

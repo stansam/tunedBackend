@@ -20,6 +20,7 @@ class GetServicesList(MethodView):
         try:
             raw = redis_client.get(CACHE_KEY)
             if raw is not None and isinstance(raw, (str, bytes, bytearray)):
+                logger.info("Services fetched successfully from cache")
                 return success_response(json.loads(raw), "Services fetched successfully")
                 
             services = get_services().service.list_services()

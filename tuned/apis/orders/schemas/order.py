@@ -73,7 +73,18 @@ class OrderListRequestSchema(Schema):
     q = fields.String(required=False, allow_none=True)
     page = fields.Integer(required=False, validate=validate.Range(min=1), load_default=1)
     per_page = fields.Integer(required=False, validate=validate.Range(min=1), load_default=10)
+    sort = fields.String(required=False, allow_none=True)
+    order = fields.String(required=False, allow_none=True)
     
     @post_load
     def make_dto(self, data, **kwargs):
-        return OrderListRequestDTO(**data)
+        return OrderListRequestDTO(
+            status=data.get("status"),
+            service_id=data.get("service_id"),
+            academic_level_id=data.get("academic_level_id"),
+            q=data.get("q"),
+            page=data.get("page"),
+            per_page=data.get("per_page"),
+            sort=data.get("sort"),
+            order=data.get("order")
+        )

@@ -158,6 +158,10 @@ class OrderFile(BaseModel):
         except (OSError, TypeError):
             return 0
     
+    @property
+    def file_type(self) -> str:
+        return self.filename.split('.')[-1].lower()
+    
     def __repr__(self) -> str:
         return f'<OrderFile {self.filename}>'
 

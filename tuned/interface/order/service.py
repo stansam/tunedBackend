@@ -8,10 +8,10 @@ from tuned.dtos import (
     ReorderResponseDTO, CreateOrderRequestDTO, CreateOrderResponseDTO,
     ValidateDiscountRequestDTO, ValidateDiscountResponseDTO,
     OrderFileUploadResponseDTO, OrderDraftCreateDTO, OrderDraftResponseDTO,
-    OrderListRequestDTO, OrderListResponseDTO
+    OrderListRequestDTO, OrderListResponseDTO,
+    UpdateUserDTO, CalculatePriceRequestDTO,
+    OrderDetailsResponseDTO
 )
-from tuned.dtos.user import UpdateUserDTO
-from tuned.dtos.price import CalculatePriceRequestDTO
 from tuned.repository.exceptions import DatabaseError, NotFound
 from tuned.repository.protocols import OrderRepositoryProtocol
 from tuned.models.enums import DiscountType
@@ -50,6 +50,11 @@ class OrderService:
 
     def list_client_orders(self, client_id: str, req: OrderListRequestDTO) -> OrderListResponseDTO:
         return self._repo.list_client_orders(client_id, req)
+    
+    def get_client_order_details(self, order_number: str, user_id: str) -> OrderDetailsResponseDTO:
+        order = self._repo.get_order_by_id_for_client(order_number, user_id)
+        return OrderDetailsResponseDTO.from_model(order)
+
 
     def reorder(self, order_id: str, user_id: str) -> ReorderResponseDTO:
         try:

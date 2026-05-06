@@ -45,6 +45,7 @@ def derive_priority(due_date: Optional[datetime]) -> Priority:
 def _status_to_string(status: OrderStatus) -> str:
     return status.name
 
+@dataclass
 class OrderResponseDTO:
     id: str
     order_number: str
@@ -90,6 +91,7 @@ class OrderResponseDTO:
             discount_amount=order.discount_amount
         )
 
+@dataclass
 class OrderListRequestDTO:
     # user_id: str
     status: Optional[str] = None
@@ -134,6 +136,7 @@ class OrderListRequestDTO:
     #         "deadline_id": self.deadline_id,
     #     }
 
+@dataclass
 class OrderListResponseDTO:
     orders: list[OrderResponseDTO]
     total: int
@@ -305,3 +308,75 @@ class OrderDraftResponseDTO:
             report_type=order.report_type.value if order.report_type else None,
             discount_amount=order.discount_amount
         )
+
+@dataclass
+class OrderFileResponseDTO:
+  id: str
+  name: str
+  url: str
+  size: float
+  mime_type: str
+
+  def from_model(file: "OrderFile") -> "OrderFileResponseDTO":
+    return OrderFileResponseDTO(
+        id=str(file.id),
+        name=file.filename,
+        url=file.file_path,
+        size=file.file_size,
+        mime_type=file.file_type,
+    )
+
+@dataclass
+class OrderDetailsResponseDTO:
+  id: str
+  order_number: str
+  client_id: str
+  status: OrderStatus
+  paid: bool
+  total_price: float
+  service_id: str
+  service_name: str
+  academic_level_id: str
+  academic_level_name: str
+  deadline_id: str
+  title: str
+  instructions: str
+  word_count: int
+  page_count: float
+  format_style: str
+  sources: int
+  line_spacing: str
+  due_date: str
+  report_type: str
+  discount_amount: float
+  created_at: str
+  client_username: str
+  attachments: list[OrderFileResponseDTO]
+
+  def from_model(order: "Order") -> "OrderDetailsResponseDTO":
+    return OrderDetailsResponseDTO(
+        id=str(order.id),
+        order_number=str(order.order_number),
+        client_id=str(order.client_id),
+        status=order.status,
+        paid=order.paid,
+        total_price=order.total_price,
+        service_id=str(order.service_id),
+        service_name=order.service.name,
+        academic_level_id=str(order.academic_level_id),
+        academic_level_name=order.academic_level.name,
+        deadline_id=str(order.deadline_id),
+        title=order.title,
+        instructions=order.instructions,
+        word_count=order.word_count,
+        page_count=order.page_count,
+        format_style=order.format_style.value,
+        sources=order.sources,
+        line_spacing=order.line_spacing.value,
+        due_date=order.due_date.isoformat(),
+        report_type=order.report_type.value,
+        discount_amount=order.discount_amount,
+        created_at=order.created_at.isoformat(),
+        client_username=order.client.username,
+        attachments=[OrderFileResponseDTO.from_model(file) for file in order.files]        
+)

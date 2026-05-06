@@ -97,18 +97,18 @@ class GetOrderByClient:
     def __init__(self, session: Session) -> None:
         self.session = session
 
-    def execute(self, order_id: str, client_id: str) -> Order:
+    def execute(self, order_number: str, client_id: str) -> Order:
         try:
             stmt = (
                 select(Order)
                 .where(
-                    Order.id == order_id,
+                    Order.order_number == order_number,
                     Order.client_id == client_id,
                 )
             )
             order = self.session.scalar(stmt)
             if not order:
-                raise NotFound(f"Order {order_id} not found for client {client_id}")
+                raise NotFound(f"Order {order_number} not found for client {client_id}")
             return order
         except NotFound:
             raise

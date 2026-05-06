@@ -128,7 +128,7 @@ class GetDraftView(MethodView):
 
 class ListClientOrders(MethodView):
     decorators = [login_required]
-    def get(self):
+    def post(self):
         try:
             user_id = current_user.id
             data = request.get_json()
@@ -147,3 +147,14 @@ class ListClientOrders(MethodView):
         except Exception as e:
             logger.error(f"Failed to fetch orders: {e}")
             return error_response(message="Failed to fetch orders", status=500)
+
+class GetOrderView(MethodView):
+    decorators = [login_required]
+    def get(self, order_number: str):
+        try:
+            user_id = current_user.id
+            response_dto = get_services().order.get_client_order_details(order_number, user_id)
+            return success_response(data=asdict(response_dto), message="Order fetched successfully", status=200)
+        except Exception as e:
+            logger.error(f"Failed to fetch order: {e}")
+            return error_response(message="Failed to fetch order", status=500)

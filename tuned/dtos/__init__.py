@@ -37,7 +37,7 @@ from tuned.dtos.order import (
     derive_progress, derive_priority,
     CreateOrderRequestDTO, CreateOrderResponseDTO, OrderFileUploadResponseDTO,
     OrderDraftCreateDTO, OrderDraftResponseDTO, OrderResponseDTO,
-    OrderListRequestDTO, OrderListResponseDTO
+    OrderListRequestDTO, OrderListResponseDTO, OrderDetailsResponseDTO, OrderFileResponseDTO
 )
 from tuned.dtos.dashboard import (
     NavStatsDTO, DashboardKPIDTO, SpendingVelocityDTO, ChartDataDTO,
@@ -113,6 +113,7 @@ __all__ = [
     "SearchResponseDTO", "SearchResultItemDTO", "SearchCountsDTO",
     "NewsletterSubscribeDTO", "NewsletterSubscriberResponseDTO",
     "CreateOrderRequestDTO", "CreateOrderResponseDTO", "OrderFileUploadResponseDTO",
-    "OrderDraftCreateDTO", "OrderDraftResponseDTO", "OrderResponseDTO", "OrderListRequestDTO", "OrderListResponseDTO"
+    "OrderDraftCreateDTO", "OrderDraftResponseDTO", "OrderResponseDTO",
+    "OrderListRequestDTO", "OrderListResponseDTO", "OrderDetailsResponseDTO", "OrderFileResponseDTO",
     "ValidateDiscountRequestDTO", "ValidateDiscountResponseDTO"
 ]

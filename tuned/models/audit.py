@@ -1,6 +1,7 @@
 import uuid
-from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.dialects.postgresql import UUID, JSONB
+from sqlalchemy.ext.mutable import MutableDict
 from datetime import datetime, timezone
 from typing import Optional, TYPE_CHECKING, Any
 from tuned.models.base import BaseModel
@@ -57,8 +58,8 @@ class ActivityLog(BaseModel):
     action: Mapped[str] = mapped_column(db.String(100), nullable=False, index=True)  # e.g., "order_created", "payment_received"
     entity_type: Mapped[Optional[str]] = mapped_column(db.String(50), nullable=True, index=True)  # e.g., "Order", "Payment", "User"
     entity_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), nullable=True, index=True)
-    before: Mapped[Optional[dict[str, Any]]] = mapped_column(db.JSON, nullable=True)
-    after: Mapped[Optional[dict[str, Any]]] = mapped_column(db.JSON, nullable=True)
+    before: Mapped[Optional[dict[str, Any]]] = mapped_column(MutableDict.as_mutable(JSONB), nullable=True, default=dict)
+    after: Mapped[Optional[dict[str, Any]]] = mapped_column(MutableDict.as_mutable(JSONB), nullable=True, default=dict)
     ip_address: Mapped[Optional[str]] = mapped_column(db.String(45), nullable=True)
     user_agent: Mapped[Optional[str]] = mapped_column(db.String(255), nullable=True)
     

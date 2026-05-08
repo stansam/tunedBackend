@@ -47,7 +47,7 @@ class PricingCategoryResponseDTO:
     @classmethod
     def from_model(cls, obj: "PricingCategory") -> "PricingCategoryResponseDTO":
         return cls(
-            id=obj.id,
+            id=str(obj.id),
             name=obj.name,
             description=obj.description or "",
             display_order=obj.display_order,
@@ -66,10 +66,10 @@ class PriceRateResponseDTO:
     @classmethod
     def from_model(cls, obj: "PriceRate") -> "PriceRateResponseDTO":
         return cls(
-            id=obj.id,
-            pricing_category_id=obj.pricing_category_id,
-            academic_level_id=obj.academic_level_id,
-            deadline_id=obj.deadline_id,
+            id=str(obj.id),
+            pricing_category_id=str(obj.pricing_category_id),
+            academic_level_id=str(obj.academic_level_id),
+            deadline_id=str(obj.deadline_id),
             price_per_page=obj.price_per_page,
             is_active=obj.is_active,
         )

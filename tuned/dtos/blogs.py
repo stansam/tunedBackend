@@ -64,11 +64,11 @@ class BlogPostResponseDTO(BaseDTO):
     @classmethod
     def from_model(cls, obj: "BlogPost") -> "BlogPostResponseDTO":
         return cls(
-            id=obj.id,
+            id=str(obj.id),
             title=obj.title,
             content=obj.content,
             author=obj.author,
-            category_id=obj.category_id,
+            category_id=str(obj.category_id) if obj.category_id else None,
             slug=obj.slug,
             excerpt=obj.excerpt or "",
             featured_image=obj.featured_image or "",

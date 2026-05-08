@@ -88,8 +88,8 @@ class PaymentResponseDTO(BaseDTO):
         return cls(
             id=str(model.id),
             payment_id=model.payment_id,
-            order_id=model.order_id,
-            user_id=model.user_id,
+            order_id=str(model.order_id),
+            user_id=str(model.user_id),
             amount=model.amount,
             status=model.status,
             accepted_method_id=model.accepted_method_id,
@@ -138,9 +138,9 @@ class InvoiceResponseDTO(BaseDTO):
         return cls(
             id=str(model.id),
             invoice_number=model.invoice_number,
-            order_id=model.order_id,
-            user_id=model.user_id,
-            payment_id=model.payment_id,
+            order_id=str(model.order_id),
+            user_id=str(model.user_id),
+            payment_id=str(model.payment_id) if model.payment_id else None,
             subtotal=model.subtotal,
             discount=model.discount,
             tax=model.tax,
@@ -173,7 +173,7 @@ class TransactionResponseDTO(BaseDTO):
     def from_model(cls, model: "Transaction") -> 'TransactionResponseDTO':
         return cls(
             id=str(model.id),
-            payment_id=model.payment_id,
+            payment_id=str(model.payment_id),
             transaction_id=model.transaction_id,
             type=model.type,
             amount=model.amount,
@@ -266,11 +266,11 @@ class RefundResponseDTO(BaseDTO):
     def from_model(cls, model: "Refund") -> 'RefundResponseDTO':
         return cls(
             id=str(model.id),
-            payment_id=model.payment_id,
+            payment_id=str(model.payment_id) if model.payment_id else None,
             amount=model.amount,
             reason=model.reason,
             status=model.status,
-            processed_by=model.processed_by,
+            processed_by=str(model.processed_by) if model.processed_by else None,
             admin_reference_id=model.admin_reference_id,
             refund_date=model.refund_date,
             created_at=model.created_at,

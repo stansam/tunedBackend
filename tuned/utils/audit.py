@@ -1,6 +1,14 @@
 import json
 import re
 from typing import Any, Optional, Set
+from datetime import datetime
+import uuid
+from decimal import Decimal
+from enum import Enum
+from sqlalchemy.inspection import inspect
+import logging
+
+logger = logging.getLogger(__name__)
 
 SENSITIVE_FIELDS: Set[str] = {
     "password", "token", "secret", "card_number", "cvv", 
@@ -33,17 +41,49 @@ def mask_sensitive_fields(data: Any) -> Any:
         return [mask_sensitive_fields(item) for item in data]
     return data
 
+def json_serializer(obj: Any) -> Any:
+    if isinstance(obj, datetime):
+        return obj.isoformat()
+
+    if isinstance(obj, uuid.UUID):
+        return str(obj)
+    if isinstance(obj, Decimal):
+        return float(obj)
+    if isinstance(obj, Enum):
+        return obj.value
+
+    raise TypeError(f"Type {type(obj)} not serializable")
+
+def model_to_dict(model):
+    mapper = inspect(model)
+    return {
+        c.key: mapper.attrs[c.key].value
+        for c in mapper.mapper.column_attrs
+    }
+
 def sanitize_json_snapshot(data: Any) -> Optional[dict[str, Any]]:
     if data is None:
         return None
-    
     try:
         masked_data = mask_sensitive_fields(data)
-        
         if not isinstance(masked_data, dict):
-            masked_data = {"data": masked_data}
-            
-        json.dumps(masked_data)
-        return masked_data
-    except (TypeError, ValueError):
+            try:
+                masked_data = model_to_dict(masked_data)
+            except (TypeError, AttributeError) as e:
+                logger.warning(f"Non-serializable data snapshot intercepted: {str(e)}")
+                if hasattr(masked_data, "__dict__"):
+                    masked_data = {
+                        k: v
+                        for k, v in masked_data.__dict__.items()
+                        if not k.startswith("_")
+                    }
+                else:
+                    masked_data = {"data": masked_data}
+
+        normalized = json.loads(
+            json.dumps(masked_data, default=json_serializer)
+        )
+        return normalized
+    except (TypeError, ValueError) as e:
+        logger.exception(f"failed to serialize data snapshot: {str(e)}")
         return {"error": "Non-serializable data snapshot intercepted"}

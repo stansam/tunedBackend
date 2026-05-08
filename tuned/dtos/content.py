@@ -102,7 +102,7 @@ class AcademicLevelResponseDTO(BaseDTO):
     @classmethod
     def from_model(cls, obj: "AcademicLevel") -> "AcademicLevelResponseDTO":
         return cls(
-            id=obj.id,
+            id=str(obj.id),
             name=obj.name,
             order=obj.order,
         )
@@ -117,7 +117,7 @@ class DeadlineResponseDTO(BaseDTO):
     @classmethod
     def from_model(cls, obj: "Deadline") -> "DeadlineResponseDTO":
         return cls(
-            id=obj.id,
+            id=str(obj.id),
             name=obj.name,
             hours=obj.hours,
             order=obj.order,
@@ -132,7 +132,7 @@ class SampleServiceResponseDTO:
     @classmethod
     def from_model(cls, obj: "Service") -> "SampleServiceResponseDTO":
         return cls(
-            id=obj.id,
+            id=str(obj.id),
             name=obj.name,
             slug=obj.slug,
         )
@@ -154,11 +154,11 @@ class SampleResponseDTO(BaseDTO):
     @classmethod
     def from_model(cls, obj: "Sample") -> "SampleResponseDTO":
         return cls(
-            id=obj.id,
+            id=str(obj.id),
             title=obj.title,
             slug=obj.slug,
             excerpt=obj.excerpt or "",
-            service_id=obj.service_id,
+            service_id=str(obj.service_id) if obj.service_id else None,
             word_count=obj.word_count or 0,
             featured=obj.featured,
             image=obj.image or "",
@@ -203,10 +203,10 @@ class TestimonialResponseDTO(BaseDTO):
     @classmethod
     def from_model(cls, obj: "Testimonial") -> "TestimonialResponseDTO":
         return cls(
-            id=obj.id,
-            user_id=obj.user_id,
-            service_id=obj.service_id,
-            order_id=obj.order_id,
+            id=str(obj.id),
+            user_id=str(obj.user_id) if obj.user_id else None,
+            service_id=str(obj.service_id) if obj.service_id else None,
+            order_id=str(obj.order_id) if obj.order_id else None,
             content=obj.content,
             rating=obj.rating,
             is_approved=obj.is_approved,
@@ -236,7 +236,7 @@ class FaqResponseDTO(BaseDTO):
     @classmethod
     def from_model(cls, obj: "FAQ") -> "FaqResponseDTO":
         return cls(
-            id=obj.id,
+            id=str(obj.id),
             question=obj.question,
             answer=obj.answer,
             category=obj.category,
@@ -254,7 +254,7 @@ class TagResponseDTO(BaseDTO):
     @classmethod
     def from_model(cls, obj: "Tag") -> "TagResponseDTO":
         return cls(
-            id=obj.id,
+            id=str(obj.id),
             name=obj.name,
             description=obj.description,
             slug=obj.slug,

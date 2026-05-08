@@ -1,14 +1,15 @@
-from tuned.extensions import db
-from tuned.models.base import BaseModel
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.sql import func
+from typing import TYPE_CHECKING, Optional
 from datetime import datetime, timezone
 import uuid
-from sqlalchemy.sql import func
+from tuned.extensions import db
+from tuned.models.base import BaseModel
 from tuned.models.enums import(
     PaymentStatus, MethodCategory, TransactionType,
     RefundStatus, DiscountType, Currency, TransactionStatus
 )
-from sqlalchemy.orm import Mapped, mapped_column, relationship
-from typing import TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
     from tuned.models.order import Order
@@ -33,16 +34,16 @@ class AcceptedPaymentMethod(BaseModel):
 class Payment(BaseModel):
     __tablename__ = 'payment'
     payment_id: Mapped[str] = mapped_column(db.String(36), unique=True, nullable=False)
-    order_id: Mapped[str] = mapped_column(db.String(36), db.ForeignKey('order.id'), nullable=False)
-    user_id: Mapped[str] = mapped_column(db.String(36), db.ForeignKey('users.id'), nullable=False)
-    accepted_method_id: Mapped[int] = mapped_column(db.Integer, db.ForeignKey('accepted_payment_method.id'), nullable=False)
+    order_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), db.ForeignKey('order.id'), nullable=False, index=True)
+    user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), db.ForeignKey('users.id'), nullable=False, index=True)
+    accepted_method_id: Mapped[int] = mapped_column(db.Integer, db.ForeignKey('accepted_payment_method.id'), nullable=False, index=True)
     currency: Mapped[Currency] = mapped_column(db.Enum(Currency), default=Currency.USD, nullable=False)
-    amount: Mapped[float] = mapped_column(db.Float, nullable=False)
-    status: Mapped[PaymentStatus] = mapped_column(db.Enum(PaymentStatus), default=PaymentStatus.PENDING, nullable=False)
+    amount: Mapped[float] = mapped_column(db.Numeric(precision=10, scale=2), nullable=False)
+    status: Mapped[PaymentStatus] = mapped_column(db.Enum(PaymentStatus), default=PaymentStatus.PENDING, nullable=False, index=True)
     
     client_proof_reference: Mapped[Optional[str]] = mapped_column(db.String(255), nullable=True)
-    client_marked_paid_at: Mapped[Optional[datetime]] = mapped_column(db.DateTime, nullable=True)
-    admin_verified_at: Mapped[Optional[datetime]] = mapped_column(db.DateTime, nullable=True)
+    client_marked_paid_at: Mapped[Optional[datetime]] = mapped_column(db.DateTime(timezone=True), nullable=True)
+    admin_verified_at: Mapped[Optional[datetime]] = mapped_column(db.DateTime(timezone=True), nullable=True)
     
     order: Mapped["Order"] = relationship('Order', foreign_keys=[order_id], back_populates='payments')
     user: Mapped["User"] = relationship('User', foreign_keys=[user_id], back_populates='payments')
@@ -70,16 +71,16 @@ class Payment(BaseModel):
 class Invoice(BaseModel):
     __tablename__ = 'invoice'
     invoice_number: Mapped[str] = mapped_column(db.String(20), unique=True, nullable=False)
-    order_id: Mapped[str] = mapped_column(db.String(36), db.ForeignKey('order.id'), nullable=False)
-    user_id: Mapped[str] = mapped_column(db.String(36), db.ForeignKey('users.id'), nullable=False)
-    payment_id: Mapped[Optional[str]] = mapped_column(db.String(36), db.ForeignKey('payment.id'), nullable=True)
+    order_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), db.ForeignKey('order.id'), nullable=False, index=True)
+    user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), db.ForeignKey('users.id'), nullable=False, index=True)
+    payment_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), db.ForeignKey('payment.id'), nullable=True, index=True)
     
-    subtotal: Mapped[float] = mapped_column(db.Float, nullable=False)
-    discount: Mapped[float] = mapped_column(db.Float, default=0, nullable=False)
-    tax: Mapped[float] = mapped_column(db.Float, default=0, nullable=False)
-    total: Mapped[float] = mapped_column(db.Float, nullable=False)
-    due_date: Mapped[datetime] = mapped_column(db.DateTime, nullable=False)
-    paid: Mapped[bool] = mapped_column(db.Boolean, default=False, nullable=False)
+    subtotal: Mapped[float] = mapped_column(db.Numeric(precision=10, scale=2), nullable=False)
+    discount: Mapped[float] = mapped_column(db.Numeric(precision=10, scale=2), default=0, nullable=False)
+    tax: Mapped[float] = mapped_column(db.Numeric(precision=10, scale=2), default=0, nullable=False)
+    total: Mapped[float] = mapped_column(db.Numeric(precision=10, scale=2), nullable=False)
+    due_date: Mapped[datetime] = mapped_column(db.DateTime(timezone=True), nullable=False)
+    paid: Mapped[bool] = mapped_column(db.Boolean, default=False, nullable=False, index=True)
     
     order: Mapped["Order"] = relationship('Order', foreign_keys=[order_id], back_populates='invoice')
     user: Mapped["User"] = relationship('User', foreign_keys=[user_id], back_populates='invoices')
@@ -108,11 +109,11 @@ class Invoice(BaseModel):
 
 class Transaction(BaseModel):
     __tablename__ = 'transaction'
-    transaction_id: Mapped[str] = mapped_column(db.String(100), unique=True, nullable=False)
-    payment_id: Mapped[str] = mapped_column(db.String(36), db.ForeignKey('payment.id'), nullable=False)
-    type: Mapped[TransactionType] = mapped_column(db.Enum(TransactionType), nullable=False)
-    amount: Mapped[float] = mapped_column(db.Float, nullable=False)
-    status: Mapped[TransactionStatus] = mapped_column(db.Enum(TransactionStatus), nullable=False)
+    transaction_id: Mapped[str] = mapped_column(db.String(100), unique=True, nullable=False, index=True)
+    payment_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), db.ForeignKey('payment.id'), nullable=False, index=True)
+    type: Mapped[TransactionType] = mapped_column(db.Enum(TransactionType), nullable=False, index=True)
+    amount: Mapped[float] = mapped_column(db.Numeric(precision=10, scale=2), nullable=False)
+    status: Mapped[TransactionStatus] = mapped_column(db.Enum(TransactionStatus), nullable=False, index=True)
 
     __table_args__ = (
         db.CheckConstraint('amount > 0', name='valid_transaction_amount'),
@@ -135,14 +136,14 @@ class Discount(BaseModel):
     code: Mapped[str] = mapped_column(db.String(20), unique=True, nullable=False)
     description: Mapped[Optional[str]] = mapped_column(db.String(200), nullable=True)
     discount_type: Mapped[DiscountType] = mapped_column(db.Enum(DiscountType), default=DiscountType.PERCENTAGE, nullable=False)
-    amount: Mapped[float] = mapped_column(db.Float, nullable=False)
-    min_order_value: Mapped[float] = mapped_column(db.Float, default=0, nullable=False)
-    max_discount_value: Mapped[Optional[float]] = mapped_column(db.Float, nullable=True)
-    valid_from: Mapped[datetime] = mapped_column(db.DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
-    valid_to: Mapped[Optional[datetime]] = mapped_column(db.DateTime, nullable=True)
+    amount: Mapped[float] = mapped_column(db.Numeric(precision=10, scale=2), nullable=False)
+    min_order_value: Mapped[float] = mapped_column(db.Numeric(precision=10, scale=2), default=0, nullable=False)
+    max_discount_value: Mapped[Optional[float]] = mapped_column(db.Numeric(precision=10, scale=2), nullable=True)
+    valid_from: Mapped[datetime] = mapped_column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
+    valid_to: Mapped[Optional[datetime]] = mapped_column(db.DateTime(timezone=True), nullable=True)
     usage_limit: Mapped[Optional[int]] = mapped_column(db.Integer, nullable=True)
     times_used: Mapped[int] = mapped_column(db.Integer, default=0, nullable=False)
-    is_active: Mapped[bool] = mapped_column(db.Boolean, default=True, nullable=False)
+    is_active: Mapped[bool] = mapped_column(db.Boolean, default=True, nullable=False, index=True)
     
     orders: Mapped[list["Order"]] = relationship('Order', secondary='order_discount', back_populates='discounts')
     
@@ -156,19 +157,19 @@ class Discount(BaseModel):
 
 
 order_discount = db.Table('order_discount',
-    db.Column('order_id', db.String(36), db.ForeignKey('order.id'), primary_key=True),
-    db.Column('discount_id', db.String(36), db.ForeignKey('discount.id'), primary_key=True)
+    db.Column('order_id', UUID(as_uuid=True), db.ForeignKey('order.id'), primary_key=True),
+    db.Column('discount_id', UUID(as_uuid=True), db.ForeignKey('discount.id'), primary_key=True)
 )
 
 class Refund(BaseModel):
     __tablename__ = 'refund'
-    payment_id: Mapped[Optional[str]] = mapped_column(db.String(36), db.ForeignKey('payment.id'), nullable=True)
-    amount: Mapped[float] = mapped_column(db.Float, nullable=False)
+    payment_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), db.ForeignKey('payment.id'), nullable=True, index=True)
+    amount: Mapped[float] = mapped_column(db.Numeric(precision=10, scale=2), nullable=False)
     reason: Mapped[Optional[str]] = mapped_column(db.Text, nullable=True)
-    status: Mapped[RefundStatus] = mapped_column(db.Enum(RefundStatus), default=RefundStatus.PENDING, nullable=False)
-    processed_by: Mapped[Optional[str]] = mapped_column(db.String(36), db.ForeignKey('users.id'), nullable=True)
-    refund_date: Mapped[Optional[datetime]] = mapped_column(db.DateTime, nullable=True)
-    admin_reference_id: Mapped[Optional[str]] = mapped_column(db.String(255), nullable=True)
+    status: Mapped[RefundStatus] = mapped_column(db.Enum(RefundStatus), default=RefundStatus.PENDING, nullable=False, index=True)
+    processed_by: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), db.ForeignKey('users.id'), nullable=True, index=True)
+    refund_date: Mapped[Optional[datetime]] = mapped_column(db.DateTime(timezone=True), nullable=True)
+    admin_reference_id: Mapped[Optional[str]] = mapped_column(db.String(255), nullable=True, index=True)
     
     payment: Mapped[Optional["Payment"]] = relationship('Payment', foreign_keys=[payment_id], back_populates='refunds')
     admin: Mapped[Optional["User"]] = relationship('User', foreign_keys=[processed_by], back_populates='processed_refunds')

@@ -1,8 +1,10 @@
+import uuid
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+from typing import TYPE_CHECKING, Optional, Any
 from tuned.extensions import db
 from tuned.models.enums import EmailFrequency
 from tuned.models.base import BaseModel
-from sqlalchemy.orm import Mapped, mapped_column, relationship
-from typing import TYPE_CHECKING, Optional, Any
 
 if TYPE_CHECKING:
     from tuned.models.user import User
@@ -10,8 +12,8 @@ if TYPE_CHECKING:
 class UserEmailPreferences(BaseModel):
     __tablename__ = 'user_email_preferences'
     
-    user_id: Mapped[str] = mapped_column(
-        db.String(36),
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
         db.ForeignKey('users.id', ondelete='CASCADE'),
         unique=True,
         nullable=False,

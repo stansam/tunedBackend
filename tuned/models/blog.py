@@ -1,11 +1,13 @@
+import uuid
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+from typing import TYPE_CHECKING, Optional, Any
+from datetime import datetime
 from tuned.models.base import BaseModel
 from tuned.models.enums import BlogReactionType
 from tuned.models.utils import generate_slug
 from tuned.extensions import db
 from tuned.models.tag import blog_post_tags
-from typing import TYPE_CHECKING, Optional, Any
-from datetime import datetime
 
 if TYPE_CHECKING:
     from tuned.models.user import User
@@ -31,11 +33,11 @@ class BlogPost(BaseModel):
     excerpt: Mapped[Optional[str]] = mapped_column(db.Text, nullable=True)
     featured_image: Mapped[Optional[str]] = mapped_column(db.String(255), nullable=True)
     author: Mapped[str] = mapped_column(db.String(100), nullable=False)
-    category_id: Mapped[Optional[str]] = mapped_column(db.String(36), db.ForeignKey('blog_category.id'), nullable=True)
+    category_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), db.ForeignKey('blog_category.id'), nullable=True)
     meta_description: Mapped[Optional[str]] = mapped_column(db.String(220), nullable=True)
     is_published: Mapped[bool] = mapped_column(db.Boolean, default=False, nullable=False)
-    is_featured: Mapped[bool] = mapped_column(db.Boolean, default=False, nullable=False)
-    published_at: Mapped[Optional[datetime]] = mapped_column(db.DateTime, nullable=True)
+    is_featured: Mapped[bool] = mapped_column(db.Boolean, default=False, nullable=False, index=True)
+    published_at: Mapped[Optional[datetime]] = mapped_column(db.DateTime(timezone=True), nullable=True)
     
     __table_args__ = (
         db.Index('ix_blog_post_published_date', 'is_published', 'published_at'),
@@ -59,12 +61,12 @@ class BlogPost(BaseModel):
 
 class BlogComment(BaseModel):
     __tablename__ = 'blog_comment'
-    post_id: Mapped[Optional[str]] = mapped_column(db.String(36), db.ForeignKey('blog_post.id'), nullable=True)
+    post_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), db.ForeignKey('blog_post.id'), nullable=True)
     name: Mapped[Optional[str]] = mapped_column(db.String(100), nullable=True)
     email: Mapped[Optional[str]] = mapped_column(db.String(100), nullable=True)
     content: Mapped[str] = mapped_column(db.Text, nullable=False)
     approved: Mapped[bool] = mapped_column(db.Boolean, default=False, nullable=False)
-    user_id: Mapped[Optional[str]] = mapped_column(db.String(36), db.ForeignKey('users.id'), nullable=True)
+    user_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), db.ForeignKey('users.id'), nullable=True)
     
     # Relationships
     post: Mapped[Optional["BlogPost"]] = relationship('BlogPost', foreign_keys=[post_id], back_populates='comments')
@@ -110,8 +112,8 @@ class BlogComment(BaseModel):
 class CommentReaction(BaseModel):
     __tablename__ = 'comment_reaction'
     
-    user_id: Mapped[Optional[str]] = mapped_column(db.String(36), db.ForeignKey('users.id', ondelete='CASCADE'), nullable=True)
-    comment_id: Mapped[str] = mapped_column(db.String(36), db.ForeignKey('blog_comment.id', ondelete='CASCADE'), nullable=False, index=True)
+    user_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), db.ForeignKey('users.id', ondelete='CASCADE'), nullable=True)
+    comment_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), db.ForeignKey('blog_comment.id', ondelete='CASCADE'), nullable=False, index=True)
     reaction_type: Mapped[BlogReactionType] = mapped_column(db.Enum(BlogReactionType), nullable=False)  # 'like' or 'dislike'
     ip_address: Mapped[Optional[str]] = mapped_column(db.String(45), nullable=True)  # For guest users (IPv4/IPv6)
     

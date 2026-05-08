@@ -9,14 +9,16 @@ class ProductionConfig(BaseConfig):
     DEBUG: bool = False
     TESTING: bool = False
     
+    # 'postgresql://{user}:{password}@{host}:{port}/{dbname}'.format(
     SQLALCHEMY_DATABASE_URI: str = os.environ.get('DATABASE_URL') or \
-        'postgresql://{user}:{password}@{host}:{port}/{dbname}'.format(
+        'postgresql+psycopg2://{user}:{password}@{host}:{port}/{dbname}'.format(
             user=os.environ.get('DB_USER', 'tunedop'),
             password=os.environ.get('DB_PASSWORD', ''),
             host=os.environ.get('DB_HOST', 'localhost'),
             port=os.environ.get('DB_PORT', '5432'),
             dbname=os.environ.get('DB_NAME', 'tunedessays')
         )
+
 
     # SERVER_NAME = os.environ.get('SERVER_NAME')  # e.g., 'tunedessays.com'
     SESSION_COOKIE_DOMAIN: Optional[str] = os.environ.get('SESSION_COOKIE_DOMAIN')

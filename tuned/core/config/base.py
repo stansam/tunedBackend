@@ -51,11 +51,11 @@ class BaseConfig:
     
     MAX_CONTENT_LENGTH: int = 16 * 1024 * 1024  # 16 MB max file size
     
-    SOCKETIO_MESSAGE_QUEUE: Optional[str] = os.environ.get('SOCKETIO_MESSAGE_QUEUE')  # Redis URL for scaling
+    SOCKETIO_MESSAGE_QUEUE: Optional[str] = os.environ.get('SOCKETIO_MESSAGE_QUEUE')
     
-    REDIS_URL: str = os.environ.get('REDIS_URL', 'redis://localhost:6379/0')
-    CELERY_BROKER_URL: str = os.environ.get('CELERY_BROKER_URL', 'redis://localhost:6379/1')
-    CELERY_RESULT_BACKEND: str = os.environ.get('CELERY_RESULT_BACKEND', 'redis://localhost:6379/2')
+    REDIS_URL: str = os.environ.get('REDIS_URL', 'redis://redis:6379/0')
+    CELERY_BROKER_URL: str = os.environ.get('CELERY_BROKER_URL', 'redis://redis:6379/1')
+    CELERY_RESULT_BACKEND: str = os.environ.get('CELERY_RESULT_BACKEND', 'redis://redis:6379/2')
     CELERY_TASK_SERIALIZER: str = 'json'
     CELERY_RESULT_SERIALIZER: str = 'json'
     CELERY_ACCEPT_CONTENT: list[str] = ['json']

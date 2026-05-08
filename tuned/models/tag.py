@@ -1,9 +1,12 @@
+# import 
 from sqlalchemy.orm import Mapped, mapped_column, relationship, Query
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.exc import IntegrityError
+from datetime import datetime, timezone
+from typing import TYPE_CHECKING, Optional, Any
 from tuned.extensions import db
 from tuned.models.utils import generate_slug
-from datetime import datetime, timezone
 from tuned.models.base import BaseModel
-from typing import TYPE_CHECKING, Optional, Any
 
 if TYPE_CHECKING:
     from tuned.models.service import Service
@@ -11,21 +14,21 @@ if TYPE_CHECKING:
     from tuned.models.blog import BlogPost
 
 service_tags = db.Table('service_tags',
-    db.Column('service_id', db.String(36), db.ForeignKey('service.id'), primary_key=True),
-    db.Column('tag_id', db.String(36), db.ForeignKey('tag.id'), primary_key=True),
-    db.Column('created_at', db.DateTime, default=lambda: datetime.now(timezone.utc))
+    db.Column('service_id', UUID(as_uuid=True), db.ForeignKey('service.id'), primary_key=True),
+    db.Column('tag_id', UUID(as_uuid=True), db.ForeignKey('tag.id'), primary_key=True),
+    db.Column('created_at', db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 )
 
 sample_tags = db.Table('sample_tags',
-    db.Column('sample_id', db.String(36), db.ForeignKey('sample.id'), primary_key=True),
-    db.Column('tag_id', db.String(36), db.ForeignKey('tag.id'), primary_key=True),
-    db.Column('created_at', db.DateTime, default=lambda: datetime.now(timezone.utc))
+    db.Column('sample_id', UUID(as_uuid=True), db.ForeignKey('sample.id'), primary_key=True),
+    db.Column('tag_id', UUID(as_uuid=True), db.ForeignKey('tag.id'), primary_key=True),
+    db.Column('created_at', db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 )
 
 blog_post_tags = db.Table('blog_post_tags',
-    db.Column('blog_post_id', db.String(36), db.ForeignKey('blog_post.id'), primary_key=True),
-    db.Column('tag_id', db.String(36), db.ForeignKey('tag.id'), primary_key=True),
-    db.Column('created_at', db.DateTime, default=lambda: datetime.now(timezone.utc))
+    db.Column('blog_post_id', UUID(as_uuid=True), db.ForeignKey('blog_post.id'), primary_key=True),
+    db.Column('tag_id', UUID(as_uuid=True), db.ForeignKey('tag.id'), primary_key=True),
+    db.Column('created_at', db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 )
 
 class Tag(BaseModel):
@@ -61,7 +64,6 @@ class Tag(BaseModel):
     
     @staticmethod
     def get_or_create(tag_name: str) -> "Tag":
-        from sqlalchemy.exc import IntegrityError
         clean_name = tag_name.strip().lower()
         tag = Tag.query.filter_by(name=clean_name).first()
         if not tag:

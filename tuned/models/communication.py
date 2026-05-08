@@ -1,9 +1,11 @@
+import uuid
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.dialects.postgresql import UUID
+from typing import TYPE_CHECKING, Optional, Any
+from datetime import datetime, timezone
 from tuned.extensions import db
 from tuned.models.base import BaseModel
-from datetime import datetime, timezone
 from tuned.models.enums import NotificationType, ChatStatus, NewsletterFrequency, NewsletterFormat
-from sqlalchemy.orm import Mapped, mapped_column, relationship
-from typing import TYPE_CHECKING, Optional, Any
 
 if TYPE_CHECKING:
     from tuned.models.user import User
@@ -11,7 +13,7 @@ if TYPE_CHECKING:
 
 class Notification(BaseModel):
     __tablename__ = 'notification'
-    user_id: Mapped[str] = mapped_column(db.String(36), db.ForeignKey('users.id'), nullable=False)
+    user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), db.ForeignKey('users.id'), nullable=False)
     title: Mapped[str] = mapped_column(db.String(100), nullable=False)
     message: Mapped[str] = mapped_column(db.Text, nullable=False)
     type: Mapped[NotificationType] = mapped_column(db.Enum(NotificationType), default=NotificationType.INFO, nullable=False)
@@ -46,8 +48,8 @@ class NewsletterSubscriber(BaseModel):
     __tablename__ = 'newsletter_subscriber'
     email: Mapped[str] = mapped_column(db.String(120), unique=True, nullable=False)
     name: Mapped[Optional[str]] = mapped_column(db.String(100), nullable=True)
-    is_active: Mapped[bool] = mapped_column(db.Boolean, default=True, nullable=False)
-    subscribed_at: Mapped[datetime] = mapped_column(db.DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+    is_active: Mapped[bool] = mapped_column(db.Boolean, default=True, nullable=False, index=True)
+    subscribed_at: Mapped[datetime] = mapped_column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
     
     frequency: Mapped[NewsletterFrequency] = mapped_column(
         db.Enum(NewsletterFrequency),
@@ -66,10 +68,10 @@ class NewsletterSubscriber(BaseModel):
     
 class Chat(BaseModel):
     __tablename__ = 'chat'
-    user_id: Mapped[str] = mapped_column(db.String(36), db.ForeignKey('users.id'), nullable=False)
-    admin_id: Mapped[Optional[str]] = mapped_column(db.String(36), db.ForeignKey('users.id'), nullable=True)
+    user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), db.ForeignKey('users.id'), nullable=False)
+    admin_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), db.ForeignKey('users.id'), nullable=True)
     subject: Mapped[Optional[str]] = mapped_column(db.String(255), nullable=True)
-    order_id: Mapped[Optional[str]] = mapped_column(db.String(36), db.ForeignKey('order.id'), nullable=True)
+    order_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), db.ForeignKey('order.id'), nullable=True)
     status: Mapped[ChatStatus] = mapped_column(db.Enum(ChatStatus), default=ChatStatus.ACTIVE, nullable=False)
     
     # Relationships
@@ -83,8 +85,8 @@ class Chat(BaseModel):
     
 class ChatMessage(BaseModel):
     __tablename__ = 'chat_message'
-    user_id: Mapped[Optional[str]] = mapped_column(db.String(36), db.ForeignKey('users.id'), nullable=True)
-    chat_id: Mapped[Optional[str]] = mapped_column(db.String(36), db.ForeignKey('chat.id'), nullable=True)
+    user_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), db.ForeignKey('users.id'), nullable=True)
+    chat_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), db.ForeignKey('chat.id'), nullable=True)
     content: Mapped[Optional[str]] = mapped_column(db.Text, nullable=True)
     is_read: Mapped[bool] = mapped_column(db.Boolean, default=False, nullable=False)
     

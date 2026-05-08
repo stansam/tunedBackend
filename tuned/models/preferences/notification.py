@@ -1,7 +1,9 @@
-from tuned.extensions import db
-from tuned.models.base import BaseModel
+import uuid
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from typing import TYPE_CHECKING, Any
+from tuned.models.base import BaseModel
+from tuned.extensions import db
 
 if TYPE_CHECKING:
     from tuned.models.user import User
@@ -9,8 +11,8 @@ if TYPE_CHECKING:
 class UserNotificationPreferences(BaseModel):
     __tablename__ = 'user_notification_preferences'
     
-    user_id: Mapped[str] = mapped_column(
-        db.String(36),
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
         db.ForeignKey('users.id', ondelete='CASCADE'),
         unique=True,
         nullable=False,

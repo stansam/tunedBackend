@@ -1,4 +1,6 @@
 from tuned.extensions import db
+import uuid
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship, Query
 from typing import TYPE_CHECKING, Optional, Any
 from tuned.models.base import BaseModel
@@ -16,7 +18,7 @@ class Sample(BaseModel):
     title: Mapped[str] = mapped_column(db.String(200), nullable=False)
     content: Mapped[str] = mapped_column(db.Text, nullable=False)
     excerpt: Mapped[Optional[str]] = mapped_column(db.Text, nullable=True)
-    service_id: Mapped[Optional[str]] = mapped_column(db.String(36), db.ForeignKey('service.id'), nullable=True)
+    service_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), db.ForeignKey('service.id'), nullable=True, index=True)
     word_count: Mapped[int] = mapped_column(db.Integer, default=0, nullable=False)
     featured: Mapped[bool] = mapped_column(db.Boolean, default=False, nullable=False)
     image: Mapped[Optional[str]] = mapped_column(db.String(255), nullable=True)
@@ -43,13 +45,13 @@ class Sample(BaseModel):
 
 class Testimonial(BaseModel):
     __tablename__ = 'testimonial'
-    user_id: Mapped[Optional[str]] = mapped_column(db.String(36), db.ForeignKey('users.id'), nullable=True)
-    service_id: Mapped[Optional[str]] = mapped_column(db.String(36), db.ForeignKey('service.id'), nullable=True)
-    order_id: Mapped[Optional[str]] = mapped_column(db.String(36), db.ForeignKey('order.id'), nullable=True)
+    user_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), db.ForeignKey('users.id'), nullable=True, index=True)
+    service_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), db.ForeignKey('service.id'), nullable=True, index=True)
+    order_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), db.ForeignKey('order.id'), nullable=True, index=True)
 
     content: Mapped[str] = mapped_column(db.Text, nullable=False)
     rating: Mapped[int] = mapped_column(db.Integer, default=5, nullable=False) # 1-5 rating scale
-    is_approved: Mapped[bool] = mapped_column(db.Boolean, default=False, nullable=False)
+    is_approved: Mapped[bool] = mapped_column(db.Boolean, default=False, nullable=False, index=True)
     
     __table_args__ = (
         db.CheckConstraint('rating >= 1 AND rating <= 5', name='valid_rating'),

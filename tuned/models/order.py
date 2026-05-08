@@ -1,6 +1,8 @@
 from tuned.extensions import db
 from tuned.models.base import BaseModel
 from datetime import datetime, timezone
+import uuid
+from sqlalchemy.dialects.postgresql import UUID
 from tuned.models.enums import OrderStatus, SupportTicketStatus, Currency, ReportType, LineSpacing, FormatStyle
 from sqlalchemy import event
 from sqlalchemy.orm import validates, Mapped, mapped_column, relationship, Session, Mapper
@@ -21,10 +23,10 @@ if TYPE_CHECKING:
 class Order(BaseModel):
     __tablename__ = 'order'
     order_number: Mapped[str] = mapped_column(db.String(20), unique=True, nullable=False, index=True)
-    client_id: Mapped[str] = mapped_column(db.String(36), db.ForeignKey('users.id'), nullable=False)
-    service_id: Mapped[Optional[str]] = mapped_column(db.String(36), db.ForeignKey('service.id'), nullable=True)
-    academic_level_id: Mapped[Optional[str]] = mapped_column(db.String(36), db.ForeignKey('academic_level.id'), nullable=True)
-    deadline_id: Mapped[Optional[str]] = mapped_column(db.String(36), db.ForeignKey('deadline.id'), nullable=True)
+    client_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), db.ForeignKey('users.id'), nullable=False, index=True)
+    service_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), db.ForeignKey('service.id'), nullable=True, index=True)
+    academic_level_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), db.ForeignKey('academic_level.id'), nullable=True, index=True)
+    deadline_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), db.ForeignKey('deadline.id'), nullable=True, index=True)
     title: Mapped[Optional[str]] = mapped_column(db.String(255), nullable=True)
     instructions: Mapped[Optional[str]] = mapped_column(db.Text, nullable=True)
     word_count: Mapped[Optional[int]] = mapped_column(db.Integer, nullable=True)
@@ -33,16 +35,16 @@ class Order(BaseModel):
     sources: Mapped[Optional[int]] = mapped_column(db.Integer, nullable=True)
     line_spacing: Mapped[Optional[LineSpacing]] = mapped_column(db.Enum(LineSpacing), default=LineSpacing.DOUBLE, nullable=True)
     report_type: Mapped[Optional[ReportType]] = mapped_column(db.Enum(ReportType), nullable=True, default=None)
-    total_price: Mapped[Optional[float]] = mapped_column(db.Float, nullable=True)
+    total_price: Mapped[Optional[float]] = mapped_column(db.Numeric(precision=10, scale=2), nullable=True)
     status: Mapped[OrderStatus] = mapped_column(db.Enum(OrderStatus), default=OrderStatus.PENDING, nullable=False)
     paid: Mapped[bool] = mapped_column(db.Boolean, default=False, nullable=False)
-    delivered_at: Mapped[Optional[datetime]] = mapped_column(db.DateTime, nullable=True, default=None)
+    delivered_at: Mapped[Optional[datetime]] = mapped_column(db.DateTime(timezone=True), nullable=True, default=None)
     extension_requested: Mapped[bool] = mapped_column(db.Boolean, default=False, nullable=False)
-    extension_requested_at: Mapped[Optional[datetime]] = mapped_column(db.DateTime, nullable=True, default=None)
-    due_date: Mapped[Optional[datetime]] = mapped_column(db.DateTime, nullable=True, default=None)
-    price_per_page: Mapped[Optional[float]] = mapped_column(db.Float, nullable=True)
-    subtotal: Mapped[Optional[float]] = mapped_column(db.Float, nullable=True)
-    discount_amount: Mapped[Optional[float]] = mapped_column(db.Float, nullable=True, default=0.0)
+    extension_requested_at: Mapped[Optional[datetime]] = mapped_column(db.DateTime(timezone=True), nullable=True, default=None)
+    due_date: Mapped[Optional[datetime]] = mapped_column(db.DateTime(timezone=True), nullable=True, default=None)
+    price_per_page: Mapped[Optional[float]] = mapped_column(db.Numeric(precision=10, scale=2), nullable=True)
+    subtotal: Mapped[Optional[float]] = mapped_column(db.Numeric(precision=10, scale=2), nullable=True)
+    discount_amount: Mapped[Optional[float]] = mapped_column(db.Numeric(precision=10, scale=2), nullable=True, default=0.0)
     currency: Mapped[Currency] = mapped_column(db.Enum(Currency), default=Currency.USD, nullable=False)
     additional_materials: Mapped[Optional[str]] = mapped_column(db.Text, nullable=True, default=None)
     
@@ -142,10 +144,10 @@ class OrderSequence(BaseModel):
     
 class OrderFile(BaseModel):
     __tablename__ = 'order_file'
-    order_id: Mapped[str] = mapped_column(db.String(36), db.ForeignKey('order.id'), nullable=False)
+    order_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), db.ForeignKey('order.id'), nullable=False, index=True)
     filename: Mapped[str] = mapped_column(db.String(255), nullable=False)
     file_path: Mapped[str] = mapped_column(db.String(255), nullable=False)
-    uploaded_at: Mapped[datetime] = mapped_column(db.DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+    uploaded_at: Mapped[datetime] = mapped_column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
     is_from_client: Mapped[bool] = mapped_column(db.Boolean, default=True, nullable=False)
     
     order: Mapped["Order"] = relationship('Order', back_populates='files')
@@ -167,8 +169,8 @@ class OrderFile(BaseModel):
 
 class OrderComment(BaseModel):
     __tablename__ = 'order_comment'
-    order_id: Mapped[Optional[str]] = mapped_column(db.String(36), db.ForeignKey('order.id'), nullable=True)
-    user_id: Mapped[Optional[str]] = mapped_column(db.String(36), db.ForeignKey('users.id'), nullable=True)
+    order_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), db.ForeignKey('order.id'), nullable=True, index=True)
+    user_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), db.ForeignKey('users.id'), nullable=True, index=True)
     message: Mapped[Optional[str]] = mapped_column(db.Text, nullable=True)
     is_admin: Mapped[bool] = mapped_column(db.Boolean, default=False, nullable=False)
     is_read: Mapped[bool] = mapped_column(db.Boolean, default=False, nullable=False)
@@ -182,8 +184,8 @@ class OrderComment(BaseModel):
 
 class SupportTicket(BaseModel):
     __tablename__ = 'support_ticket'
-    order_id: Mapped[str] = mapped_column(db.String(36), db.ForeignKey('order.id'), nullable=False)
-    user_id: Mapped[str] = mapped_column(db.String(36), db.ForeignKey('users.id'), nullable=False)
+    order_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), db.ForeignKey('order.id'), nullable=False, index=True)
+    user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), db.ForeignKey('users.id'), nullable=False, index=True)
     subject: Mapped[str] = mapped_column(db.String(255), nullable=False)
     message: Mapped[str] = mapped_column(db.Text, nullable=False)
     status: Mapped[SupportTicketStatus] = mapped_column(db.Enum(SupportTicketStatus), default=SupportTicketStatus.OPEN, nullable=False)

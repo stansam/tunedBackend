@@ -10,7 +10,7 @@ from werkzeug.security import generate_password_hash
 from werkzeug.utils import secure_filename
 from dataclasses import asdict
 
-from tuned.repository.exceptions import AlreadyExists, DatabaseError, NotFound, InvalidCredentials
+from tuned.core.exceptions import AlreadyExists, DatabaseError, NotFound, InvalidCredentials, ServiceError
 from tuned.dtos import (
     CreateUserDTO, LoginRequestDTO, UserResponseDTO, UpdateUserDTO,
     ActivityLogCreateDTO, EmailVerificationResendDTO, EmailVerifyConfirmDTO,
@@ -27,6 +27,7 @@ from tuned.interface.audit import AuditService
 
 if TYPE_CHECKING:
     from tuned.repository import Repository
+    from tuned.models import User
 
 logger: logging.Logger = get_logger(__name__)
 event_bus = get_event_bus()
@@ -44,9 +45,9 @@ class UserService:
         try:
             user = self._core.authenticate_user(credentials)
             
-            if is_email_verified_required() and not user.email_verified:
-                logger.info(f'Login blocked — email not verified: {user.email}')
-                raise InvalidCredentials("Email not verified.")
+            # if is_email_verified_required() and not user.email_verified:
+            #     logger.info(f'Login blocked — email not verified: {user.email}')
+            #     raise InvalidCredentials("Email not verified.")
 
             login_user(user, remember=credentials.remember_me)
             
@@ -61,20 +62,20 @@ class UserService:
 
     def create_user(self, data: CreateUserDTO, locale: BaseRequestDTO, referred_by_code: Optional[str] = None) -> Dict[str, Any]:
         try:
-            created_user = self._core.register_user(
+            created_user, raw_token = self._core.register_user(
                 data, 
                 locale.ip_address or "unknown", 
                 locale.user_agent or "unknown"
             )
             
             try:
-                _user, raw_token = self._repo.generate_verification_token(str(created_user.id))
-                event_bus.emit('user.registered', {
-                    'user_id': created_user.id,
-                    'raw_token': raw_token,
-                    'email': created_user.email,
-                    'name': created_user.get_name()
-                })
+                if raw_token is not None:
+                    event_bus.emit('user.registered', {
+                        'user_id': created_user.id,
+                        'raw_token': raw_token,
+                        'email': created_user.email,
+                        'name': created_user.get_name()
+                    })
 
                 if referred_by_code is not None:
                     event_bus.emit('user.registered_with_referral', {
@@ -83,21 +84,27 @@ class UserService:
                     })
             except Exception as token_exc:
                 logger.error(f'[create_user] Token/email step failed for user {created_user.id}: {token_exc!r}')
+                raise
 
             return {'email': created_user.email}
         except AlreadyExists as e:
             raise e
+        except ServiceError as e:
+            raise e
         except Exception as e:
             raise DatabaseError(str(e))
+
 
     def resend_verification_email(self, dto: EmailVerificationResendDTO) -> bool:
         cooldown_key = f'email_resend_cooldown:{dto.email}'
         if redis_client.exists(cooldown_key):
             ttl: int = int(cast(Any, redis_client.ttl(cooldown_key)))
+            logger.warning(f"[resend] Token/email error for {dto.email}: rate limited {ttl}s")
             raise ValueError(f'rate_limited:{ttl}')
 
         user = self._repo.get_user_for_resend(dto.email)
         if user is None or user.email_verified:
+            logger.warning(f"[resend] Token/email error for {dto.email}: user not found or email already verified")
             return True
 
         try:
@@ -108,10 +115,11 @@ class UserService:
                 'email': _user.email,
                 'name': _user.get_name()
             })
-        except AlreadyExists:
+        except AlreadyExists as exc:
+            logger.error(f"[resend] AlreadyExists error for {dto.email}: {exc!r}")
             return True
         except Exception as exc:
-            logger.error(f'[resend] Token/email error for {dto.email}: {exc!r}')
+            logger.error(f"[resend] Token/email error for {dto.email}: {exc!r}")
             redis_client.setex(cooldown_key, 60, '1')
             raise
 
@@ -146,6 +154,13 @@ class UserService:
         try:
             user = self._repo.get_user_by_id(user_id)
             return asdict(UserResponseDTO.from_model(user))
+        except Exception as e:
+            logger.error(f"Error fetching user by id {user_id}: {str(e)}")
+            raise
+    
+    def get_user_obj(self, user_id: str) -> User:
+        try:
+            return self._repo.get_user_by_id(user_id)
         except Exception as e:
             logger.error(f"Error fetching user by id {user_id}: {str(e)}")
             raise

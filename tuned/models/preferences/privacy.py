@@ -1,5 +1,5 @@
 import uuid
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import UUID, ENUM
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from typing import TYPE_CHECKING, Any
 from tuned.extensions import db
@@ -21,7 +21,7 @@ class UserPrivacySettings(BaseModel):
     )
     
     profile_visibility: Mapped[ProfileVisibility] = mapped_column(
-        db.Enum(ProfileVisibility),
+        ENUM(ProfileVisibility, name="profilevisibility"),
         default=ProfileVisibility.PRIVATE,
         nullable=False
     )

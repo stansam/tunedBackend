@@ -1,6 +1,6 @@
 import uuid
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import UUID, ENUM
 from typing import TYPE_CHECKING, Optional, Any
 from datetime import datetime, timezone
 from tuned.extensions import db
@@ -16,7 +16,7 @@ class Notification(BaseModel):
     user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), db.ForeignKey('users.id'), nullable=False)
     title: Mapped[str] = mapped_column(db.String(100), nullable=False)
     message: Mapped[str] = mapped_column(db.Text, nullable=False)
-    type: Mapped[NotificationType] = mapped_column(db.Enum(NotificationType), default=NotificationType.INFO, nullable=False)
+    type: Mapped[NotificationType] = mapped_column(ENUM(NotificationType, name="notificationtype"), default=NotificationType.INFO, nullable=False)
     link: Mapped[Optional[str]] = mapped_column(db.String(255), nullable=True)
     is_read: Mapped[bool] = mapped_column(db.Boolean, default=False, nullable=False)
     
@@ -52,13 +52,13 @@ class NewsletterSubscriber(BaseModel):
     subscribed_at: Mapped[datetime] = mapped_column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
     
     frequency: Mapped[NewsletterFrequency] = mapped_column(
-        db.Enum(NewsletterFrequency),
+        ENUM(NewsletterFrequency, name="newsletterfrequency"),
         default=NewsletterFrequency.WEEKLY,
         nullable=False
     )
     topics: Mapped[Optional[dict[str, Any]]] = mapped_column(db.JSON, nullable=True)
     format: Mapped[NewsletterFormat] = mapped_column(
-        db.Enum(NewsletterFormat),
+        ENUM(NewsletterFormat, name="newsletterformat"),
         default=NewsletterFormat.HTML,
         nullable=False
     )
@@ -72,7 +72,7 @@ class Chat(BaseModel):
     admin_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), db.ForeignKey('users.id'), nullable=True)
     subject: Mapped[Optional[str]] = mapped_column(db.String(255), nullable=True)
     order_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), db.ForeignKey('order.id'), nullable=True)
-    status: Mapped[ChatStatus] = mapped_column(db.Enum(ChatStatus), default=ChatStatus.ACTIVE, nullable=False)
+    status: Mapped[ChatStatus] = mapped_column(ENUM(ChatStatus, name="chatstatus"), default=ChatStatus.ACTIVE, nullable=False)
     
     # Relationships
     messages: Mapped[list["ChatMessage"]] = relationship('ChatMessage', back_populates='chat', lazy="dynamic", cascade="all, delete-orphan")

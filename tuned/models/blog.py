@@ -1,5 +1,5 @@
 import uuid
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import UUID, ENUM
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from typing import TYPE_CHECKING, Optional, Any
 from datetime import datetime
@@ -114,13 +114,13 @@ class CommentReaction(BaseModel):
     
     user_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), db.ForeignKey('users.id', ondelete='CASCADE'), nullable=True)
     comment_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), db.ForeignKey('blog_comment.id', ondelete='CASCADE'), nullable=False, index=True)
-    reaction_type: Mapped[BlogReactionType] = mapped_column(db.Enum(BlogReactionType), nullable=False)  # 'like' or 'dislike'
+    reaction_type: Mapped[BlogReactionType] = mapped_column(ENUM(BlogReactionType, name="blogreactiontype"), nullable=False)  # 'like' or 'dislike'
     ip_address: Mapped[Optional[str]] = mapped_column(db.String(45), nullable=True)  # For guest users (IPv4/IPv6)
     
     __table_args__ = (
         db.Index('ix_reaction_user_comment', 'user_id', 'comment_id'),
         db.Index('ix_reaction_ip_comment', 'ip_address', 'comment_id'),
-        db.CheckConstraint("reaction_type IN ('like', 'dislike')", name='check_reaction_type'),
+        db.CheckConstraint("reaction_type::text IN ('like', 'dislike')", name='check_reaction_type'),
     )
     
     # Relationship

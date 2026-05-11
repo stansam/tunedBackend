@@ -1,10 +1,3 @@
-"""
-Flask extensions initialization.
-
-All extensions are instantiated here but not initialized with the app.
-Initialization happens in the application factory (tuned/__init__.py)
-to avoid circular imports and support multiple app instances.
-"""
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_login import LoginManager

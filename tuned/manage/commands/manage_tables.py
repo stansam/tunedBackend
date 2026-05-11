@@ -37,7 +37,7 @@ def _all_table_names() -> list[str]:
 
 def _row_count(table: str) -> int:
     try:
-        result = db.session.execute(text(f"SELECT COUNT(*) FROM `{table}`"))
+        result = db.session.execute(text(f"SELECT COUNT(*) FROM {table}"))
         return result.scalar() or 0
     except Exception:
         return -1
@@ -45,7 +45,7 @@ def _row_count(table: str) -> int:
 
 def _delete_table(table: str) -> int:
     count_before = _row_count(table)
-    db.session.execute(text(f"DELETE FROM `{table}`"))
+    db.session.execute(text(f"TRUNCATE TABLE {table} RESTART IDENTITY CASCADE"))
     db.session.commit()
     return count_before if count_before >= 0 else -1
 

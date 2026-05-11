@@ -5,7 +5,7 @@ from datetime import datetime, timezone, timedelta
 import math
 from dataclasses import asdict
 
-from tuned.core.exceptions import InvalidCredentials, ServiceError
+from tuned.core.exceptions import InvalidCredentials, ServiceError, AlreadyExists
 from tuned.repository.protocols import UserRepositoryProtocol
 from tuned.dtos import (
     CreateUserDTO, LoginRequestDTO, UserResponseDTO, UpdateUserDTO,
@@ -14,6 +14,8 @@ from tuned.dtos import (
 from tuned.core.logging import get_logger
 from tuned.utils.validators import validate_email, validate_username
 from tuned.utils.variables import Variables
+from tuned.utils.auth import is_email_verified_required
+from tuned.core.events import get_event_bus
 
 if TYPE_CHECKING:
     from tuned.interface.protocols import ActivityLogServiceProtocol
@@ -74,9 +76,31 @@ class UserService:
         user, is_locked, error_message = self._check_account_lockout(user)
         if is_locked:
             raise InvalidCredentials(error_message or "Account locked")
+        
+        if is_email_verified_required() and not user.email_verified:
+            updated_user, token = self._repo.generate_verification_token(str(user.id))
+            
+            # self._log_activity(
+            #     user_id=str(user.id),
+            #     action=Variables.USER_RESEND_VERIFICATION_EMAIL,
+            #     before=user,
+            #     after=updated_user,
+            #     ip_address=credentials.ip_address,
+            #     user_agent=credentials.user_agent
+            # )
+            self._repo.save()
+            
+            get_event_bus().emit('user.resend_verification_email', {
+                'user_id': str(user.id),
+                'raw_token': token,
+                'email': user.email,
+                'name': user.get_name()
+            })
+            logger.info(f'Login blocked — email not verified: {user.email}')
+            raise InvalidCredentials("Email not verified. Check your email for the verification link.")
 
         if not user.check_password(credentials.password):
-            failed_attempts = self._repo.increment_failed_login_attempts(user.id)
+            failed_attempts = self._repo.increment_failed_login_attempts(str(user.id))
             user.failed_login_attempts = failed_attempts
             user.last_failed_login = datetime.now(timezone.utc)
             
@@ -137,16 +161,23 @@ class UserService:
         except Exception as e:
             logger.error(f"Failed to log user activity: {e}")
 
-    def register_user(self, data: CreateUserDTO, ip_address: str, user_agent: str) -> User:
+    def register_user(self, data: CreateUserDTO, ip_address: str, user_agent: str) -> Tuple[User, Optional[str]]:
         user = self._repo.create_user(data)
-        
+
+        if user is None:
+            raise ServiceError("Failed to create user")
+
+        updated_user, raw_token = self._repo.generate_verification_token(str(user.id))
+        if raw_token == "":
+            raw_token = None
+
         self._log_activity(
             user_id=str(user.id),
             action=Variables.USER_REGISTER_ACTION,
             before=None,
-            after=user,
+            after=updated_user,
             ip_address=ip_address,
             user_agent=user_agent
         )
         self._repo.save()
-        return user
+        return updated_user, raw_token

@@ -51,7 +51,7 @@ class PaymentCreateDTO:
     order_id: str
     user_id: str
     amount: float
-    accepted_method_id: int
+    accepted_method_id: str
     status: PaymentStatus = PaymentStatus.PENDING
 
 @dataclass(kw_only=True)
@@ -77,7 +77,7 @@ class PaymentResponseDTO(BaseDTO):
     user_id: str
     amount: float
     status: PaymentStatus
-    accepted_method_id: int
+    accepted_method_id: str
     currency: Currency
     client_proof_reference: Optional[str]
     client_marked_paid_at: Optional[datetime]
@@ -92,7 +92,7 @@ class PaymentResponseDTO(BaseDTO):
             user_id=str(model.user_id),
             amount=model.amount,
             status=model.status,
-            accepted_method_id=model.accepted_method_id,
+            accepted_method_id=str(model.accepted_method_id),
             currency=model.currency,
             client_proof_reference=model.client_proof_reference,
             client_marked_paid_at=model.client_marked_paid_at,
@@ -164,7 +164,7 @@ class TransactionCreateDTO:
 class TransactionResponseDTO(BaseDTO):
     id: str
     payment_id: str
-    transaction_id: str
+    # transaction_id: str
     type: TransactionType
     amount: float
     status: TransactionStatus
@@ -174,7 +174,7 @@ class TransactionResponseDTO(BaseDTO):
         return cls(
             id=str(model.id),
             payment_id=str(model.payment_id),
-            transaction_id=model.transaction_id,
+            # transaction_id=str(model.transaction_id,)
             type=model.type,
             amount=model.amount,
             status=model.status,
@@ -271,7 +271,7 @@ class RefundResponseDTO(BaseDTO):
             reason=model.reason,
             status=model.status,
             processed_by=str(model.processed_by) if model.processed_by else None,
-            admin_reference_id=model.admin_reference_id,
+            admin_reference_id=str(model.admin_reference_id),
             refund_date=model.refund_date,
             created_at=model.created_at,
             updated_at=model.updated_at,

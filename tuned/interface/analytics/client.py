@@ -52,7 +52,7 @@ class AnalyticsService:
     def get_kpis(self, user_id: str) -> DashboardKPIDTO:
         try:
             active_orders = self._order_repo.get_active_orders(user_id)
-            portfolio_value = sum(o.total_price for o in active_orders)
+            portfolio_value = sum(o.total_price if o.total_price else 0.0 for o in active_orders)
 
             due_dates = [o.due_date for o in active_orders if o.due_date]
             next_deadline: Optional[str] = (

@@ -1,7 +1,7 @@
 import uuid
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from typing import Optional, TYPE_CHECKING
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import UUID, ENUM
 from datetime import datetime
 from tuned.extensions import db
 from tuned.models.enums import DeliveryStatus, FileType
@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 class OrderDelivery(BaseModel):
     __tablename__ = 'order_delivery'
     order_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), db.ForeignKey('order.id'), nullable=False, index=True)
-    delivery_status: Mapped[DeliveryStatus] = mapped_column(db.Enum(DeliveryStatus), default=DeliveryStatus.DELIVERED, nullable=False, index=True)
+    delivery_status: Mapped[DeliveryStatus] = mapped_column(ENUM(DeliveryStatus, name="deliverystatus"), default=DeliveryStatus.DELIVERED, nullable=False, index=True)
     client_notified: Mapped[bool] = mapped_column(db.Boolean, default=False, nullable=False)
     client_notified_at: Mapped[Optional[datetime]] = mapped_column(db.DateTime(timezone=True), nullable=True)
         
@@ -53,7 +53,7 @@ class OrderDeliveryFile(BaseModel):
     filename: Mapped[str] = mapped_column(db.String(255), nullable=False)
     original_filename: Mapped[str] = mapped_column(db.String(255), nullable=False)
     file_path: Mapped[str] = mapped_column(db.String(255), nullable=False)
-    file_type: Mapped[FileType] = mapped_column(db.Enum(FileType), nullable=False)
+    file_type: Mapped[FileType] = mapped_column(ENUM(FileType, name="filetype"), nullable=False)
     file_format: Mapped[Optional[str]] = mapped_column(db.String(10), nullable=True)
     description: Mapped[Optional[str]] = mapped_column(db.Text, nullable=True)
     

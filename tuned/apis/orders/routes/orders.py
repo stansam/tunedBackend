@@ -1,6 +1,6 @@
 from tuned.utils import success_response
 from flask_login import login_required, current_user
-from flask import Blueprint, request, jsonify
+from flask import request
 from flask.views import MethodView
 from dataclasses import asdict
 from marshmallow import ValidationError
@@ -106,7 +106,7 @@ class SaveDraftView(MethodView):
                 logger.error(f"Validation failed: {err}")
                 return error_response(message="Validation failed", status=400)
 
-            response_dto = get_services().order.save_draft(dto)
+            response_dto = get_services().order.save_draft(dto, ip_address=get_user_ip(), user_agent=get_user_agent())
             return success_response(data=asdict(response_dto), message="Draft saved successfully", status=200)
         except Exception as e:
             logger.error(f"Failed to save draft: {e}")
@@ -145,7 +145,7 @@ class ListClientOrders(MethodView):
             response_dto = get_services().order.list_client_orders(user_id, dto)
             return success_response(data=asdict(response_dto), message="Orders fetched successfully", status=200)
         except Exception as e:
-            logger.error(f"Failed to fetch orders: {e}")
+            logger.exception(f"Failed to fetch orders: {e}")
             return error_response(message="Failed to fetch orders", status=500)
 
 class GetOrderView(MethodView):

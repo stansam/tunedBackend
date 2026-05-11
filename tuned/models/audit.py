@@ -1,6 +1,6 @@
 import uuid
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy.dialects.postgresql import UUID, JSONB
+from sqlalchemy.dialects.postgresql import UUID, JSONB, ENUM
 from sqlalchemy.ext.mutable import MutableDict
 from datetime import datetime, timezone
 from typing import Optional, TYPE_CHECKING, Any
@@ -36,8 +36,8 @@ class OrderStatusHistory(BaseModel):
     
     order_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), db.ForeignKey('order.id'), nullable=False, index=True)
     user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), db.ForeignKey('users.id'), nullable=False, index=True)
-    old_status: Mapped[Optional[OrderStatus]] = mapped_column(db.Enum(OrderStatus), nullable=True)
-    new_status: Mapped[OrderStatus] = mapped_column(db.Enum(OrderStatus), nullable=False)
+    old_status: Mapped[Optional[OrderStatus]] = mapped_column(ENUM(OrderStatus, name="orderstatus", create_type=True), nullable=True)
+    new_status: Mapped[OrderStatus] = mapped_column(ENUM(OrderStatus, name="orderstatus"), nullable=False)
     notes: Mapped[Optional[str]] = mapped_column(db.Text, nullable=True)
     ip_address: Mapped[Optional[str]] = mapped_column(db.String(45), nullable=True)
     
@@ -81,7 +81,7 @@ class EmailLog(BaseModel):
     recipient: Mapped[str] = mapped_column(db.String(120), nullable=False, index=True)
     subject: Mapped[str] = mapped_column(db.String(255), nullable=False)
     template: Mapped[Optional[str]] = mapped_column(db.String(100), nullable=True)  # Email template name used
-    status: Mapped[EmailStatus] = mapped_column(db.Enum(EmailStatus), default=EmailStatus.PENDING, nullable=False, index=True)  # pending, sent, failed
+    status: Mapped[EmailStatus] = mapped_column(ENUM(EmailStatus, name="emailstatus"), default=EmailStatus.PENDING, nullable=False, index=True)  # pending, sent, failed
     error_message: Mapped[Optional[str]] = mapped_column(db.Text, nullable=True)
     sent_at: Mapped[Optional[datetime]] = mapped_column(db.DateTime(timezone=True), nullable=True)
     
@@ -96,28 +96,44 @@ class EmailLog(BaseModel):
     user: Mapped[Optional["User"]] = relationship('User', foreign_keys=[user_id], back_populates='email_logs')
     order: Mapped[Optional["Order"]] = relationship('Order', foreign_keys=[order_id], back_populates='email_logs')
     
-    @staticmethod
-    def log_email(recipient: str, subject: str, template: Optional[str]=None, user_id: Optional[str]=None, order_id: Optional[str]=None) -> "EmailLog":
-        email_log = EmailLog(
-            recipient=recipient,
-            subject=subject,
-            template=template,
-            user_id=user_id,
-            order_id=order_id
-        )
-        db.session.add(email_log)
-        db.session.commit()
-        return email_log
+    # @staticmethod
+    # def log_email(recipient: str, subject: str, template: Optional[str]=None, user_id: Optional[uuid.UUID]=None, order_id: Optional[uuid.UUID]=None) -> "EmailLog":
+    #     email_log = EmailLog(
+    #         recipient=recipient,
+    #         subject=subject,
+    #         template=template,
+    #         user_id=user_id,
+    #         order_id=order_id
+    #     )
+    #     db.session.add(email_log)
+    #     db.session.commit()
+    #     return email_log
     
-    def mark_sent(self) -> None:
-        self.status = EmailStatus.SENT
-        self.sent_at = datetime.now(timezone.utc)
-        db.session.commit()
+    # def mark_sent(self) -> None:
+    #     self.status = EmailStatus.SENT
+    #     self.sent_at = datetime.now(timezone.utc)
+    #     db.session.commit()
     
-    def mark_failed(self, error_message: str) -> None:
-        self.status = EmailStatus.FAILED
-        self.error_message = error_message
-        db.session.commit()
+    # def mark_failed(self, error_message: str) -> None:
+    #     self.status = EmailStatus.FAILED
+    #     self.error_message = error_message
+    #     db.session.commit()
+
+    def __init__(self, 
+        recipient: str,
+        subject: str,
+        template: Optional[str]=None,
+        user_id: Optional[uuid.UUID]=None,
+        order_id: Optional[uuid.UUID]=None,
+        created_by: Optional[uuid.UUID]=None
+    ) -> None:
+        self.recipient = recipient
+        self.subject = subject
+        self.template = template
+        self.user_id = user_id
+        self.order_id = order_id
+        self.created_by = created_by
+        self.status = EmailStatus.PENDING
     
     def __repr__(self) -> str:
         return f'<EmailLog to:{self.recipient} status:{self.status}>'

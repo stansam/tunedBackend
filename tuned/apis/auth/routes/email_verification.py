@@ -19,6 +19,7 @@ from tuned.utils.responses import (
     success_response,
     validation_error_response,
 )
+from tuned.utils.variables import Variables
 
 logger: logging.Logger = get_logger(__name__)
 
@@ -77,7 +78,7 @@ class EmailVerifyConfirm(MethodView):
             )
             success, reason = get_services().user.confirm_email_verification(dto)
 
-            if success:
+            if success and reason == Variables.OK:
                 logger.info(f'[confirm] Email verified for uid={dto.uid}')
                 return success_response({'verified': True})
 

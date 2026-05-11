@@ -5,11 +5,12 @@ from datetime import datetime, timezone, timedelta
 from typing import Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from tuned.models.order import Order
+    from tuned.models.order import Order, OrderFile
 
 from tuned.models.enums import OrderStatus, Priority, FormatStyle, LineSpacing, ReportType
 
 _STATUS_PROGRESS: dict[OrderStatus, int] = {
+    OrderStatus.DRAFT:                     0,
     OrderStatus.PENDING:                   0,
     OrderStatus.ACTIVE:                   40,
     OrderStatus.REVISION:                 60,
@@ -50,20 +51,20 @@ class OrderResponseDTO:
     id: str
     order_number: str
     client_id: str
-    status: OrderStatus
+    status: Optional[OrderStatus]
     paid: bool
-    total_price: float
+    total_price: Optional[float]
     service_id: str
     academic_level_id: str
     deadline_id: str
-    title: str
-    instructions: str
-    word_count: int
-    page_count: float
-    format_style: FormatStyle
-    sources: int
-    line_spacing: LineSpacing
-    due_date: datetime
+    title: Optional[str]
+    instructions: Optional[str]
+    word_count: Optional[int]
+    page_count: Optional[float]
+    format_style: Optional[FormatStyle]
+    sources: Optional[int]
+    line_spacing: Optional[LineSpacing]
+    due_date: Optional[str]
     report_type: Optional[ReportType]
     discount_amount: Optional[float]
 
@@ -73,7 +74,7 @@ class OrderResponseDTO:
             id=str(order.id),
             order_number=order.order_number,
             client_id=str(order.client_id),
-            status=order.status.value,
+            status=order.status if order.status else None,
             paid=order.paid,
             total_price=order.total_price,
             service_id=str(order.service_id),
@@ -83,11 +84,11 @@ class OrderResponseDTO:
             instructions=order.instructions,
             word_count=order.word_count,
             page_count=order.page_count,
-            format_style=order.format_style.value,
+            format_style=order.format_style,
             sources=order.sources,
-            line_spacing=order.line_spacing.value,
+            line_spacing=order.line_spacing,
             due_date=order.due_date.isoformat() if order.due_date else None,
-            report_type=order.report_type.value if order.report_type else None,
+            report_type=order.report_type if order.report_type else None,
             discount_amount=order.discount_amount
         )
 
@@ -186,7 +187,7 @@ class OrderProgressDTO:
 class UpcomingDeadlineDTO:
     id:           str
     order_number: str
-    title:        str
+    title:        Optional[str]
     due_date:     str
     priority:     str
 
@@ -285,7 +286,7 @@ class OrderDraftResponseDTO:
     format_style: Optional[str]
     sources: Optional[int]
     line_spacing: Optional[str]
-    due_date: Optional[datetime]
+    due_date: Optional[str]
     report_type: Optional[str]
     discount_amount: Optional[float]
 
@@ -317,8 +318,9 @@ class OrderFileResponseDTO:
   size: float
   mime_type: str
 
-  def from_model(file: "OrderFile") -> "OrderFileResponseDTO":
-    return OrderFileResponseDTO(
+  @classmethod
+  def from_model(cls, file: "OrderFile") -> "OrderFileResponseDTO":
+    return cls(
         id=str(file.id),
         name=file.filename,
         url=file.file_path,
@@ -333,48 +335,49 @@ class OrderDetailsResponseDTO:
   client_id: str
   status: OrderStatus
   paid: bool
-  total_price: float
+  total_price: Optional[float]
   service_id: str
-  service_name: str
+  service_name: Optional[str]
   academic_level_id: str
-  academic_level_name: str
+  academic_level_name: Optional[str]
   deadline_id: str
-  title: str
-  instructions: str
-  word_count: int
-  page_count: float
-  format_style: str
-  sources: int
-  line_spacing: str
-  due_date: str
-  report_type: str
-  discount_amount: float
+  title: Optional[str]
+  instructions: Optional[str]
+  word_count: Optional[int]
+  page_count: Optional[float]
+  format_style: Optional[str]
+  sources: Optional[int]
+  line_spacing: Optional[str]
+  due_date: Optional[str]
+  report_type: Optional[str]
+  discount_amount: Optional[float]
   created_at: str
   client_username: str
   attachments: list[OrderFileResponseDTO]
 
-  def from_model(order: "Order") -> "OrderDetailsResponseDTO":
-    return OrderDetailsResponseDTO(
+  @classmethod
+  def from_model(cls, order: "Order") -> "OrderDetailsResponseDTO":
+    return cls(
         id=str(order.id),
-        order_number=str(order.order_number),
+        order_number=order.order_number,
         client_id=str(order.client_id),
         status=order.status,
         paid=order.paid,
         total_price=order.total_price,
         service_id=str(order.service_id),
-        service_name=order.service.name,
+        service_name=order.service.name if order.service else None,
         academic_level_id=str(order.academic_level_id),
-        academic_level_name=order.academic_level.name,
+        academic_level_name=order.academic_level.name if order.academic_level else None,
         deadline_id=str(order.deadline_id),
         title=order.title,
         instructions=order.instructions,
         word_count=order.word_count,
         page_count=order.page_count,
-        format_style=order.format_style.value,
+        format_style=order.format_style.value if order.format_style else "",
         sources=order.sources,
-        line_spacing=order.line_spacing.value,
-        due_date=order.due_date.isoformat(),
-        report_type=order.report_type.value,
+        line_spacing=order.line_spacing.value if order.line_spacing else "",
+        due_date=order.due_date.isoformat() if order.due_date else None,
+        report_type=order.report_type.value if order.report_type else "",
         discount_amount=order.discount_amount,
         created_at=order.created_at.isoformat(),
         client_username=order.client.username,

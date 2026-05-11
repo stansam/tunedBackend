@@ -1,5 +1,5 @@
 import uuid
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import UUID, ENUM
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from typing import TYPE_CHECKING, Optional, Any
 from tuned.extensions import db
@@ -26,25 +26,25 @@ class UserLocalizationSettings(BaseModel):
     timezone: Mapped[str] = mapped_column(db.String(50), default='UTC', nullable=False)  # IANA timezone
     
     date_format: Mapped[DateFormat] = mapped_column(
-        db.Enum(DateFormat),
+        ENUM(DateFormat, name="dateformat", create_type=True),
         default=DateFormat.MM_DD_YYYY,
         nullable=False
     )
     time_format: Mapped[TimeFormat] = mapped_column(
-        db.Enum(TimeFormat),
+        ENUM(TimeFormat, name="timeformat", create_type=True),
         default=TimeFormat.TWELVE_HOUR,
         nullable=False
     )
     
     currency: Mapped[str] = mapped_column(db.String(3), default='USD', nullable=False)  # ISO 4217
     number_format: Mapped[NumberFormat] = mapped_column(
-        db.Enum(NumberFormat),
+        ENUM(NumberFormat, name="numberformat", create_type=True),
         default=NumberFormat.COMMA_DOT,
         nullable=False
     )
     
     week_start: Mapped[WeekStart] = mapped_column(
-        db.Enum(WeekStart),
+        ENUM(WeekStart, name="weekstart"),
         default=WeekStart.SUNDAY,
         nullable=False
     )

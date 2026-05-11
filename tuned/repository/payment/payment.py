@@ -1,4 +1,5 @@
 from typing import Any
+from uuid import UUID
 from sqlalchemy.orm import Session
 from sqlalchemy import select, func
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
@@ -25,10 +26,10 @@ class CreatePayment:
             except ValueError:
                 raise ValueError(f"Invalid payment status: {data.status}")
             payment = Payment(
-                order_id=data.order_id,
-                user_id=data.user_id,
+                order_id=UUID(data.order_id),
+                user_id=UUID(data.user_id),
                 amount=data.amount,
-                accepted_method_id=data.accepted_method_id,
+                accepted_method_id=UUID(data.accepted_method_id),
                 status=status,
             )
             self.session.add(payment)
@@ -109,9 +110,9 @@ class GetSpendingVelocity:
         self.session = session
 
     def _month_label_expr(self, column: Any) -> Any: # TODO: Type Hint the data dict
-        if current_app.config["FLASK_ENV"] == Variables.PRODUCTION:
-            return func.to_char(column, "YYYY-MM")
-        return func.strftime("%Y-%m", column)
+        # if current_app.config["FLASK_ENV"] == Variables.PRODUCTION:
+        return func.to_char(column, "YYYY-MM")
+        # return func.strftime("%Y-%m", column)
 
     def execute(self, client_id: str, months: int = 6) -> list[tuple[str, float]]:
         try:

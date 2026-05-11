@@ -1,3 +1,4 @@
+from sqlalchemy.dialects.postgresql import ENUM
 from datetime import datetime
 from flask import url_for 
 from flask_login import UserMixin
@@ -43,7 +44,7 @@ class User(UserMixin, BaseModel):  # type: ignore[misc]
     
     first_name: Mapped[str] = mapped_column(db.String(100), nullable=False)
     last_name: Mapped[str] = mapped_column(db.String(100), nullable=False)
-    gender: Mapped[Optional[GenderEnum]] = mapped_column(db.Enum(GenderEnum), nullable=True)
+    gender: Mapped[Optional[GenderEnum]] = mapped_column(ENUM(GenderEnum, name="genderenum"), nullable=True)
     phone_number: Mapped[Optional[str]] = mapped_column(db.String(20), nullable=True)
     profile_pic: Mapped[Optional[str]] = mapped_column(db.String(120), nullable=True, default='default.png')
 

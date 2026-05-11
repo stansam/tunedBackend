@@ -1,7 +1,8 @@
+import uuid
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Optional, List, TypeVar, Generic, TYPE_CHECKING, Any
-
+from tuned.models.enums import EmailStatus
 if TYPE_CHECKING:
     from tuned.models.audit import PriceHistory, OrderStatusHistory, ActivityLog, EmailLog
 
@@ -38,8 +39,8 @@ class PriceHistoryResponseDTO:
         return cls(
             id=str(obj.id),
             price_rate_id=str(obj.price_rate_id),
-            old_price=float(obj.old_price),
-            new_price=float(obj.new_price),
+            old_price=obj.old_price,
+            new_price=obj.new_price,
             reason=obj.reason,
             created_at=obj.created_at,
             updated_at=obj.updated_at
@@ -137,9 +138,9 @@ class EmailLogCreateDTO:
     recipient: str
     subject: str
     template: Optional[str] = None
-    user_id: Optional[str] = None
-    order_id: Optional[str] = None
-    created_by: Optional[str] = None
+    user_id: Optional[uuid.UUID] = None
+    order_id: Optional[uuid.UUID] = None
+    created_by: Optional[uuid.UUID] = None
 
 @dataclass
 class EmailLogResponseDTO:
@@ -171,7 +172,7 @@ class EmailLogResponseDTO:
 
 @dataclass
 class EmailLogUpdateDTO:
-    status: str
+    status: EmailStatus
     error_message: Optional[str] = None
     sent_at: Optional[datetime] = None
 

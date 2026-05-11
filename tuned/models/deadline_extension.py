@@ -1,7 +1,7 @@
 import uuid
 from sqlalchemy.orm import validates, Mapped, mapped_column, relationship
 from typing import Optional, TYPE_CHECKING, Any
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import UUID, ENUM
 from datetime import datetime, timezone
 from tuned.extensions import db
 from tuned.models.base import BaseModel
@@ -25,8 +25,8 @@ class OrderDeadlineExtensionRequest(BaseModel):
     original_due_date: Mapped[datetime] = mapped_column(db.DateTime(timezone=True), nullable=False)
     new_due_date: Mapped[Optional[datetime]] = mapped_column(db.DateTime(timezone=True), nullable=True)  # Set when approved by client
 
-    status: Mapped[ExtensionRequestStatus] = mapped_column(db.Enum(ExtensionRequestStatus), default=ExtensionRequestStatus.PENDING, nullable=False, index=True)
-    priority: Mapped[Priority] = mapped_column(db.Enum(Priority), default=Priority.NORMAL, nullable=False)
+    status: Mapped[ExtensionRequestStatus] = mapped_column(ENUM(ExtensionRequestStatus, name="extensionrequeststatus"), default=ExtensionRequestStatus.PENDING, nullable=False, index=True)
+    priority: Mapped[Priority] = mapped_column(ENUM(Priority, name="priority"), default=Priority.NORMAL, nullable=False)
 
     requested_at: Mapped[datetime] = mapped_column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
     reviewed_at: Mapped[Optional[datetime]] = mapped_column(db.DateTime(timezone=True), nullable=True)

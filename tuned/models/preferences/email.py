@@ -1,5 +1,5 @@
 import uuid
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import UUID, ENUM
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from typing import TYPE_CHECKING, Optional, Any
 from tuned.extensions import db
@@ -44,7 +44,7 @@ class UserEmailPreferences(BaseModel):
     )
     
     frequency: Mapped[EmailFrequency] = mapped_column(
-        db.Enum(EmailFrequency),
+        ENUM(EmailFrequency, name="emailfrequency"),
         default=EmailFrequency.INSTANT,
         nullable=False
     )

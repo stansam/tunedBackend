@@ -1,6 +1,6 @@
 import uuid
 from sqlalchemy.orm import validates, Mapped, mapped_column, relationship
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import UUID, ENUM
 from typing import Optional, TYPE_CHECKING, Any
 from datetime import datetime, timezone
 from tuned.models.base import BaseModel
@@ -23,8 +23,8 @@ class OrderRevisionRequest(BaseModel):
     revision_notes: Mapped[str] = mapped_column(db.Text, nullable=False)
     internal_notes: Mapped[Optional[str]] = mapped_column(db.Text, nullable=True)
     
-    status: Mapped[RevisionRequestStatus] = mapped_column(db.Enum(RevisionRequestStatus), default=RevisionRequestStatus.PENDING, nullable=False, index=True)
-    priority: Mapped[Priority] = mapped_column(db.Enum(Priority), default=Priority.NORMAL, nullable=False)
+    status: Mapped[RevisionRequestStatus] = mapped_column(ENUM(RevisionRequestStatus, name="revisionrequeststatus"), default=RevisionRequestStatus.PENDING, nullable=False, index=True)
+    priority: Mapped[Priority] = mapped_column(ENUM(Priority, name="priority"), default=Priority.NORMAL, nullable=False)
     
 
     requested_at: Mapped[datetime] = mapped_column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)

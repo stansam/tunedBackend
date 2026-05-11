@@ -1,5 +1,5 @@
 import uuid
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import UUID, ENUM
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from typing import TYPE_CHECKING, Optional, Any
 from decimal import Decimal
@@ -23,7 +23,7 @@ class UserBillingPreferences(BaseModel):
     
     invoice_email: Mapped[Optional[str]] = mapped_column(db.String(120), nullable=True)
     invoice_delivery: Mapped[InvoiceDeliveryMethod] = mapped_column(
-        db.Enum(InvoiceDeliveryMethod),
+        ENUM(InvoiceDeliveryMethod, name="invoicedeliverymethod"),
         default=InvoiceDeliveryMethod.EMAIL,
         nullable=False
     )

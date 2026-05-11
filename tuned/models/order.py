@@ -2,7 +2,7 @@ from tuned.extensions import db
 from tuned.models.base import BaseModel
 from datetime import datetime, timezone
 import uuid
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import UUID, ENUM
 from tuned.models.enums import OrderStatus, SupportTicketStatus, Currency, ReportType, LineSpacing, FormatStyle
 from sqlalchemy import event
 from sqlalchemy.orm import validates, Mapped, mapped_column, relationship, Session, Mapper
@@ -31,12 +31,12 @@ class Order(BaseModel):
     instructions: Mapped[Optional[str]] = mapped_column(db.Text, nullable=True)
     word_count: Mapped[Optional[int]] = mapped_column(db.Integer, nullable=True)
     page_count: Mapped[Optional[float]] = mapped_column(db.Float, nullable=True)
-    format_style: Mapped[Optional[FormatStyle]] = mapped_column(db.Enum(FormatStyle), nullable=True, default=FormatStyle.APA)
+    format_style: Mapped[Optional[FormatStyle]] = mapped_column(ENUM(FormatStyle, name="formatstyle"), nullable=True, default=FormatStyle.APA)
     sources: Mapped[Optional[int]] = mapped_column(db.Integer, nullable=True)
-    line_spacing: Mapped[Optional[LineSpacing]] = mapped_column(db.Enum(LineSpacing), default=LineSpacing.DOUBLE, nullable=True)
-    report_type: Mapped[Optional[ReportType]] = mapped_column(db.Enum(ReportType), nullable=True, default=None)
+    line_spacing: Mapped[Optional[LineSpacing]] = mapped_column(ENUM(LineSpacing, name="linespacing"), default=LineSpacing.DOUBLE, nullable=True)
+    report_type: Mapped[Optional[ReportType]] = mapped_column(ENUM(ReportType, name="reporttype"), nullable=True, default=None)
     total_price: Mapped[Optional[float]] = mapped_column(db.Numeric(precision=10, scale=2), nullable=True)
-    status: Mapped[OrderStatus] = mapped_column(db.Enum(OrderStatus), default=OrderStatus.PENDING, nullable=False)
+    status: Mapped[OrderStatus] = mapped_column(ENUM(OrderStatus, name="orderstatus"), default=OrderStatus.PENDING, nullable=False)
     paid: Mapped[bool] = mapped_column(db.Boolean, default=False, nullable=False)
     delivered_at: Mapped[Optional[datetime]] = mapped_column(db.DateTime(timezone=True), nullable=True, default=None)
     extension_requested: Mapped[bool] = mapped_column(db.Boolean, default=False, nullable=False)
@@ -45,7 +45,7 @@ class Order(BaseModel):
     price_per_page: Mapped[Optional[float]] = mapped_column(db.Numeric(precision=10, scale=2), nullable=True)
     subtotal: Mapped[Optional[float]] = mapped_column(db.Numeric(precision=10, scale=2), nullable=True)
     discount_amount: Mapped[Optional[float]] = mapped_column(db.Numeric(precision=10, scale=2), nullable=True, default=0.0)
-    currency: Mapped[Currency] = mapped_column(db.Enum(Currency), default=Currency.USD, nullable=False)
+    currency: Mapped[Currency] = mapped_column(ENUM(Currency, name="currency"), default=Currency.USD, nullable=False)
     additional_materials: Mapped[Optional[str]] = mapped_column(db.Text, nullable=True, default=None)
     
     client: Mapped["User"] = relationship('User', foreign_keys=[client_id], back_populates='orders')
@@ -68,9 +68,9 @@ class Order(BaseModel):
 
     __table_args__ = (
         db.Index('ix_order_client_status_created', 'client_id', 'status', 'created_at'),
-        db.CheckConstraint("status = 'draft' OR word_count > 0", name='valid_word_count'),
-        db.CheckConstraint("status = 'draft' OR page_count > 0", name='valid_page_count'),
-        db.CheckConstraint("status = 'draft' OR total_price >= 0", name='valid_total_price'),
+        db.CheckConstraint("status::text = 'draft' OR word_count > 0", name='valid_word_count'),
+        db.CheckConstraint("status::text = 'draft' OR page_count > 0", name='valid_page_count'),
+        db.CheckConstraint("status::text = 'draft' OR total_price >= 0", name='valid_total_price'),
     )
     
     VALID_STATUS_TRANSITIONS = {
@@ -118,7 +118,7 @@ class Order(BaseModel):
     @property
     def latest_delivery(self: "Order") -> Optional["OrderDelivery"]:
         return max(
-            (item for item in self.deliveries if item.delivered_at is not None),
+            (item for item in self.deliveries if item.created_at is not None),
             key=lambda x: x.delivered_at,
             default=None
         )
@@ -188,7 +188,7 @@ class SupportTicket(BaseModel):
     user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), db.ForeignKey('users.id'), nullable=False, index=True)
     subject: Mapped[str] = mapped_column(db.String(255), nullable=False)
     message: Mapped[str] = mapped_column(db.Text, nullable=False)
-    status: Mapped[SupportTicketStatus] = mapped_column(db.Enum(SupportTicketStatus), default=SupportTicketStatus.OPEN, nullable=False)
+    status: Mapped[SupportTicketStatus] = mapped_column(ENUM(SupportTicketStatus, name="supportticketstatus"), default=SupportTicketStatus.OPEN, nullable=False)
     
     order: Mapped["Order"] = relationship('Order', foreign_keys=[order_id], back_populates='support_tickets')
     user: Mapped["User"] = relationship('User', foreign_keys=[user_id], back_populates='support_tickets')

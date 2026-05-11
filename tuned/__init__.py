@@ -34,16 +34,22 @@ def create_app(config_name: Optional[str] = None) -> Flask:
     cors_origins = app.config.get('CORS_ORIGINS', '*')
     cors.init_app(app, origins=cors_origins, supports_credentials=True)
     
-    socketio_kwargs = {
-        'cors_allowed_origins': cors_origins,
-        'async_mode': 'eventlet',
-        'logger': app.config.get('DEBUG', False),
-        'engineio_logger': app.config.get('DEBUG', False)
-    }
-    if app.config.get('SOCKETIO_MESSAGE_QUEUE'):
-        socketio_kwargs['message_queue'] = app.config['SOCKETIO_MESSAGE_QUEUE']
+    # socketio_kwargs = {
+    #     'cors_allowed_origins': cors_origins,
+    #     'async_mode': 'eventlet',
+    #     'logger': app.config.get('DEBUG', False),
+    #     'engineio_logger': app.config.get('DEBUG', False)
+    # }
+    # if app.config.get('SOCKETIO_MESSAGE_QUEUE'):
+    #     socketio_kwargs['message_queue'] = app.config['SOCKETIO_MESSAGE_QUEUE']
     
-    socketio.init_app(app, **socketio_kwargs)
+    socketio.init_app(app,
+        async_mode='eventlet',
+        cors_allowed_origins=cors_origins,
+        logger=app.config.get('DEBUG', False),
+        engineio_logger=app.config.get('DEBUG', False),
+        message_queue=app.config.get('SOCKETIO_MESSAGE_QUEUE'),
+    )
     
     from tuned.celery_app import celery_app, init_celery
     from tuned.core.events.bootstrap import init_events
@@ -68,6 +74,10 @@ def create_app(config_name: Optional[str] = None) -> Flask:
         from tuned.models.user import User
         from tuned.extensions import db
         return db.session.query(User).filter(User.id == user_id).first()
+        
+    @login_manager.unauthorized_handler
+    def unauthorized():
+        return {"message": "unauthorized"}, 401
     
     @jwt.token_in_blocklist_loader
     def check_if_token_revoked(jwt_header: dict[str, Any], jwt_payload: dict[str, Any]) -> bool:

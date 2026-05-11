@@ -39,3 +39,6 @@ temp/
 audit_report.md
 implementation_plan.md
 .codex
+celerybeat-schedule
+.mypy_cache/
+.pytest_cache/

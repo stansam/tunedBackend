@@ -46,6 +46,7 @@ def create_app(config_name: Optional[str] = None) -> Flask:
     socketio.init_app(app,
         async_mode='eventlet',
         cors_allowed_origins=cors_origins,
+        cors_credentials=True,
         logger=app.config.get('DEBUG', False),
         engineio_logger=app.config.get('DEBUG', False),
         message_queue=app.config.get('SOCKETIO_MESSAGE_QUEUE'),

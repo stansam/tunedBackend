@@ -24,6 +24,7 @@ class ProductionConfig(BaseConfig):
     SESSION_COOKIE_DOMAIN: Optional[str] = os.environ.get('SESSION_COOKIE_DOMAIN')
     
     CORS_ORIGINS: list[str] = os.environ.get('CORS_ORIGINS', 'https://tunedessays.com').split(',')
+    SOCKETIO_CORS_ORIGINS: list[str] = os.environ.get('SOCKETIO_CORS_ORIGINS', 'https://tunedessays.com').split(',')
     SESSION_COOKIE_SECURE: bool = True
     REMEMBER_COOKIE_SECURE: bool = True
     JWT_COOKIE_SECURE: bool = True

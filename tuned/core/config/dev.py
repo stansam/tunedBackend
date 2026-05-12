@@ -23,6 +23,11 @@ class DevelopmentConfig(BaseConfig):
     CORS_ORIGINS: list[str] = [
         'http://localhost:3000',
     ]
+
+    SOCKETIO_CORS_ORIGINS: list[str] = [
+        'http://localhost:3000',
+        'http://195.35.37.113:3000',
+    ]
     
     SESSION_COOKIE_SECURE: bool = False
     REMEMBER_COOKIE_SECURE: bool = False

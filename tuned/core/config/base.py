@@ -49,6 +49,8 @@ class BaseConfig:
     MAIL_PASSWORD: str = os.environ.get('MAIL_PASSWORD') or ""
     MAIL_DEFAULT_SENDER: str = os.environ.get('MAIL_DEFAULT_SENDER', 'info@tunedessays.com')
     
+    CORS_ORIGINS: list[str] = os.environ.get('CORS_ORIGINS', 'https://tunedessays.com').split(',')
+    
     MAX_CONTENT_LENGTH: int = 16 * 1024 * 1024  # 16 MB max file size
     
     SOCKETIO_MESSAGE_QUEUE: Optional[str] = os.environ.get('SOCKETIO_MESSAGE_QUEUE')

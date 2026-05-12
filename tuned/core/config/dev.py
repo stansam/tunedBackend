@@ -33,5 +33,5 @@ class DevelopmentConfig(BaseConfig):
     REMEMBER_COOKIE_SECURE: bool = False
     JWT_COOKIE_SECURE: bool = False
     
-    PROXY_FIX: bool = False
+    PROXY_FIX: bool = True
 

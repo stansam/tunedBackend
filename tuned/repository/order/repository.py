@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import Optional
+from decimal import Decimal
 
 from sqlalchemy.orm import Session
 from sqlalchemy import select, func
@@ -19,6 +20,7 @@ from tuned.repository.order.queries import (
     GetOrderByClient,
     GetOrderForReorder,
     GetClientOrders,
+    GetOrderForClientByOrderNumber,
 )
 from tuned.repository.order.create import (
     CreateOrder,
@@ -59,6 +61,9 @@ class OrderRepository(OrderRepositoryProtocol):
     def get_project_lifecycle(self, client_id: str) -> list[tuple[str, int]]:
         return GetProjectLifecycle(self.session).execute(client_id)
 
+    def get_order_by_order_number_for_client(self, order_number: str, client_id: str) -> Order:
+        return GetOrderForClientByOrderNumber(self.session).execute(order_number, client_id)
+    
     def get_order_by_id_for_client(self, order_id: str, client_id: str) -> Order:
         return self._get_order_by_id_for_client(order_id, client_id)
 
@@ -70,8 +75,8 @@ class OrderRepository(OrderRepositoryProtocol):
 
     def apply_discount(self, order_id: str, client_id: str, discount_amount: float) -> Order:
         order = self._get_order_by_id_for_client(order_id, client_id)
-        order.discount_amount = (order.discount_amount or 0.0) + discount_amount
-        order.total_price = max((order.subtotal or 0.0) - (order.discount_amount or 0.0), 0.0)
+        order.discount_amount = (order.discount_amount or Decimal('0.0')) + Decimal(str(discount_amount))
+        order.total_price = max((order.subtotal or Decimal('0.0')) - (order.discount_amount or Decimal('0.0')), Decimal('0.0'))
         self.session.flush()
         return order
 

@@ -1,6 +1,7 @@
 from __future__ import annotations
 import logging
 import os, uuid
+from datetime import datetime, timezone
 from typing import Optional, TYPE_CHECKING
 from tuned.core.logging import get_logger
 from tuned.dtos.audit import ActivityLogCreateDTO
@@ -51,8 +52,12 @@ class OrderService:
     def list_client_orders(self, client_id: str, req: OrderListRequestDTO) -> OrderListResponseDTO:
         return self._repo.list_client_orders(client_id, req)
     
-    def get_client_order_details(self, order_number: str, user_id: str) -> OrderDetailsResponseDTO:
-        order = self._repo.get_order_by_id_for_client(order_number, user_id)
+    def get_client_order_details_by_id(self, order_id: str, user_id: str) -> OrderDetailsResponseDTO:
+        order = self._repo.get_order_by_id_for_client(order_id, user_id)
+        return OrderDetailsResponseDTO.from_model(order)
+
+    def get_client_order_details_by_order_number(self, order_number: str, user_id: str) -> OrderDetailsResponseDTO:
+        order = self._repo.get_order_by_order_number_for_client(order_number, user_id)
         return OrderDetailsResponseDTO.from_model(order)
 
 
@@ -232,8 +237,7 @@ class OrderService:
         discount = self._repo.get_discount_by_code(code)
         if not discount or not discount.is_active:
             return ValidateDiscountResponseDTO(valid=False, discount_amount=0.0, description="Invalid or expired discount code")
-        
-        from datetime import datetime, timezone
+
         now = datetime.now(timezone.utc)
 
         if discount.valid_from and now < discount.valid_from.replace(tzinfo=timezone.utc):
@@ -275,7 +279,7 @@ class OrderService:
                 file.save(file_path)
 
                 relative_path = f"/static/client/assets/order_files/{order_id}/{filename}"
-                order_file = self._repo.create_order_file(order_id, file.filename or filename, relative_path)
+                order_file = self._repo.create_order_file(str(order.id), file.filename or filename, relative_path)
                 file_ids.append(str(order_file.id))
 
             try:
@@ -283,7 +287,7 @@ class OrderService:
                     action=Variables.ORDER_FILES_UPLOADED,
                     user_id=user_id,
                     entity_type=Variables.ORDER_ENTITY_TYPE,
-                    entity_id=order_id,
+                    entity_id=str(order.id),
                     before=existing,
                     after=order,
                     created_by=user_id,

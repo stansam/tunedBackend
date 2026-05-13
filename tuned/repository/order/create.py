@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 from uuid import UUID
+from decimal import Decimal
 from typing import Optional
 
 from sqlalchemy import select
@@ -59,7 +60,7 @@ class LinkDiscountToOrder:
     def execute(self, order: Order, discount: Discount, amount: float) -> None:
         try:
             order.discounts.append(discount)
-            order.discount_amount = amount
+            order.discount_amount = Decimal(str(amount))
             discount.times_used += 1
             self.session.flush()
         except SQLAlchemyError as exc:
@@ -123,7 +124,7 @@ class UpsertDraftOrder:
             if dto.title is not None: order.title = dto.title
             if dto.instructions is not None: order.instructions = dto.instructions
             if dto.word_count is not None: order.word_count = dto.word_count
-            if dto.page_count is not None: order.page_count = dto.page_count
+            if dto.page_count is not None: order.page_count = Decimal(str(dto.page_count))
             if dto.format_style is not None: order.format_style = dto.format_style
             if dto.sources is not None: order.sources = dto.sources
             if dto.line_spacing is not None: order.line_spacing = dto.line_spacing

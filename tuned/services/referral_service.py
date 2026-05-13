@@ -227,7 +227,7 @@ class ReferralService:
                 discount_amount=discount_amount,
                 new_balance=new_balance,
                 order_id=order_id,
-                updated_total_price=updated_order.total_price if updated_order.total_price else 0.0,
+                updated_total_price=float(updated_order.total_price) if updated_order.total_price else 0.0,
             )
         except (DatabaseError, NotFound, ValueError):
             self._rollback_all()

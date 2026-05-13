@@ -127,10 +127,8 @@ class Order(BaseModel):
     def is_delivered(self: "Order") -> bool:
         return self.latest_delivery is not None
         
-    # def __init__(self: "Order", **kwargs: Any) -> None:
-    #     super().__init__(**kwargs)
-    #     if not self.order_number:
-    #         self.order_number = generate_public_order_number(db.session())
+    def __init__(self: "Order", **kwargs: Any) -> None:
+        super(Order, self).__init__(**kwargs)
        
     def __repr__(self: "Order") -> str:
         return f'<Order {self.order_number}>'
@@ -153,7 +151,7 @@ class OrderFile(BaseModel):
     order: Mapped["Order"] = relationship('Order', back_populates='files')
 
     @property
-    def file_size(self) -> int:
+    def file_size(self: "OrderFile") -> int:
         import os
         try:
             return os.path.getsize(self.file_path)
@@ -161,10 +159,13 @@ class OrderFile(BaseModel):
             return 0
     
     @property
-    def file_type(self) -> str:
+    def file_type(self: "OrderFile") -> str:
         return self.filename.split('.')[-1].lower()
     
-    def __repr__(self) -> str:
+    def __init__(self: "OrderFile", **kwargs: Any) -> None:
+        super(OrderFile, self).__init__(**kwargs)
+    
+    def __repr__(self: "OrderFile") -> str:
         return f'<OrderFile {self.filename}>'
 
 class OrderComment(BaseModel):
@@ -178,7 +179,10 @@ class OrderComment(BaseModel):
     user: Mapped[Optional["User"]] = relationship('User', foreign_keys=[user_id], back_populates='order_comments')
     order: Mapped[Optional["Order"]] = relationship('Order', foreign_keys=[order_id], back_populates='comments')
     
-    def __repr__(self) -> str:
+    def __init__(self: "OrderComment", **kwargs: Any) -> None:
+        super(OrderComment, self).__init__(**kwargs)
+    
+    def __repr__(self: "OrderComment") -> str:
         return f'<OrderComment {self.id}>'
 
 
@@ -192,8 +196,11 @@ class SupportTicket(BaseModel):
     
     order: Mapped["Order"] = relationship('Order', foreign_keys=[order_id], back_populates='support_tickets')
     user: Mapped["User"] = relationship('User', foreign_keys=[user_id], back_populates='support_tickets')
+
+    def __init__(self: "SupportTicket", **kwargs: Any) -> None:
+        super(SupportTicket, self).__init__(**kwargs)
     
-    def __repr__(self) -> str:
+    def __repr__(self: "SupportTicket") -> str:
         return f'<SupportTicket {self.id} for Order {self.order_id}>'
 
 

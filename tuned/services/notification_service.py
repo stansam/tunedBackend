@@ -63,7 +63,7 @@ def create_notification(
     
     from tuned.tasks.notifications import create_in_app_notification
     create_in_app_notification.delay(
-        user_id=str(user_id),
+        user_id=user_id,
         title=title,
         message=message,
         notification_type=type,

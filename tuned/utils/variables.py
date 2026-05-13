@@ -9,7 +9,7 @@ class Variables:
     AVATAR_UPDATE_ACTION = "avatar_update"
     AVATAR_DELETE_ACTION = "avatar_delete"
 
-    ORDER_ENTITY_TYPE = "Order"
+    # ORDER_ENTITY_TYPE = "Order"
     
     PAYMENT_CREATE_ACTION = "payment_create"
     PAYMENT_UPDATE_ACTION = "payment_update"
@@ -47,6 +47,7 @@ class Variables:
     # NO_TOKEN = "no_token"
 
     ORDER_FILE_ENTITY_TYPE = "OrderFile"
+    ORDER_DRAFT_CREATED = "order_draft_created"
     ORDER_ENTITY_TYPE = "Order"
     ORDER_REORDERED = "order_reordered"
     ORDER_CREATED = "order_created"

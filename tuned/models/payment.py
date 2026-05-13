@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import UUID, ENUM
 from sqlalchemy.sql import func
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Optional, Any
 from datetime import datetime, timezone
 import uuid
 from tuned.extensions import db
@@ -152,6 +152,9 @@ class Discount(BaseModel):
         db.CheckConstraint('min_order_value >= 0', name='valid_min_order'),
     )
     
+    def __init__(self, **kwargs: Any) -> None:
+        super(Discount, self).__init__(**kwargs)
+        
     def __repr__(self) -> str:
         return f'<Discount {self.code}>'
 
@@ -177,6 +180,9 @@ class Refund(BaseModel):
     __table_args__ = (
         db.CheckConstraint('amount > 0', name='valid_refund_amount'),
     )
-    
+
+    def __init__(self, **kwargs: Any) -> None:
+        super(Refund, self).__init__(**kwargs)
+
     def __repr__(self) -> str:
         return f'<Refund {self.id}>'

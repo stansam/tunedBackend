@@ -65,5 +65,8 @@ class UserLocalizationSettings(BaseModel):
             'updated_at': self.updated_at.isoformat() if self.updated_at else None
         }
     
+    def __init__(self, **kwargs: Any) -> None:
+        super(UserLocalizationSettings, self).__init__(**kwargs)
+    
     def __repr__(self) -> str:
         return f'<UserLocalizationSettings user_id={self.user_id} language={self.language} timezone={self.timezone}>'

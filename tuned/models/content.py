@@ -61,6 +61,9 @@ class Testimonial(BaseModel):
     service: Mapped[Optional["Service"]] = relationship('Service', foreign_keys=[service_id], back_populates='testimonials')
     order: Mapped[Optional["Order"]] = relationship('Order', foreign_keys=[order_id], back_populates='testimonials')
 
+    def __init__(self, **kwargs: Any) -> None:
+        super(Testimonial, self).__init__(**kwargs)
+
     def __repr__(self) -> str:
         author_name = self.author.username if self.author else "Unknown"
         return f'<Testimonial by {author_name}>'
@@ -76,5 +79,8 @@ class FAQ(BaseModel):
         db.Index('ix_faq_category_order', 'category', 'order'),
     )
     
+    def __init__(self, **kwargs: Any) -> None:
+        super(FAQ, self).__init__(**kwargs)
+
     def __repr__(self) -> str:
         return f'<FAQ {self.question[:30]}...>'

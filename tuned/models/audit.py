@@ -26,6 +26,9 @@ class PriceHistory(BaseModel):
     )
     
     price_rate: Mapped["PriceRate"] = relationship('PriceRate', foreign_keys=[price_rate_id], back_populates='price_history')
+
+    def __init__(self: "PriceHistory", **kwargs: Any) -> None:
+        super(PriceHistory, self).__init__(**kwargs)
     
     def __repr__(self) -> str:
         return f'<PriceHistory PriceRate:{self.price_rate_id} ${self.old_price}→${self.new_price}>'
@@ -47,6 +50,9 @@ class OrderStatusHistory(BaseModel):
     
     order: Mapped["Order"] = relationship('Order', foreign_keys=[order_id], back_populates='status_history')
     
+    def __init__(self: "OrderStatusHistory", **kwargs: Any) -> None:
+        super(OrderStatusHistory, self).__init__(**kwargs)
+
     def __repr__(self) -> str:
         return f'<OrderStatusHistory Order:{self.order_id} {self.old_status}→{self.new_status}>'
 
@@ -70,6 +76,9 @@ class ActivityLog(BaseModel):
     )
     
     user: Mapped[Optional["User"]] = relationship('User', foreign_keys=[user_id], back_populates='activity_logs')
+
+    def __init__(self: "ActivityLog", **kwargs: Any) -> None:
+        super(ActivityLog, self).__init__(**kwargs)
     
     def __repr__(self) -> str:
         return f'<ActivityLog {self.action} by User:{self.user_id}>'

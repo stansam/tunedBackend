@@ -23,13 +23,19 @@ def error_response(
     errors: Optional[Dict[str, List[str]]] = None,
     status: int = 400
 ) -> tuple[Any, int]:
-    response = {
+    response: Dict[str, Any] = {
         'success': False,
         'message': message
     }
-    
     if errors:
-        response['errors'] = errors
+        normalized_errors = {
+            field: [err for err in messages]
+            for field, messages in errors.items()
+        }
+        response["errors"] = normalized_errors
+    
+    # if errors:
+    #     response['errors'] = errors
         
     return jsonify(response), status
 
@@ -54,7 +60,7 @@ def paginated_response(
 ) -> tuple[Any, int]:
     total_pages = math.ceil(total / per_page) if per_page > 0 else 0
     
-    response = {
+    response: Dict[str, Any] = {
         'success': True,
         'data': items,
         'pagination': {

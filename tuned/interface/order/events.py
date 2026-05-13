@@ -35,7 +35,7 @@ class OrderEventHandlers:
                     "progress":     progress,
                     "delivered_at": delivered_at,
                 },
-                room=f"user_{client_id}",
+                to=f"user_{client_id}",
             )
         except Exception as exc:
             logger.error(
@@ -95,13 +95,7 @@ class OrderEventHandlers:
 
         try:
             from tuned.extensions import socketio
-            socketio.emit(
-                "order.draft_saved",
-                {
-                    "draft_id": str(order_id),
-                },
-                room=f"user_{user_id}",
-            )
+            socketio.emit("order.draft_saved", {"draft_id": str(order_id)}, to=f"user_{user_id}")
         except Exception as exc:
             logger.error(
                 "[OrderEventHandlers._on_draft_saved] Socket emit failed: %r", exc

@@ -171,16 +171,16 @@ class SampleListResponseDTO(PaginationDTO):
     samples: List[SampleResponseDTO]
     total: int
 
-    @classmethod
-    def from_model(cls, obj: "Sample") -> "SampleListResponseDTO":
-        return cls(
-            samples=[SampleResponseDTO.from_model(sample) for sample in obj.samples],
-            total=obj.total,
-            sort=obj.sort,
-            order=obj.order,
-            page=obj.page,
-            per_page=obj.per_page,
-        )
+    # @classmethod
+    # def from_model(cls, obj: "Sample") -> "SampleListResponseDTO":
+    #     return cls(
+    #         samples=[SampleResponseDTO.from_model(sample) for sample in obj.samples],
+    #         total=obj.total,
+    #         sort=obj.sort,
+    #         order=obj.order,
+    #         page=obj.page,
+    #         per_page=obj.per_page,
+        # )
 
 @dataclass
 class SampleListRequestDTO(PaginationDTO):

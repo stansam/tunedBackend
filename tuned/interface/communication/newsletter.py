@@ -30,7 +30,7 @@ class NewsletterService:
                     ActivityLogCreateDTO(
                         action='newsletter_resubscribed',
                         entity_type='NewsletterSubscriber',
-                        entity_id=str(result.id),
+                        entity_id=result.id,
                         before=existing,
                         after=result,
                         ip_address=ip_address,
@@ -48,7 +48,7 @@ class NewsletterService:
                 ActivityLogCreateDTO(
                     action='newsletter_subscribed',
                     entity_type='NewsletterSubscriber',
-                    entity_id=str(result.id),
+                    entity_id=result.id,
                     before=None,
                     after=result,
                     ip_address=ip_address,

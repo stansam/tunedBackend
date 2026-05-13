@@ -48,7 +48,7 @@ def create_in_app_notification(
                 'is_read': False,
                 'created_at': notif.created_at
             },
-            room=f'user_{user_id}',
+            to=f'user_{user_id}',
         )
         logger.info(f"[notif] Created notification for user {user_id}")
 

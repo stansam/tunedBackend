@@ -54,5 +54,8 @@ class UserNotificationPreferences(BaseModel):
             'updated_at': self.updated_at.isoformat() if self.updated_at else None
         }
     
+    def __init__(self, **kwargs: Any) -> None:
+        super(UserNotificationPreferences, self).__init__(**kwargs)
+
     def __repr__(self) -> str:
         return f'<UserNotificationPreferences user_id={self.user_id}>'

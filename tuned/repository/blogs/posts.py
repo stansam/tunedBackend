@@ -1,3 +1,4 @@
+from uuid import UUID
 from typing import Any, Sequence
 from sqlalchemy import select, or_, asc, desc, func
 from tuned.models import BlogPost
@@ -16,13 +17,27 @@ class CreateBlog:
         try:
             data_dict = data.__dict__.copy()
             tags_list = data_dict.pop("tags", [])
-            post = BlogPost(**data_dict)
+            post = BlogPost(
+                title=data.title,
+                content=data.content,
+                excerpt=data.excerpt,
+                featured_image=data.featured_image,
+                author=data.author,
+                category_id=UUID(data.category_id),
+                meta_description=data.meta_description,
+                is_published=data.is_published,
+                is_featured=data.is_featured,
+                published_at=data.published_at,
+                updated_at=data.updated_at,
+                updated_by=UUID(data.updated_by),
+                created_by=UUID(data.created_by),
+            )
 
             self.session.add(post)
             self.session.flush()
 
             tags_obj = handle_tags(tags_list, self.session)
-            post.tags = tags_obj
+            post.tag_list = tags_obj
             self.session.flush()
 
             return BlogPostResponseDTO.from_model(post)
@@ -111,7 +126,7 @@ class UpdateOrDeleteBlogPost:
             if data.is_deleted:
                 post.is_deleted = data.is_deleted
                 post.deleted_at = datetime.now(timezone.utc)
-                post.deleted_by = data.deleted_by
+                post.deleted_by = UUID(data.deleted_by) if data.deleted_by else None
             else:
                 if data.title:
                     post.title = data.title
@@ -124,7 +139,7 @@ class UpdateOrDeleteBlogPost:
                 if data.author:
                     post.author = data.author
                 if data.category_id:
-                    post.category_id = data.category_id
+                    post.category_id = UUID(data.category_id)
                 if data.meta_description:
                     post.meta_description = data.meta_description
                 if data.is_published:
@@ -135,13 +150,13 @@ class UpdateOrDeleteBlogPost:
                 if data.updated_at:
                     post.updated_at = data.updated_at
                 if data.updated_by:
-                    post.updated_by = data.updated_by
+                    post.updated_by = UUID(data.updated_by)
             
             self.session.add(post)
             self.session.flush()
             if hasattr(data, "tags") and getattr(data, "tags"):
                 tags_obj = handle_tags(getattr(data, "tags"), self.session)
-                post.tags = tags_obj
+                post.tag_list = tags_obj
                 self.session.flush()
 
             return BlogPostResponseDTO.from_model(post)

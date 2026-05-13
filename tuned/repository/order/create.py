@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+from uuid import UUID
 from typing import Optional
 
 from sqlalchemy import select
@@ -116,9 +117,9 @@ class UpsertDraftOrder:
                 )
                 self.session.add(order)
 
-            if dto.service_id is not None: order.service_id = dto.service_id
-            if dto.academic_level_id is not None: order.academic_level_id = dto.academic_level_id
-            if dto.deadline_id is not None: order.deadline_id = dto.deadline_id
+            if dto.service_id is not None: order.service_id = UUID(dto.service_id)
+            if dto.academic_level_id is not None: order.academic_level_id = UUID(dto.academic_level_id)
+            if dto.deadline_id is not None: order.deadline_id = UUID(dto.deadline_id)
             if dto.title is not None: order.title = dto.title
             if dto.instructions is not None: order.instructions = dto.instructions
             if dto.word_count is not None: order.word_count = dto.word_count

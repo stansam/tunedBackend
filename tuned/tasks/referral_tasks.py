@@ -15,7 +15,7 @@ def process_referral_reward_task(payment_id: str, user_id: str) -> None:
             logger.warning(f"[ReferralTasks] Payment {payment_id} not found. Cannot award referral.")
             return
         
-        order_value = float(payment.amount)
+        order_value = payment.amount
         get_services().referral.reward_referrer(
             referred_id=user_id,
             order_value=order_value

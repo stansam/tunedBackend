@@ -31,7 +31,7 @@ class PreferenceEventHandlers:
                     "category": category,
                     "payload": data
                 },
-                room=room,
+                to=room,
                 namespace="/"
             )
         except Exception as e:

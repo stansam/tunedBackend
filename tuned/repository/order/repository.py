@@ -71,7 +71,7 @@ class OrderRepository(OrderRepositoryProtocol):
     def apply_discount(self, order_id: str, client_id: str, discount_amount: float) -> Order:
         order = self._get_order_by_id_for_client(order_id, client_id)
         order.discount_amount = (order.discount_amount or 0.0) + discount_amount
-        order.total_price = max(order.subtotal - order.discount_amount, 0.0)
+        order.total_price = max((order.subtotal or 0.0) - (order.discount_amount or 0.0), 0.0)
         self.session.flush()
         return order
 

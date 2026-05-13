@@ -1,3 +1,4 @@
+from uuid import UUID
 from sqlalchemy.orm import Session
 from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
@@ -23,8 +24,7 @@ class CreateTransaction:
             except ValueError:
                 raise ValueError(f"Invalid transaction status: {data.status}")
             transaction = Transaction(
-                payment_id=data.payment_id,
-                transaction_id=data.transaction_id,
+                payment_id=UUID(data.payment_id),
                 type=type,
                 amount=data.amount,
                 status=status,

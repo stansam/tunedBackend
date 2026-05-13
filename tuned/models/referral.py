@@ -1,5 +1,5 @@
 import uuid
-from typing import Optional, TYPE_CHECKING
+from typing import Optional, TYPE_CHECKING, Any
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import UUID, ENUM
 from datetime import datetime, timezone
@@ -29,6 +29,9 @@ class Referral(BaseModel):
 
     referrer: Mapped[Optional["User"]] = relationship('User', foreign_keys=[referrer_id], back_populates='referrals')
     referred: Mapped[Optional["User"]] = relationship('User', foreign_keys=[referred_id], back_populates='referred_by')
+    
+    def __init__(self, **kwargs: Any) -> None:
+        super(Referral, self).__init__(**kwargs)
     
     def __repr__(self) -> str:
         return f'<Referral {self.code}>'

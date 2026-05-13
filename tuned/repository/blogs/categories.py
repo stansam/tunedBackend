@@ -1,3 +1,4 @@
+from uuid import UUID
 from datetime import datetime, timezone
 from tuned.models import BlogCategory
 from tuned.dtos import BlogCategoryDTO, BlogCategoryResponseDTO
@@ -66,14 +67,14 @@ class UpdateOrDeleteBlogCategory:
             if data.is_deleted:
                 category.is_deleted = data.is_deleted
                 category.deleted_at = datetime.now(timezone.utc)
-                category.deleted_by = data.deleted_by
+                category.deleted_by = UUID(data.deleted_by)
             else:
                 if data.name:
                     category.name = data.name
                 if data.description:
                     category.description = data.description
                 if data.updated_by:
-                    category.updated_by = data.updated_by
+                    category.updated_by = UUID(data.updated_by)
                     category.updated_at = datetime.now(timezone.utc)
 
             self.session.add(category)            

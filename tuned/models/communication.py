@@ -63,6 +63,9 @@ class NewsletterSubscriber(BaseModel):
         nullable=False
     )
     
+    def __init__(self, **kwargs: Any) -> None:
+        super(NewsletterSubscriber, self).__init__(**kwargs)
+    
     def __repr__(self) -> str:
         return f'<NewsletterSubscriber {self.email}>'
     

@@ -51,6 +51,9 @@ class UserAccessibilityPreferences(BaseModel):
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None
         }
+
+    def __init__(self, **kwargs: Any) -> None:
+        super(UserAccessibilityPreferences, self).__init__(**kwargs)
     
     def __repr__(self) -> str:
         return f'<UserAccessibilityPreferences user_id={self.user_id}>'

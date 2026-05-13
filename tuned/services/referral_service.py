@@ -128,9 +128,7 @@ class ReferralService:
                 return None
 
             user = self._user_repo.get_user_by_id(referral.referrer_id)
-            if user.reward_points is None:
-                user.reward_points = 0
-            user.reward_points += points_earned
+            user.reward_points = (user.reward_points or 0) + points_earned
             update_user_dto = UpdateUserDTO(
                 user_id=str(user.id),
                 reward_points=user.reward_points
@@ -189,7 +187,7 @@ class ReferralService:
                 logger.error(f"[ReferralService] Order {order_id} is already paid")
                 raise ValueError("Cannot apply discount to a paid order")
                 
-            max_redeemable = int(order.total_price)
+            max_redeemable = int(order.total_price) if order.total_price else 0
             if max_redeemable <= 0:
                 raise ValueError("Order is not eligible for reward redemption")
 
@@ -229,7 +227,7 @@ class ReferralService:
                 discount_amount=discount_amount,
                 new_balance=new_balance,
                 order_id=order_id,
-                updated_total_price=updated_order.total_price,
+                updated_total_price=updated_order.total_price if updated_order.total_price else 0.0,
             )
         except (DatabaseError, NotFound, ValueError):
             self._rollback_all()

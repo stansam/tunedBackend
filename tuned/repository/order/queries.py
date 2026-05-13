@@ -189,8 +189,8 @@ def getOrderListResponse(
         total=total,
         page=page,
         per_page=per_page,
-        sort=req.sort,
-        order=req.order,
+        sort=req.sort if req.sort else 'created_at',
+        order=req.order if req.order else 'desc',
     )
 
 class GetClientOrders:

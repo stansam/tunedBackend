@@ -56,5 +56,8 @@ class UserPrivacySettings(BaseModel):
             'updated_at': self.updated_at.isoformat() if self.updated_at else None
         }
     
+    def __init__(self, **kwargs: Any) -> None:
+        super(UserPrivacySettings, self).__init__(**kwargs)
+    
     def __repr__(self) -> str:
         return f'<UserPrivacySettings user_id={self.user_id}>'

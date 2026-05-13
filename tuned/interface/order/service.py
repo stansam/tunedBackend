@@ -143,7 +143,7 @@ class OrderService:
                 academic_level_id=academic_level.id,
                 word_count=dto.word_count,
                 # page_count=dto.page_count,
-                report_type=dto.report_type.value if dto.report_type else None,
+                report_type=dto.report_type if dto.report_type else None,
                 # line_spacing=dto.line_spacing if dto.line_spacing else None,
             )
             price_resp = get_services().price_rate.calculate_price(calc_request)
@@ -178,7 +178,7 @@ class OrderService:
             # 7. Deduct points
             if dto.points_to_redeem > 0:
                 new_balance = (user.reward_points or 0) - dto.points_to_redeem
-                update_dto = UpdateUserDTO(reward_points=new_balance)
+                update_dto = UpdateUserDTO(user_id=user_id, reward_points=new_balance)
                 self._repos.user.update_user(update_dto, actor_id=user_id)
 
             # 8. Audit log
@@ -282,7 +282,7 @@ class OrderService:
                 self._audit_service.log(ActivityLogCreateDTO(
                     action=Variables.ORDER_FILES_UPLOADED,
                     user_id=user_id,
-                    entity_type=Variables.ENTITY_TYPE_ORDER,
+                    entity_type=Variables.ORDER_ENTITY_TYPE,
                     entity_id=order_id,
                     before=existing,
                     after=order,
@@ -309,7 +309,7 @@ class OrderService:
                     action=Variables.ORDER_DRAFT_CREATED,
                     user_id=dto.user_id,
                     entity_type=Variables.ORDER_ENTITY_TYPE,
-                    entity_id=draft.id,
+                    entity_id=str(draft.id),
                     after=draft,
                     created_by=dto.user_id,
                     ip_address=ip_address,

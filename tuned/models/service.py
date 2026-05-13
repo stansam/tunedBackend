@@ -90,6 +90,9 @@ class AcademicLevel(BaseModel):
     orders: Mapped[list["Order"]] = relationship('Order', back_populates='academic_level', lazy=True)
     price_rates: Mapped[list["PriceRate"]] = relationship('PriceRate', back_populates='academic_level', lazy=True)
 
+    def __init__(self, **kwargs: Any) -> None:
+        super(AcademicLevel, self).__init__(**kwargs)
+
     def __repr__(self) -> str:
         return f'<AcademicLevel {self.name}>'
     def to_dict(self) -> dict[str, Any]:
@@ -113,6 +116,9 @@ class Deadline(BaseModel):
     orders: Mapped[list["Order"]] = relationship('Order', back_populates='deadline', lazy=True)
     price_rates: Mapped[list["PriceRate"]] = relationship('PriceRate', back_populates='deadline', lazy=True)
     
+    def __init__(self, **kwargs: Any) -> None:
+        super(Deadline, self).__init__(**kwargs)
+
     def __repr__(self) -> str:
         return f'<Deadline {self.name}>'
     def to_dict(self) -> dict[str, Any]:

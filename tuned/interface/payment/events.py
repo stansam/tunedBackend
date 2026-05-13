@@ -29,7 +29,7 @@ class PaymentEventHandlers:
             socketio.emit("dashboard:payment_updated", {
                 "payment_id": event_data["payment_id"],
                 "status": event_data["status"]
-            }, room=room)
+            }, to=room)
         except Exception as exc:
             logger.error(f"[PaymentEventHandlers] Error in payment.created handler: {exc!r}")
 
@@ -45,7 +45,7 @@ class PaymentEventHandlers:
             socketio.emit("dashboard:payment_updated", { # TODO: Implement SocketIO Event handler
                 "payment_id": event_data["payment_id"],
                 "status": event_data["status"]
-            }, room=room)
+            }, to=room)
         except Exception as exc:
             logger.error(f"[PaymentEventHandlers] Error in payment.client_marked_paid handler: {exc!r}")
 
@@ -57,7 +57,7 @@ class PaymentEventHandlers:
             socketio.emit("dashboard:payment_updated", { # TODO: Implement SocketIO Event handler
                 "payment_id": event_data["payment_id"],
                 "status": event_data["status"]
-            }, room=room)
+            }, to=room)
         except Exception as exc:
             logger.error(f"[PaymentEventHandlers] Error in payment.verified_by_admin handler: {exc!r}")
 

@@ -1,3 +1,4 @@
+from uuid import UUID
 from typing import List
 from tuned.models import BlogComment
 from tuned.dtos import BlogCommentDTO, BlogCommentResponseDTO
@@ -58,11 +59,11 @@ class UpdateOrDeleteBlogComment:
             if data.is_deleted:
                 comment.is_deleted = data.is_deleted
                 comment.deleted_at = data.deleted_at
-                comment.deleted_by = data.deleted_by
+                comment.deleted_by = UUID(data.deleted_by)
             if data.updated_at:
                 comment.updated_at = data.updated_at
             if data.updated_by:
-                comment.updated_by = data.updated_by
+                comment.updated_by = UUID(data.updated_by)
 
             self.session.add(comment)            
             self.session.flush()

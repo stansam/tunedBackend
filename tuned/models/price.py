@@ -19,6 +19,9 @@ class PricingCategory(BaseModel):
     service: Mapped[list["Service"]] = relationship('Service', back_populates='pricing_category', lazy=True)
     price_rates: Mapped[list["PriceRate"]] = relationship('PriceRate', back_populates='pricing_category', lazy=True, cascade="all, delete-orphan")
     
+    def __init__(self, **kwargs: Any) -> None:
+        super(PricingCategory, self).__init__(**kwargs)
+    
     def __repr__(self) -> str:
         return f'<PricingCategory {self.name}>'
     
@@ -48,6 +51,9 @@ class PriceRate(BaseModel):
     academic_level: Mapped["AcademicLevel"] = relationship("AcademicLevel", back_populates="price_rates")
     deadline: Mapped["Deadline"] = relationship("Deadline", back_populates="price_rates")
     price_history: Mapped[list["PriceHistory"]] = relationship("PriceHistory", back_populates="price_rate", cascade="all, delete-orphan")
+    
+    def __init__(self, **kwargs: Any) -> None:
+        super(PriceRate, self).__init__(**kwargs)
     
     def __repr__(self) -> str:
         return f'<PriceRate for Category {self.pricing_category_id}, Level {self.academic_level_id}, Deadline {self.deadline_id}>'

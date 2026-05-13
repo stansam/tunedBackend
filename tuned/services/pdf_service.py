@@ -1,9 +1,3 @@
-"""
-PDF generation service for invoices and receipts.
-
-This module provides PDF generation functionality using ReportLab or similar.
-"""
-
 from io import BytesIO
 import logging
 from typing import Any
@@ -12,18 +6,7 @@ logger = logging.getLogger(__name__)
 
 
 def generate_invoice_pdf(order: Any, include_logo: bool = True, language: str = 'en') -> BytesIO:
-    """
-    Generate PDF invoice for an order.
-    
-    Args:
-        order: Order model instance
-        include_logo: Whether to include company logo
-        language: Language code for invoice
-        
-    Returns:
-        BytesIO: PDF file buffer
-    """
-    # Stub implementation - in production, use ReportLab or WeasyPrint
+    # TODO: implement ReportLab or WeasyPrint
     logger.info(f'Generating PDF invoice for order {order.id}')
     
     pdf_buffer = BytesIO()
@@ -45,16 +28,7 @@ def generate_invoice_pdf(order: Any, include_logo: bool = True, language: str = 
 
 
 def generate_receipt_pdf(payment: Any) -> BytesIO:
-    """
-    Generate PDF receipt for a payment.
-    
-    Args:
-        payment: Payment model instance
-        
-    Returns:
-        BytesIO: PDF file buffer
-    """
-    # Stub implementation
+    # TODO: update implementation
     logger.info(f'Generating PDF receipt for payment {payment.id}')
     
     pdf_buffer = BytesIO()

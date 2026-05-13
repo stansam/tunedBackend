@@ -53,20 +53,20 @@ class OrderResponseDTO:
     client_id: str
     status: Optional[OrderStatus]
     paid: bool
-    total_price: Optional[float]
+    total_price: Optional[str]
     service_id: str
     academic_level_id: str
     deadline_id: str
     title: Optional[str]
     instructions: Optional[str]
     word_count: Optional[int]
-    page_count: Optional[float]
+    page_count: Optional[str]
     format_style: Optional[FormatStyle]
     sources: Optional[int]
     line_spacing: Optional[LineSpacing]
     due_date: Optional[str]
     report_type: Optional[ReportType]
-    discount_amount: Optional[float]
+    discount_amount: Optional[str]
 
     @classmethod
     def from_model(cls, order: "Order") -> "OrderResponseDTO":
@@ -76,20 +76,20 @@ class OrderResponseDTO:
             client_id=str(order.client_id),
             status=order.status if order.status else None,
             paid=order.paid,
-            total_price=order.total_price if order.total_price else 0.0,
+            total_price=str(order.total_price) if order.total_price else "0.0",
             service_id=str(order.service_id),
             academic_level_id=str(order.academic_level_id),
             deadline_id=str(order.deadline_id),
             title=order.title,
             instructions=order.instructions,
             word_count=order.word_count,
-            page_count=order.page_count,
+            page_count=str(order.page_count) if order.page_count else "0.0",
             format_style=order.format_style,
             sources=order.sources,
             line_spacing=order.line_spacing,
             due_date=order.due_date.isoformat() if order.due_date else None,
             report_type=order.report_type if order.report_type else None,
-            discount_amount=order.discount_amount if order.discount_amount else 0.0
+            discount_amount=str(order.discount_amount) if order.discount_amount else "0.0"
         )
 
 @dataclass
@@ -282,13 +282,13 @@ class OrderDraftResponseDTO:
     title: Optional[str]
     instructions: Optional[str]
     word_count: Optional[int]
-    page_count: Optional[float]
+    page_count: Optional[str]
     format_style: Optional[str]
     sources: Optional[int]
     line_spacing: Optional[str]
     due_date: Optional[str]
     report_type: Optional[str]
-    discount_amount: Optional[float]
+    discount_amount: Optional[str]
 
     @classmethod
     def from_model(cls, order: "Order") -> "OrderDraftResponseDTO":
@@ -301,13 +301,13 @@ class OrderDraftResponseDTO:
             title=order.title,
             instructions=order.instructions,
             word_count=order.word_count,
-            page_count=order.page_count,
+            page_count=str(order.page_count) if order.page_count else "0.0",
             format_style=order.format_style.value if order.format_style else None,
             sources=order.sources,
             line_spacing=order.line_spacing.value if order.line_spacing else None,
             due_date=order.due_date.isoformat() if order.due_date else None,
             report_type=order.report_type.value if order.report_type else None,
-            discount_amount=order.discount_amount
+            discount_amount=str(order.discount_amount) if order.discount_amount else "0.0"
         )
 
 @dataclass
@@ -335,7 +335,7 @@ class OrderDetailsResponseDTO:
   client_id: str
   status: OrderStatus
   paid: bool
-  total_price: Optional[float]
+  total_price: Optional[str]
   service_id: str
   service_name: Optional[str]
   academic_level_id: str
@@ -344,13 +344,13 @@ class OrderDetailsResponseDTO:
   title: Optional[str]
   instructions: Optional[str]
   word_count: Optional[int]
-  page_count: Optional[float]
+  page_count: Optional[str]
   format_style: Optional[str]
   sources: Optional[int]
   line_spacing: Optional[str]
   due_date: Optional[str]
   report_type: Optional[str]
-  discount_amount: Optional[float]
+  discount_amount: Optional[str]
   created_at: str
   client_username: str
   attachments: list[OrderFileResponseDTO]
@@ -363,7 +363,7 @@ class OrderDetailsResponseDTO:
         client_id=str(order.client_id),
         status=order.status,
         paid=order.paid,
-        total_price=order.total_price,
+        total_price=str(order.total_price) if order.total_price else "0.0",
         service_id=str(order.service_id),
         service_name=order.service.name if order.service else None,
         academic_level_id=str(order.academic_level_id),
@@ -372,13 +372,13 @@ class OrderDetailsResponseDTO:
         title=order.title,
         instructions=order.instructions,
         word_count=order.word_count,
-        page_count=order.page_count,
+        page_count=str(order.page_count) if order.page_count else "0.0",
         format_style=order.format_style.value if order.format_style else "",
         sources=order.sources,
         line_spacing=order.line_spacing.value if order.line_spacing else "",
         due_date=order.due_date.isoformat() if order.due_date else None,
         report_type=order.report_type.value if order.report_type else "",
-        discount_amount=order.discount_amount,
+        discount_amount=str(order.discount_amount) if order.discount_amount else "0.0",
         created_at=order.created_at.isoformat(),
         client_username=order.client.username,
         attachments=[OrderFileResponseDTO.from_model(file) for file in order.files]        

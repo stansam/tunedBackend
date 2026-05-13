@@ -2,12 +2,14 @@ from tuned.extensions import db
 from tuned.models.base import BaseModel
 from datetime import datetime, timezone
 import uuid
+from decimal import Decimal
 from sqlalchemy.dialects.postgresql import UUID, ENUM
 from tuned.models.enums import OrderStatus, SupportTicketStatus, Currency, ReportType, LineSpacing, FormatStyle
 from sqlalchemy import event
 from sqlalchemy.orm import validates, Mapped, mapped_column, relationship, Session, Mapper
 from tuned.utils.orders import generate_public_order_number
 from typing import TYPE_CHECKING, Optional, Any
+from sqlalchemy.engine import Connection
 
 if TYPE_CHECKING:
     from tuned.models.user import User
@@ -30,21 +32,21 @@ class Order(BaseModel):
     title: Mapped[Optional[str]] = mapped_column(db.String(255), nullable=True)
     instructions: Mapped[Optional[str]] = mapped_column(db.Text, nullable=True)
     word_count: Mapped[Optional[int]] = mapped_column(db.Integer, nullable=True)
-    page_count: Mapped[Optional[float]] = mapped_column(db.Float, nullable=True)
+    page_count: Mapped[Optional[Decimal]] = mapped_column(db.Numeric(precision=10, scale=2), nullable=True)
     format_style: Mapped[Optional[FormatStyle]] = mapped_column(ENUM(FormatStyle, name="formatstyle"), nullable=True, default=FormatStyle.APA)
     sources: Mapped[Optional[int]] = mapped_column(db.Integer, nullable=True)
     line_spacing: Mapped[Optional[LineSpacing]] = mapped_column(ENUM(LineSpacing, name="linespacing"), default=LineSpacing.DOUBLE, nullable=True)
     report_type: Mapped[Optional[ReportType]] = mapped_column(ENUM(ReportType, name="reporttype"), nullable=True, default=None)
-    total_price: Mapped[Optional[float]] = mapped_column(db.Numeric(precision=10, scale=2), nullable=True)
+    total_price: Mapped[Optional[Decimal]] = mapped_column(db.Numeric(precision=10, scale=2), nullable=True)
     status: Mapped[OrderStatus] = mapped_column(ENUM(OrderStatus, name="orderstatus"), default=OrderStatus.PENDING, nullable=False)
     paid: Mapped[bool] = mapped_column(db.Boolean, default=False, nullable=False)
     delivered_at: Mapped[Optional[datetime]] = mapped_column(db.DateTime(timezone=True), nullable=True, default=None)
     extension_requested: Mapped[bool] = mapped_column(db.Boolean, default=False, nullable=False)
     extension_requested_at: Mapped[Optional[datetime]] = mapped_column(db.DateTime(timezone=True), nullable=True, default=None)
     due_date: Mapped[Optional[datetime]] = mapped_column(db.DateTime(timezone=True), nullable=True, default=None)
-    price_per_page: Mapped[Optional[float]] = mapped_column(db.Numeric(precision=10, scale=2), nullable=True)
-    subtotal: Mapped[Optional[float]] = mapped_column(db.Numeric(precision=10, scale=2), nullable=True)
-    discount_amount: Mapped[Optional[float]] = mapped_column(db.Numeric(precision=10, scale=2), nullable=True, default=0.0)
+    price_per_page: Mapped[Optional[Decimal]] = mapped_column(db.Numeric(precision=10, scale=2), nullable=True)
+    subtotal: Mapped[Optional[Decimal]] = mapped_column(db.Numeric(precision=10, scale=2), nullable=True)
+    discount_amount: Mapped[Optional[Decimal]] = mapped_column(db.Numeric(precision=10, scale=2), nullable=True, default=0.0)
     currency: Mapped[Currency] = mapped_column(ENUM(Currency, name="currency"), default=Currency.USD, nullable=False)
     additional_materials: Mapped[Optional[str]] = mapped_column(db.Text, nullable=True, default=None)
     
@@ -127,8 +129,15 @@ class Order(BaseModel):
     def is_delivered(self: "Order") -> bool:
         return self.latest_delivery is not None
         
+    # def __init__(self: "Order", **kwargs: Any) -> None:
+    #     super(Order, self).__init__(**kwargs)
+    #     if not self.order_number:
+    #         self.order_number = generate_public_order_number(db.session())
+    
     def __init__(self: "Order", **kwargs: Any) -> None:
         super(Order, self).__init__(**kwargs)
+        # if not self.order_number:
+        #     self.order_number = generate_public_order_number(db.session())
        
     def __repr__(self: "Order") -> str:
         return f'<Order {self.order_number}>'
@@ -205,7 +214,7 @@ class SupportTicket(BaseModel):
 
 
 @event.listens_for(Order, "before_insert")
-def set_public_order_number(mapper: Mapper, connection: Session, target: Order) -> None:
+def set_public_order_number(mapper: Mapper, connection: Connection, target: Order) -> None:
     if target.order_number:
         return
     target.order_number = generate_public_order_number(connection)

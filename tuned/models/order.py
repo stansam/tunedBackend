@@ -4,9 +4,16 @@ from datetime import datetime, timezone
 import uuid
 from decimal import Decimal
 from sqlalchemy.dialects.postgresql import UUID, ENUM
-from tuned.models.enums import OrderStatus, SupportTicketStatus, Currency, ReportType, LineSpacing, FormatStyle
+from tuned.models.enums import(
+    OrderStatus, SupportTicketStatus, Currency,
+    ReportType, LineSpacing, FormatStyle,
+    FileExtensionType
+)
 from sqlalchemy import event
-from sqlalchemy.orm import validates, Mapped, mapped_column, relationship, Session, Mapper
+from sqlalchemy.orm import(
+    validates, Mapped, mapped_column,
+    relationship, Mapper
+)
 from tuned.utils.orders import generate_public_order_number
 from typing import TYPE_CHECKING, Optional, Any
 from sqlalchemy.engine import Connection
@@ -155,22 +162,13 @@ class OrderFile(BaseModel):
     filename: Mapped[str] = mapped_column(db.String(255), nullable=False)
     file_path: Mapped[str] = mapped_column(db.String(255), nullable=False)
     uploaded_at: Mapped[datetime] = mapped_column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
+    file_size: Mapped[Optional[int]] = mapped_column(db.BigInteger, nullable=True, default=0)
+    file_type: Mapped[Optional[FileExtensionType]] = mapped_column(ENUM(FileExtensionType, name="fileextensiontype" ), nullable=False)
     is_from_client: Mapped[bool] = mapped_column(db.Boolean, default=True, nullable=False)
     
     order: Mapped["Order"] = relationship('Order', back_populates='files')
 
-    @property
-    def file_size(self: "OrderFile") -> int:
-        import os
-        try:
-            return os.path.getsize(self.file_path)
-        except (OSError, TypeError):
-            return 0
-    
-    @property
-    def file_type(self: "OrderFile") -> str:
-        return self.filename.split('.')[-1].lower()
-    
+
     def __init__(self: "OrderFile", **kwargs: Any) -> None:
         super(OrderFile, self).__init__(**kwargs)
     

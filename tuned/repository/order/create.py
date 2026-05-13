@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session
 from tuned.models import Order, OrderFile
 from tuned.models.payment import Discount
 from tuned.models.enums import OrderStatus
-from tuned.dtos.order import CreateOrderRequestDTO, OrderDraftCreateDTO
+from tuned.dtos.order import CreateOrderRequestDTO, OrderDraftCreateDTO, CreateOrderFileDTO
 from tuned.repository.exceptions import DatabaseError
 from tuned.core.logging import get_logger
 
@@ -72,13 +72,15 @@ class CreateOrderFile:
     def __init__(self, session: Session) -> None:
         self.session = session
 
-    def execute(self, order_id: str, filename: str, file_path: str) -> OrderFile:
+    def execute(self, order_id: str, req: CreateOrderFileDTO) -> OrderFile:
         try:
             order_file = OrderFile(
                 order_id=order_id,
-                filename=filename,
-                file_path=file_path,
-                is_from_client=True
+                filename=req.filename,
+                file_path=req.file_path,
+                file_size=req.file_size,
+                file_type=req.file_type,
+                is_from_client=req.is_from_client
             )
             self.session.add(order_file)
             self.session.flush()

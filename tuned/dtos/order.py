@@ -7,7 +7,10 @@ from typing import Optional, TYPE_CHECKING
 if TYPE_CHECKING:
     from tuned.models.order import Order, OrderFile
 
-from tuned.models.enums import OrderStatus, Priority, FormatStyle, LineSpacing, ReportType
+from tuned.models.enums import(
+    OrderStatus, Priority, FormatStyle,
+    LineSpacing, ReportType, FileExtensionType
+)
 
 _STATUS_PROGRESS: dict[OrderStatus, int] = {
     OrderStatus.DRAFT:                     0,
@@ -61,12 +64,14 @@ class OrderResponseDTO:
     instructions: Optional[str]
     word_count: Optional[int]
     page_count: Optional[str]
-    format_style: Optional[FormatStyle]
+    format_style: Optional[str]
     sources: Optional[int]
-    line_spacing: Optional[LineSpacing]
+    line_spacing: Optional[str]
     due_date: Optional[str]
-    report_type: Optional[ReportType]
+    report_type: Optional[str]
     discount_amount: Optional[str]
+    created_at: Optional[str]
+    updated_at: Optional[str]
 
     @classmethod
     def from_model(cls, order: "Order") -> "OrderResponseDTO":
@@ -84,12 +89,14 @@ class OrderResponseDTO:
             instructions=order.instructions,
             word_count=order.word_count,
             page_count=str(order.page_count) if order.page_count else "0.0",
-            format_style=order.format_style,
+            format_style=order.format_style.value if order.format_style else None,
             sources=order.sources,
-            line_spacing=order.line_spacing,
+            line_spacing=order.line_spacing.value if order.line_spacing else None,
             due_date=order.due_date.isoformat() if order.due_date else None,
-            report_type=order.report_type if order.report_type else None,
-            discount_amount=str(order.discount_amount) if order.discount_amount else "0.0"
+            report_type=order.report_type.value if order.report_type else None,
+            discount_amount=str(order.discount_amount) if order.discount_amount else "0.0",
+            created_at=order.created_at.isoformat() if order.created_at else None,
+            updated_at=order.updated_at.isoformat() if order.updated_at else None,
         )
 
 @dataclass
@@ -122,20 +129,6 @@ class OrderListRequestDTO:
             self.academic_level_id = self.academic_level_id.strip()
         # if isinstance(self.deadline_id, str):
         #     self.deadline_id = self.deadline_id.strip()
-
-    # def to_dict(self) -> dict[str, Any]:
-    #     return {
-    #         "user_id": self.user_id,
-    #         "status": self.status,
-    #         "q": self.q,
-    #         "sort": self.sort,
-    #         "order": self.order,
-    #         "page": self.page,
-    #         "per_page": self.per_page,
-    #         "service_id": self.service_id,
-    #         "academic_level_id": self.academic_level_id,
-    #         "deadline_id": self.deadline_id,
-    #     }
 
 @dataclass
 class OrderListResponseDTO:
@@ -235,6 +228,18 @@ class CreateOrderRequestDTO:
             self.report_type = ReportType(self.report_type)
 
 @dataclass
+class CreateOrderFileDTO:
+    filename: str
+    file_path: str
+    file_size: int
+    file_type: FileExtensionType
+    is_from_client: bool = True
+
+    def __post_init__(self):
+        if isinstance(self.file_type, str):
+            self.file_type = FileExtensionType(self.file_type)
+
+@dataclass
 class CreateOrderResponseDTO:
     order_id: str
     order_number: str
@@ -312,28 +317,30 @@ class OrderDraftResponseDTO:
 
 @dataclass
 class OrderFileResponseDTO:
-  id: str
-  name: str
-  url: str
-  size: float
-  mime_type: str
+    id: str
+    filename: str
+    url: str
+    size: float
+    type: str
+    created_at: str
 
-  @classmethod
-  def from_model(cls, file: "OrderFile") -> "OrderFileResponseDTO":
-    return cls(
-        id=str(file.id),
-        name=file.filename,
-        url=file.file_path,
-        size=file.file_size,
-        mime_type=file.file_type,
-    )
+    @classmethod
+    def from_model(cls, file: "OrderFile") -> "OrderFileResponseDTO":
+        return cls(
+            id=str(file.id),
+            filename=file.filename,
+            url=file.file_path,
+            size=file.file_size or 0,
+            type=file.file_type.value if file.file_type else "unknown",
+            created_at=file.created_at.isoformat() if file.created_at else ""
+        )
 
 @dataclass
 class OrderDetailsResponseDTO:
   id: str
   order_number: str
   client_id: str
-  status: OrderStatus
+  status: str
   paid: bool
   total_price: Optional[str]
   service_id: str
@@ -361,7 +368,7 @@ class OrderDetailsResponseDTO:
         id=str(order.id),
         order_number=order.order_number,
         client_id=str(order.client_id),
-        status=order.status,
+        status=order.status.value,
         paid=order.paid,
         total_price=str(order.total_price) if order.total_price else "0.0",
         service_id=str(order.service_id),
@@ -373,13 +380,13 @@ class OrderDetailsResponseDTO:
         instructions=order.instructions,
         word_count=order.word_count,
         page_count=str(order.page_count) if order.page_count else "0.0",
-        format_style=order.format_style.value if order.format_style else "",
+        format_style=order.format_style.value if order.format_style else None,
         sources=order.sources,
-        line_spacing=order.line_spacing.value if order.line_spacing else "",
+        line_spacing=order.line_spacing.value if order.line_spacing else None,
         due_date=order.due_date.isoformat() if order.due_date else None,
-        report_type=order.report_type.value if order.report_type else "",
+        report_type=order.report_type.value if order.report_type else None,
         discount_amount=str(order.discount_amount) if order.discount_amount else "0.0",
         created_at=order.created_at.isoformat(),
         client_username=order.client.username,
-        attachments=[OrderFileResponseDTO.from_model(file) for file in order.files]        
+        attachments=[OrderFileResponseDTO.from_model(file) for file in order.files]
 )

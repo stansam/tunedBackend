@@ -6,6 +6,7 @@ from dataclasses import asdict
 from marshmallow import ValidationError
 import logging
 from tuned.utils.responses import error_response
+from tuned.utils.decorators import rate_limit
 from tuned.apis.orders.schemas.order import(
     CreateOrderSchema, ValidateDiscountSchema,
     SaveDraftSchema, OrderListRequestSchema
@@ -39,14 +40,14 @@ class CreateOrderView(MethodView):
                 response_dto = get_services().order.create_order(dto, user_id, ip_address, user_agent)
                 return success_response(data=asdict(response_dto), message="Order created successfully", status=201)
             except ValueError as e:
-                logger.error(f"Failed to create order: {e}")
-                return error_response(message="Failed to create order", status=400)
+                logger.warning(f"[CreateOrderView] Business rule rejected: {e}")
+                return error_response(message="Failed to create order", status=422)
         except Exception as e:
             logger.error(f"Failed to create order: {e}")
             return error_response(message="Failed to create order", status=500)
 
 class ValidateDiscountView(MethodView):
-    decorators = [login_required]
+    decorators = [login_required, rate_limit(max_requests=10, window=60, key_prefix='discount_val')]
     def post(self):
         try:
             data = request.get_json()
@@ -71,6 +72,7 @@ class UploadOrderFilesView(MethodView):
     def post(self, order_id):
         try:
             user_id = current_user.id
+            is_admin = current_user.is_admin
             if 'files' not in request.files:
                 logger.error(f"No files provided")
                 return error_response(message="No files provided", status=400)
@@ -83,7 +85,7 @@ class UploadOrderFilesView(MethodView):
             ip_address = get_user_ip() or "127.0.0.1"
             user_agent = get_user_agent() or request.user_agent.string
 
-            response_dto = get_services().order.upload_order_files(order_id, user_id, files, ip_address, user_agent)
+            response_dto = get_services().order.upload_order_files(order_id, user_id, files, is_admin, ip_address, user_agent)
             return success_response(data=asdict(response_dto), message="Files uploaded successfully", status=200)
         except Exception as e:
             logger.error(f"Failed to upload files: {e}")
@@ -106,7 +108,9 @@ class SaveDraftView(MethodView):
                 logger.error(f"Validation failed: {err}")
                 return error_response(message="Validation failed", status=400)
 
-            response_dto = get_services().order.save_draft(dto, ip_address=get_user_ip(), user_agent=get_user_agent())
+            ip_address = get_user_ip() or "127.0.0.1"
+            user_agent = get_user_agent() or request.user_agent.string
+            response_dto = get_services().order.save_draft(dto, ip_address=ip_address, user_agent=user_agent)
             return success_response(data=asdict(response_dto), message="Draft saved successfully", status=200)
         except Exception as e:
             logger.error(f"Failed to save draft: {e}")

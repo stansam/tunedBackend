@@ -1,12 +1,21 @@
-from marshmallow import Schema, fields, validate, post_load
+from datetime import datetime, timedelta, timezone
+from marshmallow import Schema, fields, validate, post_load, validates, ValidationError
 from tuned.models.enums import FormatStyle, LineSpacing, ReportType, OrderStatus
 from tuned.dtos import CreateOrderRequestDTO, ValidateDiscountRequestDTO, OrderDraftCreateDTO, OrderListRequestDTO
 
 class CreateOrderSchema(Schema):
     service_id = fields.String(required=True)
     level_id = fields.String(required=True)
-    # deadline_id = fields.String(required=True)
     deadline = fields.AwareDateTime(required=True)
+
+    @validates("deadline")
+    def validate_deadline(self, value):
+        value_utc = value.astimezone(timezone.utc)
+        min_deadline = datetime.now(timezone.utc) + timedelta(hours=3)
+        if value_utc <= min_deadline:
+            raise ValidationError("Deadline must be at least 3 hours from now.")
+        return value_utc
+
     title = fields.String(required=True, validate=validate.Length(min=1))
     instructions = fields.String(required=True, validate=validate.Length(min=1))
     word_count = fields.Integer(required=True, validate=validate.Range(min=1))

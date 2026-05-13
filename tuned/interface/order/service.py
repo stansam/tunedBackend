@@ -7,7 +7,7 @@ from tuned.core.logging import get_logger
 from tuned.dtos.audit import ActivityLogCreateDTO
 from tuned.dtos import (
     ReorderResponseDTO, CreateOrderRequestDTO, CreateOrderResponseDTO,
-    ValidateDiscountRequestDTO, ValidateDiscountResponseDTO,
+    CreateOrderFileDTO, ValidateDiscountResponseDTO,
     OrderFileUploadResponseDTO, OrderDraftCreateDTO, OrderDraftResponseDTO,
     OrderListRequestDTO, OrderListResponseDTO,
     UpdateUserDTO, CalculatePriceRequestDTO,
@@ -15,7 +15,7 @@ from tuned.dtos import (
 )
 from tuned.repository.exceptions import DatabaseError, NotFound
 from tuned.repository.protocols import OrderRepositoryProtocol
-from tuned.models.enums import DiscountType
+from tuned.models.enums import DiscountType, FileExtensionType
 from tuned.utils.variables import Variables
 from tuned.utils.dependencies import get_services
 
@@ -170,7 +170,8 @@ class OrderService:
             total_discount = discount_amount + dto.points_to_redeem
             total_price = max(subtotal - total_discount, 0.0)
 
-            if dto.points_to_redeem > total_price + dto.points_to_redeem: # points value cannot exceed the remaining price
+            if dto.points_to_redeem > total_price:
+                # points value cannot exceed the remaining price
                 raise ValueError("Points redemption value exceeds order total")
 
             # 5. Create Order
@@ -262,11 +263,12 @@ class OrderService:
 
         return ValidateDiscountResponseDTO(valid=True, discount_amount=amount, description=discount.description)
 
-    def upload_order_files(self, order_id: str, user_id: str, files: list[FileStorage], ip_address: str, user_agent: str) -> OrderFileUploadResponseDTO:
+    def upload_order_files(self, order_id: str, user_id: str, files: list[FileStorage], is_admin: bool, ip_address: str, user_agent: str) -> OrderFileUploadResponseDTO:
         try:
             order = self._repo.get_order_by_id_for_client(order_id, user_id)
             existing = order
             from flask import current_app
+            from tuned.interface.order.util import resolve_file_type
 
             upload_dir = os.path.join(current_app.root_path, 'static', 'client', 'assets', 'order_files', order_id)
             os.makedirs(upload_dir, exist_ok=True)
@@ -279,7 +281,19 @@ class OrderService:
                 file.save(file_path)
 
                 relative_path = f"/static/client/assets/order_files/{order_id}/{filename}"
-                order_file = self._repo.create_order_file(str(order.id), file.filename or filename, relative_path)
+                # 5. Record in database
+                file_size = file.content_length or 0
+                file_type_raw = ext.lstrip(".").lower() if ext else "unknown"
+                file_type = resolve_file_type(file_type_raw)
+                
+                dto = CreateOrderFileDTO(
+                    filename=file.filename or filename,
+                    file_path=relative_path,
+                    file_size=file_size,
+                    file_type=file_type,
+                    is_from_client=not is_admin
+                )
+                order_file = self._repo.create_order_file(order_id, dto)
                 file_ids.append(str(order_file.id))
 
             try:

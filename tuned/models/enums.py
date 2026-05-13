@@ -68,6 +68,14 @@ class FileType(str, Enum):
     PLAGIARISM_REPORT = "plagiarism_report"
     SUPPLEMENTARY = "supplementary"
 
+class FileExtensionType(str, Enum):
+    DOCX = "docx"
+    PDF = "pdf"
+    JPG = "jpg"
+    PNG = "png"
+    TXT = "txt"
+    DOC = "doc"
+    
 
 class DeliveryStatus(str, Enum):
     DELIVERED = "delivered"

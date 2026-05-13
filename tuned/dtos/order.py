@@ -76,7 +76,7 @@ class OrderResponseDTO:
             client_id=str(order.client_id),
             status=order.status if order.status else None,
             paid=order.paid,
-            total_price=order.total_price,
+            total_price=order.total_price if order.total_price else 0.0,
             service_id=str(order.service_id),
             academic_level_id=str(order.academic_level_id),
             deadline_id=str(order.deadline_id),
@@ -89,7 +89,7 @@ class OrderResponseDTO:
             line_spacing=order.line_spacing,
             due_date=order.due_date.isoformat() if order.due_date else None,
             report_type=order.report_type if order.report_type else None,
-            discount_amount=order.discount_amount
+            discount_amount=order.discount_amount if order.discount_amount else 0.0
         )
 
 @dataclass

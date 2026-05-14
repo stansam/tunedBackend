@@ -28,9 +28,9 @@ class CreateBlog:
                 is_published=data.is_published,
                 is_featured=data.is_featured,
                 published_at=data.published_at,
-                updated_at=data.updated_at,
-                updated_by=UUID(data.updated_by),
-                created_by=UUID(data.created_by),
+                # updated_at=data.updated_at,
+                # updated_by=UUID(data.updated_by),
+                # created_by=UUID(data.created_by),
             )
 
             self.session.add(post)

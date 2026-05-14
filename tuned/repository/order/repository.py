@@ -10,7 +10,7 @@ from tuned.models import Order, OrderFile
 from tuned.models.payment import Discount
 from tuned.dtos import(
     OrderListRequestDTO, OrderListResponseDTO,
-    CreateOrderRequestDTO, OrderDraftCreateDTO
+    CreateOrderRequestDTO, OrderDraftCreateDTO, CreateOrderFileDTO
 )
 from tuned.repository.order.queries import (
     GetActiveOrdersByClient,
@@ -92,7 +92,7 @@ class OrderRepository(OrderRepositoryProtocol):
     def link_discount_to_order(self, order: Order, discount: Discount, amount: float) -> None:
         return LinkDiscountToOrder(self.session).execute(order, discount, amount)
 
-    def create_order_file(self, order_id: str, filename: str, file_path: str) -> OrderFile:
+    def create_order_file(self, order_id: str, req: CreateOrderFileDTO) -> OrderFile:
         return CreateOrderFile(self.session).execute(order_id, filename, file_path)
 
     def upsert_draft(self, dto: OrderDraftCreateDTO) -> Order:

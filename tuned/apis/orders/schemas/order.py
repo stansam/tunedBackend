@@ -20,12 +20,12 @@ class CreateOrderSchema(Schema):
     points_to_redeem = fields.Integer(required=False, load_default=0)
 
     @validates("deadline")
-    def validate_deadline(self, value):
+    def validate_deadline(self, value, **kwargs):
         value_utc = value.astimezone(timezone.utc)
         min_deadline = datetime.now(timezone.utc) + timedelta(hours=3)
         if value_utc <= min_deadline:
             raise ValidationError("Deadline must be at least 3 hours from now.")
-        return value_utc
+        # return value_utc
 
     @post_load
     def make_dto(self, data, **kwargs):

@@ -7,15 +7,6 @@ class CreateOrderSchema(Schema):
     service_id = fields.String(required=True)
     level_id = fields.String(required=True)
     deadline = fields.AwareDateTime(required=True)
-
-    @validates("deadline")
-    def validate_deadline(self, value):
-        value_utc = value.astimezone(timezone.utc)
-        min_deadline = datetime.now(timezone.utc) + timedelta(hours=3)
-        if value_utc <= min_deadline:
-            raise ValidationError("Deadline must be at least 3 hours from now.")
-        return value_utc
-
     title = fields.String(required=True, validate=validate.Length(min=1))
     instructions = fields.String(required=True, validate=validate.Length(min=1))
     word_count = fields.Integer(required=True, validate=validate.Range(min=1))
@@ -27,6 +18,14 @@ class CreateOrderSchema(Schema):
     report_type = fields.String(required=False, allow_none=True, validate=validate.OneOf([e.value for e in ReportType]))
     discount_code = fields.String(required=False, allow_none=True)
     points_to_redeem = fields.Integer(required=False, load_default=0)
+
+    @validates("deadline")
+    def validate_deadline(self, value):
+        value_utc = value.astimezone(timezone.utc)
+        min_deadline = datetime.now(timezone.utc) + timedelta(hours=3)
+        if value_utc <= min_deadline:
+            raise ValidationError("Deadline must be at least 3 hours from now.")
+        return value_utc
 
     @post_load
     def make_dto(self, data, **kwargs):

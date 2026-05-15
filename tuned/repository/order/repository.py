@@ -93,7 +93,7 @@ class OrderRepository(OrderRepositoryProtocol):
         return LinkDiscountToOrder(self.session).execute(order, discount, amount)
 
     def create_order_file(self, order_id: str, req: CreateOrderFileDTO) -> OrderFile:
-        return CreateOrderFile(self.session).execute(order_id, filename, file_path)
+        return CreateOrderFile(self.session).execute(order_id, req)
 
     def upsert_draft(self, dto: OrderDraftCreateDTO) -> Order:
         return UpsertDraftOrder(self.session).execute(dto)

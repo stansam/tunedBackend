@@ -75,7 +75,11 @@ class FileExtensionType(str, Enum):
     PNG = "png"
     TXT = "txt"
     DOC = "doc"
-    
+    XLS = "xls"
+    XLSX = "xlsx"
+    CSV = "csv"
+    PPT = "ppt"
+    PPTX = "pptx"  
 
 class DeliveryStatus(str, Enum):
     DELIVERED = "delivered"

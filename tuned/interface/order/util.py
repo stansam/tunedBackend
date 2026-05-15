@@ -6,3 +6,18 @@ def resolve_file_type(file_type: str) -> FileExtensionType:
         return FileExtensionType(file_type)
     except ValueError:
         raise ValidationError(f"Invalid file type: {file_type}")
+
+allowed_extensions = {
+            "pdf",
+            "doc",
+            "docx",
+            "txt",
+            "rtf",
+            "xls",
+            "xlsx",
+            "csv",
+            "ppt",
+            "pptx",
+            "png",
+            "jpg",
+        }

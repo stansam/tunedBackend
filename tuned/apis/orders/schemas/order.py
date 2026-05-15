@@ -54,7 +54,7 @@ class ValidateDiscountSchema(Schema):
     def make_dto(self, data, **kwargs):
         return ValidateDiscountRequestDTO(**data)
 
-class SaveDraftSchema(Schema):
+class SaveDraftSchema(Schema): # TODO: Refactor the schema accordingly
     service_id = fields.String(required=False, allow_none=True)
     academic_level_id = fields.String(required=False, allow_none=True)
     deadline_id = fields.String(required=False, allow_none=True)

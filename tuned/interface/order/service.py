@@ -420,7 +420,7 @@ class OrderService:
                 "result": asdict(result),
                 "order_id": order_id
             }
-            get_event_bus().emit("order:comment", payload)
+            get_event_bus().emit("order.comment", payload)
             return result
         except Exception as exc:
             logger.error("[OrderService.create_order_comment] Socket emit failed: %r", exc)

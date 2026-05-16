@@ -15,6 +15,7 @@ class OrderEventHandlers:
         self._bus.on("order.status_changed", self._on_status_changed)
         self._bus.on("order.created",        self._on_created)
         self._bus.on("order.draft_saved",    self._on_draft_saved)
+        self._bus.on("order.comment", self._on_comment_created)
         self._bus.on("order.comment.updated", self._on_comment_updated)
         self._bus.on("order.comment.deleted", self._on_comment_deleted)
         logger.info("[OrderEventHandlers] registered")

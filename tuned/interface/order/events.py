@@ -15,6 +15,8 @@ class OrderEventHandlers:
         self._bus.on("order.status_changed", self._on_status_changed)
         self._bus.on("order.created",        self._on_created)
         self._bus.on("order.draft_saved",    self._on_draft_saved)
+        self._bus.on("order.comment.updated", self._on_comment_updated)
+        self._bus.on("order.comment.deleted", self._on_comment_deleted)
         logger.info("[OrderEventHandlers] registered")
 
     def _on_status_changed(self, payload: EventPayload) -> None:
@@ -99,4 +101,49 @@ class OrderEventHandlers:
         except Exception as exc:
             logger.error(
                 "[OrderEventHandlers._on_draft_saved] Socket emit failed: %r", exc
+            )
+    
+    def _on_comment_created(self, payload: EventPayload) -> None:
+        result   = payload.get("result")
+        order_id  = payload.get("order_id")
+        try:
+            from tuned.extensions import socketio
+            socketio.emit(
+                "order:comment",
+                result,
+                to=f"order_{order_id}",
+            )
+        except Exception as exc:
+            logger.error(
+                "[OrderEventHandlers._on_comment_updated] Socket emit failed: %r", exc
+            )
+    
+    def _on_comment_updated(self, payload: EventPayload) -> None:
+        result = payload.get("result")
+        order_id   = payload.get("order_id")
+        try:
+            from tuned.extensions import socketio
+            socketio.emit(
+                "order:comment:updated",
+                result,
+                to=f"order_{order_id}",
+            )
+        except Exception as exc:
+            logger.error(
+                "[OrderEventHandlers._on_comment_updated] Socket emit failed: %r", exc
+            )
+    
+    def _on_comment_deleted(self, payload: EventPayload) -> None:
+        comment_id   = payload.get("comment_id")
+        order_id   = payload.get("order_id")
+        try:
+            from tuned.extensions import socketio
+            socketio.emit(
+                "order:comment:deleted",
+                {"comment_id": comment_id},
+                to=f"order_{order_id}",
+            )
+        except Exception as exc:
+            logger.error(
+                "[OrderEventHandlers._on_comment_deleted] Socket emit failed: %r", exc
             )

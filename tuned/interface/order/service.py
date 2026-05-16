@@ -416,7 +416,11 @@ class OrderService:
             from dataclasses import asdict
             self._repo.save()
             result = OrderCommentResponseDTO.from_model(comment)
-            get_event_bus().emit("order:comment", asdict(result), room=f"order_{order_id}")
+            payload = {
+                "result": asdict(result),
+                "order_id": order_id
+            }
+            get_event_bus().emit("order:comment", payload)
             return result
         except Exception as exc:
             logger.error("[OrderService.create_order_comment] Socket emit failed: %r", exc)
@@ -431,8 +435,13 @@ class OrderService:
         try:
             from tuned.core.events import get_event_bus
             from dataclasses import asdict
-            get_event_bus().emit("order:comment:updated", asdict(result), room=f"order_{order_id}")
-        except Exception:
+            payload = {
+                "result": asdict(result),
+                "order_id": order_id
+            }
+            get_event_bus().emit("order.comment.updated", payload)
+        except Exception as exc:
+            logger.error("[OrderService.update_order_comment] Socket emit failed: %r", exc)
             pass
         return result
 
@@ -441,6 +450,7 @@ class OrderService:
         self._repo.save()
         try:
             from tuned.core.events import get_event_bus
-            get_event_bus().emit("order:comment:deleted", {"comment_id": comment_id}, room=f"order_{order_id}")
-        except Exception:
+            get_event_bus().emit("order.comment.deleted", {"comment_id": comment_id, "order_id": order_id})
+        except Exception as exc:
+            logger.error("[OrderService.delete_order_comment] Socket emit failed: %r", exc)
             pass

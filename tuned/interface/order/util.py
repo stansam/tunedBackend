@@ -20,4 +20,8 @@ allowed_extensions = {
             "pptx",
             "png",
             "jpg",
+            "webm",
+            "ogg",
+            "mp3",
+            "wav",
         }

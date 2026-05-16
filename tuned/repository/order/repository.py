@@ -6,11 +6,11 @@ from decimal import Decimal
 from sqlalchemy.orm import Session
 from sqlalchemy import select, func
 from sqlalchemy.exc import SQLAlchemyError
-from tuned.models import Order, OrderFile
-from tuned.models.payment import Discount
+from tuned.models import Order, OrderFile, OrderComment, Discount
 from tuned.dtos import(
     OrderListRequestDTO, OrderListResponseDTO,
-    CreateOrderRequestDTO, OrderDraftCreateDTO, CreateOrderFileDTO
+    CreateOrderRequestDTO, OrderDraftCreateDTO, CreateOrderFileDTO,
+    CreateCommentRequestDTO, UpdateCommentRequestDTO
 )
 from tuned.repository.order.queries import (
     GetActiveOrdersByClient,
@@ -33,6 +33,10 @@ from tuned.repository.order.create import (
 )
 from tuned.repository.exceptions import DatabaseError
 from tuned.repository.protocols import OrderRepositoryProtocol
+from tuned.repository.order.comments import (
+    GetOrderComments, CreateOrderComment, UpdateOrderComment,
+    DeleteOrderComment, LinkFilesToComment, MarkCommentsRead,
+)
 
 
 class OrderRepository(OrderRepositoryProtocol):
@@ -100,6 +104,24 @@ class OrderRepository(OrderRepositoryProtocol):
 
     def get_draft(self, user_id: str) -> Optional[Order]:
         return GetDraftOrder(self.session).execute(user_id)
+
+    def get_order_comments(self, order_id: str) -> list[OrderComment]:
+        return GetOrderComments(self.session).execute(order_id)
+
+    def create_order_comment(self, order_id: str, user_id: str, content: str) -> OrderComment:
+        return CreateOrderComment(self.session).execute(order_id, user_id, content)
+
+    def update_order_comment(self, comment_id: str, user_id: str, content: str) -> OrderComment:
+        return UpdateOrderComment(self.session).execute(comment_id, user_id, content)
+
+    def delete_order_comment(self, comment_id: str, user_id: str) -> None:
+        return DeleteOrderComment(self.session).execute(comment_id, user_id)
+
+    def link_files_to_comment(self, comment_id: str, file_ids: list[str]) -> None:
+        return LinkFilesToComment(self.session).execute(comment_id, file_ids)
+
+    def mark_comments_read(self, order_id: str, reader_user_id: str) -> None:
+        return MarkCommentsRead(self.session).execute(order_id, reader_user_id)
 
     def save(self) -> None:
         try:

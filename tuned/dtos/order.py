@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime, timezone, timedelta
 from typing import Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from tuned.models.order import Order, OrderFile
+    from tuned.models.order import Order, OrderFile, OrderComment
 
 from tuned.models.enums import(
     OrderStatus, Priority, FormatStyle,
@@ -390,3 +390,45 @@ class OrderDetailsResponseDTO:
         client_username=order.client.username,
         attachments=[OrderFileResponseDTO.from_model(file) for file in order.files]
 )
+
+@dataclass
+class OrderCommentResponseDTO:
+    id: str
+    order_id: str
+    sender_id: str
+    sender_name: str
+    sender_role: str
+    content: str
+    created_at: str
+    is_read: bool
+    attachments: list[OrderFileResponseDTO]
+
+    @classmethod
+    def from_model(cls, comment: "OrderComment") -> "OrderCommentResponseDTO":
+        role = "admin" if comment.is_admin else "client"
+        name = comment.user.username if comment.user else "Unknown"
+        return cls(
+            id=str(comment.id),
+            order_id=str(comment.order_id) if comment.order_id else "",
+            sender_id=str(comment.user_id) if comment.user_id else "",
+            sender_name=name,
+            sender_role=role,
+            content=comment.message or "",
+            created_at=comment.created_at.isoformat() if comment.created_at else "",
+            is_read=comment.is_read,
+            attachments=[
+                OrderFileResponseDTO.from_model(f)
+                for f in comment.attachments
+            ] if hasattr(comment, "attachments") else [],
+        )
+
+@dataclass
+class CreateCommentRequestDTO:
+    order_id: str
+    content: str
+    attachment_ids: list[str] = field(default_factory=list)
+
+@dataclass
+class UpdateCommentRequestDTO:
+    comment_id: str
+    content: str

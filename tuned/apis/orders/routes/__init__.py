@@ -1,6 +1,7 @@
 from tuned.apis.orders.routes.orders import (
     CreateOrderView, ValidateDiscountView,
-    UploadOrderFilesView, SaveDraftView, GetDraftView, ListClientOrders, GetOrderView
+    UploadOrderFilesView, SaveDraftView, GetDraftView, ListClientOrders, GetOrderView,
+    ListOrderCommentsView, CreateOrderCommentView, UpdateDeleteOrderCommentView
 )
 
 ORDER_ROUTES = [
@@ -10,5 +11,8 @@ ORDER_ROUTES = [
     {"url_rule": "/draft",                    "view_func": SaveDraftView.as_view("save_draft"),             "methods": ["POST"]},
     {"url_rule": "/draft",                    "view_func": GetDraftView.as_view("get_draft"),               "methods": ["GET"]},
     {"url_rule": "/detail/<string:order_number>", "view_func": GetOrderView.as_view("order_details"), "methods": ["GET"]},
-    {"url_rule": "/list", "view_func": ListClientOrders.as_view("list_client_orders"), "methods": ["POST"]}
+    {"url_rule": "/list", "view_func": ListClientOrders.as_view("list_client_orders"), "methods": ["POST"]},
+    {"url_rule": "/<string:order_id>/comments",                     "view_func": ListOrderCommentsView.as_view("list_comments"),        "methods": ["GET"]},
+    {"url_rule": "/<string:order_id>/comments",                     "view_func": CreateOrderCommentView.as_view("create_comment"),      "methods": ["POST"]},
+    {"url_rule": "/<string:order_id>/comments/<string:comment_id>", "view_func": UpdateDeleteOrderCommentView.as_view("comment_detail"),"methods": ["PATCH","DELETE"]}
 ]

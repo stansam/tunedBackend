@@ -80,6 +80,10 @@ class FileExtensionType(str, Enum):
     CSV = "csv"
     PPT = "ppt"
     PPTX = "pptx"  
+    WEBM = "webm"
+    OGG = "ogg"
+    MP3 = "mp3"
+    WAV = "wav"
 
 class DeliveryStatus(str, Enum):
     DELIVERED = "delivered"

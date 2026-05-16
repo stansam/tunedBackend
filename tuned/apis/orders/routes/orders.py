@@ -9,7 +9,8 @@ from tuned.utils.responses import error_response
 from tuned.utils.decorators import rate_limit
 from tuned.apis.orders.schemas.order import(
     CreateOrderSchema, ValidateDiscountSchema,
-    SaveDraftSchema, OrderListRequestSchema
+    SaveDraftSchema, OrderListRequestSchema,
+    OrderCommentCreateSchema, OrderCommentUpdateSchema
 )
 from tuned.core.logging import get_logger
 from tuned.utils.auth import get_user_ip, get_user_agent
@@ -162,3 +163,58 @@ class GetOrderView(MethodView):
         except Exception as e:
             logger.error(f"Failed to fetch order: {e}")
             return error_response(message="Failed to fetch order", status=500)
+
+class ListOrderCommentsView(MethodView):
+    decorators = [login_required]
+    def get(self, order_id: str):
+        try:
+            user_id = current_user.id
+            dtos = get_services().order.get_order_comments(order_id, user_id)
+            return success_response(data=[asdict(d) for d in dtos], message="Comments fetched", status=200)
+        except Exception as e:
+            logger.error("[ListOrderCommentsView] %s", e)
+            return error_response(message="Failed to fetch comments", status=500)
+
+class CreateOrderCommentView(MethodView):
+    decorators = [login_required, rate_limit(max_requests=50, window=3600, key_prefix="comment")]
+    def post(self, order_id: str):
+        try:
+            data = request.get_json()
+            if not data:
+                return error_response(message="No input data", status=400)
+            try:
+                dto = OrderCommentCreateSchema().load(data)
+            except ValidationError as err:
+                return error_response(message="Validation failed", status=400)
+            ip = get_user_ip() or "127.0.0.1"
+            ua = get_user_agent() or request.user_agent.string
+            result = get_services().order.create_order_comment(order_id, current_user.id, dto, ip, ua)
+            return success_response(data=asdict(result), message="Comment posted", status=201)
+        except Exception as e:
+            logger.error("[CreateOrderCommentView] %s", e)
+            return error_response(message="Failed to post comment", status=500)
+
+class UpdateDeleteOrderCommentView(MethodView):
+    decorators = [login_required]
+    def patch(self, order_id: str, comment_id: str):
+        try:
+            data = request.get_json()
+            if not data:
+                return error_response(message="No input data", status=400)
+            try:
+                dto = OrderCommentUpdateSchema().load(data)
+            except ValidationError as err:
+                return error_response(message="Validation failed", status=400)
+            result = get_services().order.update_order_comment(order_id, comment_id, current_user.id, dto)
+            return success_response(data=asdict(result), message="Comment updated", status=200)
+        except Exception as e:
+            logger.error("[UpdateDeleteOrderCommentView.patch] %s", e)
+            return error_response(message="Failed to update comment", status=500)
+
+    def delete(self, order_id: str, comment_id: str):
+        try:
+            get_services().order.delete_order_comment(order_id, comment_id, current_user.id)
+            return success_response(data={}, message="Comment deleted", status=200)
+        except Exception as e:
+            logger.error("[UpdateDeleteOrderCommentView.delete] %s", e)
+            return error_response(message="Failed to delete comment", status=500)

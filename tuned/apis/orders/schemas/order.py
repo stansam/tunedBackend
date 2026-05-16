@@ -1,8 +1,10 @@
 from datetime import datetime, timedelta, timezone
 from marshmallow import Schema, fields, validate, post_load, validates, ValidationError
 from tuned.models.enums import FormatStyle, LineSpacing, ReportType, OrderStatus
-from tuned.dtos import CreateOrderRequestDTO, ValidateDiscountRequestDTO, OrderDraftCreateDTO, OrderListRequestDTO
-
+from tuned.dtos import(
+    CreateOrderRequestDTO, ValidateDiscountRequestDTO, OrderDraftCreateDTO, OrderListRequestDTO,
+    CreateCommentRequestDTO, UpdateCommentRequestDTO,
+)
 class CreateOrderSchema(Schema):
     service_id = fields.String(required=True)
     level_id = fields.String(required=True)
@@ -96,3 +98,22 @@ class OrderListRequestSchema(Schema):
             sort=data.get("sort"),
             order=data.get("order")
         )
+
+class OrderCommentCreateSchema(Schema):
+    content = fields.String(required=True, validate=validate.Length(min=1, max=2500))
+    attachment_ids = fields.List(fields.String(), load_default=[])
+
+    @post_load
+    def make_dto(self, data, **kwargs):
+        return CreateCommentRequestDTO(
+            order_id="",  # injected from URL in view
+            content=data["content"],
+            attachment_ids=data.get("attachment_ids", []),
+        )
+
+class OrderCommentUpdateSchema(Schema):
+    content = fields.String(required=True, validate=validate.Length(min=1, max=2500))
+
+    @post_load
+    def make_dto(self, data, **kwargs):
+        return UpdateCommentRequestDTO(comment_id="", content=data["content"])

@@ -165,8 +165,10 @@ class OrderFile(BaseModel):
     file_size: Mapped[Optional[int]] = mapped_column(db.BigInteger, nullable=True, default=0)
     file_type: Mapped[Optional[FileExtensionType]] = mapped_column(ENUM(FileExtensionType, name="fileextensiontype" ), nullable=False)
     is_from_client: Mapped[bool] = mapped_column(db.Boolean, default=True, nullable=False)
+    comment_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), db.ForeignKey('order_comment.id'), nullable=True, index=True, default=None)
     
     order: Mapped["Order"] = relationship('Order', back_populates='files')
+    comment: Mapped[Optional["OrderComment"]] = relationship('OrderComment', foreign_keys=[comment_id], back_populates='attachments')
 
 
     def __init__(self: "OrderFile", **kwargs: Any) -> None:
@@ -185,6 +187,7 @@ class OrderComment(BaseModel):
     
     user: Mapped[Optional["User"]] = relationship('User', foreign_keys=[user_id], back_populates='order_comments')
     order: Mapped[Optional["Order"]] = relationship('Order', foreign_keys=[order_id], back_populates='comments')
+    attachments: Mapped[list["OrderFile"]] = relationship('OrderFile', foreign_keys='OrderFile.comment_id', back_populates='comment', lazy=True)
     
     def __init__(self: "OrderComment", **kwargs: Any) -> None:
         super(OrderComment, self).__init__(**kwargs)

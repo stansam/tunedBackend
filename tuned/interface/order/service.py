@@ -11,15 +11,14 @@ from tuned.dtos import (
     CreateOrderFileDTO, ValidateDiscountResponseDTO,
     OrderFileUploadResponseDTO, OrderDraftCreateDTO, OrderDraftResponseDTO,
     OrderListRequestDTO, OrderListResponseDTO,
-    UpdateUserDTO, CalculatePriceRequestDTO,
-    OrderDetailsResponseDTO
+    UpdateUserDTO, CalculatePriceRequestDTO, OrderDetailsResponseDTO,
+    OrderCommentResponseDTO, CreateCommentRequestDTO, UpdateCommentRequestDTO,
 )
 from tuned.repository.exceptions import DatabaseError, NotFound
 from tuned.repository.protocols import OrderRepositoryProtocol
 from tuned.models.enums import DiscountType, FileExtensionType
 from tuned.utils.variables import Variables
 from tuned.utils.dependencies import get_services
-
 if TYPE_CHECKING:
     from tuned.interface import Services
     from tuned.repository import Repository
@@ -395,3 +394,53 @@ class OrderService:
         except Exception as e:
             logger.error("[OrderService.get_draft] Failed: %r", e)
             raise DatabaseError("Failed to fetch draft") from e
+
+    def get_order_comments(self, order_id: str, user_id: str) -> list[OrderCommentResponseDTO]:
+        self._repo.get_order_by_id_for_client(order_id, user_id)  # auth check
+        try:
+            self._repo.mark_comments_read(order_id, user_id)
+        except Exception:
+            pass  # non-blocking
+        comments = self._repo.get_order_comments(order_id)
+        self._repo.save()
+        return [OrderCommentResponseDTO.from_model(c) for c in comments]
+
+    def create_order_comment(self, order_id: str, user_id: str, dto: CreateCommentRequestDTO, ip: str, ua: str) -> OrderCommentResponseDTO:
+        self._repo.get_order_by_id_for_client(order_id, user_id)  # auth check
+        dto.order_id = order_id
+        comment = self._repo.create_order_comment(order_id, user_id, dto.content)
+        if dto.attachment_ids:
+            self._repo.link_files_to_comment(str(comment.id), dto.attachment_ids)
+        try:
+            from tuned.core.events import get_event_bus
+            from dataclasses import asdict
+            self._repo.save()
+            result = OrderCommentResponseDTO.from_model(comment)
+            get_event_bus().emit("order:comment", asdict(result), room=f"order_{order_id}")
+            return result
+        except Exception as exc:
+            logger.error("[OrderService.create_order_comment] Socket emit failed: %r", exc)
+            self._repo.save()
+            return OrderCommentResponseDTO.from_model(comment)
+
+    def update_order_comment(self, order_id: str, comment_id: str, user_id: str, dto: UpdateCommentRequestDTO) -> OrderCommentResponseDTO:
+        dto.comment_id = comment_id
+        comment = self._repo.update_order_comment(comment_id, user_id, dto.content)
+        self._repo.save()
+        result = OrderCommentResponseDTO.from_model(comment)
+        try:
+            from tuned.core.events import get_event_bus
+            from dataclasses import asdict
+            get_event_bus().emit("order:comment:updated", asdict(result), room=f"order_{order_id}")
+        except Exception:
+            pass
+        return result
+
+    def delete_order_comment(self, order_id: str, comment_id: str, user_id: str) -> None:
+        self._repo.delete_order_comment(comment_id, user_id)
+        self._repo.save()
+        try:
+            from tuned.core.events import get_event_bus
+            get_event_bus().emit("order:comment:deleted", {"comment_id": comment_id}, room=f"order_{order_id}")
+        except Exception:
+            pass

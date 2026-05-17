@@ -126,6 +126,7 @@ class ActivityLogResponseDTO:
 class ActivityLogFilterDTO:
     user_id: Optional[str] = None
     action: Optional[str] = None
+    exclude_action: Optional[str] = None
     entity_type: Optional[str] = None
     entity_id: Optional[str] = None
     page: int = 1

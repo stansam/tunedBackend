@@ -64,7 +64,7 @@ class AnalyticsService:
 
             return DashboardKPIDTO(
                 active_projects=len(active_orders),
-                portfolio_value=round(portfolio_value, 2),
+                portfolio_value=round(float(portfolio_value), 2),
                 reward_points=reward_points,
                 next_deadline=next_deadline,
             )
@@ -107,7 +107,7 @@ class AnalyticsService:
             deadlines   = self._order_repo.get_upcoming_deadlines(user_id, limit=3)
             log_filter = ActivityLogFilterDTO(
                 user_id=user_id,
-                action=Variables.USER_LOGIN_ACTION,
+                exclude_action=Variables.USER_LOGIN_ACTION,
                 per_page=10,
                 page=1,
             )

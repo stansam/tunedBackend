@@ -53,6 +53,8 @@ class GetActivityLogsFiltered:
                 stmt = stmt.where(ActivityLog.user_id == filters.user_id)
             if filters.action:
                 stmt = stmt.where(ActivityLog.action == filters.action)
+            if filters.exclude_action:
+                stmt = stmt.where(ActivityLog.action != filters.exclude_action)
             if filters.entity_type:
                 stmt = stmt.where(ActivityLog.entity_type == filters.entity_type)
             if filters.entity_id:

@@ -59,7 +59,7 @@ class OrderDeliveryFile(BaseModel):
     file_path: Mapped[str] = mapped_column(db.String(255), nullable=False)
     file_size: Mapped[int] = mapped_column(db.Integer, nullable=False)
     file_type: Mapped[FileType] = mapped_column(ENUM(FileType, name="filetype"), nullable=False)
-    file_format: Mapped[FileExtensionType] = mapped_column(ENUM(FileExtensionType, name="deliveryfileextensiontype"), nullable=False)
+    file_format: Mapped[FileExtensionType] = mapped_column(ENUM(FileExtensionType, name="fileextensiontype"), nullable=False)
     description: Mapped[Optional[str]] = mapped_column(db.Text, nullable=True)
     
     delivery: Mapped["OrderDelivery"] = relationship('OrderDelivery', back_populates='delivery_files')

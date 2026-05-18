@@ -60,5 +60,11 @@ class Variables:
     ORDER_PARTIALLY_REFUNDED = "partially_refunded"
     ORDER_LATE = "late"
     ORDER_LATE_COMPLETED = "late_completed"
+
+    ORDER_DELIVERY_CREATED = "order_delivery_created"
+    ORDER_DELIVERY_UPDATED = "order_delivery_updated"
+    ORDER_DELIVERY_DELETED = "order_delivery_deleted"
+    ORDER_DELIVERY_FILE_UPLOADED_ACTION = "order_delivery_file_uploaded"
+    ORDER_DELIVERY_ENTITY_TYPE = "OrderDelivery"
     
     

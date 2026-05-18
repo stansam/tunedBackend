@@ -9,6 +9,7 @@ from tuned.interface.price import PriceRateService, PricingCategoryService
 from tuned.interface.blogs import Blogs, BlogPostService, BlogCategoryService, BlogCommentService, CommentReactionService
 from tuned.interface.notification import NotificationInterface
 from tuned.interface.order import OrderService
+from tuned.interface.order_delivery import OrderDeliveryService
 from tuned.interface.preferences.service import PreferenceService
 from tuned.interface.analytics import Analytics, AnalyticsService
 from tuned.interface.audit import AuditService
@@ -36,6 +37,7 @@ class Services:
         self._pricing_category: Optional[PricingCategoryService] = None
         self._notification: Optional[NotificationInterface] = None
         self._order: Optional[OrderService] = None
+        self._order_delivery: Optional[OrderDeliveryService] = None
         self._preferences: Optional[PreferenceService] = None
         self._analytics_agg: Optional[Analytics] = None
         self._audit: Optional[AuditService] = None
@@ -148,6 +150,12 @@ class Services:
         if not self._order:
             self._order = OrderService(repos=self._repos)
         return self._order
+
+    @property
+    def order_delivery(self) -> OrderDeliveryService:
+        if not self._order_delivery:
+            self._order_delivery = OrderDeliveryService(repos=self._repos, interfaces=self)
+        return self._order_delivery
 
     @property
     def preferences(self) -> PreferenceService:

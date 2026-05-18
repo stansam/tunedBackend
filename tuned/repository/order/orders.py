@@ -3,18 +3,109 @@ from __future__ import annotations
 import logging
 from typing import Optional
 
-from sqlalchemy import func, select, asc, desc, or_
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
-from typing import Any, Optional, Sequence
+from sqlalchemy import func, select, asc, desc, or_
 
 from tuned.models import Order
 from tuned.models.enums import OrderStatus
-from tuned.repository.exceptions import NotFound, DatabaseError
+from tuned.dtos.order import(
+    CreateOrderRequestDTO, OrderListRequestDTO,
+    OrderListResponseDTO, OrderResponseDTO
+)
+from tuned.core.exceptions import DatabaseError, NotFound
 from tuned.core.logging import get_logger
-from tuned.dtos import OrderListRequestDTO, OrderListResponseDTO, OrderResponseDTO
+from typing import Any, Optional, Sequence
 
 logger: logging.Logger = get_logger(__name__)
+
+
+class CreateOrder:
+    def __init__(self, session: Session) -> None:
+        self.session = session
+
+    def execute(self, client_id: str, dto: CreateOrderRequestDTO, total_price: float, subtotal: float) -> Order:
+        try:
+            new_order = Order(
+                client_id=client_id,
+                service_id=dto.service_id,
+                academic_level_id=dto.level_id,
+                deadline_id=dto.deadline_id,
+                title=dto.title,
+                instructions=dto.instructions,
+                word_count=dto.word_count,
+                page_count=dto.page_count,
+                format_style=dto.format_style,
+                sources=dto.sources,
+                line_spacing=dto.line_spacing,
+                due_date=dto.due_date,
+                report_type=dto.report_type,
+                total_price=total_price,
+                subtotal=subtotal,
+                price_per_page=subtotal / dto.page_count if dto.page_count else 0,
+                status=OrderStatus.PENDING,
+                paid=False,
+            )
+            self.session.add(new_order)
+            self.session.flush()
+            return new_order
+        except SQLAlchemyError as exc:
+            logger.error("[CreateOrder] DB error: %s", exc)
+            raise DatabaseError(str(exc)) from exc
+
+class CreateOrderFromReorder:
+    def __init__(self, session: Session) -> None:
+        self.session = session
+
+    def execute(self, source: Order, client_id: str) -> Order:
+        try:
+            new_order = Order(
+                client_id=client_id,
+                service_id=source.service_id,
+                academic_level_id=source.academic_level_id,
+                deadline_id=source.deadline_id,
+                title=source.title,
+                instructions=source.instructions,
+                word_count=source.word_count,
+                page_count=source.page_count,
+                format_style=source.format_style,
+                sources=source.sources,
+                line_spacing=source.line_spacing,
+                report_type=source.report_type,
+                due_date=source.due_date,
+                total_price=source.total_price,
+                price_per_page=source.price_per_page,
+                subtotal=source.subtotal,
+                discount_amount=source.discount_amount or 0,
+                status=OrderStatus.PENDING,
+                paid=False,
+            )
+            self.session.add(new_order)
+            self.session.flush()
+            return new_order
+        except SQLAlchemyError as exc:
+            logger.error("[CreateOrderFromReorder] DB error: %s", exc)
+            raise DatabaseError(str(exc)) from exc
+
+class UpdateOrderStatus:
+    def __init__(self, session: Session) -> None:
+        self.session = session
+
+    def execute(self, order_id: str, status: OrderStatus) -> Order:
+        try:
+            stmt = select(Order).where(Order.id == order_id)
+            order = self.session.scalar(stmt)
+            if not order:
+                raise NotFound(f"Order with ID {order_id} not found")
+            order.status = status
+            self.session.flush()
+            self.session.refresh(order, ["order_status"])
+            return order
+        except NotFound:
+            raise
+        except SQLAlchemyError as exc:
+            logger.error("[UpdateOrderStatus] DB error: %s", exc)
+            raise DatabaseError(str(exc)) from exc
 
 _ACTIVE_STATUSES = (OrderStatus.ACTIVE, OrderStatus.REVISION)
 
@@ -230,3 +321,4 @@ class GetClientOrders:
         except SQLAlchemyError as exc:
             logger.error("[GetClientOrders] DB error: %s", exc)
             raise DatabaseError(str(exc)) from exc
+

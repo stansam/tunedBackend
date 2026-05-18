@@ -269,7 +269,7 @@ class OrderService:
             order = self._repo.get_order_by_id_for_client(order_id, user_id)
             existing = copy.deepcopy(order)
             from flask import current_app
-            from tuned.interface.order.util import resolve_file_type, allowed_extensions
+            from tuned.interface.order.util import resolve_file_type
 
             upload_dir = os.path.join(current_app.root_path, 'uploads', 'order_files', order_id)
             os.makedirs(upload_dir, exist_ok=True)

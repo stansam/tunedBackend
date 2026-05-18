@@ -4,7 +4,7 @@ from typing import Optional, TYPE_CHECKING
 from sqlalchemy.dialects.postgresql import UUID, ENUM
 from datetime import datetime
 from tuned.extensions import db
-from tuned.models.enums import DeliveryStatus, FileType
+from tuned.models.enums import DeliveryStatus, FileType, FileExtensionType
 from tuned.models.base import BaseModel
 
 if TYPE_CHECKING:
@@ -17,6 +17,7 @@ class OrderDelivery(BaseModel):
     delivery_status: Mapped[DeliveryStatus] = mapped_column(ENUM(DeliveryStatus, name="deliverystatus"), default=DeliveryStatus.DELIVERED, nullable=False, index=True)
     client_notified: Mapped[bool] = mapped_column(db.Boolean, default=False, nullable=False)
     client_notified_at: Mapped[Optional[datetime]] = mapped_column(db.DateTime(timezone=True), nullable=True)
+    delivered_at: Mapped[Optional[datetime]] = mapped_column(db.DateTime(timezone=True), nullable=True)
         
     delivery_files: Mapped[list["OrderDeliveryFile"]] = relationship('OrderDeliveryFile', back_populates='delivery', lazy=True, cascade="all, delete-orphan")
     order: Mapped[Optional["Order"]] = relationship('Order', back_populates='deliveries')
@@ -42,7 +43,10 @@ class OrderDelivery(BaseModel):
             DeliveryStatus.REDELIVERED: 'info'
         }
         return colors.get(self.delivery_status, 'secondary')
-    
+
+    def __init__(self, **kwargs) -> None:
+        super(OrderDelivery, self).__init__(**kwargs)
+
     def __repr__(self) -> str:
         return f'<OrderDelivery Order:{self.order_id} Status:{self.delivery_status}>'
 
@@ -53,19 +57,12 @@ class OrderDeliveryFile(BaseModel):
     filename: Mapped[str] = mapped_column(db.String(255), nullable=False)
     original_filename: Mapped[str] = mapped_column(db.String(255), nullable=False)
     file_path: Mapped[str] = mapped_column(db.String(255), nullable=False)
+    file_size: Mapped[int] = mapped_column(db.Integer, nullable=False)
     file_type: Mapped[FileType] = mapped_column(ENUM(FileType, name="filetype"), nullable=False)
-    file_format: Mapped[Optional[str]] = mapped_column(db.String(10), nullable=True)
+    file_format: Mapped[FileExtensionType] = mapped_column(ENUM(FileExtensionType, name="deliveryfileextensiontype"), nullable=False)
     description: Mapped[Optional[str]] = mapped_column(db.Text, nullable=True)
     
     delivery: Mapped["OrderDelivery"] = relationship('OrderDelivery', back_populates='delivery_files')
-
-    @property
-    def file_size(self) -> int:
-        import os
-        try:
-            return os.path.getsize(self.file_path)
-        except (OSError, TypeError):
-            return 0
     
     @property
     def file_size_mb(self) -> float:
@@ -87,6 +84,9 @@ class OrderDeliveryFile(BaseModel):
             'rar': 'fa-file-archive'
         }
         return icons.get(self.file_format, 'fa-file') if self.file_format else 'fa-file'
+    
+    def __init__(self, **kwargs) -> None:
+        super(OrderDeliveryFile, self).__init__(**kwargs)
     
     def __repr__(self) -> str:
         return f'<OrderDeliveryFile {self.filename} Type:{self.file_type}>'

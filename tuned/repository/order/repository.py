@@ -6,13 +6,18 @@ from decimal import Decimal
 from sqlalchemy.orm import Session
 from sqlalchemy import select, func
 from sqlalchemy.exc import SQLAlchemyError
-from tuned.models import Order, OrderFile, OrderComment, Discount
+from tuned.models import(
+    Order, OrderFile, OrderComment,
+    Discount, OrderStatus
+)
 from tuned.dtos import(
     OrderListRequestDTO, OrderListResponseDTO,
     CreateOrderRequestDTO, OrderDraftCreateDTO, CreateOrderFileDTO,
-    CreateCommentRequestDTO, UpdateCommentRequestDTO
 )
-from tuned.repository.order.queries import (
+from tuned.repository.order.files import (
+    CreateOrderFile
+)
+from tuned.repository.order.orders import(
     GetActiveOrdersByClient,
     GetLatestActiveOrderByClient,
     GetUpcomingDeadlines,
@@ -20,18 +25,14 @@ from tuned.repository.order.queries import (
     GetOrderByClient,
     GetOrderForReorder,
     GetClientOrders,
-    GetOrderForClientByOrderNumber,
-)
-from tuned.repository.order.create import (
     CreateOrder,
-    LinkDiscountToOrder,
-    CreateOrderFile,
-    GetDiscountByCode,
-    UpsertDraftOrder,
-    GetDraftOrder,
+    GetOrderForClientByOrderNumber,
     CreateOrderFromReorder,
+    UpdateOrderStatus,
 )
-from tuned.repository.exceptions import DatabaseError
+from tuned.repository.order.discount import LinkDiscountToOrder, GetDiscountByCode
+from tuned.repository.order.drafts import UpsertDraftOrder, GetDraftOrder
+from tuned.core.exceptions import DatabaseError
 from tuned.repository.protocols import OrderRepositoryProtocol
 from tuned.repository.order.comments import (
     GetOrderComments, CreateOrderComment, UpdateOrderComment,
@@ -89,6 +90,9 @@ class OrderRepository(OrderRepositoryProtocol):
 
     def create_order(self, client_id: str, dto: CreateOrderRequestDTO, total_price: float, subtotal: float) -> Order:
         return CreateOrder(self.session).execute(client_id, dto, total_price, subtotal)
+
+    def update_order_status(self, order_id: str, status: OrderStatus) -> Order:
+        return UpdateOrderStatus(self.session).execute(order_id, status)
 
     def get_discount_by_code(self, code: str) -> Optional[Discount]:
         return GetDiscountByCode(self.session).execute(code)

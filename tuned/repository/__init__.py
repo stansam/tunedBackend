@@ -10,13 +10,12 @@ from tuned.repository.price import (
 )
 from tuned.repository.audit import AuditRepository
 from tuned.repository.order import OrderRepository
+from tuned.repository.order_delivery import OrderDeliveryRepository
 from tuned.repository.preferences import PreferenceRepository
 from tuned.repository.payment import PaymentRepository
 from tuned.repository.communication import NewsletterRepository
 from tuned.repository.user.notification import NotificationRepository
-from tuned.extensions import db
-from sqlalchemy.orm import Session, scoped_session
-from typing import Optional, Union, Any
+from typing import Optional, Any
 
 class Repository:
     def __init__(self, session: Any) -> None:
@@ -35,6 +34,7 @@ class Repository:
         self._pricing_category: Optional[PricingCategoryRepository] = None
         self._audit: Optional[AuditRepository] = None
         self._order: Optional[OrderRepository] = None
+        self._order_delivery: Optional[OrderDeliveryRepository] = None
         self._preferences: Optional[PreferenceRepository] = None
         self._payment: Optional[PaymentRepository] = None
         self._notification: Optional[NotificationRepository] = None
@@ -124,6 +124,12 @@ class Repository:
         if not self._order:
             self._order = OrderRepository(self.session)
         return self._order
+
+    @property
+    def order_delivery(self) -> OrderDeliveryRepository:
+        if not self._order_delivery:
+            self._order_delivery = OrderDeliveryRepository(self.session)
+        return self._order_delivery
 
     @property
     def preferences(self) -> PreferenceRepository:

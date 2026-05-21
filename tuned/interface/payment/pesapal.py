@@ -66,6 +66,7 @@ class PesapalHelper:
                 response = session.post(url, json=payload, headers=headers, timeout=10)
                 response.raise_for_status()
                 res_data = response.json()
+                logger.info(f"Pesapal auth response: {res_data}")
                 token = res_data.get("token")
                 expiry = res_data.get("expiryDate")
                 if not token:

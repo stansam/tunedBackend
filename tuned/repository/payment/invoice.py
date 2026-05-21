@@ -90,3 +90,18 @@ class UpdateInvoice:
         except SQLAlchemyError as e:
             logger.error(f"[UpdateInvoice] DB error: {e}")
             raise DatabaseError("Database error while updating invoice.") from e
+
+class GetInvoiceByPaymentID:
+    def __init__(self, session: Session) -> None:
+        self.session = session
+
+    def execute(self, payment_id: str) -> InvoiceResponseDTO:
+        try:
+            stmt = select(Invoice).where(Invoice.payment_id == UUID(payment_id))
+            invoice = self.session.scalar(stmt)
+            if not invoice:
+                raise NotFound("Invoice not found for this payment.")
+            return InvoiceResponseDTO.from_model(invoice)
+        except SQLAlchemyError as e:
+            logger.error(f"[GetInvoiceByPaymentID] DB error: {e}")
+            raise DatabaseError("Database error while fetching invoice by payment ID.") from e

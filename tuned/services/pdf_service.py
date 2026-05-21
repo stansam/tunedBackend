@@ -8,7 +8,7 @@ from reportlab.lib import colors
 from tuned.core.logging import get_logger
 logger:logging.Logger = get_logger(__name__)
 
-def generate_invoice_pdf(order: Any, include_logo: bool = True, language: str = 'en') -> BytesIO:
+def generate_invoice_pdf(order: Any, include_logo: bool = True, language: str = 'en', invoice: Any = None) -> BytesIO:
     logger.info(f'Generating beautiful PDF invoice for order {order.id}')
     
     pdf_buffer = BytesIO()
@@ -79,6 +79,7 @@ def generate_invoice_pdf(order: Any, include_logo: bool = True, language: str = 
     elements: list[Flowable] = []
     
     # Header Section
+    invoice_num = invoice.invoice_number if invoice else (order.invoice.invoice_number if getattr(order, 'invoice', None) else 'INV-TEMP')
     header_data = [
         [
             Paragraph("TUNED ESSAYS", title_style),
@@ -86,7 +87,7 @@ def generate_invoice_pdf(order: Any, include_logo: bool = True, language: str = 
         ],
         [
             Paragraph("Professional Academic Solutions & Research Services<br/>support@tunedessays.com | +1 (800) 555-0199", subtitle_style),
-            Paragraph(f"<b>Invoice No:</b> {order.invoice.invoice_number if getattr(order, 'invoice', None) else 'INV-TEMP'}<br/><b>Date:</b> {order.created_at.strftime('%B %d, %Y') if order.created_at else 'N/A'}", ParagraphStyle('RightMeta', parent=body_style, alignment=2))
+            Paragraph(f"<b>Invoice No:</b> {invoice_num}<br/><b>Date:</b> {order.created_at.strftime('%B %d, %Y') if order.created_at else 'N/A'}", ParagraphStyle('RightMeta', parent=body_style, alignment=2))
         ]
     ]
     header_table = Table(header_data, colWidths=[320, 210])

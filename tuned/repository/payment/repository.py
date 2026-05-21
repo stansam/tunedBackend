@@ -13,7 +13,7 @@ from tuned.repository.payment.payment import (
     GetPendingPaymentByOrderID, GetPendingPaymentByReferenceID, GetPaymentsList
 )
 from tuned.repository.payment.invoice import (
-    CreateInvoice, GetInvoiceByID, GetInvoiceByNumber, UpdateInvoice
+    CreateInvoice, GetInvoiceByID, GetInvoiceByNumber, UpdateInvoice, GetInvoiceByPaymentID
 )
 from tuned.repository.payment.transaction import (
     CreateTransaction, GetTransactionByID, GetTransactionsByPaymentID
@@ -72,6 +72,12 @@ class InvoiceManager:
 
     def update(self, invoice_id: str, data: InvoiceUpdateDTO) -> InvoiceResponseDTO:
         return UpdateInvoice(self.session).execute(invoice_id, data)
+
+    def get_by_payment_id(self, payment_id: str) -> Optional[InvoiceResponseDTO]:
+        try:
+            return GetInvoiceByPaymentID(self.session).execute(payment_id)
+        except Exception:
+            return None
 
 class TransactionManager:
     def __init__(self, session: Session) -> None:

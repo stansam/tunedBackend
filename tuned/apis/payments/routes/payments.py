@@ -12,6 +12,7 @@ from tuned.utils import success_response
 from tuned.utils.responses import error_response
 from tuned.utils.dependencies import get_services
 from tuned.utils.auth import get_user_ip, get_user_agent
+from tuned.utils.decorators import rate_limit, admin_required
 from tuned.models import (
     AcceptedPaymentMethod, Payment, PaymentStatus, Order, OrderStatus, 
     MethodCategory, NotificationType, User
@@ -173,11 +174,21 @@ class CheckoutView(MethodView):
 
 
 class PesapalIpnView(MethodView):
+    decorators = [rate_limit(max_requests=30, window=60, key_prefix="pesapal_ipn")]
+
     def get(self):
         """
         Pesapal Instant Payment Notification (IPN) webhook listener.
         Secured by direct verification checks against official Pesapal transaction status.
         """
+        # Verify caller IP in non-development environments
+        if current_app.config.get("FLASK_ENV") == "production":
+            from tuned.interface.payment.pesapal import PESAPAL_IPN_ALLOWED_IPS
+            caller_ip = get_user_ip()
+            if caller_ip not in PESAPAL_IPN_ALLOWED_IPS:
+                logger.warning(f"[IPN] Rejected request from unauthorized IP: {caller_ip}")
+                return error_response(message="Forbidden", status=403)
+
         services = None
         try:
             services = get_services()
@@ -197,49 +208,15 @@ class PesapalIpnView(MethodView):
             
             status_description = status_res.get("payment_status_description", "").lower()
             amount_paid = status_res.get("amount", 0.0)
-            logger.info(f"[IPN] Verified status from Pesapal API: {status_description}")
+            logger.info(f"[IPN] Verified status from Pesapal API: {status_description} (Amount: {amount_paid})")
 
             if status_description == "completed" or status_description == "success":
                 # Get the pending payment bound to this tracking ID
                 payment = services._repos.payment.payment.get_pending_payment_by_reference_id(order_tracking_id)
                 
                 if payment:
-                    # Transaction matches and is valid! Update payment state
-                    update_dto = PaymentUpdateDTO(
-                        status=PaymentStatus.COMPLETED,
-                        admin_verified_at=datetime.now(timezone.utc)
-                    )
-                    updated_payment = services._repos.payment.payment.update(str(payment.id), update_dto)
                     
-                    # Update Order state
-                    order = services._repos.order.get_by_id(str(payment.order_id))
-                    if order:
-                        order.paid = True
-                        order.status = OrderStatus.ACTIVE
-                        
-                        # Generate Invoice
-                        invoice_dto = InvoiceCreateDTO(
-                            order_id=str(order.id),
-                            user_id=str(order.client_id),
-                            subtotal=float(order.subtotal or order.total_price or 0.0),
-                            total=float(order.total_price or 0.0),
-                            due_date=datetime.now(timezone.utc) + timedelta(days=14),
-                            payment_id=updated_payment.id,
-                            discount=float(order.discount_amount or 0.0),
-                            tax=0.0,
-                            paid=True
-                        )
-                        services.payment.invoice.generate(invoice_dto)
-                    
-                    # Emit verified domain event to dispatch emails/notifications
-                    from tuned.core.events import get_event_bus
-                    get_event_bus().emit("payment.verified_by_admin", {
-                        "payment_id": updated_payment.id,
-                        "order_id": updated_payment.order_id,
-                        "user_id": updated_payment.user_id,
-                        "status": updated_payment.status
-                    })
-                    
+                    _ = services.payment.payment.verify_payment(str(payment.id), "system")
                     logger.info(f"[IPN] Payment {payment.id} verified via IPN for Order {payment.order_id}")
                 else:
                     logger.warning(f"[IPN] Completed transaction has already been verified or no pending record exists: {order_tracking_id}")
@@ -255,12 +232,9 @@ class PesapalIpnView(MethodView):
 
 
 class AdminVerifyPaymentView(MethodView):
-    decorators = [login_required]
+    decorators = [login_required, admin_required]
 
     def put(self, payment_id):
-        if not current_user.is_admin:
-            return error_response(message="Forbidden: Administrator privilege required", status=403)
-
         services = get_services()
         try:
             updated_payment = services.payment.payment.verify_payment(payment_id, str(current_user.id))
@@ -280,12 +254,9 @@ class AdminVerifyPaymentView(MethodView):
 
 
 class AdminRejectPaymentView(MethodView):
-    decorators = [login_required]
+    decorators = [login_required, admin_required]
 
     def put(self, payment_id):
-        if not current_user.is_admin:
-            return error_response(message="Forbidden: Administrator privilege required", status=403)
-
         services = get_services()
         try:
             data = request.get_json()
@@ -372,11 +343,13 @@ class DownloadInvoiceView(MethodView):
             if not order:
                 return error_response(message="Order not found", status=404)
 
+            invoice_record = services._repos.payment.invoice.get_by_payment_id(payment_id)
+
             # Generate PDF Invoice using reports lab utility
             from tuned.services.pdf_service import generate_invoice_pdf
             
-            pdf_buffer = generate_invoice_pdf(order=order)
-            filename = f"Invoice_{order.order_number}.pdf"
+            pdf_buffer = generate_invoice_pdf(order=order, invoice=invoice_record)
+            filename = f"Invoice_{invoice_record.invoice_number if invoice_record else order.order_number}.pdf"
 
             return send_file(
                 pdf_buffer,

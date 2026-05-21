@@ -184,7 +184,40 @@ class PaymentEventHandlers:
 
     def _on_refund_processed(self, event_data: Dict[str, Any]) -> None:
         try:
-            logger.info(f"[PaymentEventHandlers] Processing refund.processed: {event_data['refund_id']}")
-            # TODO: Add email and dashboard notification
+            logger.info(
+                f"[PaymentEventHandlers] Processing refund.processed: {event_data['refund_id']}"
+            )
+            from tuned.utils.dependencies import get_services
+            from tuned.tasks.notifications import create_in_app_notification
+            from tuned.services.email_service import send_refund_processed_email
+            from tuned.models import NotificationType
+
+            services = get_services()
+            refund = services._repos.payment.refund.get_by_id(event_data["refund_id"])
+            payment = services._repos.payment.payment.get_by_id(str(refund.payment_id))
+            order = services._repos.order.get_by_id(str(payment.order_id))
+            client = services._repos.user.get_user_by_id(str(payment.user_id))
+
+            create_in_app_notification.delay(
+                user_id=str(client.id),
+                title="Refund Processed",
+                message=(
+                    f"A refund of {refund.amount} has been processed for "
+                    f"Order #{order.order_number}."
+                ),
+                notification_type=NotificationType.INFO,
+                action_url=f"/client/orders/{order.order_number}",
+            )
+
+            send_refund_processed_email(client, order, refund)
+
+            from tuned.extensions import socketio
+            socketio.emit(
+                "dashboard:refund_processed",
+                {"refund_id": str(refund.id), "amount": str(refund.amount)},
+                to=f"user_{client.id}",
+            )
         except Exception as exc:
-            logger.error(f"[PaymentEventHandlers] Error in refund.processed handler: {exc!r}")
+            logger.error(
+                f"[PaymentEventHandlers] Error in refund.processed handler: {exc!r}"
+            )

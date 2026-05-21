@@ -1,11 +1,27 @@
 import logging
 import requests
+import threading
+from urllib3.util.retry import Retry
+from requests.adapters import HTTPAdapter
 from flask import current_app
 from datetime import datetime, timezone
 
 logger = logging.getLogger(__name__)
 
+# Known Pesapal IP ranges for IPN signature/IP verification
+PESAPAL_IPN_ALLOWED_IPS: frozenset[str] = frozenset({
+    "196.201.214.200",
+    "196.201.214.206",
+    "196.201.213.114",
+    "196.201.214.115",
+})
+
 class PesapalHelper:
+    # Class-level variables for thread-safe in-memory token cache
+    _token: str | None = None
+    _token_expires: float | None = None
+    _token_lock: threading.Lock = threading.Lock()
+
     def __init__(self) -> None:
         self.sandbox = current_app.config.get("PESAPAL_SANDBOX", True)
         self.base_url = "https://cybspay.pesapal.com/pesapalv3" if self.sandbox else "https://pay.pesapal.com/v3"
@@ -13,44 +29,66 @@ class PesapalHelper:
         self.consumer_secret = current_app.config.get("PESAPAL_CONSUMER_SECRET", "")
         self.ipn_url = current_app.config.get("PESAPAL_IPN_URL", "")
 
-    # Class-level variables for in-memory token cache to support multi-instance request persistence
-    _token: str | None = None
-    _token_expires: float | None = None
+    def _make_session(self) -> requests.Session:
+        session = requests.Session()
+        retry_strategy = Retry(
+            total=3,
+            backoff_factor=0.5,        # 0.5s, 1.0s, 2.0s
+            status_forcelist=[500, 502, 503, 504],
+            allowed_methods=["GET", "POST"],
+        )
+        adapter = HTTPAdapter(max_retries=retry_strategy)
+        session.mount("https://", adapter)
+        session.mount("http://", adapter)
+        return session
 
     def get_token(self) -> str:
         """
         Authenticate with Pesapal and retrieve a JWT bearer token.
         """
         now = datetime.now(timezone.utc).timestamp()
-        if PesapalHelper._token and PesapalHelper._token_expires and now < PesapalHelper._token_expires:
-            return PesapalHelper._token
+        with PesapalHelper._token_lock:
+            if PesapalHelper._token and PesapalHelper._token_expires and now < PesapalHelper._token_expires:
+                return PesapalHelper._token
 
-        url = f"{self.base_url}/api/Auth/RequestToken"
-        payload = {
-            "consumer_key": self.consumer_key,
-            "consumer_secret": self.consumer_secret
-        }
-        headers = {
-            "Content-Type": "application/json",
-            "Accept": "application/json"
-        }
-        try:
-            logger.info(f"Authenticating with Pesapal API: {url}")
-            response = requests.post(url, json=payload, headers=headers, timeout=10)
-            response.raise_for_status()
-            res_data = response.json()
-            token = res_data.get("token")
-            expiry = res_data.get("expiryDate")
-            if not token:
-                raise ValueError("No token returned from Pesapal auth endpoint")
-            
-            PesapalHelper._token = token
-            PesapalHelper._token_expires = expiry or now + 300
-            logger.info("Successfully fetched new Pesapal JWT token.")
-            return token
-        except Exception as e:
-            logger.error(f"Pesapal Authentication failed: {str(e)}")
-            raise
+            url = f"{self.base_url}/api/Auth/RequestToken"
+            payload = {
+                "consumer_key": self.consumer_key,
+                "consumer_secret": self.consumer_secret
+            }
+            headers = {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+            try:
+                logger.info(f"Authenticating with Pesapal API: {url}")
+                session = self._make_session()
+                response = session.post(url, json=payload, headers=headers, timeout=10)
+                response.raise_for_status()
+                res_data = response.json()
+                token = res_data.get("token")
+                expiry = res_data.get("expiryDate")
+                if not token:
+                    raise ValueError("No token returned from Pesapal auth endpoint")
+                
+                PesapalHelper._token = token
+                if expiry:
+                    try:
+                        if isinstance(expiry, str):
+                            dt = datetime.fromisoformat(expiry.replace("Z", "+00:00"))
+                            PesapalHelper._token_expires = dt.timestamp()
+                        else:
+                            PesapalHelper._token_expires = float(expiry)
+                    except Exception:
+                        PesapalHelper._token_expires = now + 270
+                else:
+                    PesapalHelper._token_expires = now + 270
+                
+                logger.info("Successfully fetched and cached new Pesapal JWT token.")
+                return token
+            except Exception as e:
+                logger.error(f"Pesapal Authentication failed: {str(e)}")
+                raise
 
     def get_registered_ipns(self, token: str) -> list:
         """
@@ -63,7 +101,8 @@ class PesapalHelper:
             "Accept": "application/json"
         }
         try:
-            response = requests.get(url, headers=headers, timeout=10)
+            session = self._make_session()
+            response = session.get(url, headers=headers, timeout=10)
             response.raise_for_status()
             return response.json()
         except Exception as e:
@@ -92,7 +131,8 @@ class PesapalHelper:
         }
         try:
             logger.info(f"Registering new Pesapal IPN URL: {self.ipn_url}")
-            response = requests.post(url, json=payload, headers=headers, timeout=10)
+            session = self._make_session()
+            response = session.post(url, json=payload, headers=headers, timeout=10)
             response.raise_for_status()
             res_data = response.json()
             ipn_id = res_data.get("ipn_id")
@@ -141,7 +181,8 @@ class PesapalHelper:
         }
         try:
             logger.info(f"Submitting Pesapal transaction request for order {order_id} (Amount: {amount})")
-            response = requests.post(url, json=payload, headers=headers, timeout=10)
+            session = self._make_session()
+            response = session.post(url, json=payload, headers=headers, timeout=10)
             response.raise_for_status()
             return response.json()
         except Exception as e:
@@ -161,7 +202,8 @@ class PesapalHelper:
         }
         try:
             logger.info(f"Fetching Pesapal transaction status for tracking ID: {order_tracking_id}")
-            response = requests.get(url, headers=headers, params=params, timeout=10)
+            session = self._make_session()
+            response = session.get(url, headers=headers, params=params, timeout=10)
             response.raise_for_status()
             return response.json()
         except Exception as e:

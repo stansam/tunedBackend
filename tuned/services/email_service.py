@@ -412,3 +412,28 @@ def send_order_created_email_admin(order: Any) -> None:
         logger.info('New order email sent to admins')
     except Exception as e:
         logger.error(f'Order notification to admins failed: {str(e)}')
+
+
+def send_refund_processed_email(client: User, order: Order, refund: Any) -> None:
+    from tuned.utils.email import send_async_email
+    try:
+        subject = f"Refund Processed - Order #{order.order_number}"
+        html_body = f"""
+        <h2>Your refund has been processed</h2>
+        <p>Dear {client.get_name()},</p>
+        <p>A refund has been successfully processed for Order <strong>#{order.order_number}</strong>.</p>
+        <p>Refund Amount: <strong>${refund.amount:.2f}</strong></p>
+        <p>If you have any questions or require further assistance, please feel free to reach out to our support team.</p>
+        <p>Best regards,</p>
+        <p>Tuned Essays Team</p>
+        """
+        send_async_email(
+            to=client.email,
+            subject=subject,
+            template="generic_notification",
+            body=html_body,
+            current_year=datetime.now().year
+        )
+        logger.info(f"Refund processed email sent to client {client.id} for refund {refund.id}")
+    except Exception as e:
+        logger.error(f"Failed to send refund processed email for user {client.id}: {str(e)}")

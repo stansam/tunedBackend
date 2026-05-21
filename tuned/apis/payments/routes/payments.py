@@ -53,6 +53,7 @@ class CheckoutView(MethodView):
             services = get_services()
             data = request.get_json()
             if not data:
+                logger.error(f"No input data provided")
                 return error_response(message="No input data provided", status=400)
 
             try:
@@ -116,6 +117,7 @@ class CheckoutView(MethodView):
                     order_tracking_id = sub_res.get("order_tracking_id")
                     
                     if not redirect_url or not order_tracking_id:
+                        logger.error(f"Invalid Pesapal response: {sub_res}")
                         raise ValueError(f"Invalid Pesapal response: {sub_res}")
                     
                     # Store tracking ID in our client_proof_reference for automated IPN verification
@@ -129,9 +131,9 @@ class CheckoutView(MethodView):
                     }, message="Checkout redirect initialized", status=200)
                     
                 except Exception as ex:
-                    logger.error(f"Pesapal checkout failed: {ex}")
+                    logger.error(f"Pesapal checkout failed: {str(ex)}")
                     services._repos.session.rollback()
-                    return error_response(message=f"Gateway payment failed: {str(ex)}", status=502)
+                    return error_response(message=f"Gateway payment failed", status=502)
 
             else:
                 # Manual payment flow

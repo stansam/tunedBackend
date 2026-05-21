@@ -1,4 +1,4 @@
-from tuned.models import (
+from tuned.models.enums import (
     RefundStatus, PaymentStatus, MethodCategory, TransactionType,
     TransactionStatus, DiscountType, Currency
 )
@@ -288,3 +288,17 @@ class ValidateDiscountResponseDTO:
     valid: bool
     discount_amount: float
     description: Optional[str] = None
+
+@dataclass
+class PaymentListRequestDTO:
+    status: Optional[str] = None
+    page: Optional[int] = 1
+    per_page: Optional[int] = 10
+
+@dataclass
+class PaymentListResponseDTO:
+    payments: list[PaymentResponseDTO]
+    total: int
+    page: int
+    per_page: int
+

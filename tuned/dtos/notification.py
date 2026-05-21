@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from typing import Optional, TYPE_CHECKING
-from tuned.models import NotificationType
+from tuned.models.enums import NotificationType
 
 if TYPE_CHECKING:
     from tuned.models.communication import Notification

@@ -88,12 +88,8 @@ class Invoice(BaseModel):
     
     def __init__(self, order_id: uuid.UUID, user_id: uuid.UUID, subtotal: float, total: float, due_date: datetime, payment_id: Optional[uuid.UUID]=None, discount: float=0, tax: float=0, paid: bool=False) -> None:
         year_month = datetime.now(timezone.utc).strftime('%Y%m')
-        
-        count = Invoice.query.filter(
-            func.strftime('%Y%m', Invoice.created_at) == year_month
-        ).count() + 1
-        
-        self.invoice_number = f"INV-{year_month}-{count:04d}"
+        suffix = uuid.uuid4().hex[:6].upper()
+        self.invoice_number = f"INV-{year_month}-{suffix}"
         self.order_id = order_id
         self.user_id = user_id
         self.payment_id = payment_id

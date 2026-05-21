@@ -48,6 +48,9 @@ class OrderService:
         from tuned.interface.audit import AuditService as AuditAggregator
         self._audit = AuditAggregator(repos=repos)
         self._audit_service = audit_service or self._audit.activity_log
+    
+    def get_by_id(self, order_id: str) -> "Order":
+        return self._repo.get_by_id(order_id)
 
     def list_client_orders(self, client_id: str, req: OrderListRequestDTO) -> OrderListResponseDTO:
         return self._repo.list_client_orders(client_id, req)

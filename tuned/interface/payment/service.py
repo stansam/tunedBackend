@@ -1,7 +1,7 @@
 from __future__ import annotations
 from typing import Optional, TYPE_CHECKING, List, Sequence
 
-from tuned.interface.payment.payment import ProcessPayment, GetPaymentDetails, ClientMarkAsPaid, AdminVerifyPayment
+from tuned.interface.payment.payment import ProcessPayment, GetPaymentDetails, ClientMarkAsPaid, AdminVerifyPayment, AdminRejectPayment, ListPayments
 from tuned.interface.payment.invoice import GenerateInvoice, GetInvoiceDetails, MarkInvoicePaid
 from tuned.interface.payment.discount import ApplyDiscount, CreateDiscount, GetDiscountDetails
 from tuned.interface.payment.refund import ProcessRefund, ApproveRefund
@@ -25,6 +25,8 @@ class PaymentServiceManager:
         self._get = GetPaymentDetails(repos=repos)
         self._mark_paid_client = ClientMarkAsPaid(repos=repos)
         self._verify_payment = AdminVerifyPayment(repos=repos)
+        self._mark_as_failed = AdminRejectPayment(repos=repos)
+        self._list_payments = ListPayments(repos=repos)
 
     def process(self, data: PaymentCreateDTO) -> PaymentResponseDTO:
         return self._process.execute(data)
@@ -37,6 +39,12 @@ class PaymentServiceManager:
 
     def verify_payment(self, payment_id: str, admin_id: str) -> PaymentResponseDTO:
         return self._verify_payment.execute(payment_id, admin_id)
+    
+    def mark_as_failed(self, payment_id: str, user_id: str, rejection_reason: str = "Payment marked as failed by Admin", ip_address: str = "", user_agent: str = "") -> PaymentResponseDTO:
+        return self._mark_as_failed.execute(payment_id, user_id, rejection_reason, ip_address, user_agent)
+
+    def list_payments(self, user_id: Optional[str] = None, status: Optional[str] = None, page: int = 1, per_page: int = 10) -> tuple[list[PaymentResponseDTO], int]:
+        return self._list_payments.execute(user_id=user_id, status=status, page=page, per_page=per_page)
 
 class AcceptedMethodServiceManager:
     def __init__(self, repos: Repository) -> None:

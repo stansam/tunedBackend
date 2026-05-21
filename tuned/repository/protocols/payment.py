@@ -1,4 +1,4 @@
-from typing import Protocol, TYPE_CHECKING, runtime_checkable, List, Tuple
+from typing import Protocol, TYPE_CHECKING, runtime_checkable, List, Tuple, Optional
 
 if TYPE_CHECKING:
     from tuned.dtos import (
@@ -17,6 +17,7 @@ class PaymentsManagerProtocol(Protocol):
     def get_by_order_id(self, order_id: str) -> List["PaymentResponseDTO"]: ...
     def update(self, payment_id: str, data: "PaymentUpdateDTO") -> "PaymentResponseDTO": ...
     def get_spending_velocity(self, client_id: str, months: int = 6) -> List[Tuple[str, float]]: ...
+    def list_payments(self, user_id: Optional[str] = None, status: Optional[str] = None, page: int = 1, per_page: int = 10) -> Tuple[List["PaymentResponseDTO"], int]: ...
 
 @runtime_checkable
 class InvoiceManagerProtocol(Protocol):

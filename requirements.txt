@@ -67,3 +67,6 @@ vine
 wcwidth
 Werkzeug
 wsproto
+reportlab
+requests
+

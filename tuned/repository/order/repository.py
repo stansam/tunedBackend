@@ -19,6 +19,7 @@ from tuned.repository.order.files import (
 )
 from tuned.repository.order.orders import(
     GetActiveOrdersByClient,
+    GetOrderById,
     GetLatestActiveOrderByClient,
     GetUpcomingDeadlines,
     GetProjectLifecycle,
@@ -46,7 +47,9 @@ class OrderRepository(OrderRepositoryProtocol):
 
     def _get_order_by_id_for_client(self, order_id: str, client_id: str) -> Order:
         return GetOrderByClient(self.session).execute(order_id, client_id)
-
+    def get_by_id(self, order_id: str) -> Order:
+        return GetOrderById(self.session).execute(order_id)
+        
     def get_active_orders(self, client_id: str) -> list[Order]:
         return GetActiveOrdersByClient(self.session).execute(client_id)
 

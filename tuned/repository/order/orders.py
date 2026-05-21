@@ -127,6 +127,28 @@ class GetActiveOrdersByClient:
             logger.error("[GetActiveOrdersByClient] DB error: %s", exc)
             raise DatabaseError(str(exc)) from exc
 
+class GetOrderById:
+    def __init__(self, session: Session) -> None:
+        self.session = session
+
+    def execute(self, order_id: str) -> Order:
+        try:
+            stmt = (
+                select(Order)
+                .where(
+                    Order.id == order_id,
+                )
+            )
+            order = self.session.scalar(stmt)
+            if not order:
+                raise NotFound(f"Order with ID {order_id} not found")
+            return order
+        except NotFound:
+            raise
+        except SQLAlchemyError as exc:
+            logger.error("[GetOrderById] DB error: %s", exc)
+            raise DatabaseError(str(exc)) from exc
+
 class GetLatestActiveOrderByClient:
     def __init__(self, session: Session) -> None:
         self.session = session

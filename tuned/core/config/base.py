@@ -70,3 +70,9 @@ class BaseConfig:
     FRONTEND_URL: str = os.environ.get('FRONTEND_URL', 'http://localhost:3000')
 
     WORDS_PER_PAGE: int = 275
+
+    PESAPAL_CONSUMER_KEY: str = os.environ.get('PESAPAL_CONSUMER_KEY', '')
+    PESAPAL_CONSUMER_SECRET: str = os.environ.get('PESAPAL_CONSUMER_SECRET', '')
+    PESAPAL_SANDBOX: bool = os.environ.get('PESAPAL_SANDBOX', 'True').lower() == 'true'
+    PESAPAL_IPN_URL: str = os.environ.get('PESAPAL_IPN_URL', 'http://localhost:5000/api/payments/pesapal/ipn')
+    PESAPAL_CALLBACK_URL: str = os.environ.get('PESAPAL_CALLBACK_URL', 'http://localhost:3000/payments/callback')

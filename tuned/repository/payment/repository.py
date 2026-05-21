@@ -9,7 +9,8 @@ from tuned.dtos.payment import (
 )
 
 from tuned.repository.payment.payment import (
-    CreatePayment, GetPaymentByID, GetPaymentByOrderID, UpdatePayment, GetSpendingVelocity
+    CreatePayment, GetPaymentByID, GetPaymentByOrderID, UpdatePayment, GetSpendingVelocity,
+    GetPendingPaymentByOrderID, GetPendingPaymentByReferenceID, GetPaymentsList
 )
 from tuned.repository.payment.invoice import (
     CreateInvoice, GetInvoiceByID, GetInvoiceByNumber, UpdateInvoice
@@ -24,6 +25,9 @@ from tuned.repository.payment.refund import (
     CreateRefund, GetRefundByID, UpdateRefundStatus
 )
 from tuned.repository.payment.accepted_method import AcceptedPaymentMethodRepository
+from typing import TYPE_CHECKING, Optional
+if TYPE_CHECKING:
+    from tuned.models.payment import Payment
 
 class PaymentsManager:
     def __init__(self, session: Session) -> None:
@@ -32,8 +36,14 @@ class PaymentsManager:
     def create(self, data: PaymentCreateDTO) -> PaymentResponseDTO:
         return CreatePayment(self.session).execute(data)
 
-    def get_by_id(self, payment_id: str) -> PaymentResponseDTO:
+    def get_by_id(self, payment_id: str) -> "Payment":
         return GetPaymentByID(self.session).execute(payment_id)
+
+    def get_pending_payment_by_order_id(self, order_id: str, accepted_method_id: str) -> "Payment":
+        return GetPendingPaymentByOrderID(self.session).execute(order_id, accepted_method_id)
+
+    def get_pending_payment_by_reference_id(self, reference_id: str) -> "Payment":
+        return GetPendingPaymentByReferenceID(self.session).execute(reference_id)
 
     def get_by_order_id(self, order_id: str) -> list[PaymentResponseDTO]:
         return GetPaymentByOrderID(self.session).execute(order_id)
@@ -43,6 +53,9 @@ class PaymentsManager:
 
     def get_spending_velocity(self, client_id: str, months: int = 6) -> list[tuple[str, float]]:
         return GetSpendingVelocity(self.session).execute(client_id, months)
+
+    def list_payments(self, user_id: Optional[str] = None, status: Optional[str] = None, page: int = 1, per_page: int = 10) -> tuple[list[PaymentResponseDTO], int]:
+        return GetPaymentsList(self.session).execute(user_id=user_id, status=status, page=page, per_page=per_page)
 
 class InvoiceManager:
     def __init__(self, session: Session) -> None:

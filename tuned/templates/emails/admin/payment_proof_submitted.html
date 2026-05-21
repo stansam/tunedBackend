@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Action Required: Verify Manual Payment</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: 'Arial', 'Helvetica', sans-serif; background-color: #f3f4f6;">
+    <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background-color: #f3f4f6; padding: 40px 0;">
+        <tr>
+            <td align="center">
+                <table role="presentation" cellpadding="0" cellspacing="0" width="600" style="background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                    <!-- Header -->
+                    <tr>
+                        <td style="background-color: #f59e0b; padding: 40px 30px; text-align: center;">
+                            <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 700; letter-spacing: -0.5px;">
+                                ⚠️ Verification Required
+                            </h1>
+                        </td>
+                    </tr>
+                    <!-- Content -->
+                    <tr>
+                        <td style="padding: 50px 40px;">
+                            <h2 style="margin: 0 0 20px; color: #1f2937; font-size: 22px; font-weight: 600;">
+                                Hello Administrator,
+                            </h2>
+                            <p style="margin: 0 0 20px; color: #374151; font-size: 16px; line-height: 1.6;">
+                                Client <strong>{{ client_name }}</strong> has marked order <strong>#{{ order_number }}</strong> as paid and uploaded payment proof. Action is required to verify the payment and activate the order.
+                            </p>
+                            <hr style="border: 0; border-top: 1px solid #e5e7eb; margin: 30px 0;">
+                            
+                            <h3 style="margin: 0 0 15px; color: #1f2937; font-size: 18px; font-weight: 600;">
+                                Transaction Specifications
+                            </h3>
+                            <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom: 30px;">
+                                <tr style="border-bottom: 1px solid #f3f4f6;">
+                                    <td style="padding: 10px 0; font-weight: bold; color: #4b5563; font-size: 15px; width: 40%;">Client Name:</td>
+                                    <td style="padding: 10px 0; color: #1f2937; font-size: 15px;">{{ client_name }}</td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid #f3f4f6;">
+                                    <td style="padding: 10px 0; font-weight: bold; color: #4b5563; font-size: 15px;">Order Number:</td>
+                                    <td style="padding: 10px 0; color: #1f2937; font-size: 15px;">#{{ order_number }}</td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid #f3f4f6;">
+                                    <td style="padding: 10px 0; font-weight: bold; color: #4b5563; font-size: 15px;">Payment Method:</td>
+                                    <td style="padding: 10px 0; color: #1f2937; font-size: 15px;">{{ payment_method }}</td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid #f3f4f6;">
+                                    <td style="padding: 10px 0; font-weight: bold; color: #4b5563; font-size: 15px;">Amount to Verify:</td>
+                                    <td style="padding: 10px 0; color: #f59e0b; font-size: 18px; font-weight: bold;">${{ amount }}</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 10px 0; font-weight: bold; color: #4b5563; font-size: 15px;">Proof Reference:</td>
+                                    <td style="padding: 10px 0; color: #1f2937; font-size: 15px; font-weight: bold;">{{ proof_reference }}</td>
+                                </tr>
+                            </table>
+                            
+                            <!-- CTA Button -->
+                            <table role="presentation" cellpadding="0" cellspacing="0" style="margin: 0 auto 30px;">
+                                <tr>
+                                    <td style="border-radius: 6px; background-color: #f59e0b; text-align: center;">
+                                        <a href="{{ admin_verify_url }}" target="_blank" style="display: inline-block; padding: 12px 30px; color: #ffffff; text-decoration: none; font-size: 16px; font-weight: 600;">
+                                            Go to Admin Verification Panel
+                                        </a>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    <!-- Footer -->
+                    <tr>
+                        <td style="background-color: #1f2937; padding: 30px 40px; text-align: center;">
+                            <p style="margin: 0; color: #9ca3af; font-size: 12px;">
+                                &copy; {{ current_year }} Tuned Essays Backend Manager. All rights reserved.
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

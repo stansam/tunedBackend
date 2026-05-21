@@ -214,7 +214,7 @@ class PaymentEventHandlers:
             from tuned.extensions import socketio
             socketio.emit(
                 "dashboard:refund_processed",
-                {"refund_id": str(refund.id), "amount": str(refund.amount)},
+                {"refund_id": refund.id, "amount": str(refund.amount)},
                 to=f"user_{client.id}",
             )
         except Exception as exc:

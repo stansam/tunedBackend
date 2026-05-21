@@ -22,7 +22,11 @@ def create_payment_methods() -> None:
     click.echo("Seeding accepted payment methods…")
 
     # Retrieve an admin user ID for activity logging, or default to a standard system UUID
-    admin_user = services.user._repo.get_admin_user()
+    admin_user = None
+    try:
+        admin_user = services.user._repo.get_admin_user()
+    except NotFound:
+        pass
     admin_id = str(admin_user.id) if admin_user else "00000000-0000-0000-0000-000000000000"
 
     for entry in accepted_methods_list:

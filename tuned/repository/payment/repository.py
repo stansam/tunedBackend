@@ -27,7 +27,7 @@ from tuned.repository.payment.refund import (
 from tuned.repository.payment.accepted_method import AcceptedPaymentMethodRepository
 from typing import TYPE_CHECKING, Optional
 if TYPE_CHECKING:
-    from tuned.models.payment import Payment
+    from tuned.models.payment import Payment, AcceptedPaymentMethod
 
 class PaymentsManager:
     def __init__(self, session: Session) -> None:
@@ -140,3 +140,6 @@ class AcceptedMethodRepositoryManager:
 
     def get_all_active(self) -> list[AcceptedMethodResponseDTO]:
         return self._repo.get_all_active()
+    
+    def get_by_name(self, name: str) -> "AcceptedPaymentMethod":
+        return self._repo.get_by_name(name)

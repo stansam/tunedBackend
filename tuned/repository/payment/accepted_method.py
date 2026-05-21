@@ -57,3 +57,10 @@ class AcceptedPaymentMethodRepository:
         stmt = select(AcceptedPaymentMethod).where(AcceptedPaymentMethod.is_active == True)
         methods = self._session.scalars(stmt).all()
         return [AcceptedMethodResponseDTO.from_model(m) for m in methods]
+    
+    def get_by_name(self, name: str) -> AcceptedPaymentMethod:
+        stmt = select(AcceptedPaymentMethod).where(AcceptedPaymentMethod.name == name)
+        method = self._session.scalar(stmt)
+        if not method:
+            raise NotFound(f"Accepted method {name} not found")
+        return method

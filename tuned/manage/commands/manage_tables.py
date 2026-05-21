@@ -27,6 +27,7 @@ SEED_TABLES = [
     "academic_level",
     "users",
     "tag",
+    "accepted_payment_method",
 ]
 
 

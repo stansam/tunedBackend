@@ -10,6 +10,7 @@ from tuned.manage.commands import (
     create_blogs,
     seed_db,
     manage_tables,
+    create_payment_methods,
 )
 from typing import Any, Union
 from flask import Blueprint, Flask
@@ -28,5 +29,6 @@ def register_cli_commands(app: Union[Flask, Blueprint]) -> None:
     app.cli.add_command(create_blogs)
     app.cli.add_command(seed_db)
     app.cli.add_command(manage_tables)
+    app.cli.add_command(create_payment_methods)
 
 register_cli_commands(manage_bp)

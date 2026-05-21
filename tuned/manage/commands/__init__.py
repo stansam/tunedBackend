@@ -9,6 +9,7 @@ from tuned.manage.commands.create_faqs import create_faqs
 from tuned.manage.commands.create_blogs import create_blogs
 from tuned.manage.commands.seed_db import seed_db
 from tuned.manage.commands.manage_tables import manage_tables
+from tuned.manage.commands.create_payment_methods import create_payment_methods
 
 __all__ = [
     "create_superuser",
@@ -22,4 +23,5 @@ __all__ = [
     "create_blogs",
     "seed_db",
     "manage_tables",
+    "create_payment_methods",
 ]

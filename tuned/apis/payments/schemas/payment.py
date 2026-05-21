@@ -7,14 +7,14 @@ class CheckoutSchema(Schema):
     client_proof_reference = fields.String(required=False, allow_none=True)
 
     @validates("order_id")
-    def validate_order_id_uuid(self, value: str) -> None:
+    def validate_order_id_uuid(self, value: str, **kwargs) -> None:
         try:
             uuid.UUID(value)
         except ValueError:
             raise ValidationError("order_id must be a valid UUID string.")
 
     @validates("payment_method_id")
-    def validate_payment_method_id_uuid(self, value: str) -> None:
+    def validate_payment_method_id_uuid(self, value: str, **kwargs) -> None:
         try:
             uuid.UUID(value)
         except ValueError:

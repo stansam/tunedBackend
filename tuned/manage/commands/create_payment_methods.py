@@ -10,6 +10,7 @@ from tuned.models.enums import PaymentMethod
 from tuned.extensions import db
 from tuned.repository.exceptions import AlreadyExists
 from tuned.core.logging import get_logger
+from tuned.core.exceptions import NotFound
 
 logger: logging.Logger = get_logger(__name__)
 
@@ -28,11 +29,14 @@ def create_payment_methods() -> None:
         name = entry["name"]
         try:
             # Check if payment method already exists by name to remain idempotent
-            existing = services._repos.payment.accepted_method.get_by_name(name)
-            if existing:
-                click.echo(f"  ⚠ Skipped (already exists): {name}")
-                skipped += 1
-                continue
+            try:
+                existing = services._repos.payment.accepted_method.get_by_name(name)
+                if existing:
+                    click.echo(f"  ⚠ Skipped (already exists): {name}")
+                    skipped += 1
+                    continue
+            except NotFound:
+                pass
 
             dto = AcceptedMethodCreateDTO(
                 name=name,

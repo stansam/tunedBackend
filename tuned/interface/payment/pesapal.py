@@ -24,7 +24,7 @@ class PesapalHelper:
 
     def __init__(self) -> None:
         self.sandbox = current_app.config.get("PESAPAL_SANDBOX", True)
-        self.base_url = "https://cybspay.pesapal.com/pesapalv3" if self.sandbox else "https://pay.pesapal.com/v3"
+        self.base_url = "https://cybqa.pesapal.com/pesapalv3" if self.sandbox else "https://pay.pesapal.com/v3"
         self.consumer_key = current_app.config.get("PESAPAL_CONSUMER_KEY", "")
         self.consumer_secret = current_app.config.get("PESAPAL_CONSUMER_SECRET", "")
         self.ipn_url = current_app.config.get("PESAPAL_IPN_URL", "")

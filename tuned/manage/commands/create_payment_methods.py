@@ -32,15 +32,11 @@ def create_payment_methods() -> None:
     for entry in accepted_methods_list:
         name = entry["name"]
         try:
-            # Check if payment method already exists by name to remain idempotent
-            try:
-                existing = services._repos.payment.accepted_method.get_by_name(name)
-                if existing:
-                    click.echo(f"  ⚠ Skipped (already exists): {name}")
-                    skipped += 1
-                    continue
-            except NotFound:
-                pass
+            existing = services._repos.payment.accepted_method.get_by_name(name)
+            if existing:
+                click.echo(f"  ⚠ Skipped (already exists): {name}")
+                skipped += 1
+                continue
 
             dto = AcceptedMethodCreateDTO(
                 name=name,

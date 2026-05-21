@@ -4,10 +4,10 @@ from sqlalchemy import select
 from datetime import datetime, timezone, timedelta
 from typing import Optional, TYPE_CHECKING
 from tuned.core.logging import get_logger
-from tuned.dtos import ActivityLogCreateDTO, PaymentCreateDTO, PaymentUpdateDTO, PaymentResponseDTO, InvoiceCreateDTO
+from tuned.dtos import ActivityLogCreateDTO, PaymentCreateDTO, PaymentUpdateDTO, PaymentResponseDTO, InvoiceCreateDTO, TransactionCreateDTO
 from tuned.utils.variables import Variables
 from tuned.core.events import get_event_bus
-from tuned.models import PaymentStatus, OrderStatus, Order
+from tuned.models import PaymentStatus, OrderStatus, Order, TransactionType, TransactionStatus
 
 if TYPE_CHECKING:
     from tuned.repository import Repository
@@ -26,6 +26,16 @@ class ProcessPayment:
         try:
             payment = self._repo.create(data)
             
+            try:
+                self._repos.payment.transaction.create(TransactionCreateDTO(
+                    payment_id=payment.id,
+                    type=TransactionType.PAYMENT,
+                    amount=payment.amount,
+                    status=TransactionStatus.PENDING
+                ))
+            except Exception as tx_exc:
+                logger.error(f"[ProcessPayment] Transaction record creation failed for payment {payment.id}: {tx_exc!r}")
+
             try:
                 self._audit.activity_log.log(ActivityLogCreateDTO(
                     action=Variables.PAYMENT_CREATE_ACTION,
@@ -90,6 +100,16 @@ class ClientMarkAsPaid:
             updated_payment = self._repo.update(payment_id, data)
 
             try:
+                self._repos.payment.transaction.create(TransactionCreateDTO(
+                    payment_id=updated_payment.id,
+                    type=TransactionType.PAYMENT,
+                    amount=updated_payment.amount,
+                    status=TransactionStatus.PENDING
+                ))
+            except Exception as tx_exc:
+                logger.error(f"[ClientMarkAsPaid] Transaction record creation failed for payment {updated_payment.id}: {tx_exc!r}")
+
+            try:
                 self._audit.activity_log.log(ActivityLogCreateDTO(
                     action=Variables.PAYMENT_UPDATE_ACTION,
                     user_id=updated_payment.user_id,
@@ -131,7 +151,7 @@ class AdminVerifyPayment:
     def execute(self, payment_id: str, admin_id: str) -> PaymentResponseDTO:
         try:
             payment = self._repo.get_by_id(payment_id)
-            if payment.status != PaymentStatus.PENDING_VERIFICATION.value and payment.status != PaymentStatus.PENDING_VERIFICATION:
+            if payment.status != PaymentStatus.PENDING_VERIFICATION:
                 raise ValueError(f"Payment is not awaiting verification, current state: {payment.status}")
                 
             data = PaymentUpdateDTO(
@@ -139,6 +159,16 @@ class AdminVerifyPayment:
                 admin_verified_at=datetime.now(timezone.utc)
             )
             updated_payment = self._repo.update(payment_id, data)
+
+            try:
+                self._repos.payment.transaction.create(TransactionCreateDTO(
+                    payment_id=updated_payment.id,
+                    type=TransactionType.PAYMENT,
+                    amount=updated_payment.amount,
+                    status=TransactionStatus.COMPLETED
+                ))
+            except Exception as tx_exc:
+                logger.error(f"[AdminVerifyPayment] Transaction record creation failed for payment {updated_payment.id}: {tx_exc!r}")
 
             order = self._repos.order.get_by_id(updated_payment.order_id)
             # Update Order paid status and transition to ACTIVE
@@ -202,7 +232,7 @@ class AdminRejectPayment:
     def execute(self, payment_id: str, user_id: str, rejection_reason: str = "Payment marked as failed by Admin", ip_address: str = "system", user_agent: str = "system") -> PaymentResponseDTO:
         try:
             payment = self._repo.get_by_id(payment_id)
-            if payment.status != PaymentStatus.PENDING_VERIFICATION.value and payment.status != PaymentStatus.PENDING_VERIFICATION:
+            if payment.status != PaymentStatus.PENDING_VERIFICATION:
                 raise ValueError(f"Payment is not awaiting verification, current state: {payment.status}")
                 
             data = PaymentUpdateDTO(
@@ -210,6 +240,16 @@ class AdminRejectPayment:
                 admin_verified_at=datetime.now(timezone.utc)
             )
             updated_payment = self._repo.update(payment_id, data)
+
+            try:
+                self._repos.payment.transaction.create(TransactionCreateDTO(
+                    payment_id=updated_payment.id,
+                    type=TransactionType.PAYMENT,
+                    amount=updated_payment.amount,
+                    status=TransactionStatus.FAILED
+                ))
+            except Exception as tx_exc:
+                logger.error(f"[AdminRejectPayment] Transaction record creation failed for payment {updated_payment.id}: {tx_exc!r}")
 
             try:
                 self._audit.activity_log.log(ActivityLogCreateDTO(

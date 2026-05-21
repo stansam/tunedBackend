@@ -164,6 +164,18 @@ class GetOrderView(MethodView):
             logger.error(f"Failed to fetch order: {e}")
             return error_response(message="Failed to fetch order", status=500)
 
+class GetOrderByIdView(MethodView):
+    decorators = [login_required]
+    def get(self, order_id: str):
+        try:
+            user_id = current_user.id
+            response_dto = get_services().order.get_client_order_details_by_id(order_id, user_id)
+            return success_response(data=asdict(response_dto), message="Order fetched successfully", status=200)
+        except Exception as e:
+            logger.error(f"Failed to fetch order by ID: {e}")
+            return error_response(message="Failed to fetch order", status=500)
+
+
 class ListOrderCommentsView(MethodView):
     decorators = [login_required]
     def get(self, order_id: str):

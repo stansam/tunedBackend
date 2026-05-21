@@ -155,7 +155,6 @@ class InvoiceResponseDTO(BaseDTO):
 @dataclass(kw_only=True)
 class TransactionCreateDTO:
     payment_id: str
-    transaction_id: str
     type: TransactionType
     amount: float
     status: TransactionStatus
@@ -271,7 +270,7 @@ class RefundResponseDTO(BaseDTO):
             reason=model.reason,
             status=model.status,
             processed_by=str(model.processed_by) if model.processed_by else None,
-            admin_reference_id=str(model.admin_reference_id),
+            admin_reference_id=str(model.admin_reference_id) if model.admin_reference_id else None,
             refund_date=model.refund_date,
             created_at=model.created_at,
             updated_at=model.updated_at,

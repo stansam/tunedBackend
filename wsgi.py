@@ -1,3 +1,7 @@
-from tuned import create_app
+from gevent import monkey
+monkey.patch_all()
 
-app = create_app('production')
+from tuned import create_app
+from tuned.extensions import socketio
+
+app = create_app()

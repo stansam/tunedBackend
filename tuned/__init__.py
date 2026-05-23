@@ -44,7 +44,7 @@ def create_app(config_name: Optional[str] = None) -> Flask:
     #     socketio_kwargs['message_queue'] = app.config['SOCKETIO_MESSAGE_QUEUE']
     
     socketio.init_app(app,
-        async_mode='eventlet',
+        async_mode='gevent',
         cors_allowed_origins=cors_origins,
         cors_credentials=True,
         logger=app.config.get('DEBUG', False),

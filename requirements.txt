@@ -12,7 +12,6 @@ click-plugins
 click-repl
 coverage
 dnspython
-eventlet
 Flask
 flask-cors
 Flask-JWT-Extended
@@ -23,7 +22,10 @@ flask-redis
 Flask-SocketIO
 Flask-SQLAlchemy
 flower
+gevent
+gevent-websocket
 greenlet
+gunicorn
 h11
 humanize
 iniconfig

@@ -7,7 +7,8 @@ WORKDIR /app
 
 RUN apt-get update && apt-get upgrade -y
 
-RUN apt-get install -y vim
+RUN apt-get install -y vim build-essential && \
+    rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
 
@@ -17,4 +18,4 @@ COPY . /app
 
 EXPOSE 5000
 
-CMD ["python", "app.py"]   
+CMD ["gunicorn", "-k", "gevent", "-w", "1", "-b", "0.0.0.0:5000", "tuned.wsgi:app"]

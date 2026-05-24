@@ -32,7 +32,12 @@ def create_app(config_name: Optional[str] = None) -> Flask:
     mail.init_app(app)
     
     cors_origins = app.config.get('CORS_ORIGINS', '*')
-    cors.init_app(app, origins=cors_origins, supports_credentials=True, methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"])
+    cors.init_app(app,
+        origins=cors_origins, 
+        supports_credentials=True, 
+        methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+        allow_headers=["Authorization", "Content-Type", "Accept", "X-Requested-With"],
+    )
     
     # socketio_kwargs = {
     #     'cors_allowed_origins': cors_origins,

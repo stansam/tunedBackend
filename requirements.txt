@@ -14,7 +14,6 @@ coverage
 dnspython
 Flask
 flask-cors
-Flask-JWT-Extended
 Flask-Login
 Flask-Mail
 Flask-Migrate
@@ -40,13 +39,13 @@ mypy
 mypy_extensions
 packaging
 pathspec
+pillow
 pip
 pluggy
 prometheus_client
 prompt_toolkit
 psycopg2-binary
 Pygments
-PyJWT
 pytest
 pytest-cov
 pytest-flask

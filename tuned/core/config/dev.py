@@ -24,8 +24,8 @@ class DevelopmentConfig(BaseConfig):
     SESSION_COOKIE_DOMAIN: Optional[str] = os.environ.get('SESSION_COOKIE_DOMAIN')
     SESSION_COOKIE_SECURE: bool = True
     REMEMBER_COOKIE_SECURE: bool = True
-    JWT_COOKIE_SECURE: bool = True
-    JWT_COOKIE_DOMAIN: Optional[str] = os.environ.get('JWT_COOKIE_DOMAIN')
+    # JWT_COOKIE_SECURE: bool = True
+    # JWT_COOKIE_DOMAIN: Optional[str] = os.environ.get('JWT_COOKIE_DOMAIN')
     SSL_REDIRECT: bool = os.environ.get('SSL_REDIRECT', 'True').lower() == 'true'
     
     PROXY_FIX: bool = True

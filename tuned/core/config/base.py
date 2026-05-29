@@ -30,16 +30,16 @@ class BaseConfig:
     REMEMBER_COOKIE_HTTPONLY: bool = True
     REMEMBER_COOKIE_DURATION: timedelta = timedelta(days=30)
     
-    JWT_SECRET_KEY: str = os.environ.get('JWT_SECRET_KEY') or os.environ.get('SECRET_KEY') or "dev_jwt_secret"
-    JWT_ACCESS_TOKEN_EXPIRES: timedelta = timedelta(hours=1)
-    JWT_REFRESH_TOKEN_EXPIRES: timedelta = timedelta(days=30)
-    JWT_TOKEN_LOCATION: list[str] = ['headers', 'cookies']
-    JWT_COOKIE_SECURE: bool = True  # Only send over HTTPS
-    JWT_COOKIE_CSRF_PROTECT: bool = True
-    JWT_COOKIE_SAMESITE: str = 'Lax'
-    JWT_ACCESS_COOKIE_NAME: str = 'tuned_access_token'
-    JWT_REFRESH_COOKIE_NAME: str = 'tuned_refresh_token'
-    JWT_COOKIE_PATH: str = '/'
+    # JWT_SECRET_KEY: str = os.environ.get('JWT_SECRET_KEY') or os.environ.get('SECRET_KEY') or "dev_jwt_secret"
+    # JWT_ACCESS_TOKEN_EXPIRES: timedelta = timedelta(hours=1)
+    # JWT_REFRESH_TOKEN_EXPIRES: timedelta = timedelta(days=30)
+    # JWT_TOKEN_LOCATION: list[str] = ['headers', 'cookies']
+    # JWT_COOKIE_SECURE: bool = True  # Only send over HTTPS
+    # JWT_COOKIE_CSRF_PROTECT: bool = True
+    # JWT_COOKIE_SAMESITE: str = 'Lax'
+    # JWT_ACCESS_COOKIE_NAME: str = 'tuned_access_token'
+    # JWT_REFRESH_COOKIE_NAME: str = 'tuned_refresh_token'
+    # JWT_COOKIE_PATH: str = '/'
     
     MAIL_SERVER: str = os.environ.get('EMAIL_HOST', 'smtp.hostinger.com')
     MAIL_PORT: int = int(os.environ.get('EMAIL_PORT', 587))
@@ -64,8 +64,8 @@ class BaseConfig:
     CELERY_TIMEZONE: str = 'UTC'
     CELERY_ENABLE_UTC: bool = True
     
-    JWT_BLACKLIST_ENABLED: bool = True
-    JWT_BLACKLIST_TOKEN_CHECKS: list[str] = ['access', 'refresh']
+    # JWT_BLACKLIST_ENABLED: bool = True
+    # JWT_BLACKLIST_TOKEN_CHECKS: list[str] = ['access', 'refresh']
     
     FRONTEND_URL: str = os.environ.get('FRONTEND_URL', 'http://localhost:3000')
 

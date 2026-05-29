@@ -34,11 +34,11 @@ def app():
         'WTF_CSRF_ENABLED': False,
         'CELERY_TASK_ALWAYS_EAGER': True,  # Run Celery tasks synchronously
         'REDIS_URL': 'redis://localhost:6379/15',  # Separate Redis DB for tests
-        'JWT_SECRET_KEY': 'test-secret-key-for-testing-only',
+        # 'JWT_SECRET_KEY': 'test-secret-key-for-testing-only',
         'SECRET_KEY': 'test-secret-key-for-testing-only',
-        'JWT_TOKEN_LOCATION': ['headers'],
-        'JWT_HEADER_NAME': 'Authorization',
-        'JWT_HEADER_TYPE': 'Bearer',
+        # 'JWT_TOKEN_LOCATION': ['headers'],
+        # 'JWT_HEADER_NAME': 'Authorization',
+        # 'JWT_HEADER_TYPE': 'Bearer',
     })
     
     # Create application context
@@ -152,23 +152,23 @@ def admin_user(db):
     return user
 
 
-@pytest.fixture(scope='function')
-def auth_headers(sample_user, app):
-    """
-    Create authentication headers with JWT token.
+# @pytest.fixture(scope='function')
+# def auth_headers(sample_user, app):
+#     """
+#     Create authentication headers with JWT token.
     
-    Returns:
-        dict: Headers with Authorization Bearer token
-    """
-    from flask_jwt_extended import create_access_token
+#     Returns:
+#         dict: Headers with Authorization Bearer token
+#     """
+#     from flask_jwt_extended import create_access_token
     
-    with app.app_context():
-        access_token = create_access_token(identity=str(sample_user.id))
+#     with app.app_context():
+#         access_token = create_access_token(identity=str(sample_user.id))
     
-    return {
-        'Authorization': f'Bearer {access_token}',
-        'Content-Type': 'application/json'
-    }
+#     return {
+#         'Authorization': f'Bearer {access_token}',
+#         'Content-Type': 'application/json'
+#     }
 
 
 @pytest.fixture(scope='function')

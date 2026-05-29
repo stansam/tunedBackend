@@ -23,12 +23,12 @@ def create_app(config_name: Optional[str] = None) -> Flask:
 
     app.config.from_object(config[config_name])
     
-    from tuned.extensions import db, migrate, login_manager, jwt, cors, socketio, mail
+    from tuned.extensions import db, migrate, login_manager, cors, socketio, mail #jwt
     
     db.init_app(app)
     migrate.init_app(app, db)
     login_manager.init_app(app)
-    jwt.init_app(app)
+    # jwt.init_app(app)
     mail.init_app(app)
     
     cors_origins = app.config.get('CORS_ORIGINS', '*')
@@ -85,11 +85,11 @@ def create_app(config_name: Optional[str] = None) -> Flask:
     def unauthorized():
         return {"message": "unauthorized"}, 401
     
-    @jwt.token_in_blocklist_loader
-    def check_if_token_revoked(jwt_header: dict[str, Any], jwt_payload: dict[str, Any]) -> bool:
-        from tuned.redis_client import is_token_blacklisted
-        jti = jwt_payload['jti']
-        return is_token_blacklisted(jti)
+    # @jwt.token_in_blocklist_loader
+    # def check_if_token_revoked(jwt_header: dict[str, Any], jwt_payload: dict[str, Any]) -> bool:
+    #     from tuned.redis_client import is_token_blacklisted
+    #     jti = jwt_payload['jti']
+    #     return is_token_blacklisted(jti)
     
     from tuned.apis import(
         main_bp, auth_bp, notification_bp, client_bp, orders_bp, order_deliveries_bp, payments_bp

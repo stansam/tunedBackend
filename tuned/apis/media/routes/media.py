@@ -35,7 +35,6 @@ class DownloadMediaView(MethodView):
             response.headers['X-Accel-Redirect'] = f"/protected_media/{asset.storage_path}"
             response.headers['Content-Disposition'] = f"attachment; filename=\"{asset.original_filename}\""
 
-            response.headers['Content-Type'] = ""
             return response
         except Exception as exc:
             logger.error("[DownloadMediaView] Failed to download asset %s: %r", asset_id, exc)
@@ -89,6 +88,24 @@ class DownloadOrderFilesView(MethodView):
         except Exception as exc:
             logger.error("[DownloadOrderFilesView] Failed to download order %s package: %r", order_id, exc)
             return error_response(message="Failed to download order package", status=500)
+
+class DownloadOrderFileView(MethodView):
+    decorators = [login_required]
+
+    def get(self, file_id: str, order_id: str):
+        try:
+            services = get_services()
+            file = services.order.get_order_file(file_id, order_id, current_user.id)
+            
+            response = make_response()
+            response.headers['X-Accel-Redirect'] = f"/protected_media/{file.url}"
+            response.headers['Content-Disposition'] = f"attachment; filename=\"{file.filename}\""
+            return response
+        except ValidationError as val_err:
+            return error_response(message=str(val_err), status=403)
+        except Exception as exc:
+            logger.error("[DownloadOrderFileView] Failed to download order file %s: %r", file_id, exc)
+            return error_response(message="Failed to download order file", status=500)
 
 
 class DownloadDeliveryFilesView(MethodView):

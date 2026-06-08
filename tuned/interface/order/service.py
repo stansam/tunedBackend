@@ -13,8 +13,9 @@ from tuned.dtos import (
     OrderListRequestDTO, OrderListResponseDTO,
     UpdateUserDTO, CalculatePriceRequestDTO, OrderDetailsResponseDTO,
     OrderCommentResponseDTO, CreateCommentRequestDTO, UpdateCommentRequestDTO,
+    OrderFileResponseDTO
 )
-from tuned.repository.exceptions import DatabaseError, NotFound
+from tuned.repository.exceptions import DatabaseError, NotFound, ValidationError
 from tuned.repository.protocols import OrderRepositoryProtocol
 from tuned.models.enums import DiscountType, FileExtensionType
 from tuned.utils.variables import Variables
@@ -315,7 +316,20 @@ class OrderService:
         except Exception as e:
             self._repo.rollback()
             logger.error("[OrderService.upload_order_files] Failed: %r", e)
-            raise 
+            raise
+    
+    def get_order_file(self, file_id: str, order_id: str, user_id: str) -> OrderFileResponseDTO:
+        try:
+            order = self._repo.get_by_id(order_id)
+            user = self._repos.user.get_user_by_id(user_id)
+            if not user.is_admin and str(order.client_id) != str(user.id):
+                raise ValidationError("You are not authorized to access files for this order")
+            file = self._repo.get_order_file_by_id(file_id, order_id)
+            return OrderFileResponseDTO.from_model(file)
+        except Exception as e:
+            self._repo.rollback()
+            logger.error("[OrderService.download_order_file] Failed: %r", e)
+            raise
 
     def save_draft(self, dto: OrderDraftCreateDTO, ip_address: str, user_agent: str) -> OrderDraftResponseDTO:
         try:

@@ -1,6 +1,7 @@
 from tuned.apis.media.routes.media import (
     DownloadMediaView,
     BulkDownloadMediaView,
+    DownloadOrderFileView,
     DownloadOrderFilesView,
     DownloadDeliveryFilesView
 )
@@ -16,6 +17,11 @@ MEDIA_ROUTES: list[dict[str, Any]] = [
         "rule": "/download/bulk",
         "view_func": BulkDownloadMediaView.as_view("bulk_download_media"),
         "methods": ["POST"]
+    },
+    {
+        "rule": "/download/order/<string:order_id>/<string:file_id>",
+        "view_func": DownloadOrderFileView.as_view("download_order_file"),
+        "methods": ["GET"]
     },
     {
         "rule": "/download/order/<string:order_id>",

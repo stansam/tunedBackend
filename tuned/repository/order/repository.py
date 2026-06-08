@@ -15,7 +15,7 @@ from tuned.dtos import(
     CreateOrderRequestDTO, OrderDraftCreateDTO, CreateOrderFileDTO,
 )
 from tuned.repository.order.files import (
-    CreateOrderFile
+    CreateOrderFile, GetOrderFileById
 )
 from tuned.repository.order.orders import(
     GetActiveOrdersByClient,
@@ -105,6 +105,9 @@ class OrderRepository(OrderRepositoryProtocol):
 
     def create_order_file(self, order_id: str, req: CreateOrderFileDTO) -> OrderFile:
         return CreateOrderFile(self.session).execute(order_id, req)
+
+    def get_order_file_by_id(self, file_id: str, order_id: str) -> OrderFile:
+        return GetOrderFileById(self.session).execute(file_id, order_id)
 
     def upsert_draft(self, dto: OrderDraftCreateDTO) -> Order:
         return UpsertDraftOrder(self.session).execute(dto)

@@ -135,7 +135,7 @@ class User(UserMixin, BaseModel):  # type: ignore[misc]
         from flask import current_app
         with current_app.app_context():
             if self.profile_pic:
-                return f"{current_app.config.get('FRONTEND_URL')}/{self.profile_pic.storage_path}"
+                return f"{current_app.config.get('FRONTEND_URL')}/uploads/{self.profile_pic.storage_path}"
 
             if self.gender == GenderEnum.FEMALE:
                 return f"{current_app.config.get('FRONTEND_URL')}/uploads/profile_pics/ladyDefault.png"

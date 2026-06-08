@@ -28,7 +28,6 @@ if TYPE_CHECKING:
 
 logger = get_logger(__name__)
 
-
 class MediaService:
     def __init__(
         self,
@@ -249,6 +248,21 @@ class MediaService:
             raise NotFound("No files uploaded for this order")
 
         return self.create_bulk_zip(asset_ids, user_id)
+    
+    # def download_order_file(self, file_id: str, order_id: str, user_id: str) -> str:
+    #     user = self._repos.user.get_user_by_id(user_id)
+    #     order = self._repos.order.get_by_id(order_id)
+    #     if not order:
+    #         raise NotFound("Order not found")
+
+    #     # Permission check
+    #     if not user.is_admin and str(order.client_id) != str(user.id):
+    #         raise ValidationError("You are not authorized to access files for this order")
+
+    #     if not order.files:
+    #         raise NotFound("File not found")
+
+    #     return self.create_bulk_zip([str(file.asset_id)], user_id)
 
     def create_delivery_zip(self, delivery_id: str, user_id: str) -> str:
         user = self._repos.user.get_user_by_id(user_id)

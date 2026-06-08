@@ -5,9 +5,10 @@ import uuid
 
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
+from sqlalchemy import select
 
 from tuned.models import OrderFile
-from tuned.core.exceptions import DatabaseError
+from tuned.core.exceptions import DatabaseError, NotFound
 from tuned.core.logging import get_logger
 from tuned.dtos import CreateOrderFileDTO
 
@@ -36,3 +37,20 @@ class CreateOrderFile:
             logger.error("[CreateOrderFile] DB error: %s", exc)
             raise DatabaseError(str(exc)) from exc
 
+class GetOrderFileById:
+    def __init__(self, session: Session) -> None:
+        self.session = session
+
+    def execute(self, file_id: str, order_id: str) -> OrderFile:
+        try:
+            stmnt = select(OrderFile).where(
+                OrderFile.order_id == order_id,
+                OrderFile.id == file_id
+            )
+            order_file = self.session.execute(stmnt).scalar_one_or_none()
+            if not order_file:
+                raise NotFound("File not found")
+            return order_file
+        except SQLAlchemyError as exc:
+            logger.error("[GetOrderFileById] DB error: %s", exc)
+            raise DatabaseError(str(exc)) from exc

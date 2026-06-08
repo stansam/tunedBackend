@@ -1,3 +1,4 @@
+import uuid
 from datetime import timezone, datetime
 from dataclasses import dataclass, field
 from typing import Optional, TYPE_CHECKING, Union
@@ -60,6 +61,7 @@ class UpdateUserDTO:
     gender: Optional[GenderEnum] = None
     phone_number: Optional[str] = None
     profile_pic: Optional[str] = None
+    profile_pic_id: Optional[Union[str, uuid.UUID]] = None
     failed_login_attempts: Optional[int] = None
     reward_points: Optional[int] = None
     last_failed_login: Optional[datetime] = None

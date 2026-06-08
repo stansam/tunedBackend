@@ -67,4 +67,28 @@ class Variables:
     ORDER_DELIVERY_FILE_UPLOADED_ACTION = "order_delivery_file_uploaded"
     ORDER_DELIVERY_ENTITY_TYPE = "OrderDelivery"
     
+    BLOG_POST_CREATED = "blog_post_created"
+    BLOG_POST_UPDATED = "blog_post_updated"
+    BLOG_POST_DELETED = "blog_post_deleted"
+    BLOG_POST_ENTITY_TYPE = "BlogPost"
+
+    BLOG_COMMENT_CREATED = "blog_comment_created"
+    BLOG_COMMENT_UPDATED = "blog_comment_updated"
+    BLOG_COMMENT_DELETED = "blog_comment_deleted"
+    BLOG_COMMENT_ENTITY_TYPE = "BlogComment"
+
+    BLOG_CATEGORY_CREATED = "blog_category_created"
+    BLOG_CATEGORY_UPDATED = "blog_category_updated"
+    BLOG_CATEGORY_DELETED = "blog_category_deleted"
+    BLOG_CATEGORY_ENTITY_TYPE = "BlogCategory"
+
+    BLOG_COMMENT_REACTION_CREATED = "blog_comment_reaction_created"
+    BLOG_COMMENT_REACTION_UPDATED = "blog_comment_reaction_updated"
+    BLOG_COMMENT_REACTION_DELETED = "blog_comment_reaction_deleted"
+    BLOG_COMMENT_REACTION_ENTITY_TYPE = "BlogCommentReaction"
+
+    NEWSLETTER_SUBSCRIBER_SUBSCRIBED = "newsletter_subscriber_subscribed"
+    NEWSLETTER_SUBSCRIBER_UNSUBSCRIBED = "newsletter_subscriber_unsubscribed"
+    NEWSLETTER_SUBSCRIBER_RESUBSCRIBED = "newsletter_subscriber_resubscribed"
+    NEWSLETTER_SUBSCRIBER_ENTITY_TYPE = "NewsletterSubscriber"
     

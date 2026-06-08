@@ -9,6 +9,7 @@ if TYPE_CHECKING:
 class NewsletterSubscribeDTO(BaseDTO):
     email: str
     name: Optional[str] = None
+    client_id: Optional[str] = None
 
 @dataclass(kw_only=True)
 class NewsletterSubscriberResponseDTO(BaseDTO):

@@ -34,9 +34,11 @@ class AddFilesToDelivery:
             for file_dto in data.delivery_files:
                 delivery_file = OrderDeliveryFile(
                     delivery_id=delivery.id,
+                    asset_id=UUID(file_dto.asset_id) if file_dto.asset_id else None,
                     filename=file_dto.filename,
                     original_filename=file_dto.original_filename,
                     file_path=file_dto.file_path,
+                    file_size=file_dto.file_size,
                     file_type=file_dto.file_type,
                     file_format=file_dto.file_format,
                     description=file_dto.description,

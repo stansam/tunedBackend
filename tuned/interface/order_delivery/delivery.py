@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import uuid
 import os
 import logging
 from typing import Optional, TYPE_CHECKING
@@ -31,7 +32,7 @@ class OrderDeliveryService:
     def __init__(
         self,
         repos: "Repository",
-        interfaces: Optional["Services"] = None,
+        interfaces: "Services",
         audit_service: Optional["ActivityLogServiceProtocol"] = None,
     ) -> None:
         self._repos = repos
@@ -46,39 +47,31 @@ class OrderDeliveryService:
         self,
         order_id: str,
         files: list[FileStorage],
-        file_type: FileType
+        file_type: FileType,
+        delivery_id: str
     ) -> list[OrderDeliveryFileDTO]:
-        upload_dir = os.path.join(current_app.root_path, 'uploads', 'order_deliveries', order_id)
-        os.makedirs(upload_dir, exist_ok=True)
+        from tuned.models.enums import AssetOwnerType
         
         file_dtos: list[OrderDeliveryFileDTO] = []
         for file in files:
-            if not file.filename:
+            if not file or not file.filename:
                 continue
-            original_filename = file.filename
-            filename = secure_filename(original_filename)
-            file_path = os.path.join(upload_dir, filename)
-            
-            base, ext = os.path.splitext(filename)
-            counter = 1
-            while os.path.exists(file_path):
-                filename = f"{base}_{counter}{ext}"
-                file_path = os.path.join(upload_dir, filename)
-                counter += 1
-                
-            file.save(file_path)
-            file_size = os.path.getsize(file_path)
-            from tuned.interface.order.util import resolve_file_type
-            ext_without_dot = ext.lstrip('.')
-            file_format = resolve_file_type(ext_without_dot)
+
+            media_asset_dto = self._interfaces.media.upload_file(
+                file=file,
+                owner_type=AssetOwnerType.DELIVERY,
+                owner_id=delivery_id,
+                is_public=False
+            )
 
             file_dtos.append(OrderDeliveryFileDTO(
-                filename=filename,
-                original_filename=original_filename,
-                file_path=file_path,
-                file_size=file_size,
+                filename=media_asset_dto.original_filename,
+                original_filename=media_asset_dto.original_filename,
+                file_path=media_asset_dto.storage_path,
+                file_size=media_asset_dto.file_size_bytes or 0,
                 file_type=file_type,
-                file_format=file_format,
+                file_format=media_asset_dto.asset_type,
+                asset_id=media_asset_dto.id
             ))
             
         return file_dtos
@@ -92,17 +85,19 @@ class OrderDeliveryService:
         ip_address: str,
         user_agent: str,
     ) -> OrderDeliveryResponseDTO:
+        delivery_id = str(uuid.uuid4()) # TODO Check on this smells a bit
         all_file_dtos: list[OrderDeliveryFileDTO] = []
         
         try:
             all_file_dtos.extend(
-                self._process_and_save_files(order_id, delivery_files, FileType.DELIVERY)
+                self._process_and_save_files(order_id, delivery_files, FileType.DELIVERY, delivery_id)
             )
             all_file_dtos.extend(
-                self._process_and_save_files(order_id, plagiarism_reports, FileType.PLAGIARISM_REPORT)
+                self._process_and_save_files(order_id, plagiarism_reports, FileType.PLAGIARISM_REPORT, delivery_id)
             )
 
             create_dto = CreateOrderDeliveryDTO(
+                id=delivery_id,
                 order_id=order_id,
                 delivery_files=all_file_dtos,
             )
@@ -139,11 +134,13 @@ class OrderDeliveryService:
         except Exception as exc:
             self._repo.rollback()
             for f in all_file_dtos:
-                if os.path.exists(f.file_path):
+                upload_root = current_app.config.get("UPLOAD_ROOT", "/tmp")
+                abs_path = os.path.join(upload_root, f.file_path)
+                if os.path.exists(abs_path):
                     try:
-                        os.remove(f.file_path)
+                        os.remove(abs_path)
                     except Exception as cleanup_exc:
-                        logger.error(f"Failed to cleanup file {f.file_path}: {cleanup_exc}")
+                        logger.error(f"Failed to cleanup file {abs_path}: {cleanup_exc}")
             raise exc
 
     def get_deliveries_by_order(self, order_id: str) -> list[OrderDeliveryResponseDTO]:
@@ -169,10 +166,10 @@ class OrderDeliveryService:
         try:
             # Process and save new files
             all_file_dtos.extend(
-                self._process_and_save_files(order_id, delivery_files, FileType.DELIVERY)
+                self._process_and_save_files(order_id, delivery_files, FileType.DELIVERY, delivery_id)
             )
             all_file_dtos.extend(
-                self._process_and_save_files(order_id, plagiarism_reports, FileType.PLAGIARISM_REPORT)
+                self._process_and_save_files(order_id, plagiarism_reports, FileType.PLAGIARISM_REPORT, delivery_id)
             )
 
             add_dto = AddDeliveryFilesDTO(delivery_files=all_file_dtos)
@@ -204,11 +201,13 @@ class OrderDeliveryService:
         except Exception as exc:
             self._repo.rollback()
             for f in all_file_dtos:
-                if os.path.exists(f.file_path):
+                upload_root = current_app.config.get("UPLOAD_ROOT", "/tmp")
+                abs_path = os.path.join(upload_root, f.file_path)
+                if os.path.exists(abs_path):
                     try:
-                        os.remove(f.file_path)
+                        os.remove(abs_path)
                     except Exception as cleanup_exc:
-                        logger.error(f"Failed to cleanup file {f.file_path}: {cleanup_exc}")
+                        logger.error(f"Failed to cleanup file {abs_path}: {cleanup_exc}")
             raise exc
 
     def update_delivery_status(

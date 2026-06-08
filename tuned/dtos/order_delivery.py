@@ -13,6 +13,7 @@ class OrderDeliveryFileDTO:
     file_type: FileType
     file_format: FileExtensionType
     description: Optional[str] = None
+    asset_id: Optional[str] = None
     
     def __post_init__(self):
         if isinstance(self.file_type, str):
@@ -24,6 +25,7 @@ class OrderDeliveryFileDTO:
 class CreateOrderDeliveryDTO:
     order_id: str
     delivery_files: list[OrderDeliveryFileDTO] = field(default_factory=list)
+    id: Optional[str] = None
 
 @dataclass
 class AddDeliveryFilesDTO:

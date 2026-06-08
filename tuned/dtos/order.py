@@ -234,6 +234,7 @@ class CreateOrderFileDTO:
     file_size: int
     file_type: FileExtensionType
     is_from_client: bool = True
+    asset_id: Optional[str] = None
 
     def __post_init__(self):
         if isinstance(self.file_type, str):

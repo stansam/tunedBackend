@@ -13,7 +13,7 @@ class CreateBlog:
     def __init__(self, session: Session):
         self.session = session
 
-    def execute(self, data: BlogPostDTO) -> BlogPostResponseDTO:
+    def execute(self, data: BlogPostDTO) -> BlogPost:
         try:
             data_dict = data.__dict__.copy()
             tags_list = data_dict.pop("tags", [])
@@ -21,16 +21,13 @@ class CreateBlog:
                 title=data.title,
                 content=data.content,
                 excerpt=data.excerpt,
-                featured_image=data.featured_image,
+                featured_image_id=UUID(data.featured_image_id) if data.featured_image_id else None,
                 author=data.author,
                 category_id=UUID(data.category_id),
                 meta_description=data.meta_description,
                 is_published=data.is_published,
                 is_featured=data.is_featured,
                 published_at=data.published_at,
-                # updated_at=data.updated_at,
-                # updated_by=UUID(data.updated_by),
-                # created_by=UUID(data.created_by),
             )
 
             self.session.add(post)
@@ -40,7 +37,7 @@ class CreateBlog:
             post.tag_list = tags_obj
             self.session.flush()
 
-            return BlogPostResponseDTO.from_model(post)
+            return post
 
         except IntegrityError as e:
             raise AlreadyExists("Post already exists")
@@ -51,14 +48,14 @@ class GetBlogPostBySlug:
     def __init__(self, session: Session) -> None:
         self.session = session
 
-    def execute(self, slug: str) -> BlogPostResponseDTO:
+    def execute(self, slug: str) -> BlogPost:
         try:
             stmt = select(BlogPost).where(BlogPost.slug == slug)
             post = self.session.scalar(stmt)
             if not post:
                 raise NotFound("post not found")
 
-            return BlogPostResponseDTO.from_model(post)
+            return post
 
         except SQLAlchemyError as e:
             raise DatabaseError(f"Database error while fetching post: {str(e)}")
@@ -67,14 +64,14 @@ class GetBlogPostByID:
     def __init__(self, session: Session) -> None:
         self.session = session
 
-    def execute(self, id: str) -> BlogPostResponseDTO:
+    def execute(self, id: str) -> BlogPost:
         try:
             stmt = select(BlogPost).where(BlogPost.id == id)
             post = self.session.scalar(stmt)
             if not post:
                 raise NotFound("post not found")
 
-            return BlogPostResponseDTO.from_model(post)
+            return post
 
         except SQLAlchemyError as e:
             raise DatabaseError(f"Database error while fetching post: {str(e)}")
@@ -83,7 +80,7 @@ class GetFeaturedBlogPosts:
     def __init__(self, session: Session) -> None:
         self.session = session
 
-    def execute(self) -> list[BlogPostResponseDTO]:
+    def execute(self) -> list[BlogPost]:
         try:
             stmt = (
                 select(BlogPost)
@@ -94,7 +91,7 @@ class GetFeaturedBlogPosts:
             if not posts:
                 raise NotFound("posts not found")
 
-            return [BlogPostResponseDTO.from_model(s) for s in posts]
+            return list(posts)
 
         except SQLAlchemyError as e:
             raise DatabaseError(f"Database error while fetching posts: {str(e)}")
@@ -116,7 +113,7 @@ class UpdateOrDeleteBlogPost:
     def __init__(self, session: Session) -> None:
         self.session = session
 
-    def execute(self, id: str, data: BlogPostDTO) -> BlogPostResponseDTO:
+    def execute(self, id: str, data: BlogPostDTO) -> BlogPost:
         try:
             stmt = select(BlogPost).where(BlogPost.id == id)
             post = self.session.scalar(stmt)
@@ -134,8 +131,11 @@ class UpdateOrDeleteBlogPost:
                     post.content = data.content
                 if data.excerpt:
                     post.excerpt = data.excerpt
-                if data.featured_image:
-                    post.featured_image = data.featured_image
+                if data.featured_image_id:
+                    post.featured_image_id = UUID(data.featured_image_id)
+                elif data.featured_image:
+                    # Fallback or support direct paths if needed
+                    pass
                 if data.author:
                     post.author = data.author
                 if data.category_id:
@@ -159,7 +159,7 @@ class UpdateOrDeleteBlogPost:
                 post.tag_list = tags_obj
                 self.session.flush()
 
-            return BlogPostResponseDTO.from_model(post)
+            return post
 
         except SQLAlchemyError as e:
             raise DatabaseError(f"Database error while updating post: {str(e)}")   
@@ -215,7 +215,7 @@ class GetBlogsByCategory:
         self.session = session
         self.req = req
     
-    def execute(self) -> list[BlogPostResponseDTO]:
+    def execute(self) -> list[BlogPost]:
         try:
             stmt = (
                 select(BlogPost)
@@ -224,7 +224,7 @@ class GetBlogsByCategory:
                 .limit(self.req.per_page)
             )
             items = self.session.scalars(stmt).all()
-            return [BlogPostResponseDTO.from_model(s) for s in items]
+            return list(items)
 
         except SQLAlchemyError as e:
             raise DatabaseError(f"Database error while fetching posts: {str(e)}")

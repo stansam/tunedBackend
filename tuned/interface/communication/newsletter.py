@@ -3,7 +3,7 @@ from typing import Optional, TYPE_CHECKING
 from tuned.dtos import NewsletterSubscribeDTO, NewsletterSubscriberResponseDTO, ActivityLogCreateDTO
 from tuned.repository.exceptions import DatabaseError, NotFound
 from tuned.core.logging import get_logger
-
+from tuned.utils.variables import Variables
 if TYPE_CHECKING:
     from tuned.repository import Repository
     from tuned.interface import Services
@@ -15,49 +15,53 @@ class NewsletterService:
         self._repo = repos.newsletter
         self._services = services
 
-    def subscribe(self, data: NewsletterSubscribeDTO, ip_address: Optional[str] = None, user_agent: Optional[str] = None) -> NewsletterSubscriberResponseDTO:
+    def subscribe(self, data: NewsletterSubscribeDTO, ip_address: Optional[str] = "system", user_agent: Optional[str] = "system") -> NewsletterSubscriberResponseDTO:
         try:
             existing = self._repo.get_by_email(data.email)
             
             if existing:
                 if existing.is_active:
-                    return existing
+                    return NewsletterSubscriberResponseDTO.from_model(existing)
                 
-                result = self._repo.update_status(existing.id, True, data.name)
+                result = self._repo.update_status(str(existing.id), True, data.name)
                 logger.info(f"Newsletter subscription reactivated for {data.email}")
                 
                 self._services.audit.activity_log.log(
                     ActivityLogCreateDTO(
-                        action='newsletter_resubscribed',
-                        entity_type='NewsletterSubscriber',
-                        entity_id=result.id,
+                        action=Variables.NEWSLETTER_SUBSCRIBER_RESUBSCRIBED,
+                        entity_type=Variables.NEWSLETTER_SUBSCRIBER_ENTITY_TYPE,
+                        entity_id=str(result.id),
                         before=existing,
                         after=result,
                         ip_address=ip_address,
                         user_agent=user_agent
                     )
                 )
+
+                self._repo.save()
                 
-                self._send_confirmation(data.email, data.name or existing.name)
-                return result
+                self._send_confirmation(data.email, data.name if data.name else existing.name if existing.name else "")
+                return NewsletterSubscriberResponseDTO.from_model(result)
 
             result = self._repo.create(data)
             logger.info(f"New newsletter subscription for {data.email}")
             
             self._services.audit.activity_log.log(
                 ActivityLogCreateDTO(
-                    action='newsletter_subscribed',
-                    entity_type='NewsletterSubscriber',
-                    entity_id=result.id,
+                    action=Variables.NEWSLETTER_SUBSCRIBER_SUBSCRIBED,
+                    entity_type=Variables.NEWSLETTER_SUBSCRIBER_ENTITY_TYPE,
+                    entity_id=str(result.id),
                     before=None,
                     after=result,
                     ip_address=ip_address,
                     user_agent=user_agent
                 )
             )
-            
+
+            self._repo.save()
+
             self._send_confirmation(data.email, data.name or "")
-            return result
+            return NewsletterSubscriberResponseDTO.from_model(result)
 
         except DatabaseError as e:
             logger.error(f"Database error in newsletter subscription: {str(e)}")

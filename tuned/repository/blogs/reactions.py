@@ -1,7 +1,7 @@
 from uuid import UUID
 from typing import List
 from tuned.models import CommentReaction, BlogReactionType
-from tuned.dtos import CommentReactionDTO, CommentReactionResponseDTO
+from tuned.dtos import CommentReactionDTO
 from tuned.repository.exceptions import NotFound, DatabaseError, AlreadyExists
 from sqlalchemy.orm import Session
 from sqlalchemy import select
@@ -11,13 +11,13 @@ class CreateCommentReaction:
     def __init__(self, session: Session):
         self.session = session
 
-    def execute(self, data: CommentReactionDTO) -> CommentReactionResponseDTO:
+    def execute(self, data: CommentReactionDTO) -> CommentReaction:
         try:
             reaction = CommentReaction(**data.__dict__)
 
             self.session.add(reaction)
             self.session.flush()
-            return CommentReactionResponseDTO.from_model(reaction)
+            return reaction
 
         except IntegrityError as e:
             raise AlreadyExists("reaction already exists")
@@ -28,14 +28,14 @@ class GetCommentReaction:
     def __init__(self, session: Session) -> None:
         self.session = session
 
-    def execute(self, id: str) -> CommentReactionResponseDTO:
+    def execute(self, id: str) -> CommentReaction:
         try:
             stmt = select(CommentReaction).where(CommentReaction.id == id)
             comment_reaction = self.session.scalar(stmt)
             if not comment_reaction:
                 raise NotFound("reaction not found")
 
-            return CommentReactionResponseDTO.from_model(comment_reaction)
+            return comment_reaction
 
         except SQLAlchemyError as e:
             raise DatabaseError(f"Database error while fetching reaction: {str(e)}") from e
@@ -44,7 +44,7 @@ class UpdateOrDeleteCommentReaction:
     def __init__(self, session: Session) -> None:
         self.session = session
 
-    def execute(self, id: str, data: CommentReactionDTO) -> CommentReactionResponseDTO:
+    def execute(self, id: str, data: CommentReactionDTO) -> CommentReaction:
         try:
             stmt = select(CommentReaction).where(CommentReaction.id == id)
             comment_reaction = self.session.scalar(stmt)
@@ -64,7 +64,7 @@ class UpdateOrDeleteCommentReaction:
 
             self.session.add(comment_reaction)            
             self.session.flush()
-            return CommentReactionResponseDTO.from_model(comment_reaction)
+            return comment_reaction
 
         except SQLAlchemyError as e:
             raise DatabaseError(f"Database error while updating reaction: {str(e)}") from e
@@ -73,10 +73,10 @@ class GetCommentReactions:
     def __init__(self, session: Session) -> None:
         self.session = session
 
-    def execute(self, comment_id: str) -> List[CommentReactionResponseDTO]:
+    def execute(self, comment_id: str) -> List[CommentReaction]:
         try:
             stmt = select(CommentReaction).where(CommentReaction.comment_id == comment_id)
             comment_reactions = self.session.scalars(stmt).all()
-            return [CommentReactionResponseDTO.from_model(reaction) for reaction in comment_reactions]
+            return list(comment_reactions)
         except SQLAlchemyError as e:
             raise DatabaseError(f"Database error while fetching reactions: {str(e)}") from e

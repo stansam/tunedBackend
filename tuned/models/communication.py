@@ -51,6 +51,8 @@ class NewsletterSubscriber(BaseModel):
     is_active: Mapped[bool] = mapped_column(db.Boolean, default=True, nullable=False, index=True)
     subscribed_at: Mapped[datetime] = mapped_column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
     
+    client_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), db.ForeignKey('users.id'), nullable=True)
+
     frequency: Mapped[NewsletterFrequency] = mapped_column(
         ENUM(NewsletterFrequency, name="newsletterfrequency"),
         default=NewsletterFrequency.WEEKLY,
@@ -62,6 +64,8 @@ class NewsletterSubscriber(BaseModel):
         default=NewsletterFormat.HTML,
         nullable=False
     )
+
+    client: Mapped["User"] = relationship('User', foreign_keys=[client_id], back_populates='newsletter_subscriptions')
     
     def __init__(self, **kwargs: Any) -> None:
         super(NewsletterSubscriber, self).__init__(**kwargs)

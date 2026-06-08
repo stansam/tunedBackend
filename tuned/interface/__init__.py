@@ -15,6 +15,7 @@ from tuned.interface.analytics import Analytics, AnalyticsService
 from tuned.interface.audit import AuditService
 from tuned.interface.payment import PaymentService
 from tuned.interface.communication.newsletter import NewsletterService
+from tuned.interface.media import MediaService
 
 if TYPE_CHECKING:
     from tuned.repository import Repository
@@ -44,11 +45,12 @@ class Services:
         self._payment: Optional[PaymentService] = None
         self._newsletter: Optional[NewsletterService] = None
         self._search: Optional[SearchService] = None
+        self._media: Optional[MediaService] = None
 
     @property
     def user(self) -> UserService:
         if not self._user:
-            self._user = UserService(repos=self._repos)
+            self._user = UserService(repos=self._repos, interfaces=self)
         return self._user
     
     @property
@@ -108,7 +110,7 @@ class Services:
     @property
     def blogs(self) -> Blogs:
         if not self._blogs:
-            self._blogs = Blogs(repos=self._repos)
+            self._blogs = Blogs(repos=self._repos, services=self)
         return self._blogs
 
     @property
@@ -148,7 +150,7 @@ class Services:
     @property
     def order(self) -> OrderService:
         if not self._order:
-            self._order = OrderService(repos=self._repos)
+            self._order = OrderService(repos=self._repos, interfaces=self)
         return self._order
 
     @property
@@ -196,5 +198,11 @@ class Services:
         if not self._search:
             self._search = SearchService(repos=self._repos)
         return self._search
+
+    @property
+    def media(self) -> MediaService:
+        if not self._media:
+            self._media = MediaService(repos=self._repos, interfaces=self)
+        return self._media
 
 

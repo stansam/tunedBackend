@@ -34,7 +34,7 @@ class OrderService:
     def __init__(
         self,
         repos: Repository,
-        interfaces: Optional["Services"] = None,
+        interfaces: Services,
         repo: Optional[OrderRepositoryProtocol] = None,
         audit_service: Optional[ActivityLogServiceProtocol] = None,
     ) -> None:
@@ -267,48 +267,30 @@ class OrderService:
         return ValidateDiscountResponseDTO(valid=True, discount_amount=amount, description=discount.description)
 
     def upload_order_files(self, order_id: str, user_id: str, files: list[FileStorage], is_admin: bool, ip_address: str, user_agent: str) -> OrderFileUploadResponseDTO:
-        saved_paths: list[str] = []
         try:
             order = self._repo.get_order_by_id_for_client(order_id, user_id)
             existing = copy.deepcopy(order)
-            from flask import current_app
-            from tuned.interface.order.util import resolve_file_type
 
-            upload_dir = os.path.join(current_app.root_path, 'uploads', 'order_files', order_id)
-            os.makedirs(upload_dir, exist_ok=True)
-
+            from tuned.models.enums import AssetOwnerType
             file_ids: list[str] = []
             for file in files:
                 if not file or not file.filename:
                     continue
-                original_filename = secure_filename(file.filename)
-                if not original_filename:
-                    continue
-                ext = os.path.splitext(original_filename)[1].lower()
-                ext_without_dot = ext.lstrip(".")
 
-                stored_filename = f"{uuid.uuid4()}{ext}"
-                file_path = os.path.join(upload_dir, stored_filename)
-                file.save(file_path) # TODO: Implement cleanup of saved files if transaction fails
-                saved_paths.append(file_path)
-                file_size = os.path.getsize(file_path)
-                # filename = f"{uuid.uuid4()}{ext}" # TODO: Use secure_filename
+                media_asset_dto = self._interfaces.media.upload_file(
+                    file=file,
+                    owner_type=AssetOwnerType.ORDER,
+                    owner_id=order_id,
+                    is_public=False
+                )
 
-                relative_path = f"/uploads/order_files/{order_id}/{stored_filename}"
-                # 5. Record in database
-                # file_size = file.content_length or 0
-                # file.stream.seek(0, os.SEEK_END)
-                # file_size = file.stream.tell()
-                # file.stream.seek(0)
-                # file_type_raw = ext.lstrip(".").lower() if ext else "unknown"
-                file_type = resolve_file_type(ext_without_dot)
-                
                 dto = CreateOrderFileDTO(
-                    filename=original_filename,
-                    file_path=relative_path,
-                    file_size=file_size,
-                    file_type=file_type,
-                    is_from_client=not is_admin
+                    filename=media_asset_dto.original_filename,
+                    file_path=f"/uploads/{media_asset_dto.storage_path}",
+                    file_size=media_asset_dto.file_size_bytes or 0,
+                    file_type=media_asset_dto.asset_type,
+                    is_from_client=not is_admin,
+                    asset_id=media_asset_dto.id
                 )
                 order_file = self._repo.create_order_file(order_id, dto)
                 file_ids.append(str(order_file.id))
@@ -332,17 +314,6 @@ class OrderService:
             return OrderFileUploadResponseDTO(uploaded_count=len(file_ids), file_ids=file_ids)
         except Exception as e:
             self._repo.rollback()
-            for path in saved_paths:
-                try:
-                    if os.path.exists(path):
-                        os.remove(path)
-                except Exception as cleanup_exc:
-                    logger.error(
-                        "[OrderService.upload_order_files] Cleanup failed for %s: %r",
-                        path,
-                        cleanup_exc
-                    )
-
             logger.error("[OrderService.upload_order_files] Failed: %r", e)
             raise 
 

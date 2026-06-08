@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import uuid
 
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
@@ -21,6 +22,7 @@ class CreateOrderFile:
         try:
             order_file = OrderFile(
                 order_id=order_id,
+                asset_id=uuid.UUID(req.asset_id) if req.asset_id else None,
                 filename=req.filename,
                 file_path=req.file_path,
                 file_size=req.file_size,

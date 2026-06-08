@@ -1,7 +1,7 @@
 from uuid import UUID
 from typing import List
 from tuned.models import BlogComment
-from tuned.dtos import BlogCommentDTO, BlogCommentResponseDTO
+from tuned.dtos import BlogCommentDTO
 from tuned.repository.exceptions import NotFound, DatabaseError, AlreadyExists
 from sqlalchemy.orm import Session
 from sqlalchemy import select
@@ -11,14 +11,14 @@ class CreateBlogComment:
     def __init__(self, session: Session):
         self.session = session
 
-    def execute(self, data: BlogCommentDTO) -> BlogCommentResponseDTO:
+    def execute(self, data: BlogCommentDTO) -> BlogComment:
         try:
             data_dict = data.__dict__.copy()
             comment = BlogComment(**data_dict)
 
             self.session.add(comment)
             self.session.flush()
-            return BlogCommentResponseDTO.from_model(comment)
+            return comment
 
         except IntegrityError as e:
             raise AlreadyExists("comment already exists")
@@ -29,14 +29,14 @@ class GetBlogComment:
     def __init__(self, session: Session) -> None:
         self.session = session
 
-    def execute(self, id: str) -> BlogCommentResponseDTO:
+    def execute(self, id: str) -> BlogComment:
         try:
             stmt = select(BlogComment).where(BlogComment.id == id)
             comment = self.session.scalar(stmt)
             if not comment:
                 raise NotFound("comment not found")
 
-            return BlogCommentResponseDTO.from_model(comment)
+            return comment
 
         except SQLAlchemyError as e:
             raise DatabaseError(f"Database error while fetching comment: {str(e)}") from e
@@ -45,7 +45,7 @@ class UpdateOrDeleteBlogComment:
     def __init__(self, session: Session) -> None:
         self.session = session
 
-    def execute(self, id: str, data: BlogCommentDTO) -> BlogCommentResponseDTO:
+    def execute(self, id: str, data: BlogCommentDTO) -> BlogComment:
         try:
             stmt = select(BlogComment).where(BlogComment.id == id)
             comment = self.session.scalar(stmt)
@@ -67,7 +67,7 @@ class UpdateOrDeleteBlogComment:
 
             self.session.add(comment)            
             self.session.flush()
-            return BlogCommentResponseDTO.from_model(comment)
+            return comment
 
         except SQLAlchemyError as e:
             raise DatabaseError(f"Database error while updating comment: {str(e)}") from e
@@ -76,10 +76,10 @@ class GetBlogComments:
     def __init__(self, session: Session) -> None:
         self.session = session
 
-    def execute(self, post_id: str) -> List[BlogCommentResponseDTO]:
+    def execute(self, post_id: str) -> List[BlogComment]:
         try:
             stmt = select(BlogComment).where(BlogComment.post_id == post_id)
             comments = self.session.scalars(stmt).all()
-            return [BlogCommentResponseDTO.from_model(comment) for comment in comments]
+            return list(comments)
         except SQLAlchemyError as e:
             raise DatabaseError(f"Database error while fetching comments: {str(e)}") from e

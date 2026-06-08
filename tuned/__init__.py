@@ -92,7 +92,7 @@ def create_app(config_name: Optional[str] = None) -> Flask:
     #     return is_token_blacklisted(jti)
     
     from tuned.apis import(
-        main_bp, auth_bp, notification_bp, client_bp, orders_bp, order_deliveries_bp, payments_bp
+        main_bp, auth_bp, notification_bp, client_bp, orders_bp, order_deliveries_bp, payments_bp, media_bp
     ) 
     from tuned.manage import manage_bp
     
@@ -102,6 +102,7 @@ def create_app(config_name: Optional[str] = None) -> Flask:
     app.register_blueprint(orders_bp, url_prefix='/api/orders')
     app.register_blueprint(order_deliveries_bp, url_prefix='/api/orders/delivery')
     app.register_blueprint(payments_bp, url_prefix='/api/payments')
+    app.register_blueprint(media_bp, url_prefix='/api/media')
     app.register_blueprint(manage_bp)
     
     # from tuned.apis.client.routes.settings.preferences import preferences_bp

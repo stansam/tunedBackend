@@ -1,4 +1,4 @@
-from sqlalchemy.dialects.postgresql import ENUM
+from sqlalchemy.dialects.postgresql import ENUM, UUID
 from datetime import datetime
 from flask import url_for 
 from flask_login import UserMixin
@@ -11,11 +11,13 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from typing import Optional, TYPE_CHECKING, Any
 import secrets
 import string
+import uuid
 
 if TYPE_CHECKING:
     from tuned.models.order import Order
+    from tuned.models.media import MediaAsset
     from tuned.models.referral import Referral
-    from tuned.models.communication import Notification
+    from tuned.models.communication import Notification, NewsletterSubscriber
     from tuned.models.content import Testimonial
     from tuned.models.audit import ActivityLog, EmailLog
     from tuned.models.payment import Payment, Invoice, Refund
@@ -46,7 +48,8 @@ class User(UserMixin, BaseModel):  # type: ignore[misc]
     last_name: Mapped[str] = mapped_column(db.String(100), nullable=False)
     gender: Mapped[Optional[GenderEnum]] = mapped_column(ENUM(GenderEnum, name="genderenum"), nullable=True)
     phone_number: Mapped[Optional[str]] = mapped_column(db.String(20), nullable=True)
-    profile_pic: Mapped[Optional[str]] = mapped_column(db.String(120), nullable=True, default='default.png')
+    profile_pic_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), db.ForeignKey('media_assets.id'), nullable=True)
+    profile_pic: Mapped[Optional["MediaAsset"]] = relationship("MediaAsset", foreign_keys=[profile_pic_id])
 
     is_admin: Mapped[bool] = mapped_column(db.Boolean, default=False, server_default='false', nullable=False)
 
@@ -80,7 +83,7 @@ class User(UserMixin, BaseModel):  # type: ignore[misc]
     
     blog_comments: Mapped[list["BlogComment"]] = relationship('BlogComment', foreign_keys="BlogComment.user_id", back_populates='user', lazy=True)
     comment_reactions: Mapped[list["CommentReaction"]] = relationship('CommentReaction', foreign_keys="CommentReaction.user_id", back_populates='user', lazy=True)
-    
+    newsletter_subscriptions: Mapped[list["NewsletterSubscriber"]] = relationship('NewsletterSubscriber', foreign_keys="NewsletterSubscriber.user_id", back_populates='client', lazy=True)
     order_comments: Mapped[list["OrderComment"]] = relationship('OrderComment', foreign_keys="OrderComment.user_id", back_populates='user', lazy=True)
     support_tickets: Mapped[list["SupportTicket"]] = relationship('SupportTicket', foreign_keys="SupportTicket.user_id", back_populates='user', lazy=True)
 
@@ -131,12 +134,12 @@ class User(UserMixin, BaseModel):  # type: ignore[misc]
     def get_profile_pic_url(self: 'User') -> str:
         from flask import current_app
         with current_app.app_context():
-            if self.profile_pic and self.profile_pic != 'default.png':
-                return url_for('static', filename=f'client/assets/profile_pics/{self.profile_pic}', _external=True)
-                
+            if self.profile_pic:
+                return f"{current_app.config.get('FRONTEND_URL')}/{self.profile_pic.storage_path}"
+
             if self.gender == GenderEnum.FEMALE:
-                return url_for('static', filename='ladyDefault.png', _external=True)
-            return url_for('static', filename='manDefault.png', _external=True)
+                return f"{current_app.config.get('FRONTEND_URL')}/uploads/profile_pics/ladyDefault.png"
+            return f"{current_app.config.get('FRONTEND_URL')}/uploads/profile_pics/manDefault.png"
     
     def __repr__(self: 'User') -> str:
         return f'<User {self.username}>'

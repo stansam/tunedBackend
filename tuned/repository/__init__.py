@@ -15,6 +15,7 @@ from tuned.repository.preferences import PreferenceRepository
 from tuned.repository.payment import PaymentRepository
 from tuned.repository.communication import NewsletterRepository
 from tuned.repository.user.notification import NotificationRepository
+from tuned.repository.media import MediaRepository
 from typing import Optional, Any
 
 class Repository:
@@ -40,6 +41,7 @@ class Repository:
         self._notification: Optional[NotificationRepository] = None
         self._tag: Optional[TagRepository] = None
         self._newsletter: Optional[NewsletterRepository] = None
+        self._media: Optional[MediaRepository] = None
 
     @property
     def user(self) -> UserRepository:
@@ -160,3 +162,9 @@ class Repository:
         if not self._newsletter:
             self._newsletter = NewsletterRepository(self.session)
         return self._newsletter
+
+    @property
+    def media(self) -> MediaRepository:
+        if not self._media:
+            self._media = MediaRepository(self.session)
+        return self._media

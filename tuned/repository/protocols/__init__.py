@@ -21,6 +21,7 @@ from tuned.repository.protocols.preferences import PreferenceRepositoryProtocol
 from tuned.repository.protocols.price import (
     PricingCategoryRepositoryProtocol, PriceRateRepositoryProtocol
 )
+from tuned.repository.protocols.media import MediaRepositoryProtocol
 
 __all__ = [
     "UserRepositoryProtocol",
@@ -48,5 +49,6 @@ __all__ = [
     "PaymentRepositoryProtocol",
     "PreferenceRepositoryProtocol",
     "PricingCategoryRepositoryProtocol",
-    "PriceRateRepositoryProtocol"
+    "PriceRateRepositoryProtocol",
+    "MediaRepositoryProtocol"
 ]

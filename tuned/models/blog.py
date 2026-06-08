@@ -12,6 +12,7 @@ from tuned.models.tag import blog_post_tags
 if TYPE_CHECKING:
     from tuned.models.user import User
     from tuned.models.tag import Tag
+    from tuned.models.media import MediaAsset
 
 class BlogCategory(BaseModel):
     __tablename__ = 'blog_category'
@@ -31,7 +32,8 @@ class BlogPost(BaseModel):
     slug: Mapped[str] = mapped_column(db.String(220), unique=True, nullable=False)
     content: Mapped[str] = mapped_column(db.Text, nullable=False)
     excerpt: Mapped[Optional[str]] = mapped_column(db.Text, nullable=True)
-    featured_image: Mapped[Optional[str]] = mapped_column(db.String(255), nullable=True)
+    featured_image_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), db.ForeignKey('media_assets.id'), nullable=True)
+    image_url: Mapped[Optional[str]] = mapped_column(db.String(200), nullable=True) # STUB FOR STUB DATA
     author: Mapped[str] = mapped_column(db.String(100), nullable=False)
     category_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), db.ForeignKey('blog_category.id'), nullable=True)
     meta_description: Mapped[Optional[str]] = mapped_column(db.String(220), nullable=True)
@@ -44,6 +46,7 @@ class BlogPost(BaseModel):
     )
     
     category: Mapped[Optional["BlogCategory"]] = relationship("BlogCategory", back_populates="posts")
+    featured_image: Mapped[Optional["MediaAsset"]] = relationship("MediaAsset", foreign_keys=[featured_image_id])
     comments: Mapped[list["BlogComment"]] = relationship('BlogComment', foreign_keys="BlogComment.post_id", back_populates='post', lazy=True, cascade='all, delete-orphan')
     tag_list: Mapped[list["Tag"]] = relationship('Tag', secondary=blog_post_tags, lazy='selectin', back_populates='blog_posts')
     

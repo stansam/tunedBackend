@@ -82,10 +82,9 @@ def sample_user(db):
         email='test@example.com',
         first_name='Test',
         last_name='User',
-        gender=GenderEnum.male,
+        gender=GenderEnum.MALE,
         phone_number='+1234567890',
         email_verified=True,
-        is_active=True,
         created_at=datetime.now(timezone.utc)
     )
     user.password_hash = hash_password('TestPass123!')
@@ -110,9 +109,8 @@ def unverified_user(db):
         email='unverified@example.com',
         first_name='Unverified',
         last_name='User',
-        gender=GenderEnum.female,
+        gender=GenderEnum.FEMALE,
         email_verified=False,
-        is_active=True,
         created_at=datetime.now(timezone.utc)
     )
     user.password_hash = hash_password('TestPass123!')
@@ -137,10 +135,9 @@ def admin_user(db):
         email='admin@example.com',
         first_name='Admin',
         last_name='User',
-        gender=GenderEnum.male,
+        gender=GenderEnum.MALE,
         is_admin=True,
         email_verified=True,
-        is_active=True,
         created_at=datetime.now(timezone.utc)
     )
     user.password_hash = hash_password('AdminPass123!')

@@ -1,4 +1,5 @@
 from flask import request
+from flask_login import current_user
 from flask.views import MethodView
 from tuned.utils.dependencies import get_services
 from tuned.utils.responses import (
@@ -29,24 +30,25 @@ class NewsletterSubscribeView(MethodView):
             return validation_error_response(err.messages)
         
         try:
-            subscribe_dto = NewsletterSubscribeDTO(
-                email=data['email'],
-                name=data.get('name')
-            )
+            if current_user and current_user.is_authenticated:
+                subscribe_dto = NewsletterSubscribeDTO(
+                    email=current_user.email,
+                    name=current_user.get_name(),
+                    client_id=current_user.id
+                )
+            else:
+                subscribe_dto = NewsletterSubscribeDTO(
+                    email=data['email'],
+                    name=data.get('name')
+                )
             
-            result = get_services().newsletter.subscribe(
+            _ = get_services().newsletter.subscribe(
                 data=subscribe_dto,
                 ip_address=request.remote_addr,
                 user_agent=request.headers.get('User-Agent')
             )
             
             # TODO: Check if it was a re-subscription or new
-            # If it already existed and just returned it
-            # The service handles reactivation logic
-            
-            # TODO: The service doesn't currently return if it was "new" or "existing"
-            # But can check the result created_at vs current time if needed
-            # For simplicity, just return success
             
             return success_response(
                 {'subscribed': True},

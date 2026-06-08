@@ -10,6 +10,7 @@ from tuned.models.base import BaseModel
 if TYPE_CHECKING:
     from tuned.models.order import Order
     from tuned.models.revision_request import OrderRevisionRequest
+    from tuned.models.media import MediaAsset
 
 class OrderDelivery(BaseModel):
     __tablename__ = 'order_delivery'
@@ -54,6 +55,7 @@ class OrderDelivery(BaseModel):
 class OrderDeliveryFile(BaseModel):
     __tablename__ = 'order_delivery_file'
     delivery_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), db.ForeignKey('order_delivery.id'), nullable=False, index=True)
+    asset_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), db.ForeignKey('media_assets.id'), nullable=True, index=True)
     filename: Mapped[str] = mapped_column(db.String(255), nullable=False)
     original_filename: Mapped[str] = mapped_column(db.String(255), nullable=False)
     file_path: Mapped[str] = mapped_column(db.String(255), nullable=False)
@@ -63,6 +65,7 @@ class OrderDeliveryFile(BaseModel):
     description: Mapped[Optional[str]] = mapped_column(db.Text, nullable=True)
     
     delivery: Mapped["OrderDelivery"] = relationship('OrderDelivery', back_populates='delivery_files')
+    asset: Mapped[Optional["MediaAsset"]] = relationship('MediaAsset', back_populates='delivery_files')
     
     @property
     def file_size_mb(self) -> float:

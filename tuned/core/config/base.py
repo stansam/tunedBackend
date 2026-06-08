@@ -52,6 +52,7 @@ class BaseConfig:
     CORS_ORIGINS: list[str] = os.environ.get('CORS_ORIGINS', 'https://tunedessays.com').split(',')
     
     MAX_CONTENT_LENGTH: int = 16 * 1024 * 1024  # 16 MB max file size
+    UPLOAD_ROOT: str = os.path.abspath(os.environ.get("UPLOAD_ROOT", "/home/vault/tunedBundle/uploads"))
     
     SOCKETIO_MESSAGE_QUEUE: Optional[str] = os.environ.get('SOCKETIO_MESSAGE_QUEUE')
     

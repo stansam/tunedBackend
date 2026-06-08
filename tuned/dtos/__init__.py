@@ -71,6 +71,9 @@ from tuned.dtos.preferences import(
 from tuned.dtos.communication import(
     NewsletterSubscribeDTO, NewsletterSubscriberResponseDTO
 )
+from tuned.dtos.media import(
+    MediaAssetCreateDTO, MediaAssetResponseDTO
+)
 
 __all__ = [
     "CreateUserDTO", "LoginRequestDTO", "UserResponseDTO", "UpdateUserDTO",
@@ -117,5 +120,6 @@ __all__ = [
     "OrderDraftCreateDTO", "OrderDraftResponseDTO", "OrderResponseDTO", "CreateOrderFileDTO",
     "OrderListRequestDTO", "OrderListResponseDTO", "OrderDetailsResponseDTO", "OrderFileResponseDTO",
     "CreateCommentRequestDTO", "UpdateCommentRequestDTO", "OrderCommentResponseDTO",
-    "ValidateDiscountRequestDTO", "ValidateDiscountResponseDTO"
+    "ValidateDiscountRequestDTO", "ValidateDiscountResponseDTO",
+    "MediaAssetCreateDTO", "MediaAssetResponseDTO"
 ]

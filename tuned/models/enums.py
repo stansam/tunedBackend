@@ -85,6 +85,12 @@ class FileExtensionType(str, Enum):
     MP3 = "mp3"
     WAV = "wav"
 
+class AssetOwnerType(str, Enum):
+    DELIVERY = "delivery"
+    ORDER = "order"
+    USER = "user"
+    BLOG_POST = "blog_post"
+
 class DeliveryStatus(str, Enum):
     DELIVERED = "delivered"
     REVISED = "revised"

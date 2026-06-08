@@ -12,6 +12,7 @@ from tuned.models.tag import Tag, service_tags, sample_tags, blog_post_tags
 from tuned.models.audit import PriceHistory, OrderStatusHistory, ActivityLog, EmailLog
 from tuned.models.deadline_extension import OrderDeadlineExtensionRequest
 from tuned.models.revision_request import OrderRevisionRequest
+from tuned.models.media import MediaAsset
 
 from tuned.models.preferences import (
     UserNotificationPreferences, UserEmailPreferences, UserPrivacySettings,
@@ -31,6 +32,7 @@ __all__ = [
     "Sample", "FAQ", "Testimonial",
     "BlogCategory", "BlogPost", "BlogComment", "CommentReaction",
     "Order", "OrderComment", "OrderFile",
+    "MediaAsset",
     "PricingCategory", "PriceRate",
     "Payment", "Invoice", "Transaction", "Refund", "Discount", "AcceptedPaymentMethod",
     "OrderDelivery", "OrderDeliveryFile",

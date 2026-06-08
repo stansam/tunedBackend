@@ -20,6 +20,7 @@ from sqlalchemy.engine import Connection
 
 if TYPE_CHECKING:
     from tuned.models.user import User
+    from tuned.models.media import MediaAsset
     from tuned.models.service import Service, AcademicLevel, Deadline
     from tuned.models.payment import Payment, Invoice, Discount
     from tuned.models.order_delivery import OrderDelivery
@@ -159,6 +160,7 @@ class OrderSequence(BaseModel):
 class OrderFile(BaseModel):
     __tablename__ = 'order_file'
     order_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), db.ForeignKey('order.id'), nullable=False, index=True)
+    asset_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), db.ForeignKey('media_assets.id'), nullable=True, index=True)
     filename: Mapped[str] = mapped_column(db.String(255), nullable=False)
     file_path: Mapped[str] = mapped_column(db.String(255), nullable=False)
     uploaded_at: Mapped[datetime] = mapped_column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
@@ -169,6 +171,7 @@ class OrderFile(BaseModel):
     
     order: Mapped["Order"] = relationship('Order', back_populates='files')
     comment: Mapped[Optional["OrderComment"]] = relationship('OrderComment', foreign_keys=[comment_id], back_populates='attachments')
+    asset: Mapped[Optional["MediaAsset"]] = relationship('MediaAsset', back_populates='order_files')
 
 
     def __init__(self: "OrderFile", **kwargs: Any) -> None:

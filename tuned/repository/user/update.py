@@ -1,3 +1,4 @@
+from uuid import UUID
 from datetime import datetime, timezone
 from typing import Optional
 from sqlalchemy import update
@@ -28,6 +29,7 @@ class UpdateUser:
                 "gender",
                 "phone_number",
                 "profile_pic",
+                "profile_pic_id",
                 "reward_points",
                 "language",
                 "timezone",
@@ -47,7 +49,7 @@ class UpdateUser:
         
             user.updated_at = datetime.now(timezone.utc)
             if actor_id:
-                user.updated_by = actor_id
+                user.updated_by = UUID(actor_id)
                 
             self.session.flush()
             return user
@@ -67,6 +69,6 @@ class UpdateUser:
             )
 
             new_count = self.session.execute(stmt).scalar_one()
-            return int(new_count)
+            return new_count
         except SQLAlchemyError as e:
             raise DatabaseError(f"Database error while updating user: {str(e)}") from e

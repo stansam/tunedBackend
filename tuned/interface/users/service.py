@@ -27,19 +27,21 @@ from tuned.interface.audit import AuditService
 
 if TYPE_CHECKING:
     from tuned.repository import Repository
+    from tuned.interface import Services 
     from tuned.models import User
 
 logger: logging.Logger = get_logger(__name__)
 event_bus = get_event_bus()
 
 class UserService:
-    def __init__(self, repos: Repository):
+    def __init__(self, repos: Repository, interfaces: Services):
         self._repo = repos.user
         self._audit = AuditService(repos=repos)
         self._core = CoreUserService(
             user_repo=repos.user,
             audit_service=self._audit.activity_log
         )
+        self._interfaces = interfaces
 
     def login_user(self, credentials: LoginRequestDTO) -> Tuple[bool, Dict[str, Any]]:
         try:
@@ -209,7 +211,7 @@ class UserService:
             raise InvalidCredentials("Invalid current password.")
             
         new_hash = generate_password_hash(data.new_password)
-        updated_user = self._repo.update_user(
+        _ = self._repo.update_user(
             UpdateUserDTO(user_id=user_id, password_hash=new_hash),
             actor_id=user_id
         )
@@ -231,21 +233,17 @@ class UserService:
     def upload_avatar(self, user_id: str, file: Any, locale: BaseRequestDTO) -> Dict[str, Any]:
         user = self._repo.get_user_by_id(user_id)
         
-        static_folder = current_app.static_folder or "static"
-        upload_folder = os.path.join(static_folder, 'client/assets/profile_pics')
-        os.makedirs(upload_folder, exist_ok=True)
+        old_profile_pic_id = user.profile_pic_id
         
-        original_filename = getattr(file, "filename", "avatar.png") or "avatar.png"
-        filename = secure_filename(original_filename)
-        ext = os.path.splitext(filename)[1]
-        unique_filename = f"{uuid.uuid4().hex}{ext}"
-        file_path = os.path.join(upload_folder, unique_filename)
-        file.save(file_path)
-        
-        updated_user = self._repo.update_user(
-            UpdateUserDTO(user_id=user_id, profile_pic=unique_filename),
-            actor_id=user_id
+        from tuned.models.enums import AssetOwnerType
+        media_dto = self._interfaces.media.upload_file(
+            file=file,
+            owner_type=AssetOwnerType.USER,
+            owner_id=user_id,
+            is_public=True
         )
+        
+        user.profile_pic_id = uuid.UUID(media_dto.id)
         
         self._audit.activity_log.log(ActivityLogCreateDTO(
             user_id=user_id,
@@ -259,14 +257,28 @@ class UserService:
             created_by=user_id
         ))
         self._repo.save()
-        return {"profile_pic_url": updated_user.get_profile_pic_url()}
+
+        if old_profile_pic_id and user.profile_pic_id != old_profile_pic_id:
+            try:
+                self._interfaces.media.delete_media(str(old_profile_pic_id))
+                self._repo.save()
+            except Exception as del_exc:
+                logger.error("[UserService.upload_avatar] Failed to delete old avatar: %r", del_exc)
+
+        return {"profile_pic_url": user.get_profile_pic_url()}
 
     def delete_avatar(self, user_id: str, locale: BaseRequestDTO) -> Dict[str, Any]:
         user = self._repo.get_user_by_id(user_id)
-        updated_user = self._repo.update_user(
-            UpdateUserDTO(user_id=user_id, profile_pic="default.png"),
-            actor_id=user_id
-        )
+        
+        if user.profile_pic_id:
+            try:
+                self._interfaces.media.delete_media(str(user.profile_pic_id))
+            except Exception as del_exc:
+                logger.error("[UserService.delete_avatar] Failed to delete old avatar: %r", del_exc)
+                raise del_exc
+                
+        user.profile_pic_id = None
+        
         self._audit.activity_log.log(ActivityLogCreateDTO(
             user_id=user_id,
             action=Variables.AVATAR_DELETE_ACTION,
@@ -279,4 +291,4 @@ class UserService:
             created_by=user_id
         ))
         self._repo.save()
-        return {"profile_pic_url": updated_user.get_profile_pic_url()}
+        return {"profile_pic_url": user.get_profile_pic_url()}

@@ -28,7 +28,6 @@ def create_app(config_name: Optional[str] = None) -> Flask:
     db.init_app(app)
     migrate.init_app(app, db)
     login_manager.init_app(app)
-    # jwt.init_app(app)
     mail.init_app(app)
     
     cors_origins = app.config.get('CORS_ORIGINS', '*')
@@ -38,16 +37,7 @@ def create_app(config_name: Optional[str] = None) -> Flask:
         methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
         allow_headers=["Authorization", "Content-Type", "Accept", "X-Requested-With"],
     )
-    
-    # socketio_kwargs = {
-    #     'cors_allowed_origins': cors_origins,
-    #     'async_mode': 'eventlet',
-    #     'logger': app.config.get('DEBUG', False),
-    #     'engineio_logger': app.config.get('DEBUG', False)
-    # }
-    # if app.config.get('SOCKETIO_MESSAGE_QUEUE'):
-    #     socketio_kwargs['message_queue'] = app.config['SOCKETIO_MESSAGE_QUEUE']
-    
+
     socketio.init_app(app,
         async_mode='gevent',
         cors_allowed_origins=cors_origins,
@@ -85,16 +75,11 @@ def create_app(config_name: Optional[str] = None) -> Flask:
     def unauthorized():
         return {"message": "unauthorized"}, 401
     
-    # @jwt.token_in_blocklist_loader
-    # def check_if_token_revoked(jwt_header: dict[str, Any], jwt_payload: dict[str, Any]) -> bool:
-    #     from tuned.redis_client import is_token_blacklisted
-    #     jti = jwt_payload['jti']
-    #     return is_token_blacklisted(jti)
-    
     from tuned.apis import(
         main_bp, auth_bp, notification_bp, client_bp, orders_bp, order_deliveries_bp, payments_bp, media_bp
     ) 
     from tuned.manage import manage_bp
+    from tuned.health import health_bp
     
     app.register_blueprint(auth_bp, url_prefix='/api')
     app.register_blueprint(notification_bp, url_prefix='/api/notifications')
@@ -109,7 +94,8 @@ def create_app(config_name: Optional[str] = None) -> Flask:
     # app.register_blueprint(preferences_bp, url_prefix='/client/settings/preferences')
     
     app.register_blueprint(main_bp, url_prefix="/api")  # No prefix - root routes
-
+    
+    app.register_blueprint(health_bp)
     
     if app.config.get('PROXY_FIX'):
         from werkzeug.middleware.proxy_fix import ProxyFix

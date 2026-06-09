@@ -1,9 +1,9 @@
 from typing import Any, cast
-import redis
+from redis import Redis
 from tuned.core.config import config
 import os
 
-def get_redis_client() -> redis.Redis:
+def get_redis_client() -> Redis:
     config_name = os.environ.get('FLASK_ENV', 'development')
     flask_config = config[config_name]
     

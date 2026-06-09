@@ -1,3 +1,4 @@
+import redis
 from typing import Any, cast
 from redis import Redis
 from tuned.core.config import config
@@ -7,7 +8,7 @@ def get_redis_client() -> Redis:
     config_name = os.environ.get('FLASK_ENV', 'development')
     flask_config = config[config_name]
     
-    redis_client: redis.Redis = redis.from_url(  # type: ignore[no-untyped-call]
+    redis_client: Redis = redis.from_url(  # type: ignore[no-untyped-call]
         flask_config.REDIS_URL,
         decode_responses=True
     )

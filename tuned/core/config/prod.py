@@ -36,3 +36,15 @@ class ProductionConfig(BaseConfig):
     PROXY_FIX: bool = True
     
     SQLALCHEMY_RECORD_QUERIES: bool = False 
+    REDIS_HOST: str = os.environ.get('REDIS_HOST', 'localhost')
+    REDIS_PORT: int = int(os.environ.get('REDIS_PORT', 6379))
+    REDIS_PASSWORD: str = os.environ.get('REDIS_PASSWORD', '')
+    REDIS_DB: int = int(os.environ.get('REDIS_DB', 0))
+    CELERY_BROKER_REDIS_DB: int = int(os.environ.get('CELERY_BROKER_REDIS_DB', 1))
+    CELERY_RESULT_BACKEND_REDIS_DB: int = int(os.environ.get('CELERY_RESULT_BACKEND_REDIS_DB', 2))
+    SOCKETIO_REDIS_DB: int = int(os.environ.get('SOCKETIO_REDIS_DB', 3))
+    
+    REDIS_URL: str = os.environ.get('REDIS_URL', f'redis://:{REDIS_PASSWORD}@{REDIS_HOST}:{REDIS_PORT}/{REDIS_DB}')
+    CELERY_BROKER_URL: str = os.environ.get('CELERY_BROKER_URL', f'redis://:{REDIS_PASSWORD}@{REDIS_HOST}:{REDIS_PORT}/{CELERY_BROKER_REDIS_DB}')
+    CELERY_RESULT_BACKEND: str = os.environ.get('CELERY_RESULT_BACKEND', f'redis://:{REDIS_PASSWORD}@{REDIS_HOST}:{REDIS_PORT}/{CELERY_RESULT_BACKEND_REDIS_DB}')
+    SOCKETIO_MESSAGE_QUEUE: str = os.environ.get('SOCKETIO_MESSAGE_QUEUE', f'redis://:{REDIS_PASSWORD}@{REDIS_HOST}:{REDIS_PORT}/{SOCKETIO_REDIS_DB}')

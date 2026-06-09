@@ -1,16 +1,3 @@
-"""
-health/views.py - Class-based Flask MethodView for the /health endpoint.
-
-Security posture:
-  - Internal-only header guard: requests without X-Health-Token are rejected
-    with 401 before any dependency probe runs. This prevents external
-    enumeration of your infrastructure topology via error messages.
-  - Rate limiting via Flask-Limiter (applied at the Blueprint level).
-  - No stack traces or internal error details leak to the caller.
-  - Response headers strip Server and X-Powered-By.
-  - All dependency errors are caught and typed — no unhandled exceptions
-    propagate to Flask's default error handler.
-"""
 from __future__ import annotations
 
 import os
@@ -20,8 +7,8 @@ from typing import ClassVar
 from flask import Blueprint, Response, jsonify, request
 from flask.views import MethodView
 
-from health.checkers import DiskHealthChecker, PostgresHealthChecker, RedisHealthChecker
-from health.dto import CheckStatus, HealthResponse, PostgresResult, RedisResult, DiskResult
+from tuned.health.checkers import DiskHealthChecker, PostgresHealthChecker, RedisHealthChecker
+from tuned.dtos.health import CheckStatus, HealthResponse, PostgresResult, RedisResult, DiskResult
 
 health_bp: Blueprint = Blueprint("health", __name__)
 

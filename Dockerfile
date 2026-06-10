@@ -5,9 +5,11 @@ ENV PYTHONUNBUFFERED=1
 
 WORKDIR /app
 
-RUN apt-get update && apt-get upgrade -y
-
-RUN apt-get install -y vim build-essential curl && \
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    build-essential \
+    wget \
+    vim && \
     rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .

@@ -16,6 +16,7 @@ from tuned.interface.audit import AuditService
 from tuned.interface.payment import PaymentService
 from tuned.interface.communication.newsletter import NewsletterService
 from tuned.interface.media import MediaService
+from tuned.interface.admin.analytics import AdminAnalyticsService
 
 if TYPE_CHECKING:
     from tuned.repository import Repository
@@ -23,6 +24,7 @@ if TYPE_CHECKING:
 class Services:
     def __init__(self, repos: "Repository") -> None:
         self._repos = repos
+        self._admin_analytics: Optional[AdminAnalyticsService] = None
         self._user: Optional[UserService] = None
         self._referral: Optional[ReferralInterface] = None
         self._academic_level: Optional[AcademicLevelService] = None
@@ -204,5 +206,11 @@ class Services:
         if not self._media:
             self._media = MediaService(repos=self._repos, interfaces=self)
         return self._media
+
+    @property
+    def admin_analytics(self) -> AdminAnalyticsService:
+        if not self._admin_analytics:
+            self._admin_analytics = AdminAnalyticsService(interfaces=self)
+        return self._admin_analytics
 
 

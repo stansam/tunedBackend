@@ -442,3 +442,12 @@ class OrderService:
         except Exception as exc:
             logger.error("[OrderService.delete_order_comment] Socket emit failed: %r", exc)
             pass
+
+    def get_active_orders_count(self) -> int:
+        return self._repo.get_active_orders_count()
+
+    def get_unpaid_completed_orders_count(self) -> int:
+        return self._repo.get_unpaid_completed_orders_count()
+
+    def get_unread_comments_count(self) -> int:
+        return self._repo.get_unread_comments_count()

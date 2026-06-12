@@ -69,14 +69,19 @@ def create_app(config_name: Optional[str] = None) -> Flask:
     def load_user(user_id: str) -> Optional["User"]:
         from tuned.models.user import User
         from tuned.extensions import db
-        return db.session.query(User).filter(User.id == user_id).first()
+        import uuid
+        try:
+            uuid_obj = uuid.UUID(user_id)
+        except (ValueError, AttributeError):
+            return None
+        return db.session.query(User).filter(User.id == uuid_obj).first()
         
     @login_manager.unauthorized_handler
     def unauthorized():
         return {"message": "unauthorized"}, 401
     
     from tuned.apis import(
-        main_bp, auth_bp, notification_bp, client_bp, orders_bp, order_deliveries_bp, payments_bp, media_bp
+        main_bp, auth_bp, notification_bp, client_bp, orders_bp, order_deliveries_bp, payments_bp, media_bp, admin_bp
     ) 
     from tuned.manage import manage_bp
     from tuned.health import health_bp
@@ -88,6 +93,7 @@ def create_app(config_name: Optional[str] = None) -> Flask:
     app.register_blueprint(order_deliveries_bp, url_prefix='/api/orders/delivery')
     app.register_blueprint(payments_bp, url_prefix='/api/payments')
     app.register_blueprint(media_bp, url_prefix='/api/media')
+    app.register_blueprint(admin_bp, url_prefix='/admin')
     app.register_blueprint(manage_bp)
     
     # from tuned.apis.client.routes.settings.preferences import preferences_bp

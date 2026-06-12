@@ -1,3 +1,4 @@
+import uuid
 from sqlalchemy import select
 from tuned.models import User
 from sqlalchemy.orm import Session
@@ -11,7 +12,8 @@ class GetUserByID:
 
     def execute(self, user_id: str) -> User:
         try:
-            stmt = select(User).where(User.id == user_id)
+            user_uuid = uuid.UUID(user_id)
+            stmt = select(User).where(User.id == user_uuid)
             user = self.session.scalar(stmt)
             if not user:
                 raise NotFound("User not found")

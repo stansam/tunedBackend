@@ -5,6 +5,42 @@ Provides reusable fixtures for testing the Flask application.
 """
 import pytest
 import os
+import uuid
+from sqlalchemy.ext.compiler import compiles
+from sqlalchemy.dialects.postgresql import JSONB, UUID
+from sqlalchemy.schema import CheckConstraint
+
+@compiles(JSONB, "sqlite")
+def compile_jsonb_sqlite(type_, compiler, **kw):
+    return "JSON"
+
+@compiles(CheckConstraint, "sqlite")
+def compile_check_constraint_sqlite(element, compiler, **kw):
+    from sqlalchemy.sql.elements import TextClause
+    if isinstance(element.sqltext, TextClause):
+        element.sqltext.text = element.sqltext.text.replace("::text", "")
+    else:
+        element.sqltext = str(element.sqltext).replace("::text", "")
+    return compiler.visit_check_constraint(element, **kw)
+
+# Monkeypatch UUID bind processor to handle string inputs under SQLite tests
+original_bind_processor = UUID.bind_processor
+
+def patched_bind_processor(self, dialect):
+    proc = original_bind_processor(self, dialect)
+    if proc:
+        def safe_process(value):
+            if isinstance(value, str):
+                try:
+                    value = uuid.UUID(value)
+                except ValueError:
+                    pass
+            return proc(value)
+        return safe_process
+    return proc
+
+UUID.bind_processor = patched_bind_processor
+
 from tuned import create_app
 from tuned.extensions import db as _db
 from tuned.models.user import User, GenderEnum
@@ -87,7 +123,7 @@ def sample_user(db):
         email_verified=True,
         created_at=datetime.now(timezone.utc)
     )
-    user.password_hash = hash_password('TestPass123!')
+    user.set_password('TestPass123!')
     user.referral_code = 'TESTREF1'
     
     db.session.add(user)
@@ -113,7 +149,7 @@ def unverified_user(db):
         email_verified=False,
         created_at=datetime.now(timezone.utc)
     )
-    user.password_hash = hash_password('TestPass123!')
+    user.set_password('TestPass123!')
     user.referral_code = 'TESTREF2'
     
     db.session.add(user)
@@ -140,7 +176,7 @@ def admin_user(db):
         email_verified=True,
         created_at=datetime.now(timezone.utc)
     )
-    user.password_hash = hash_password('AdminPass123!')
+    user.set_password('AdminPass123!')
     user.referral_code = 'ADMINREF'
     
     db.session.add(user)

@@ -44,3 +44,4 @@ celerybeat-schedule
 .pytest_cache/
 celerybeat-schedule-shm
 celerybeat-schedule-wal
+.env.prod

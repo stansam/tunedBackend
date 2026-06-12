@@ -133,6 +133,31 @@ class OrderRepository(OrderRepositoryProtocol):
     def mark_comments_read(self, order_id: str, reader_user_id: str) -> None:
         return MarkCommentsRead(self.session).execute(order_id, reader_user_id)
 
+    def get_active_orders_count(self) -> int:
+        _NAV_ACTIVE_STATUSES = (
+            OrderStatus.PENDING,
+            OrderStatus.ACTIVE,
+            OrderStatus.REVISION,
+        )
+        stmt = select(func.count(Order.id)).where(
+            Order.status.in_(_NAV_ACTIVE_STATUSES)
+        )
+        return self.session.scalar(stmt) or 0
+
+    def get_unpaid_completed_orders_count(self) -> int:
+        stmt = select(func.count(Order.id)).where(
+            Order.status == OrderStatus.COMPLETED_PENDING_REVIEW,
+            Order.paid == False
+        )
+        return self.session.scalar(stmt) or 0
+
+    def get_unread_comments_count(self) -> int:
+        stmt = select(func.count(OrderComment.id)).where(
+            OrderComment.is_admin == False,
+            OrderComment.is_read == False,
+        )
+        return self.session.scalar(stmt) or 0
+
     def save(self) -> None:
         try:
             self.session.commit()

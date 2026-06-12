@@ -83,7 +83,7 @@ class User(UserMixin, BaseModel):  # type: ignore[misc]
     
     blog_comments: Mapped[list["BlogComment"]] = relationship('BlogComment', foreign_keys="BlogComment.user_id", back_populates='user', lazy=True)
     comment_reactions: Mapped[list["CommentReaction"]] = relationship('CommentReaction', foreign_keys="CommentReaction.user_id", back_populates='user', lazy=True)
-    newsletter_subscriptions: Mapped[list["NewsletterSubscriber"]] = relationship('NewsletterSubscriber', foreign_keys="NewsletterSubscriber.user_id", back_populates='client', lazy=True)
+    newsletter_subscriptions: Mapped[list["NewsletterSubscriber"]] = relationship('NewsletterSubscriber', foreign_keys="NewsletterSubscriber.client_id", back_populates='client', lazy=True)
     order_comments: Mapped[list["OrderComment"]] = relationship('OrderComment', foreign_keys="OrderComment.user_id", back_populates='user', lazy=True)
     support_tickets: Mapped[list["SupportTicket"]] = relationship('SupportTicket', foreign_keys="SupportTicket.user_id", back_populates='user', lazy=True)
 

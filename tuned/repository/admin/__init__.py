@@ -4,7 +4,9 @@ from tuned.dtos.admin import AdminOrderListResponseDTO, AdminOrdersStatsResponse
 from tuned.dtos import OrderListRequestDTO
 from tuned.dtos.admin import(
     AdminDashboardAnalyticsDTO, AdminDashboardTrackingDTO,
-    AdminDashboardAlertsDTO, AdminKPIDTO
+    AdminDashboardAlertsDTO, AdminKPIDTO,
+    AdminUserListRequestDTO, AdminUserListResponseDTO,
+    AdminUserStatsDTO, GeographicDistributionDTO
 )
 from tuned.repository.admin.dashboard import (
     GetAdminKPIs, GetAdminAnalytics, GetAdminTracking, GetAdminAlerts
@@ -12,6 +14,10 @@ from tuned.repository.admin.dashboard import (
 
 from tuned.repository.admin.orders import (
     GetAllOrders, GetAdminOrdersStats, ActivateOrder, EscalateOrder
+)
+
+from tuned.repository.admin.users import (
+    GetAdminUserList, GetAdminUserStats, GetGeographicDistribution
 )
 
 class AdminAnalyticsRepository:
@@ -45,8 +51,22 @@ class AdminOrderRepository:
     
     def escalate_order(self, order_id: str) -> Order:
         return EscalateOrder(self.session).execute(order_id)
+
+class AdminUserRepository:
+    def __init__(self, session: Session) -> None:
+        self.session = session
+
+    def list_users(self, req: AdminUserListRequestDTO) -> AdminUserListResponseDTO:
+        return GetAdminUserList(self.session).execute(req)
+
+    def get_stats(self) -> AdminUserStatsDTO:
+        return GetAdminUserStats(self.session).execute()
+
+    def get_geography(self) -> list[GeographicDistributionDTO]:
+        return GetGeographicDistribution(self.session).execute()
     
 __all__ = [
     "AdminAnalyticsRepository",
     "AdminOrderRepository",
+    "AdminUserRepository",
 ]

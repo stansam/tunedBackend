@@ -10,6 +10,11 @@ from tuned.dtos.admin.orders import (
     AdminOrdersStatsDTO, AdminBottleneckStatsDTO,
     AdminServiceLoadDTO, AdminOrdersStatsResponseDTO,
 )
+from tuned.dtos.admin.users import (
+    AdminUserInsightDTO, AdminUserListResponseDTO,
+    AdminUserStatsDTO, GeographicDistributionDTO,
+    AdminUserListRequestDTO,
+)
 
 __all__ = [
     "AdminNavStatsDTO",
@@ -28,4 +33,9 @@ __all__ = [
     "AdminBottleneckStatsDTO",
     "AdminServiceLoadDTO",
     "AdminOrdersStatsResponseDTO",
+    "AdminUserInsightDTO",
+    "AdminUserListResponseDTO",
+    "AdminUserStatsDTO",
+    "GeographicDistributionDTO",
+    "AdminUserListRequestDTO",
 ]

@@ -76,7 +76,8 @@ class UserService:
                         'user_id': created_user.id,
                         'raw_token': raw_token,
                         'email': created_user.email,
-                        'name': created_user.get_name()
+                        'name': created_user.get_name(),
+                        'ip_address': locale.ip_address or "unknown"
                     })
 
                 if referred_by_code is not None:

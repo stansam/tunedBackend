@@ -55,7 +55,6 @@ class PreferenceService:
             before_snapshot = self._get_snapshot(getattr(all_prefs, category, None))
 
             updated_obj = self._repo.update_category(category, user_id, data)
-            self._repo.save()
             after_snapshot = self._get_snapshot(updated_obj)
             
             audit_data = ActivityLogCreateDTO(
@@ -70,6 +69,7 @@ class PreferenceService:
                 created_by=user_id
             )
             self._audit_service.log(audit_data)
+            self._repo.save()
 
             self._event_bus.emit("SETTINGS_UPDATED", {
                 "user_id": user_id,

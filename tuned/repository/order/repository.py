@@ -28,6 +28,7 @@ from tuned.repository.order.orders import(
     GetClientOrders,
     CreateOrder,
     GetOrderForClientByOrderNumber,
+    GetOrderByOrderNumber,
     CreateOrderFromReorder,
     UpdateOrderStatus,
 )
@@ -71,6 +72,9 @@ class OrderRepository(OrderRepositoryProtocol):
 
     def get_order_by_order_number_for_client(self, order_number: str, client_id: str) -> Order:
         return GetOrderForClientByOrderNumber(self.session).execute(order_number, client_id)
+
+    def get_order_by_order_number(self, order_number: str) -> Order:
+        return GetOrderByOrderNumber(self.session).execute(order_number)
     
     def get_order_by_id_for_client(self, order_id: str, client_id: str) -> Order:
         return self._get_order_by_id_for_client(order_id, client_id)

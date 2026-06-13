@@ -22,11 +22,11 @@ class DevelopmentConfig(BaseConfig):
     SQLALCHEMY_ECHO: bool = False 
 
     SESSION_COOKIE_DOMAIN: Optional[str] = os.environ.get('SESSION_COOKIE_DOMAIN')
-    SESSION_COOKIE_SECURE: bool = True
-    REMEMBER_COOKIE_SECURE: bool = True
+    SESSION_COOKIE_SECURE: bool = False
+    REMEMBER_COOKIE_SECURE: bool = False
     # JWT_COOKIE_SECURE: bool = True
     # JWT_COOKIE_DOMAIN: Optional[str] = os.environ.get('JWT_COOKIE_DOMAIN')
     SSL_REDIRECT: bool = os.environ.get('SSL_REDIRECT', 'True').lower() == 'true'
     
-    PROXY_FIX: bool = True
+    PROXY_FIX: bool = False
 

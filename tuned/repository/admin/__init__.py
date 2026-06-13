@@ -1,5 +1,9 @@
 from sqlalchemy.orm import Session
+from typing import Optional
 from tuned.models.order import Order
+from tuned.models.revision_request import OrderRevisionRequest
+from tuned.models.deadline_extension import OrderDeadlineExtensionRequest
+from tuned.models.enums import RevisionRequestStatus, Priority
 from tuned.dtos.admin import AdminOrderListResponseDTO, AdminOrdersStatsResponseDTO
 from tuned.dtos import OrderListRequestDTO
 from tuned.dtos.admin import(
@@ -13,7 +17,9 @@ from tuned.repository.admin.dashboard import (
 )
 
 from tuned.repository.admin.orders import (
-    GetAllOrders, GetAdminOrdersStats, ActivateOrder, EscalateOrder
+    GetAllOrders, GetAdminOrdersStats, ActivateOrder, EscalateOrder,
+    GetOrderRevisionRequests, UpdateRevisionRequestStatus,
+    GetDeadlineExtensionRequests, CreateDeadlineExtensionRequest
 )
 
 from tuned.repository.admin.users import (
@@ -51,6 +57,28 @@ class AdminOrderRepository:
     
     def escalate_order(self, order_id: str) -> Order:
         return EscalateOrder(self.session).execute(order_id)
+
+    def get_revision_requests(self, order_id: str) -> list[OrderRevisionRequest]:
+        return GetOrderRevisionRequests(self.session).execute(order_id)
+
+    def update_revision_status(
+        self, request_id: str, reviewed_by: str,
+        new_status: RevisionRequestStatus, internal_notes: Optional[str] = None
+    ) -> OrderRevisionRequest:
+        return UpdateRevisionRequestStatus(self.session).execute(
+            request_id, reviewed_by, new_status, internal_notes
+        )
+
+    def get_deadline_extensions(self, order_id: str) -> list[OrderDeadlineExtensionRequest]:
+        return GetDeadlineExtensionRequests(self.session).execute(order_id)
+
+    def create_deadline_extension(
+        self, order_id: str, requested_by: str,
+        requested_hours: int, reason: str, priority: Priority
+    ) -> OrderDeadlineExtensionRequest:
+        return CreateDeadlineExtensionRequest(self.session).execute(
+            order_id, requested_by, requested_hours, reason, priority
+        )
 
 class AdminUserRepository:
     def __init__(self, session: Session) -> None:

@@ -191,6 +191,7 @@ class OrderDeliveryService:
                 "delivery.files_added",
                 {
                     "client_id": user_id,
+                    "order_id": order_id,
                     "delivery_id": delivery_id,
                     "delivery": asdict(response),
                 }
@@ -239,6 +240,7 @@ class OrderDeliveryService:
                 "delivery.status_changed",
                 {
                     "client_id": user_id,
+                    "order_id": str(delivery_resp.order_id),
                     "delivery_id": delivery_id,
                     "delivery": asdict(response),
                 }
@@ -287,6 +289,7 @@ class OrderDeliveryService:
                 "delivery.deleted",
                 {
                     "client_id": user_id,
+                    "order_id": str(delivery.order_id),
                     "delivery_id": delivery_id,
                 }
             )

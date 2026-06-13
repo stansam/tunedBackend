@@ -1,11 +1,15 @@
 from __future__ import annotations
 import logging
 from typing import Optional
-from sqlalchemy.orm import Session
+from uuid import UUID
+from datetime import datetime, timezone
+from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import func, select, and_
 from sqlalchemy.exc import SQLAlchemyError
 from tuned.models import Order, Service
-from tuned.models.enums import OrderStatus
+from tuned.models.enums import OrderStatus, RevisionRequestStatus, Priority
+from tuned.models.revision_request import OrderRevisionRequest
+from tuned.models.deadline_extension import OrderDeadlineExtensionRequest
 from tuned.dtos.order import OrderListRequestDTO
 from tuned.repository.order.orders import getOrderListResponse
 from tuned.dtos.admin.orders import (
@@ -196,4 +200,109 @@ class EscalateOrder:
             raise DatabaseError(str(exc)) from exc
         except Exception as exc:
             logger.error("[EscalateOrder] Unexpected error: %s", exc)
+            raise DatabaseError(str(exc)) from exc
+
+
+class GetOrderRevisionRequests:
+    """Lists revision requests for an order (admin view with internal notes)."""
+    def __init__(self, session: Session) -> None:
+        self.session = session
+
+    def execute(self, order_id: str) -> list[OrderRevisionRequest]:
+        try:
+            stmt = (
+                select(OrderRevisionRequest)
+                .options(
+                    joinedload(OrderRevisionRequest.requester),
+                    joinedload(OrderRevisionRequest.reviewer),
+                )
+                .where(OrderRevisionRequest.order_id == UUID(order_id))
+                .order_by(OrderRevisionRequest.requested_at.desc())
+            )
+            return list(self.session.scalars(stmt).unique().all())
+        except SQLAlchemyError as exc:
+            raise DatabaseError(str(exc)) from exc
+
+
+class UpdateRevisionRequestStatus:
+    """Updates revision request status with admin reviewer."""
+    def __init__(self, session: Session) -> None:
+        self.session = session
+
+    def execute(
+        self, request_id: str, reviewed_by: str, new_status: RevisionRequestStatus,
+        internal_notes: Optional[str] = None
+    ) -> OrderRevisionRequest:
+        try:
+            req = self.session.scalar(
+                select(OrderRevisionRequest).where(OrderRevisionRequest.id == UUID(request_id))
+            )
+            if not req:
+                raise NotFound(f"Revision request {request_id} not found")
+            req.status = new_status  # model @validates handles transition check
+            req.reviewed_by = UUID(reviewed_by)
+            req.reviewed_at = datetime.now(timezone.utc)
+            if new_status == RevisionRequestStatus.COMPLETED:
+                req.resolved_at = datetime.now(timezone.utc)
+            if internal_notes:
+                req.internal_notes = internal_notes
+            self.session.flush()
+            return req
+        except (NotFound, ValueError):
+            raise
+        except SQLAlchemyError as exc:
+            raise DatabaseError(str(exc)) from exc
+
+
+class GetDeadlineExtensionRequests:
+    """Lists all deadline extension requests for an order."""
+    def __init__(self, session: Session) -> None:
+        self.session = session
+
+    def execute(self, order_id: str) -> list[OrderDeadlineExtensionRequest]:
+        try:
+            stmt = (
+                select(OrderDeadlineExtensionRequest)
+                .options(
+                    joinedload(OrderDeadlineExtensionRequest.requester),
+                    joinedload(OrderDeadlineExtensionRequest.reviewer),
+                )
+                .where(OrderDeadlineExtensionRequest.order_id == UUID(order_id))
+                .order_by(OrderDeadlineExtensionRequest.requested_at.desc())
+            )
+            return list(self.session.scalars(stmt).unique().all())
+        except SQLAlchemyError as exc:
+            raise DatabaseError(str(exc)) from exc
+
+
+class CreateDeadlineExtensionRequest:
+    """Admin creates a deadline extension request for client approval."""
+    def __init__(self, session: Session) -> None:
+        self.session = session
+
+    def execute(
+        self, order_id: str, requested_by: str,
+        requested_hours: int, reason: str, priority: Priority
+    ) -> OrderDeadlineExtensionRequest:
+        try:
+            order = self.session.scalar(select(Order).where(Order.id == UUID(order_id)))
+            if not order:
+                raise NotFound(f"Order {order_id} not found")
+            ext_req = OrderDeadlineExtensionRequest(
+                order_id=UUID(order_id),
+                requested_by=UUID(requested_by),
+                requested_hours=requested_hours,
+                reason=reason,
+                original_due_date=order.due_date,
+                priority=priority,
+            )
+            self.session.add(ext_req)
+            order.extension_requested = True
+            order.extension_requested_at = datetime.now(timezone.utc)
+            self.session.flush()
+            self.session.refresh(ext_req, ["requester", "order"])
+            return ext_req
+        except (NotFound, ValueError):
+            raise
+        except SQLAlchemyError as exc:
             raise DatabaseError(str(exc)) from exc

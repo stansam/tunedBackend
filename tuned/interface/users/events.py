@@ -48,10 +48,9 @@ class UserEventHandlers:
 
     def _on_registered(self, payload: EventPayload) -> None:
         from tuned.services.email_service import send_verification_email
-        from tuned.repository.user.get import GetUserByID
-        from tuned.extensions import db
-        from tuned.services.preference_service import initialize_user_preferences
-        from tuned.models.preferences import UserLocalizationSettings
+        from tuned.utils.dependencies import get_services
+        from tuned.dtos import LocalizationUpdateDTO
+        from tuned.dtos.base import BaseRequestDTO
 
         user_id   = payload.get("user_id")
         raw_token = payload.get("raw_token")
@@ -59,16 +58,25 @@ class UserEventHandlers:
 
         try:
             # Initialize all user preference profiles
-            initialize_user_preferences(user_id) # TODO: Implement user preference initialization workflow
+            if user_id is None:
+                raise ValueError("user_id is required")
+            services = get_services()
+            services.user.init_user_preferences(str(user_id))
 
             # Geolocation logic
             if ip_address and ip_address not in ("127.0.0.1", "localhost", "unknown"):
                 cc = get_country_code_from_ip(str(ip_address))
                 if cc:
-                    loc_settings = db.session.query(UserLocalizationSettings).filter_by(user_id=user_id).first()
-                    if loc_settings:
-                        loc_settings.country_code = cc
-                        db.session.commit()
+                    # loc_settings = db.session.query(UserLocalizationSettings).filter_by(user_id=user_id).first()
+                    # if loc_settings:
+                    #     loc_settings.country_code = cc
+                    #     db.session.commit()
+                    services.preferences.update_category(
+                        "localization", str(user_id),
+                        LocalizationUpdateDTO(country_code=cc), 
+                        BaseRequestDTO(ip_address=ip_address)
+                    )
+                    # services.preferences._repo.save()
 
             # Socket notification to admin room
             try:
@@ -81,7 +89,7 @@ class UserEventHandlers:
             except Exception as socket_exc:
                 logger.error("[UserEventHandlers._on_registered] Admin socket failed: %r", socket_exc)
 
-            user = GetUserByID(cast(Any, db.session)).execute(str(user_id))
+            user = services.user._repo.get_user_by_id(str(user_id))
             send_verification_email(user, str(raw_token or ""))
             
             try:
@@ -96,14 +104,13 @@ class UserEventHandlers:
 
     def _on_resend_verification(self, payload: EventPayload) -> None:
         from tuned.services.email_service import send_verification_email
-        from tuned.repository.user.get import GetUserByID
-        from tuned.extensions import db
+        from tuned.utils.dependencies import get_services
 
         user_id   = payload.get("user_id")
         raw_token = payload.get("raw_token")
 
         try:
-            user = GetUserByID(cast(Any, db.session)).execute(str(user_id)) # TODO: Check on this
+            user = get_services().user._repo.get_user_by_id(str(user_id))
             send_verification_email(user, str(raw_token or ""))
         except Exception as exc:
             logger.error(

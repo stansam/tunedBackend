@@ -4,7 +4,7 @@ import logging
 from typing import Optional
 
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import func, select, asc, desc, or_
 
 from tuned.models import Order
@@ -227,6 +227,33 @@ class GetOrderForClientByOrderNumber:
             raise
         except SQLAlchemyError as exc:
             logger.error("[GetOrderForClientByOrderNumber] DB error: %s", exc)
+            raise DatabaseError(str(exc)) from exc
+
+class GetOrderByOrderNumber:
+    """Admin-scoped order fetch by order_number — no client ownership check."""
+    def __init__(self, session: Session) -> None:
+        self.session = session
+
+    def execute(self, order_number: str) -> Order:
+        try:
+            stmt = (
+                select(Order)
+                .options(
+                    joinedload(Order.client),
+                    joinedload(Order.service),
+                    joinedload(Order.academic_level),
+                    joinedload(Order.files),
+                )
+                .where(Order.order_number == order_number)
+            )
+            order = self.session.scalar(stmt)
+            if not order:
+                raise NotFound(f"Order {order_number} not found")
+            return order
+        except NotFound:
+            raise
+        except SQLAlchemyError as exc:
+            logger.error("[GetOrderByOrderNumber] DB error: %s", exc)
             raise DatabaseError(str(exc)) from exc
 
 class GetOrderByClient:

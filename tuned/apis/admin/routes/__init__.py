@@ -7,6 +7,10 @@ from tuned.apis.admin.routes.orders import (
     AdminOrdersListView, AdminOrdersStatsView,
     AdminActivateOrderView, AdminEscalateOrderView
 )
+from tuned.apis.admin.routes.order_detail import (
+    AdminOrderDetailView, AdminOrderRevisionRequestsView, AdminUpdateRevisionStatusView
+)
+from tuned.apis.admin.routes.order_extensions import AdminDeadlineExtensionsView
 from tuned.apis.admin.routes.users import (
     AdminUsersListView, AdminUsersStatsView, AdminUsersGeographyView,
     AdminBroadcastView, AdminMessageUserView, AdminUsersExportView
@@ -47,6 +51,26 @@ ADMIN_ROUTES: list[dict[str, Any]] = [
         "url_rule": "/orders/stats",
         "view_func": AdminOrdersStatsView.as_view("admin_orders_stats"),
         "methods": ["GET"],
+    },
+    {
+        "url_rule": "/orders/detail/<string:order_number>",
+        "view_func": AdminOrderDetailView.as_view("admin_order_detail"),
+        "methods": ["GET"],
+    },
+    {
+        "url_rule": "/orders/<string:order_id>/revision-requests",
+        "view_func": AdminOrderRevisionRequestsView.as_view("admin_order_revision_requests"),
+        "methods": ["GET"],
+    },
+    {
+        "url_rule": "/orders/<string:order_id>/revision-requests/<string:request_id>/status",
+        "view_func": AdminUpdateRevisionStatusView.as_view("admin_update_revision_status"),
+        "methods": ["PATCH"],
+    },
+    {
+        "url_rule": "/orders/<string:order_id>/deadline-extensions",
+        "view_func": AdminDeadlineExtensionsView.as_view("admin_deadline_extensions"),
+        "methods": ["GET", "POST"],
     },
     {
         "url_rule": "/orders/<string:order_id>/activate",

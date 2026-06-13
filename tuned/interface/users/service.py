@@ -97,6 +97,14 @@ class UserService:
         except Exception as e:
             raise DatabaseError(str(e))
 
+    def init_user_preferences(self, user_id: str) -> None:
+        try:
+            self._interfaces.preferences.get_user_preferences(user_id)
+            self._repo.save()
+        except Exception as exc:
+            logger.error(f"[init_user_preferences] Failed to initialize user preferences for user {user_id}: {exc!r}")
+            raise
+
 
     def resend_verification_email(self, dto: EmailVerificationResendDTO) -> bool:
         cooldown_key = f'email_resend_cooldown:{dto.email}'

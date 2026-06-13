@@ -1,5 +1,5 @@
 from marshmallow import Schema, fields, validate, post_load
-from tuned.models.enums import OrderStatus
+from tuned.models.enums import OrderStatus, RevisionRequestStatus, Priority
 from tuned.dtos.order import OrderListRequestDTO
 
 
@@ -18,3 +18,26 @@ class AdminOrderListRequestSchema(Schema):
     @post_load
     def make_dto(self, data, **kwargs):
         return OrderListRequestDTO(**data)
+
+
+class AdminUpdateRevisionStatusSchema(Schema):
+    status = fields.String(
+        required=True,
+        validate=validate.OneOf([
+            RevisionRequestStatus.IN_PROGRESS.value,
+            RevisionRequestStatus.COMPLETED.value,
+            RevisionRequestStatus.REJECTED.value,
+            RevisionRequestStatus.CANCELLED.value,
+        ])
+    )
+    internal_notes = fields.String(required=False, allow_none=True)
+
+
+class AdminRequestDeadlineExtensionSchema(Schema):
+    requested_hours = fields.Integer(required=True, validate=validate.Range(min=1, max=720))
+    reason = fields.String(required=True, validate=validate.Length(min=10, max=2000))
+    priority = fields.String(
+        required=False,
+        load_default=Priority.NORMAL.value,
+        validate=validate.OneOf([e.value for e in Priority])
+    )

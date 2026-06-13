@@ -48,6 +48,7 @@ class Order(BaseModel):
     total_price: Mapped[Optional[Decimal]] = mapped_column(db.Numeric(precision=10, scale=2), nullable=True)
     status: Mapped[OrderStatus] = mapped_column(ENUM(OrderStatus, name="orderstatus"), default=OrderStatus.PENDING, nullable=False)
     paid: Mapped[bool] = mapped_column(db.Boolean, default=False, nullable=False)
+    escalated: Mapped[bool] = mapped_column(db.Boolean, default=False, nullable=False)
     delivered_at: Mapped[Optional[datetime]] = mapped_column(db.DateTime(timezone=True), nullable=True, default=None)
     extension_requested: Mapped[bool] = mapped_column(db.Boolean, default=False, nullable=False)
     extension_requested_at: Mapped[Optional[datetime]] = mapped_column(db.DateTime(timezone=True), nullable=True, default=None)

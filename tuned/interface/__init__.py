@@ -16,7 +16,6 @@ from tuned.interface.audit import AuditService
 from tuned.interface.payment import PaymentService
 from tuned.interface.communication.newsletter import NewsletterService
 from tuned.interface.media import MediaService
-from tuned.interface.admin.analytics import AdminAnalyticsService
 
 if TYPE_CHECKING:
     from tuned.repository import Repository
@@ -24,7 +23,6 @@ if TYPE_CHECKING:
 class Services:
     def __init__(self, repos: "Repository") -> None:
         self._repos = repos
-        self._admin_analytics: Optional[AdminAnalyticsService] = None
         self._user: Optional[UserService] = None
         self._referral: Optional[ReferralInterface] = None
         self._academic_level: Optional[AcademicLevelService] = None
@@ -42,7 +40,7 @@ class Services:
         self._order: Optional[OrderService] = None
         self._order_delivery: Optional[OrderDeliveryService] = None
         self._preferences: Optional[PreferenceService] = None
-        self._analytics_agg: Optional[Analytics] = None
+        self._analytics: Optional[Analytics] = None
         self._audit: Optional[AuditService] = None
         self._payment: Optional[PaymentService] = None
         self._newsletter: Optional[NewsletterService] = None
@@ -168,14 +166,10 @@ class Services:
         return self._preferences
 
     @property
-    def analytics_agg(self) -> Analytics:
-        if not self._analytics_agg:
-            self._analytics_agg = Analytics(repos=self._repos)
-        return self._analytics_agg
-
-    @property
-    def analytics(self) -> AnalyticsService:
-        return self.analytics_agg.client
+    def analytics(self) -> Analytics:
+        if not self._analytics:
+            self._analytics = Analytics(repos=self._repos, interfaces=self)
+        return self._analytics
 
     @property
     def audit(self) -> AuditService:
@@ -206,11 +200,5 @@ class Services:
         if not self._media:
             self._media = MediaService(repos=self._repos, interfaces=self)
         return self._media
-
-    @property
-    def admin_analytics(self) -> AdminAnalyticsService:
-        if not self._admin_analytics:
-            self._admin_analytics = AdminAnalyticsService(interfaces=self)
-        return self._admin_analytics
 
 

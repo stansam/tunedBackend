@@ -15,7 +15,7 @@ class AdminNavStatsView(MethodView): # TODO: Check on payments count and chat co
     def get(self):
         try:
             services = get_services()
-            service = services.admin_analytics
+            service = services.analytics.admin
             dto = service.get_nav_stats()
             return success_response(data=asdict(dto), status=200)
         except Exception as exc:

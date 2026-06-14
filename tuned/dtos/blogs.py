@@ -39,6 +39,7 @@ class BlogPostDTO(BaseDTO):
     excerpt: str = ""
     featured_image: str = ""
     featured_image_id: Optional[str] = None
+    image_url: str = ""
     meta_description: str = ""
     is_published: bool = False
     is_featured: bool = False

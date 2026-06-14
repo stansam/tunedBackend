@@ -22,6 +22,7 @@ class CreateBlog:
                 content=data.content,
                 excerpt=data.excerpt,
                 featured_image_id=UUID(data.featured_image_id) if data.featured_image_id else None,
+                image_url=data.image_url if data.image_url else None,
                 author=data.author,
                 category_id=UUID(data.category_id),
                 meta_description=data.meta_description,

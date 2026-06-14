@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 def _build_blog_category_map() -> dict[str, str]:
     cats = db.session.query(BlogCategory).all()
-    return {str(cat.slug): str(cat.id) for cat in cats}
+    return {cat.slug: str(cat.id) for cat in cats}
 
 
 @click.command("create-blogs")
@@ -30,9 +30,9 @@ def create_blogs() -> None:
     for entry_cat in blogCategories:
         try:
             category_dto = BlogCategoryDTO(
-                name=str(entry_cat["name"]),
-                slug=str(entry_cat["slug"]),
-                description=str(entry_cat.get("description", "")),
+                name=entry_cat["name"],
+                slug=entry_cat["slug"],
+                description=entry_cat.get("description", ""),
             )
             services.blog_category.create_category(category_dto)
             click.echo(f"  ✓ Created blog category: {entry_cat['name']}")
@@ -75,9 +75,10 @@ def create_blogs() -> None:
                 title=str(entry_post["title"]),
                 content=str(entry_post["content"]),
                 author=str(entry_post["author"]),
-                category_id=str(category_id),
+                category_id=category_id,
                 excerpt=str(entry_post.get("excerpt", "")),
                 featured_image=str(entry_post.get("featured_image", "")),
+                image_url=str(entry_post.get("image_url", "")),
                 meta_description=str(entry_post.get("meta_description", "")),
                 is_published=bool(entry_post.get("is_published", False)),
                 is_featured=bool(entry_post.get("is_featured", False)),

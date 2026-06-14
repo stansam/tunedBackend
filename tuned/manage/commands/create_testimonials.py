@@ -14,11 +14,11 @@ logger: logging.Logger = get_logger(__name__)
 
 
 def _build_service_map() -> dict[str, str]:
-    return {svc.name: svc.id for svc in db.session.query(Service).all()}
+    return {svc.name: str(svc.id) for svc in db.session.query(Service).all()}
 
 
 def _build_user_map() -> dict[str, str]:
-    return {u.username: u.id for u in db.session.query(User).all()}
+    return {u.username: str(u.id) for u in db.session.query(User).all()}
 
 
 @click.command("create-testimonials")

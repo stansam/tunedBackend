@@ -48,7 +48,7 @@ class User(UserMixin, BaseModel):  # type: ignore[misc]
     last_name: Mapped[str] = mapped_column(db.String(100), nullable=False)
     gender: Mapped[Optional[GenderEnum]] = mapped_column(ENUM(GenderEnum, name="genderenum"), nullable=True)
     phone_number: Mapped[Optional[str]] = mapped_column(db.String(20), nullable=True)
-    profile_pic_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), db.ForeignKey('media_assets.id'), nullable=True)
+    profile_pic_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), db.ForeignKey('media_assets.id', use_alter=True, name="fk_users_profile_pic_id"), nullable=True)
     profile_pic: Mapped[Optional["MediaAsset"]] = relationship("MediaAsset", foreign_keys=[profile_pic_id])
 
     is_admin: Mapped[bool] = mapped_column(db.Boolean, default=False, server_default='false', nullable=False)
@@ -136,6 +136,10 @@ class User(UserMixin, BaseModel):  # type: ignore[misc]
         with current_app.app_context():
             if self.profile_pic:
                 return f"{current_app.config.get('FRONTEND_URL')}/uploads/{self.profile_pic.storage_path}"
+            if current_app.config.get("FLASK_ENV") == "development":
+                if self.gender == GenderEnum.FEMALE:
+                    return url_for("static", filename=f"ladyDefault.png")
+                return url_for("static", filename=f"manDefault.png")
 
             if self.gender == GenderEnum.FEMALE:
                 return f"{current_app.config.get('FRONTEND_URL')}/uploads/profile_pics/ladyDefault.png"

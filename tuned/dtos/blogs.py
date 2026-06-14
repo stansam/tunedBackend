@@ -65,7 +65,7 @@ class BlogPostResponseDTO(BaseDTO):
     @classmethod
     def from_model(cls, obj: "BlogPost") -> "BlogPostResponseDTO":
         from flask import current_app
-        image_path = f"{current_app.config.get('FRONTEND_URL')}/uploads/{obj.featured_image.storage_path}" if obj.featured_image else ""
+        image_path = f"{current_app.config.get('FRONTEND_URL')}/uploads/{obj.featured_image.storage_path}" if obj.featured_image else obj.image_url if obj.image_url else ""
         return cls(
             id=str(obj.id),
             title=obj.title,

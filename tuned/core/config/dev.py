@@ -21,7 +21,7 @@ class DevelopmentConfig(BaseConfig):
         
     SQLALCHEMY_ECHO: bool = False 
 
-    SESSION_COOKIE_DOMAIN: Optional[str] = os.environ.get('SESSION_COOKIE_DOMAIN')
+    # SESSION_COOKIE_DOMAIN: Optional[str] = os.environ.get('SESSION_COOKIE_DOMAIN')
     SESSION_COOKIE_SECURE: bool = False
     REMEMBER_COOKIE_SECURE: bool = False
     # JWT_COOKIE_SECURE: bool = True

@@ -20,6 +20,7 @@ from tuned.models import (
 from tuned.dtos.payment import (
     PaymentCreateDTO, PaymentUpdateDTO, InvoiceCreateDTO, PaymentResponseDTO
 )
+from tuned.core.exceptions import NotFound
 from tuned.dtos.notification import NotificationCreateDTO
 from tuned.apis.payments.schemas import CheckoutSchema, AdminRejectSchema
 from tuned.interface.payment.pesapal import PesapalHelper
@@ -138,7 +139,10 @@ class CheckoutView(MethodView):
             else:
                 # Manual payment flow
                 if proof_ref:
-                    payment = services._repos.payment.payment.get_pending_payment_by_order_id(str(order.id), method.id)
+                    try:
+                        payment = services._repos.payment.payment.get_pending_payment_by_order_id(str(order.id), method.id)
+                    except NotFound:
+                        payment = None
                     
                     if not payment:
                         payment_dto = PaymentCreateDTO(

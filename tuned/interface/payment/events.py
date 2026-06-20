@@ -9,8 +9,6 @@ if TYPE_CHECKING:
 
 logger: logging.Logger = get_logger(__name__)
 
-
-
 class PaymentEventHandlers:
     def __init__(self, bus: EventBus) -> None:
         self._bus = bus
@@ -18,6 +16,7 @@ class PaymentEventHandlers:
     def register(self) -> None:
         self._bus.on("payment.created", self._on_payment_created)
         self._bus.on("payment.client_marked_paid", self._on_payment_client_marked_paid)
+        self._bus.on("payment.pesapal_initiated", self._on_pesapal_initiated)
         self._bus.on("payment.verified_by_admin", self._on_payment_verified_by_admin)
         self._bus.on("invoice.created", self._on_invoice_created)
         self._bus.on("refund.processed", self._on_refund_processed)
@@ -47,37 +46,39 @@ class PaymentEventHandlers:
             client_name = event_data.get("client_name")
             payment_id = event_data.get("payment_id")
             status = event_data.get("status")
+            method_category = event_data.get("method_category", "")
+            is_card_payment = method_category == "credit_card"
 
-            # 1. In-app notification for client
+            # 1. Always notify client their payment action was recorded
             create_in_app_notification.delay(
                 user_id=str(user_id),
                 title="Payment Proof Submitted",
-                message=f"Your payment proof for Order #{order_number} has been received and is pending verification.",
+                message=f"Your payment for Order #{order_number} has been received and is under review.",
                 notification_type="info",
                 action_url=f"/client/orders/{order_number}"
             )
 
-            # 2. In-app notification for admin room (broadcast)
-            create_in_app_notification.delay(
-                user_id="__admin_broadcast__",
-                title="Action Required: Verify Payment",
-                message=f"Client {client_name} submitted payment proof for Order #{order_number}.",
-                notification_type="warning",
-                action_url=f"/admin/orders/{order_number}"
-            )
+            # 2. Notify admin ONLY for manual payments
+            if not is_card_payment:
+                create_in_app_notification.delay(
+                    user_id="__admin_broadcast__",
+                    title="Action Required: Verify Payment Proof",
+                    message=f"Client {client_name} submitted payment proof for Order #{order_number}. Please verify.",
+                    notification_type="warning",
+                    action_url=f"/admin/orders/{order_number}"
+                )
+                socketio.emit("admin:payment_verification_required", {
+                    "payment_id": str(payment_id),
+                    "order_number": order_number,
+                    "client_name": client_name
+                }, to="admin_room")
 
-            # 3. SocketIO emits
+            # 3. SocketIO update client dashboard
             room = f"user_{user_id}"
             socketio.emit("dashboard:payment_updated", {
                 "payment_id": str(payment_id),
                 "status": status
             }, to=room)
-            
-            socketio.emit("admin:payment_verification_required", {
-                "payment_id": str(payment_id),
-                "order_number": order_number,
-                "client_name": client_name
-            }, to="admin_room")
             
         except Exception as exc:
             logger.error("[PaymentEventHandlers] Error in payment.client_marked_paid handler: %r", exc)
@@ -91,7 +92,11 @@ class PaymentEventHandlers:
             user_id = event_data.get("user_id")
             order_number = event_data.get("order_number")
             payment_id = event_data.get("payment_id")
+            payment_ref = event_data.get("payment_ref", "")
             status = event_data.get("status")
+            is_automated = event_data.get("is_automated", False)
+            invoice_id = event_data.get("invoice_id")
+            invoice_number = event_data.get("invoice_number")
 
             create_in_app_notification.delay(
                 user_id=str(user_id),
@@ -101,7 +106,6 @@ class PaymentEventHandlers:
                 action_url=f"/client/orders/{order_number}"
             )
 
-            # Direct referral reward trigger from payment verification
             try:
                 from tuned.tasks.referral_tasks import process_referral_reward_task
                 process_referral_reward_task.delay(
@@ -121,6 +125,19 @@ class PaymentEventHandlers:
                 "status": status
             }, to=room)
             
+            if invoice_id:
+                socketio.emit("dashboard:invoice_ready", {
+                    "invoice_id": invoice_id,
+                    "invoice_number": invoice_number
+                }, to=room)
+
+            socketio.emit("admin:payment_verified", {
+                "payment_id": str(payment_id),
+                "payment_ref": payment_ref,
+                "order_number": order_number,
+                "is_automated": is_automated,
+            }, to="admin_room")
+            
         except Exception as exc:
             logger.error("[PaymentEventHandlers] Error in payment.verified_by_admin handler: %r", exc)
 
@@ -128,6 +145,7 @@ class PaymentEventHandlers:
         try:
             logger.info("[PaymentEventHandlers] Processing invoice.created: %s", event_data.get("invoice_id"))
             from tuned.tasks.notifications import create_in_app_notification
+            from tuned.extensions import socketio
             
             user_id = event_data.get("user_id")
             invoice_id = event_data.get("invoice_id")
@@ -141,6 +159,12 @@ class PaymentEventHandlers:
                 notification_type="info",
                 action_url=f"/client/invoices/{invoice_id}"
             )
+
+            socketio.emit("dashboard:invoice_ready", {
+                "invoice_id": invoice_id,
+                "invoice_number": invoice_number,
+                "order_number": order_number,
+            }, to=f"user_{user_id}")
             
         except Exception as exc:
             logger.error("[PaymentEventHandlers] Error in invoice.created handler: %r", exc)
@@ -155,11 +179,12 @@ class PaymentEventHandlers:
             payment_id = event_data.get("payment_id")
             order_number = event_data.get("order_number")
             status = event_data.get("status")
+            rejection_reason = event_data.get("rejection_reason", "")
             
             create_in_app_notification.delay(
                 user_id=str(user_id),
                 title="Payment Rejected",
-                message=f"Payment for Order #{order_number} has been rejected. Please provide a valid payment proof.",
+                message=f"Your payment proof for Order #{order_number} was rejected. Reason: {rejection_reason or 'Please submit a valid payment proof.'}",
                 notification_type="error",
                 action_url=f"/client/orders/{order_number}"
             )
@@ -169,6 +194,13 @@ class PaymentEventHandlers:
                 "payment_id": str(payment_id),
                 "status": status
             }, to=room)
+
+            socketio.emit("admin:payment_rejected", {
+                "payment_id": str(payment_id),
+                "order_number": order_number,
+                "rejection_reason": rejection_reason
+            }, to="admin_room")
+            
         except Exception as exc:
             logger.error("[PaymentEventHandlers] Error in payment.marked_failed handler: %r", exc)
 
@@ -198,3 +230,24 @@ class PaymentEventHandlers:
             )
         except Exception as exc:
             logger.error(f"[PaymentEventHandlers] Error in refund.processed handler: {exc!r}")
+
+    def _on_pesapal_initiated(self, event_data: Dict[str, Any]) -> None:
+        try:
+            logger.info("[PaymentEventHandlers] Processing payment.pesapal_initiated: %s", event_data.get("payment_ref"))
+            from tuned.extensions import socketio
+
+            user_id = event_data.get("user_id")
+            payment_id = event_data.get("payment_id")
+            payment_ref = event_data.get("payment_ref")
+
+            socketio.emit(
+                "dashboard:payment_updated",
+                {
+                    "payment_id": str(payment_id),
+                    "payment_ref": payment_ref,
+                    "status": "pending",
+                },
+                to=f"user_{user_id}",
+            )
+        except Exception as exc:
+            logger.error("[PaymentEventHandlers] Error in payment.pesapal_initiated handler: %r", exc)

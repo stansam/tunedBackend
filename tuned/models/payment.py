@@ -42,6 +42,8 @@ class Payment(BaseModel):
     status: Mapped[PaymentStatus] = mapped_column(ENUM(PaymentStatus, name="paymentstatus"), default=PaymentStatus.PENDING, nullable=False, index=True)
     
     client_proof_reference: Mapped[Optional[str]] = mapped_column(db.String(255), nullable=True)
+    pesapal_tracking_id: Mapped[Optional[str]] = mapped_column(db.String(100), nullable=True, unique=True, index=True)
+    admin_notes: Mapped[Optional[str]] = mapped_column(db.Text, nullable=True)
     client_marked_paid_at: Mapped[Optional[datetime]] = mapped_column(db.DateTime(timezone=True), nullable=True)
     admin_verified_at: Mapped[Optional[datetime]] = mapped_column(db.DateTime(timezone=True), nullable=True)
     
@@ -57,13 +59,14 @@ class Payment(BaseModel):
         db.CheckConstraint('amount > 0', name='valid_payment_amount'),
     )
 
-    def __init__(self, order_id: uuid.UUID, user_id: uuid.UUID, amount: float, accepted_method_id: uuid.UUID, status: PaymentStatus=PaymentStatus.PENDING) -> None:
+    def __init__(self, order_id: uuid.UUID, user_id: uuid.UUID, amount: float, accepted_method_id: uuid.UUID, status: PaymentStatus = PaymentStatus.PENDING, currency: Currency = Currency.USD) -> None:
         self.payment_id = f"PAY-{uuid.uuid4().hex[:12].upper()}"
         self.order_id = order_id
         self.user_id = user_id
         self.amount = amount
         self.accepted_method_id = accepted_method_id
         self.status = status
+        self.currency = currency
     
     def __repr__(self) -> str:
         return f"Payment {self.payment_id} for Order {self.order_id}"
@@ -105,11 +108,12 @@ class Invoice(BaseModel):
 
 class Transaction(BaseModel):
     __tablename__ = 'transaction'
-    # transaction_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), unique=True, nullable=False, index=True)
+    transaction_id: Mapped[str] = mapped_column(db.String(20), unique=True, nullable=False, index=True)
     payment_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), db.ForeignKey('payment.id'), nullable=False, index=True)
     type: Mapped[TransactionType] = mapped_column(ENUM(TransactionType, name="transactiontype"), nullable=False, index=True)
     amount: Mapped[float] = mapped_column(db.Numeric(precision=10, scale=2), nullable=False)
     status: Mapped[TransactionStatus] = mapped_column(ENUM(TransactionStatus, name="transactionstatus"), nullable=False, index=True)
+    reference: Mapped[Optional[str]] = mapped_column(db.String(255), nullable=True)
 
     __table_args__ = (
         db.CheckConstraint('amount > 0', name='valid_transaction_amount'),
@@ -117,15 +121,16 @@ class Transaction(BaseModel):
 
     payment: Mapped["Payment"] = relationship('Payment', back_populates='transactions')
     
-    def __init__(self, payment_id: uuid.UUID, type: TransactionType, amount: float, status: TransactionStatus) -> None:
+    def __init__(self, payment_id: uuid.UUID, type: TransactionType, amount: float, status: TransactionStatus, reference: Optional[str] = None) -> None:
+        self.transaction_id = f"TX-{uuid.uuid4().hex[:10].upper()}"
         self.payment_id = payment_id
-        # self.transaction_id = transaction_id
         self.type = type
         self.amount = amount
         self.status = status
+        self.reference = reference
     
     def __repr__(self) -> str:
-        return f"{self.type.title()} of {self.amount} for Payment #{self.payment_id}"
+        return f"<Transaction {self.transaction_id}: {self.type} {self.amount} [{self.status}]>"
     
 class Discount(BaseModel):
     __tablename__ = 'discount'
@@ -144,7 +149,7 @@ class Discount(BaseModel):
     orders: Mapped[list["Order"]] = relationship('Order', secondary='order_discount', back_populates='discounts')
     
     __table_args__ = (
-        db.CheckConstraint('amount > 0', name='valid_discount_amount'),
+        db.CheckConstraint('amount >= 0', name='valid_discount_amount'),
         db.CheckConstraint('min_order_value >= 0', name='valid_min_order'),
     )
     

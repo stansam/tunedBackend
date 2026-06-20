@@ -10,10 +10,12 @@ from tuned.dtos.payment import (
 
 from tuned.repository.payment.payment import (
     CreatePayment, GetPaymentByID, GetPaymentByOrderID, UpdatePayment, GetSpendingVelocity,
-    GetPendingPaymentByOrderID, GetPendingPaymentByReferenceID, GetPaymentsList
+    GetPendingPaymentByOrderID, GetPendingPaymentByReferenceID, GetPaymentsList,
+    GetPaymentByPesapalTrackingId, GetActivePaymentForOrder
 )
 from tuned.repository.payment.invoice import (
-    CreateInvoice, GetInvoiceByID, GetInvoiceByNumber, UpdateInvoice, GetInvoiceByPaymentID
+    CreateInvoice, GetInvoiceByID, GetInvoiceByNumber, UpdateInvoice, GetInvoiceByPaymentID,
+    GetInvoiceByOrderId, ListInvoicesByUser
 )
 from tuned.repository.payment.transaction import (
     CreateTransaction, GetTransactionByID, GetTransactionsByPaymentID
@@ -57,6 +59,12 @@ class PaymentsManager:
     def list_payments(self, user_id: Optional[str] = None, status: Optional[str] = None, page: int = 1, per_page: int = 10) -> tuple[list[PaymentResponseDTO], int]:
         return GetPaymentsList(self.session).execute(user_id=user_id, status=status, page=page, per_page=per_page)
 
+    def get_by_pesapal_tracking_id(self, tracking_id: str) -> "Payment":
+        return GetPaymentByPesapalTrackingId(self.session).execute(tracking_id)
+
+    def get_active_payment_for_order(self, order_id: str) -> Optional["Payment"]:
+        return GetActivePaymentForOrder(self.session).execute(order_id)
+
 class InvoiceManager:
     def __init__(self, session: Session) -> None:
         self.session = session
@@ -78,6 +86,12 @@ class InvoiceManager:
             return GetInvoiceByPaymentID(self.session).execute(payment_id)
         except Exception:
             return None
+
+    def get_by_order_id(self, order_id: str) -> Optional[InvoiceResponseDTO]:
+        return GetInvoiceByOrderId(self.session).execute(order_id)
+
+    def list_by_user(self, user_id: str, page: int = 1, per_page: int = 10) -> tuple[list[InvoiceResponseDTO], int]:
+        return ListInvoicesByUser(self.session).execute(user_id, page, per_page)
 
 class TransactionManager:
     def __init__(self, session: Session) -> None:

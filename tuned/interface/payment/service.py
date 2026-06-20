@@ -1,7 +1,10 @@
 from __future__ import annotations
-from typing import Optional, TYPE_CHECKING, List, Sequence
+from typing import Optional, TYPE_CHECKING, Sequence
 
-from tuned.interface.payment.payment import ProcessPayment, GetPaymentDetails, ClientMarkAsPaid, AdminVerifyPayment, AdminRejectPayment, ListPayments
+from tuned.interface.payment.payment import (
+    ProcessPayment, GetPaymentDetails, ClientMarkAsPaid, AdminVerifyPayment, AdminRejectPayment, ListPayments,
+    InitiatePesapalCheckout, HandlePesapalIpn
+)
 from tuned.interface.payment.invoice import GenerateInvoice, GetInvoiceDetails, MarkInvoicePaid
 from tuned.interface.payment.discount import ApplyDiscount, CreateDiscount, GetDiscountDetails
 from tuned.interface.payment.refund import ProcessRefund, ApproveRefund
@@ -27,6 +30,8 @@ class PaymentServiceManager:
         self._verify_payment = AdminVerifyPayment(repos=repos)
         self._mark_as_failed = AdminRejectPayment(repos=repos)
         self._list_payments = ListPayments(repos=repos)
+        self._initiate_pesapal = InitiatePesapalCheckout(repos=repos)
+        self._handle_ipn = HandlePesapalIpn(repos=repos)
 
     def process(self, data: PaymentCreateDTO) -> PaymentResponseDTO:
         return self._process.execute(data)
@@ -37,14 +42,20 @@ class PaymentServiceManager:
     def mark_as_paid_client(self, payment_id: str, client_proof_reference: str, client_id: str) -> PaymentResponseDTO:
         return self._mark_paid_client.execute(payment_id, client_proof_reference, client_id)
 
-    def verify_payment(self, payment_id: str, admin_id: str) -> PaymentResponseDTO:
-        return self._verify_payment.execute(payment_id, admin_id)
+    def verify_payment(self, payment_id: str, admin_id: str, admin_notes: Optional[str] = None) -> PaymentResponseDTO:
+        return self._verify_payment.execute(payment_id, admin_id, admin_notes=admin_notes)
     
     def mark_as_failed(self, payment_id: str, user_id: str, rejection_reason: str = "Payment marked as failed by Admin", ip_address: str = "", user_agent: str = "") -> PaymentResponseDTO:
         return self._mark_as_failed.execute(payment_id, user_id, rejection_reason, ip_address, user_agent)
 
     def list_payments(self, user_id: Optional[str] = None, status: Optional[str] = None, page: int = 1, per_page: int = 10) -> tuple[list[PaymentResponseDTO], int]:
         return self._list_payments.execute(user_id=user_id, status=status, page=page, per_page=per_page)
+
+    def initiate_pesapal_checkout(self, order_id: str, user_id: str, amount: float, method_id: str, user_data: dict) -> dict:
+        return self._initiate_pesapal.execute(order_id, user_id, amount, method_id, user_data)
+
+    def handle_pesapal_ipn(self, tracking_id: str, status_result) -> dict:
+        return self._handle_ipn.execute(tracking_id, status_result)
 
 class AcceptedMethodServiceManager:
     def __init__(self, repos: Repository) -> None:

@@ -140,10 +140,10 @@ class User(UserMixin, BaseModel):  # type: ignore[misc]
                 if self.gender == GenderEnum.FEMALE:
                     return f"{current_app.config.get('FRONTEND_URL')}/static/ladyDefault.png"
                 return f"{current_app.config.get('FRONTEND_URL')}/static/manDefault.png"
-
-            if self.gender == GenderEnum.FEMALE:
-                return f"{current_app.config.get('FRONTEND_URL')}/uploads/profile_pics/ladyDefault.png"
-            return f"{current_app.config.get('FRONTEND_URL')}/uploads/profile_pics/manDefault.png"
+            else:
+                if self.gender == GenderEnum.FEMALE:
+                    return f"{current_app.config.get('FRONTEND_URL')}/uploads/profile_pics/ladyDefault.png"
+                return f"{current_app.config.get('FRONTEND_URL')}/uploads/profile_pics/manDefault.png"
     
     def __repr__(self: 'User') -> str:
         return f'<User {self.username}>'

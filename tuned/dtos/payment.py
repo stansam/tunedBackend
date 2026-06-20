@@ -66,6 +66,8 @@ class PaymentAdminVerifyDTO:
 class PaymentUpdateDTO:
     status: Optional[PaymentStatus] = None
     client_proof_reference: Optional[str] = None
+    pesapal_tracking_id: Optional[str] = None
+    admin_notes: Optional[str] = None
     client_marked_paid_at: Optional[datetime] = None
     admin_verified_at: Optional[datetime] = None
 
@@ -80,6 +82,8 @@ class PaymentResponseDTO(BaseDTO):
     accepted_method_id: str
     currency: Currency
     client_proof_reference: Optional[str]
+    pesapal_tracking_id: Optional[str]
+    admin_notes: Optional[str]
     client_marked_paid_at: Optional[datetime]
     admin_verified_at: Optional[datetime]
     
@@ -90,11 +94,13 @@ class PaymentResponseDTO(BaseDTO):
             payment_id=model.payment_id,
             order_id=str(model.order_id),
             user_id=str(model.user_id),
-            amount=model.amount,
+            amount=float(model.amount),
             status=model.status,
             accepted_method_id=str(model.accepted_method_id),
             currency=model.currency,
             client_proof_reference=model.client_proof_reference,
+            pesapal_tracking_id=getattr(model, 'pesapal_tracking_id', None),
+            admin_notes=getattr(model, 'admin_notes', None),
             client_marked_paid_at=model.client_marked_paid_at,
             admin_verified_at=model.admin_verified_at,
             created_at=model.created_at,
@@ -158,25 +164,28 @@ class TransactionCreateDTO:
     type: TransactionType
     amount: float
     status: TransactionStatus
+    reference: Optional[str] = None
 
 @dataclass(kw_only=True)
 class TransactionResponseDTO(BaseDTO):
     id: str
+    transaction_id: str
     payment_id: str
-    # transaction_id: str
     type: TransactionType
     amount: float
     status: TransactionStatus
+    reference: Optional[str]
     
     @classmethod
     def from_model(cls, model: "Transaction") -> 'TransactionResponseDTO':
         return cls(
             id=str(model.id),
+            transaction_id=model.transaction_id,
             payment_id=str(model.payment_id),
-            # transaction_id=str(model.transaction_id,)
             type=model.type,
-            amount=model.amount,
+            amount=float(model.amount),
             status=model.status,
+            reference=getattr(model, 'reference', None),
             created_at=model.created_at,
             updated_at=model.updated_at,
             is_deleted=getattr(model, 'is_deleted', False)
@@ -300,4 +309,61 @@ class PaymentListResponseDTO:
     total: int
     page: int
     per_page: int
+
+@dataclass(kw_only=True)
+class PesapalSubmitOrderDTO:
+    merchant_reference: str
+    amount: float
+    currency: str
+    email: str
+    phone: str
+    first_name: str
+    last_name: str
+    description: str
+
+@dataclass(kw_only=True)
+class PesapalSubmitOrderResponseDTO:
+    redirect_url: str
+    order_tracking_id: str
+    merchant_reference: str
+
+@dataclass(kw_only=True)
+class PesapalTransactionStatusDTO:
+    payment_status_description: str
+    amount: float
+    currency: str
+    payment_method: Optional[str]
+    order_tracking_id: str
+    merchant_reference: str
+
+@dataclass(kw_only=True)
+class PaymentStatusResponseDTO:
+    payment_id: str
+    internal_id: str
+    status: PaymentStatus
+    order_id: str
+    is_completed: bool
+
+@dataclass(kw_only=True)
+class AcceptedMethodAdminResponseDTO(BaseDTO):
+    id: str
+    name: str
+    category: MethodCategory
+    details: Optional[str]
+    is_active: bool
+    created_at: Optional[datetime]
+    updated_at: Optional[datetime]
+
+    @classmethod
+    def from_model(cls, model: "AcceptedPaymentMethod") -> "AcceptedMethodAdminResponseDTO":
+        return cls(
+            id=str(model.id),
+            name=model.name,
+            category=model.category,
+            details=model.details,
+            is_active=model.is_active,
+            created_at=model.created_at,
+            updated_at=model.updated_at,
+            is_deleted=getattr(model, 'is_deleted', False)
+        )
 

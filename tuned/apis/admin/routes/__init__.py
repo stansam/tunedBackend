@@ -15,6 +15,7 @@ from tuned.apis.admin.routes.users import (
     AdminUsersListView, AdminUsersStatsView, AdminUsersGeographyView,
     AdminBroadcastView, AdminMessageUserView, AdminUsersExportView
 )
+from tuned.apis.admin.routes.payments import AdminPaymentsListView
 
 ADMIN_ROUTES: list[dict[str, Any]] = [
     {
@@ -112,4 +113,10 @@ ADMIN_ROUTES: list[dict[str, Any]] = [
         "view_func": AdminUsersExportView.as_view("admin_users_export"),
         "methods": ["GET"],
     },
+    {
+        "url_rule": "/payments/list",
+        "view_func": AdminPaymentsListView.as_view("admin_payments_list"),
+        "methods": ["POST"],
+    },
 ]
+

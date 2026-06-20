@@ -16,7 +16,7 @@ from tuned.repository.payment import PaymentRepository
 from tuned.repository.communication import NewsletterRepository
 from tuned.repository.user.notification import NotificationRepository
 from tuned.repository.media import MediaRepository
-from tuned.repository.admin import AdminAnalyticsRepository, AdminOrderRepository, AdminUserRepository
+from tuned.repository.admin import AdminAnalyticsRepository, AdminOrderRepository, AdminUserRepository, AdminPaymentRepository
 from typing import Optional, Any
 
 class Repository:
@@ -46,6 +46,7 @@ class Repository:
         self._admin_analytics: Optional[AdminAnalyticsRepository] = None
         self._admin_orders: Optional[AdminOrderRepository] = None
         self._admin_users: Optional[AdminUserRepository] = None
+        self._admin_payments: Optional[AdminPaymentRepository] = None
 
     @property
     def user(self) -> UserRepository:
@@ -190,3 +191,10 @@ class Repository:
         if not self._admin_users:
             self._admin_users = AdminUserRepository(self.session)
         return self._admin_users
+
+    @property
+    def admin_payments(self) -> AdminPaymentRepository:
+        if not self._admin_payments:
+            self._admin_payments = AdminPaymentRepository(self.session)
+        return self._admin_payments
+

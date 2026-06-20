@@ -367,3 +367,63 @@ class AcceptedMethodAdminResponseDTO(BaseDTO):
             is_deleted=getattr(model, 'is_deleted', False)
         )
 
+
+@dataclass(kw_only=True)
+class AdminPaymentResponseDTO(PaymentResponseDTO):
+    client_name: str
+    client_email: str
+    order_number: str
+    payment_method_name: str
+    payment_method_category: str
+
+    @classmethod
+    def from_model_and_relations(
+        cls,
+        model: "Payment",
+        client_name: str,
+        client_email: str,
+        order_number: str,
+        payment_method_name: str,
+        payment_method_category: str
+    ) -> "AdminPaymentResponseDTO":
+        return cls(
+            id=str(model.id),
+            payment_id=model.payment_id,
+            order_id=str(model.order_id),
+            user_id=str(model.user_id),
+            amount=float(model.amount),
+            status=model.status,
+            accepted_method_id=str(model.accepted_method_id),
+            currency=model.currency,
+            client_proof_reference=model.client_proof_reference,
+            pesapal_tracking_id=getattr(model, 'pesapal_tracking_id', None),
+            admin_notes=getattr(model, 'admin_notes', None),
+            client_marked_paid_at=model.client_marked_paid_at,
+            admin_verified_at=model.admin_verified_at,
+            created_at=model.created_at,
+            updated_at=model.updated_at,
+            is_deleted=getattr(model, 'is_deleted', False),
+            client_name=client_name,
+            client_email=client_email,
+            order_number=order_number,
+            payment_method_name=payment_method_name,
+            payment_method_category=payment_method_category
+        )
+
+
+@dataclass
+class AdminPaymentListRequestDTO:
+    status: Optional[str] = None
+    q: Optional[str] = None
+    page: int = 1
+    per_page: int = 10
+
+
+@dataclass
+class AdminPaymentListResponseDTO:
+    payments: list[AdminPaymentResponseDTO]
+    total: int
+    page: int
+    per_page: int
+
+

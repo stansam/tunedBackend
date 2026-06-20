@@ -138,8 +138,8 @@ class User(UserMixin, BaseModel):  # type: ignore[misc]
                 return f"{current_app.config.get('FRONTEND_URL')}/uploads/{self.profile_pic.storage_path}"
             if current_app.config.get("FLASK_ENV") == "development":
                 if self.gender == GenderEnum.FEMALE:
-                    return url_for("static", filename=f"ladyDefault.png")
-                return url_for("static", filename=f"manDefault.png")
+                    return f"{current_app.config.get('FRONTEND_URL')}/static/ladyDefault.png"
+                return f"{current_app.config.get('FRONTEND_URL')}/static/manDefault.png"
 
             if self.gender == GenderEnum.FEMALE:
                 return f"{current_app.config.get('FRONTEND_URL')}/uploads/profile_pics/ladyDefault.png"

@@ -1,4 +1,4 @@
-import uuid
+from uuid import UUID
 from sqlalchemy import select
 from tuned.models import User
 from sqlalchemy.orm import Session
@@ -12,7 +12,10 @@ class GetUserByID:
 
     def execute(self, user_id: str) -> User:
         try:
-            user_uuid = uuid.UUID(user_id)
+            if isinstance(user_id, UUID):
+                user_uuid = user_id
+            else:
+                user_uuid = UUID(user_id)
             stmt = select(User).where(User.id == user_uuid)
             user = self.session.scalar(stmt)
             if not user:

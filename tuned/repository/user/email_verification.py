@@ -32,7 +32,7 @@ class GenerateAndStoreVerificationToken:
             raise NotFound("User not found") from None
 
         if user.email_verified:
-            raise AlreadyExists("Email is already verified")
+            return user, ""
 
         raw_token = secrets.token_urlsafe(_TOKEN_BYTES)
         hashed = _hash_token(raw_token)
@@ -41,7 +41,7 @@ class GenerateAndStoreVerificationToken:
         try:
             user.email_verification_token = hashed
             user.email_verification_token_expires_at = expires_at
-            self.session.add(user)
+            # self.session.add(user)
             self.session.flush()
         except SQLAlchemyError as exc:
             raise DatabaseError(
@@ -75,7 +75,7 @@ class ConfirmEmailVerification:
             raise ValueError("expired")
 
         stored_hash = user.email_verification_token or ""
-        incoming_hash = _hash_token(raw_token)
+        incoming_hash = _hash_token(raw_token.strip())
         if not hmac.compare_digest(stored_hash, incoming_hash):
             raise ValueError("invalid")
 

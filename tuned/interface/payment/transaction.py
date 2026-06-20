@@ -32,11 +32,11 @@ class LogTransaction:
                     ip_address="system",
                     user_agent="system"
                 ))
-                logger.info(f"[LogTransaction] Audit successfully applied for transaction {transaction.transaction_id}")
+                logger.info(f"[LogTransaction] Audit successfully applied for transaction {transaction.id}")
             except Exception as audit_exc:
                 logger.error(f"[LogTransaction] Audit failed for transaction {transaction.id}: {audit_exc!r}")
 
-            logger.info(f"[LogTransaction] Transaction {transaction.transaction_id} logged for payment {transaction.payment_id}")
+            logger.info(f"[LogTransaction] Transaction {transaction.id} logged for payment {transaction.payment_id}")
             return transaction
         except Exception as exc:
             logger.error(f"[LogTransaction] Failed to log transaction: {exc!r}")

@@ -1,8 +1,8 @@
 from datetime import datetime, timezone
 from sqlalchemy import select, update, insert
-from sqlalchemy.orm import Session
+from sqlalchemy.engine import Connection
 
-def generate_public_order_number(connection: Session) -> str:
+def generate_public_order_number(connection: Connection) -> str:
     from tuned.models.order import OrderSequence
     
     now = datetime.now(timezone.utc)

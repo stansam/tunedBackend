@@ -6,6 +6,7 @@ class GenderEnum(str, Enum):
     UNKNOWN = "unknown"
 
 class OrderStatus(str, Enum):
+    DRAFT = "draft"
     PENDING = "pending"
     ACTIVE = "active"
     COMPLETED_PENDING_REVIEW = "completed pending review"
@@ -67,6 +68,28 @@ class FileType(str, Enum):
     PLAGIARISM_REPORT = "plagiarism_report"
     SUPPLEMENTARY = "supplementary"
 
+class FileExtensionType(str, Enum):
+    DOCX = "docx"
+    PDF = "pdf"
+    JPG = "jpg"
+    PNG = "png"
+    TXT = "txt"
+    DOC = "doc"
+    XLS = "xls"
+    XLSX = "xlsx"
+    CSV = "csv"
+    PPT = "ppt"
+    PPTX = "pptx"  
+    WEBM = "webm"
+    OGG = "ogg"
+    MP3 = "mp3"
+    WAV = "wav"
+
+class AssetOwnerType(str, Enum):
+    DELIVERY = "delivery"
+    ORDER = "order"
+    USER = "user"
+    BLOG_POST = "blog_post"
 
 class DeliveryStatus(str, Enum):
     DELIVERED = "delivered"
@@ -86,11 +109,24 @@ class ReferralStatus(str, Enum):
     COMPLETED = "completed"
     EXPIRED = "expired"
 
+class ReportType(str, Enum):
+    TURNITIN = "turnitin"
+    STANDARD = "standard"
+
+class LineSpacing(str, Enum):
+    DOUBLE = "double"
+    SINGLE = "single"
 
 class DiscountType(str, Enum):
     PERCENTAGE = "percentage"
     FIXED = "fixed"
 
+class FormatStyle(str, Enum):
+    APA = "APA"
+    MLA = "MLA"
+    CHICAGO = "Chicago"
+    HARVARD = "Harvard"
+    OTHER = "Other"
 
 class Currency(str, Enum):
     USD = "USD"

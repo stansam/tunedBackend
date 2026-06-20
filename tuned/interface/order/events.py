@@ -14,6 +14,10 @@ class OrderEventHandlers:
     def register(self) -> None:
         self._bus.on("order.status_changed", self._on_status_changed)
         self._bus.on("order.created",        self._on_created)
+        self._bus.on("order.draft_saved",    self._on_draft_saved)
+        self._bus.on("order.comment", self._on_comment_created)
+        self._bus.on("order.comment.updated", self._on_comment_updated)
+        self._bus.on("order.comment.deleted", self._on_comment_deleted)
         logger.info("[OrderEventHandlers] registered")
 
     def _on_status_changed(self, payload: EventPayload) -> None:
@@ -34,12 +38,36 @@ class OrderEventHandlers:
                     "progress":     progress,
                     "delivered_at": delivered_at,
                 },
-                room=f"user_{client_id}",
+                to=f"user_{client_id}",
             )
         except Exception as exc:
             logger.error(
                 "[OrderEventHandlers._on_status_changed] Socket emit failed: %r", exc
             )
+
+        # Notify admins
+        try:
+            from tuned.utils.dependencies import get_services
+            from tuned.dtos.order import derive_priority
+            order = get_services().order.get_by_id(str(order_id))
+            if order:
+                from tuned.extensions import socketio
+                socketio.emit(
+                    "admin.order.status_changed",
+                    {
+                        "id":           str(order.id),
+                        "order_number": order.order_number,
+                        "title":        order.title,
+                        "due_date":     order.due_date.isoformat() if order.due_date else "",
+                        "priority":     derive_priority(order.due_date).name,
+                    },
+                    to="admin_room",
+                )
+        except Exception as exc:
+            logger.error(
+                "[OrderEventHandlers._on_status_changed] Admin socket emit failed: %r", exc
+            )
+
         try:
             from tuned.tasks.notifications import create_in_app_notification
             from tuned.models.enums import NotificationType
@@ -86,4 +114,78 @@ class OrderEventHandlers:
         except Exception as exc:
             logger.error(
                 "[OrderEventHandlers._on_created] Notification task failed: %r", exc
+            )
+
+        # Notify admins
+        try:
+            from tuned.extensions import socketio
+            socketio.emit(
+                "admin.order.created",
+                {
+                    "order_number": order_number,
+                    "client_id":    str(client_id),
+                },
+                to="admin_room",
+            )
+        except Exception as exc:
+            logger.error(
+                "[OrderEventHandlers._on_created] Admin socket emit failed: %r", exc
+            )
+
+
+    def _on_draft_saved(self, payload: EventPayload) -> None:
+        user_id  = payload.get("user_id")
+        order_id = payload.get("order_id", "")
+
+        try:
+            from tuned.extensions import socketio
+            socketio.emit("order.draft_saved", {"draft_id": str(order_id)}, to=f"user_{user_id}")
+        except Exception as exc:
+            logger.error(
+                "[OrderEventHandlers._on_draft_saved] Socket emit failed: %r", exc
+            )
+    
+    def _on_comment_created(self, payload: EventPayload) -> None:
+        result   = payload.get("result")
+        order_id  = payload.get("order_id")
+        try:
+            from tuned.extensions import socketio
+            socketio.emit(
+                "order:comment",
+                result,
+                to=f"order_{order_id}",
+            )
+        except Exception as exc:
+            logger.error(
+                "[OrderEventHandlers._on_comment_updated] Socket emit failed: %r", exc
+            )
+    
+    def _on_comment_updated(self, payload: EventPayload) -> None:
+        result = payload.get("result")
+        order_id   = payload.get("order_id")
+        try:
+            from tuned.extensions import socketio
+            socketio.emit(
+                "order:comment:updated",
+                result,
+                to=f"order_{order_id}",
+            )
+        except Exception as exc:
+            logger.error(
+                "[OrderEventHandlers._on_comment_updated] Socket emit failed: %r", exc
+            )
+    
+    def _on_comment_deleted(self, payload: EventPayload) -> None:
+        comment_id   = payload.get("comment_id")
+        order_id   = payload.get("order_id")
+        try:
+            from tuned.extensions import socketio
+            socketio.emit(
+                "order:comment:deleted",
+                {"comment_id": comment_id},
+                to=f"order_{order_id}",
+            )
+        except Exception as exc:
+            logger.error(
+                "[OrderEventHandlers._on_comment_deleted] Socket emit failed: %r", exc
             )

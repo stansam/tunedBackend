@@ -38,6 +38,8 @@ class BlogPostDTO(BaseDTO):
     category_id: str
     excerpt: str = ""
     featured_image: str = ""
+    featured_image_id: Optional[str] = None
+    image_url: str = ""
     meta_description: str = ""
     is_published: bool = False
     is_featured: bool = False
@@ -63,15 +65,17 @@ class BlogPostResponseDTO(BaseDTO):
 
     @classmethod
     def from_model(cls, obj: "BlogPost") -> "BlogPostResponseDTO":
+        from flask import current_app
+        image_path = f"{current_app.config.get('FRONTEND_URL')}/uploads/{obj.featured_image.storage_path}" if obj.featured_image else obj.image_url if obj.image_url else ""
         return cls(
-            id=obj.id,
+            id=str(obj.id),
             title=obj.title,
             content=obj.content,
             author=obj.author,
-            category_id=obj.category_id,
+            category_id=str(obj.category_id) if obj.category_id else None,
             slug=obj.slug,
             excerpt=obj.excerpt or "",
-            featured_image=obj.featured_image or "",
+            featured_image=image_path,
             meta_description=obj.meta_description or "",
             is_published=obj.is_published,
             is_featured=obj.is_featured,

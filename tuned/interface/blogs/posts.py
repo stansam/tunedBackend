@@ -1,27 +1,37 @@
 from __future__ import annotations
-import logging
-from typing import List, Optional, TYPE_CHECKING
+import logging, copy
+from typing import List, TYPE_CHECKING, Optional
 
-from tuned.dtos import BlogPostDTO, BlogPostResponseDTO, BlogPostListResponseDTO, BlogPostListRequestDTO, PostByCategoryRequestDTO
+from tuned.dtos import (
+    BlogPostDTO, 
+    BlogPostResponseDTO, 
+    BlogPostListResponseDTO, 
+    BlogPostListRequestDTO, 
+    PostByCategoryRequestDTO,
+    ActivityLogCreateDTO
+)
 from tuned.repository.exceptions import AlreadyExists, DatabaseError, NotFound
 from tuned.core.logging import get_logger
-
+from tuned.utils.variables import Variables
 if TYPE_CHECKING:
     from tuned.repository import Repository
+    from tuned.interface import Services
 
 logger: logging.Logger = get_logger(__name__)
 
 
 class BlogPostService:
-    def __init__(self, repos: Repository) -> None:
+    def __init__(self, repos: Repository, services: Services) -> None:
         self._repo = repos.blog
+        self._audit_service = services.audit.activity_log
+        # self._services = services
 
-    def create_post(self, data: BlogPostDTO) -> BlogPostResponseDTO:
+    def create_post(self, data: BlogPostDTO, actor_id: Optional[str] = None, ip_address: str = "system", user_agent: str = "system") -> BlogPostResponseDTO:
         try:
             logger.info("Creating blog post: %s", data.title)
             post = self._repo.create_blog(data)
             logger.info("Blog post created: id=%s", post.id)
-            return post
+            # return post
         except AlreadyExists:
             logger.error("Post already exists: %s", data.title)
             raise AlreadyExists("post already exists")
@@ -29,10 +39,27 @@ class BlogPostService:
             logger.error("Database error while creating post")
             raise DatabaseError("Database error while creating post")
 
+        try:
+            self._audit_service.log(ActivityLogCreateDTO(
+                action=Variables.BLOG_POST_CREATED,
+                user_id=actor_id,
+                entity_type=Variables.BLOG_POST_ENTITY_TYPE,
+                entity_id=str(post.id),
+                after=post,
+                created_by=actor_id,
+                ip_address=ip_address,
+                user_agent=user_agent
+            ))
+        except Exception as audit_exc:
+            logger.error("[BlogPostService.create_post] Audit failed: %r", audit_exc)
+
+        return BlogPostResponseDTO.from_model(post)    
+
     def get_by_slug(self, slug: str) -> BlogPostResponseDTO:
         try:
             logger.debug("Fetching blog post: %s", slug)
-            return self._repo.get_blog_post_by_slug(slug)
+            post = self._repo.get_blog_post_by_slug(slug)
+            return BlogPostResponseDTO.from_model(post)
         except NotFound:
             logger.error("Post not found: %s", slug)
             raise NotFound("post not found")
@@ -43,7 +70,8 @@ class BlogPostService:
     def get_by_id(self, id: str) -> BlogPostResponseDTO:
         try:
             logger.debug("Fetching blog post: %s", id)
-            return self._repo.get_blog_post_by_id(id)
+            post = self._repo.get_blog_post_by_id(id)
+            return BlogPostResponseDTO.from_model(post)
         except NotFound:
             logger.error("Post not found: %s", id)
             raise NotFound("post not found")
@@ -55,7 +83,8 @@ class BlogPostService:
     def list_featured(self) -> List[BlogPostResponseDTO]:
         try:
             logger.debug("Fetching featured blog posts")
-            return self._repo.get_featured()
+            posts = self._repo.get_featured()
+            return [BlogPostResponseDTO.from_model(post) for post in posts]
         except DatabaseError:
             logger.error("Database error while fetching featured posts")
             raise DatabaseError("Database error while fetching featured posts")
@@ -68,21 +97,41 @@ class BlogPostService:
             logger.error("Database error while fetching published posts")
             raise DatabaseError("Database error while fetching published posts")
     
-    def update_or_delete_post(self, id: str, data: BlogPostDTO) -> BlogPostResponseDTO:
+    def update_or_delete_post(self, id: str, data: BlogPostDTO, actor_id: Optional[str] = None, ip_address: str = "system", user_agent: str = "system") -> BlogPostResponseDTO:
+        is_delete = data.is_deleted
         try:
-            logger.debug("Updating or deleting blog post: %s", id)
-            return self._repo.update_or_delete_post(id, data)
+            post_to_update = self._repo.get_blog_post_by_id(id)
+            existing = copy.deepcopy(post_to_update)
+            logger.debug("Updating blog post: %s" if not is_delete else "Deleting blog post: %s", id)
+
+            post = self._repo.update_or_delete_post(id, data)
         except NotFound:
             logger.error("Post not found: %s", id)
-            raise NotFound("comment not found")
-        except DatabaseError:
-            logger.error("Database error while updating or deleting post")
-            raise DatabaseError("Database error while fetching comment")
-
+            raise NotFound("post not found")
+        except DatabaseError as err:
+            err_str = "Database error while updating post" if not is_delete else "Database error while deleting post"
+            logger.error(f"{err_str}: {err}")
+            raise DatabaseError(err_str)
+        try:
+            self._audit_service.log(ActivityLogCreateDTO(
+                action=Variables.BLOG_POST_UPDATED if not is_delete else Variables.BLOG_POST_DELETED,
+                user_id=actor_id,
+                entity_type=Variables.BLOG_POST_ENTITY_TYPE,
+                entity_id=str(post.id),
+                before=existing,
+                after=post,
+                created_by=actor_id,
+                ip_address=ip_address,
+                user_agent=user_agent
+            ))
+        except Exception as audit_exc:
+            logger.error("[BlogPostService.update_or_delete_post] Audit failed: %r", audit_exc)
+        return BlogPostResponseDTO.from_model(post)
     def get_by_category(self, req: PostByCategoryRequestDTO) -> List[BlogPostResponseDTO]:
         try:
             logger.debug("Fetching blog posts for category: %s", req.category_id)
-            return self._repo.get_by_category(req)
+            posts = self._repo.get_by_category(req)
+            return [BlogPostResponseDTO.from_model(post) for post in posts]
         except DatabaseError:
             logger.error("Database error while fetching posts by category")
             raise DatabaseError("Database error while fetching posts")

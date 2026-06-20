@@ -1,7 +1,8 @@
+import uuid
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Optional, List, TypeVar, Generic, TYPE_CHECKING, Any
-
+from tuned.models.enums import EmailStatus
 if TYPE_CHECKING:
     from tuned.models.audit import PriceHistory, OrderStatusHistory, ActivityLog, EmailLog
 
@@ -36,10 +37,10 @@ class PriceHistoryResponseDTO:
     @classmethod
     def from_model(cls, obj: "PriceHistory") -> "PriceHistoryResponseDTO":
         return cls(
-            id=obj.id,
-            price_rate_id=obj.price_rate_id,
-            old_price=float(obj.old_price),
-            new_price=float(obj.new_price),
+            id=str(obj.id),
+            price_rate_id=str(obj.price_rate_id),
+            old_price=obj.old_price,
+            new_price=obj.new_price,
             reason=obj.reason,
             created_at=obj.created_at,
             updated_at=obj.updated_at
@@ -70,9 +71,9 @@ class OrderStatusHistoryResponseDTO:
     @classmethod
     def from_model(cls, obj: "OrderStatusHistory") -> "OrderStatusHistoryResponseDTO":
         return cls(
-            id=obj.id,
-            order_id=obj.order_id,
-            user_id=obj.user_id,
+            id=str(obj.id),
+            order_id=str(obj.order_id),
+            user_id=str(obj.user_id),
             old_status=obj.old_status,
             new_status=obj.new_status,
             notes=obj.notes,
@@ -109,11 +110,11 @@ class ActivityLogResponseDTO:
     @classmethod
     def from_model(cls, obj: "ActivityLog") -> "ActivityLogResponseDTO":
         return cls(
-            id=obj.id,
-            user_id=obj.user_id,
+            id=str(obj.id),
+            user_id=str(obj.user_id) if obj.user_id else None,
             action=obj.action,
             entity_type=obj.entity_type,
-            entity_id=obj.entity_id,
+            entity_id=str(obj.entity_id) if obj.entity_id else None,
             before=obj.before,
             after=obj.after,
             ip_address=obj.ip_address,
@@ -125,6 +126,7 @@ class ActivityLogResponseDTO:
 class ActivityLogFilterDTO:
     user_id: Optional[str] = None
     action: Optional[str] = None
+    exclude_action: Optional[str] = None
     entity_type: Optional[str] = None
     entity_id: Optional[str] = None
     page: int = 1
@@ -137,9 +139,9 @@ class EmailLogCreateDTO:
     recipient: str
     subject: str
     template: Optional[str] = None
-    user_id: Optional[str] = None
-    order_id: Optional[str] = None
-    created_by: Optional[str] = None
+    user_id: Optional[uuid.UUID] = None
+    order_id: Optional[uuid.UUID] = None
+    created_by: Optional[uuid.UUID] = None
 
 @dataclass
 class EmailLogResponseDTO:
@@ -157,21 +159,21 @@ class EmailLogResponseDTO:
     @classmethod
     def from_model(cls, obj: "EmailLog") -> "EmailLogResponseDTO":
         return cls(
-            id=obj.id,
+            id=str(obj.id),
             recipient=obj.recipient,
             subject=obj.subject,
             template=obj.template,
             status=obj.status,
             error_message=obj.error_message,
             sent_at=obj.sent_at,
-            user_id=obj.user_id,
-            order_id=obj.order_id,
+            user_id=str(obj.user_id) if obj.user_id else None,
+            order_id=str(obj.order_id) if obj.order_id else None,
             created_at=obj.created_at
         )
 
 @dataclass
 class EmailLogUpdateDTO:
-    status: str
+    status: EmailStatus
     error_message: Optional[str] = None
     sent_at: Optional[datetime] = None
 

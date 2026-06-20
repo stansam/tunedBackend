@@ -1,15 +1,19 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime, timezone, timedelta
 from typing import Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from tuned.models.order import Order
+    from tuned.models.order import Order, OrderFile, OrderComment
 
-from tuned.models.enums import OrderStatus, Priority
+from tuned.models.enums import(
+    OrderStatus, Priority, FormatStyle,
+    LineSpacing, ReportType, FileExtensionType
+)
 
 _STATUS_PROGRESS: dict[OrderStatus, int] = {
+    OrderStatus.DRAFT:                     0,
     OrderStatus.PENDING:                   0,
     OrderStatus.ACTIVE:                   40,
     OrderStatus.REVISION:                 60,
@@ -46,6 +50,112 @@ def _status_to_string(status: OrderStatus) -> str:
     return status.name
 
 @dataclass
+class OrderResponseDTO:
+    id: str
+    order_number: str
+    client_id: str
+    status: Optional[OrderStatus]
+    paid: bool
+    total_price: Optional[str]
+    service_id: str
+    academic_level_id: str
+    deadline_id: str
+    title: Optional[str]
+    instructions: Optional[str]
+    word_count: Optional[int]
+    page_count: Optional[str]
+    format_style: Optional[str]
+    sources: Optional[int]
+    line_spacing: Optional[str]
+    due_date: Optional[str]
+    report_type: Optional[str]
+    discount_amount: Optional[str]
+    created_at: Optional[str]
+    updated_at: Optional[str]
+
+    @classmethod
+    def from_model(cls, order: "Order") -> "OrderResponseDTO":
+        return cls(
+            id=str(order.id),
+            order_number=order.order_number,
+            client_id=str(order.client_id),
+            status=order.status if order.status else None,
+            paid=order.paid,
+            total_price=str(order.total_price) if order.total_price else "0.0",
+            service_id=str(order.service_id),
+            academic_level_id=str(order.academic_level_id),
+            deadline_id=str(order.deadline_id),
+            title=order.title,
+            instructions=order.instructions,
+            word_count=order.word_count,
+            page_count=str(order.page_count) if order.page_count else "0.0",
+            format_style=order.format_style.value if order.format_style else None,
+            sources=order.sources,
+            line_spacing=order.line_spacing.value if order.line_spacing else None,
+            due_date=order.due_date.isoformat() if order.due_date else None,
+            report_type=order.report_type.value if order.report_type else None,
+            discount_amount=str(order.discount_amount) if order.discount_amount else "0.0",
+            created_at=order.created_at.isoformat() if order.created_at else None,
+            updated_at=order.updated_at.isoformat() if order.updated_at else None,
+        )
+
+@dataclass
+class OrderListRequestDTO:
+    # user_id: str
+    status: Optional[str] = None
+    q: Optional[str] = None
+    sort: Optional[str] = "created_at"
+    order: Optional[str] = "desc"
+    page: Optional[int] = 1
+    per_page: Optional[int] = 10
+    service_id: Optional[str] = None
+    academic_level_id: Optional[str] = None
+    # deadline_id: Optional[str] = None
+
+    def __post_init__(self):
+        if isinstance(self.status, str):
+            self.status = OrderStatus(self.status)
+        if isinstance(self.sort, str):
+            self.sort = self.sort.strip()
+        if isinstance(self.order, str):
+            self.order = self.order.strip().lower()
+        if isinstance(self.page, str):
+            self.page = int(self.page)
+        if isinstance(self.per_page, str):
+            self.per_page = int(self.per_page)
+        if isinstance(self.service_id, str):
+            self.service_id = self.service_id.strip()
+        if isinstance(self.academic_level_id, str):
+            self.academic_level_id = self.academic_level_id.strip()
+        # if isinstance(self.deadline_id, str):
+        #     self.deadline_id = self.deadline_id.strip()
+
+@dataclass
+class OrderListResponseDTO:
+    orders: list[OrderResponseDTO]
+    total: int
+    page: int
+    per_page: int
+    sort: str
+    order: str
+
+    def __init__(
+        self,
+        orders: list[OrderResponseDTO],
+        total: int,
+        page: int,
+        per_page: int,
+        sort: str,
+        order: str,
+    ) -> None:
+        self.orders = orders
+        self.total = total
+        self.page = page
+        self.per_page = per_page
+        self.sort = sort
+        self.order = order
+
+@dataclass
 class OrderProgressDTO:
     id:           str
     order_number: str
@@ -66,12 +176,11 @@ class OrderProgressDTO:
             ),
         )
 
-
 @dataclass
 class UpcomingDeadlineDTO:
     id:           str
     order_number: str
-    title:        str
+    title:        Optional[str]
     due_date:     str
     priority:     str
 
@@ -86,9 +195,241 @@ class UpcomingDeadlineDTO:
             priority=derive_priority(due_date_dt).name,
         )
 
-
 @dataclass
 class ReorderResponseDTO:
     order_id:     str
     order_number: str
     redirect_url: str
+
+@dataclass
+class CreateOrderRequestDTO:
+    service_id: str
+    level_id: str
+    title: str
+    # description: str
+    word_count: int
+    page_count: float
+    format_style: FormatStyle
+    sources: int
+    line_spacing: LineSpacing
+    due_date: datetime
+    deadline_id: Optional[str] = ""
+    instructions: Optional[str] = None
+    report_type: Optional[ReportType] = None
+    discount_code: Optional[str] = None
+    points_to_redeem: int = 0
+
+    def __post_init__(self):
+        if isinstance(self.format_style, str):
+            self.format_style = FormatStyle(self.format_style)
+        if isinstance(self.line_spacing, str):
+            self.line_spacing = LineSpacing(self.line_spacing)
+        if isinstance(self.report_type, str):
+            self.report_type = ReportType(self.report_type)
+
+@dataclass
+class CreateOrderFileDTO:
+    filename: str
+    file_path: str
+    file_size: int
+    file_type: FileExtensionType
+    is_from_client: bool = True
+    asset_id: Optional[str] = None
+
+    def __post_init__(self):
+        if isinstance(self.file_type, str):
+            self.file_type = FileExtensionType(self.file_type)
+
+@dataclass
+class CreateOrderResponseDTO:
+    order_id: str
+    order_number: str
+    # success: bool
+    # message: str
+
+@dataclass
+class OrderFileUploadResponseDTO:
+    uploaded_count: int
+    file_ids: list[str]
+
+@dataclass
+class OrderDraftCreateDTO:
+    user_id: str
+    service_id: Optional[str] = None
+    academic_level_id: Optional[str] = None
+    deadline_id: Optional[str] = None
+    title: Optional[str] = None
+    instructions: Optional[str] = None
+    word_count: Optional[int] = None
+    page_count: Optional[float] = None
+    format_style: Optional[FormatStyle] = None
+    sources: Optional[int] = None
+    line_spacing: Optional[LineSpacing] = None
+    due_date: Optional[datetime] = None
+    report_type: Optional[ReportType] = None
+    discount_code: Optional[str] = None
+    points_to_redeem: int = 0
+
+    def __post_init__(self):
+        if isinstance(self.format_style, str) and self.format_style:
+            self.format_style = FormatStyle(self.format_style)
+        if isinstance(self.line_spacing, str) and self.line_spacing:
+            self.line_spacing = LineSpacing(self.line_spacing)
+        if isinstance(self.report_type, str) and self.report_type:
+            self.report_type = ReportType(self.report_type)
+
+@dataclass
+class OrderDraftResponseDTO:
+    id: str
+    status: str
+    service_id: Optional[str]
+    academic_level_id: Optional[str]
+    deadline_id: Optional[str]
+    title: Optional[str]
+    instructions: Optional[str]
+    word_count: Optional[int]
+    page_count: Optional[str]
+    format_style: Optional[str]
+    sources: Optional[int]
+    line_spacing: Optional[str]
+    due_date: Optional[str]
+    report_type: Optional[str]
+    discount_amount: Optional[str]
+
+    @classmethod
+    def from_model(cls, order: "Order") -> "OrderDraftResponseDTO":
+        return cls(
+            id=str(order.id),
+            status=order.status.value,
+            service_id=str(order.service_id) if order.service_id else None,
+            academic_level_id=str(order.academic_level_id) if order.academic_level_id else None,
+            deadline_id=str(order.deadline_id) if order.deadline_id else None,
+            title=order.title,
+            instructions=order.instructions,
+            word_count=order.word_count,
+            page_count=str(order.page_count) if order.page_count else "0.0",
+            format_style=order.format_style.value if order.format_style else None,
+            sources=order.sources,
+            line_spacing=order.line_spacing.value if order.line_spacing else None,
+            due_date=order.due_date.isoformat() if order.due_date else None,
+            report_type=order.report_type.value if order.report_type else None,
+            discount_amount=str(order.discount_amount) if order.discount_amount else "0.0"
+        )
+
+@dataclass
+class OrderFileResponseDTO:
+    id: str
+    filename: str
+    url: str
+    size: float
+    type: str
+    created_at: str
+
+    @classmethod
+    def from_model(cls, file: "OrderFile") -> "OrderFileResponseDTO":
+        return cls(
+            id=str(file.id),
+            filename=file.filename,
+            url=file.file_path,
+            size=file.file_size or 0,
+            type=file.file_type.value if file.file_type else "unknown",
+            created_at=file.created_at.isoformat() if file.created_at else ""
+        )
+
+@dataclass
+class OrderDetailsResponseDTO:
+  id: str
+  order_number: str
+  client_id: str
+  status: str
+  paid: bool
+  total_price: Optional[str]
+  service_id: str
+  service_name: Optional[str]
+  academic_level_id: str
+  academic_level_name: Optional[str]
+  deadline_id: str
+  title: Optional[str]
+  instructions: Optional[str]
+  word_count: Optional[int]
+  page_count: Optional[str]
+  format_style: Optional[str]
+  sources: Optional[int]
+  line_spacing: Optional[str]
+  due_date: Optional[str]
+  report_type: Optional[str]
+  discount_amount: Optional[str]
+  created_at: str
+  client_username: str
+  attachments: list[OrderFileResponseDTO]
+
+  @classmethod
+  def from_model(cls, order: "Order") -> "OrderDetailsResponseDTO":
+    return cls(
+        id=str(order.id),
+        order_number=order.order_number,
+        client_id=str(order.client_id),
+        status=order.status.value,
+        paid=order.paid,
+        total_price=str(order.total_price) if order.total_price else "0.0",
+        service_id=str(order.service_id),
+        service_name=order.service.name if order.service else None,
+        academic_level_id=str(order.academic_level_id),
+        academic_level_name=order.academic_level.name if order.academic_level else None,
+        deadline_id=str(order.deadline_id),
+        title=order.title,
+        instructions=order.instructions,
+        word_count=order.word_count,
+        page_count=str(order.page_count) if order.page_count else "0.0",
+        format_style=order.format_style.value if order.format_style else None,
+        sources=order.sources,
+        line_spacing=order.line_spacing.value if order.line_spacing else None,
+        due_date=order.due_date.isoformat() if order.due_date else None,
+        report_type=order.report_type.value if order.report_type else None,
+        discount_amount=str(order.discount_amount) if order.discount_amount else "0.0",
+        created_at=order.created_at.isoformat(),
+        client_username=order.client.username,
+        attachments=[OrderFileResponseDTO.from_model(file) for file in order.files]
+)
+
+@dataclass
+class OrderCommentResponseDTO:
+    id: str
+    order_id: str
+    sender_id: str
+    sender_name: str
+    sender_role: str
+    content: str
+    created_at: str
+    is_read: bool
+    attachments: list[OrderFileResponseDTO]
+
+    @classmethod
+    def from_model(cls, comment: "OrderComment") -> "OrderCommentResponseDTO":
+        role = "admin" if comment.is_admin else "client"
+        name = comment.user.username if comment.user else "Unknown"
+        return cls(
+            id=str(comment.id),
+            order_id=str(comment.order_id) if comment.order_id else "",
+            sender_id=str(comment.user_id) if comment.user_id else "",
+            sender_name=name,
+            sender_role=role,
+            content=comment.message or "",
+            created_at=comment.created_at.isoformat() if comment.created_at else "",
+            is_read=comment.is_read,
+            attachments=[
+                OrderFileResponseDTO.from_model(f)
+                for f in comment.attachments
+            ] if hasattr(comment, "attachments") else [],
+        )
+
+@dataclass
+class CreateCommentRequestDTO:
+    order_id: str
+    content: str
+    attachment_ids: list[str] = field(default_factory=list)
+
+@dataclass
+class UpdateCommentRequestDTO:
+    comment_id: str
+    content: str

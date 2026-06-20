@@ -1,13 +1,13 @@
 from __future__ import annotations
 
-from typing import Any, cast
+from typing import Any
 from celery import Task
 
 from celery.utils.log import get_task_logger
 
 from tuned.celery_app import celery_app
 from tuned.models import User
-from tuned.extensions import db
+from tuned.core.exceptions import NotFound
 from tuned.services.email_service import send_welcome_email
 
 logger = get_task_logger(__name__)
@@ -54,11 +54,9 @@ def send_transactional_email(
     acks_late=True,
 )
 def send_welcome_task(self: Task, user_id: str) -> None:
-    from tuned.repository.user.get import GetUserByID
-    from tuned.repository.exceptions import NotFound
-    from tuned.extensions import db
+    from tuned.utils.dependencies import get_services
     try:
-        user: User = GetUserByID(cast(Any, db.session)).execute(user_id)
+        user: User = get_services().user.get_user_obj(user_id) # GetUserByID(cast(Any, db.session)).execute(user_id)
         send_welcome_email(user)
     except NotFound:
         logger.warning(f"[email] send_welcome_task: user {user_id} not found — skipping")

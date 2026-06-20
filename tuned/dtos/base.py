@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Optional, Protocol
+from typing import Optional # , Protocol
 from datetime import datetime
 
 # class PaginationModel(Protocol):

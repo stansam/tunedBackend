@@ -1,0 +1,62 @@
+# python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# virtualenv
+venv/
+.env
+
+# flask/runtime
+instance/
+.webassets-cache
+*.rdb
+
+# tests/cache
+.pytest_cache/
+.mypy_cache/
+
+# uploads/temp
+uploads/
+temp/
+backups/
+
+# local/dev artifacts
+logs/
+dist/
+build/
+
+# databases
+app.db
+
+# node
+node_modules/
+
+# docs/dev notes
+TODO
+TODO.md
+SETUP.md
+orderFlow.md
+Analysis.md
+audit_report.md
+implementation_plan.md
+
+# IDE/git
+.git
+.gitignore
+.codex
+
+# OS
+.DS_Store
+
+# binaries
+ngrok.exe
+
+# optional large assets
+profile_pics/
+
+# local-only
+.python-version
+
+requirements-ver.txt

@@ -10,13 +10,14 @@ from tuned.repository.price import (
 )
 from tuned.repository.audit import AuditRepository
 from tuned.repository.order import OrderRepository
+from tuned.repository.order_delivery import OrderDeliveryRepository
 from tuned.repository.preferences import PreferenceRepository
 from tuned.repository.payment import PaymentRepository
 from tuned.repository.communication import NewsletterRepository
 from tuned.repository.user.notification import NotificationRepository
-from tuned.extensions import db
-from sqlalchemy.orm import Session, scoped_session
-from typing import Optional, Union, Any
+from tuned.repository.media import MediaRepository
+from tuned.repository.admin import AdminAnalyticsRepository, AdminOrderRepository, AdminUserRepository
+from typing import Optional, Any
 
 class Repository:
     def __init__(self, session: Any) -> None:
@@ -35,11 +36,16 @@ class Repository:
         self._pricing_category: Optional[PricingCategoryRepository] = None
         self._audit: Optional[AuditRepository] = None
         self._order: Optional[OrderRepository] = None
+        self._order_delivery: Optional[OrderDeliveryRepository] = None
         self._preferences: Optional[PreferenceRepository] = None
         self._payment: Optional[PaymentRepository] = None
         self._notification: Optional[NotificationRepository] = None
         self._tag: Optional[TagRepository] = None
         self._newsletter: Optional[NewsletterRepository] = None
+        self._media: Optional[MediaRepository] = None
+        self._admin_analytics: Optional[AdminAnalyticsRepository] = None
+        self._admin_orders: Optional[AdminOrderRepository] = None
+        self._admin_users: Optional[AdminUserRepository] = None
 
     @property
     def user(self) -> UserRepository:
@@ -126,6 +132,12 @@ class Repository:
         return self._order
 
     @property
+    def order_delivery(self) -> OrderDeliveryRepository:
+        if not self._order_delivery:
+            self._order_delivery = OrderDeliveryRepository(self.session)
+        return self._order_delivery
+
+    @property
     def preferences(self) -> PreferenceRepository:
         if not self._preferences:
             self._preferences = PreferenceRepository(self.session)
@@ -154,3 +166,27 @@ class Repository:
         if not self._newsletter:
             self._newsletter = NewsletterRepository(self.session)
         return self._newsletter
+
+    @property
+    def media(self) -> MediaRepository:
+        if not self._media:
+            self._media = MediaRepository(self.session)
+        return self._media
+
+    @property
+    def admin_analytics(self) -> AdminAnalyticsRepository:
+        if not self._admin_analytics:
+            self._admin_analytics = AdminAnalyticsRepository(self.session)
+        return self._admin_analytics
+    
+    @property
+    def admin_orders(self) -> AdminOrderRepository:
+        if not self._admin_orders:
+            self._admin_orders = AdminOrderRepository(self.session)
+        return self._admin_orders
+
+    @property
+    def admin_users(self) -> AdminUserRepository:
+        if not self._admin_users:
+            self._admin_users = AdminUserRepository(self.session)
+        return self._admin_users

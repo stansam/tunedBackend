@@ -1,3 +1,4 @@
+from uuid import UUID
 from sqlalchemy.orm import Session
 from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
@@ -15,12 +16,12 @@ class CreateInvoice:
     def execute(self, data: InvoiceCreateDTO) -> InvoiceResponseDTO:
         try:
             invoice = Invoice(
-                order_id=data.order_id,
-                user_id=data.user_id,
+                order_id=UUID(data.order_id),
+                user_id=UUID(data.user_id),
                 subtotal=data.subtotal,
                 total=data.total,
                 due_date=data.due_date,
-                payment_id=data.payment_id,
+                payment_id=UUID(data.payment_id),
                 discount=data.discount if data.discount is not None else 0.0,
                 tax=data.tax if data.tax is not None else 0.0,
                 paid=data.paid if data.paid is not None else False,
@@ -79,7 +80,7 @@ class UpdateInvoice:
             if data.paid is not None:
                 invoice.paid = data.paid
             if data.payment_id is not None:
-                invoice.payment_id = data.payment_id
+                invoice.payment_id = UUID(data.payment_id)
                 
             self.session.flush()
             return InvoiceResponseDTO.from_model(invoice)
@@ -89,3 +90,18 @@ class UpdateInvoice:
         except SQLAlchemyError as e:
             logger.error(f"[UpdateInvoice] DB error: {e}")
             raise DatabaseError("Database error while updating invoice.") from e
+
+class GetInvoiceByPaymentID:
+    def __init__(self, session: Session) -> None:
+        self.session = session
+
+    def execute(self, payment_id: str) -> InvoiceResponseDTO:
+        try:
+            stmt = select(Invoice).where(Invoice.payment_id == UUID(payment_id))
+            invoice = self.session.scalar(stmt)
+            if not invoice:
+                raise NotFound("Invoice not found for this payment.")
+            return InvoiceResponseDTO.from_model(invoice)
+        except SQLAlchemyError as e:
+            logger.error(f"[GetInvoiceByPaymentID] DB error: {e}")
+            raise DatabaseError("Database error while fetching invoice by payment ID.") from e

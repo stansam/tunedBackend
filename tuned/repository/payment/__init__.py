@@ -1,4 +1,6 @@
 from typing import Optional
+from sqlalchemy.exc import SQLAlchemyError
+from tuned.core.exceptions import DatabaseError
 from tuned.repository.payment.repository import (
     PaymentsManager,
     InvoiceManager,
@@ -20,6 +22,16 @@ class PaymentRepository:
         self._refund: Optional[RefundManager] = None
         self._accepted_method: Optional[AcceptedMethodRepositoryManager] = None
 
+    def save(self) -> None:
+        try:
+            self.session.commit()
+        except SQLAlchemyError as e:
+            self.session.rollback()
+            raise DatabaseError(f"Database error while saving preferences: {str(e)}") from e
+
+    def rollback(self) -> None:
+        self.session.rollback()
+        
     @property
     def payment(self) -> PaymentsManager:
         if not self._payment:
@@ -55,3 +67,5 @@ class PaymentRepository:
         if not self._accepted_method:
             self._accepted_method = AcceptedMethodRepositoryManager(self.session)
         return self._accepted_method
+    
+    

@@ -1,9 +1,11 @@
-from tuned.extensions import db
-from tuned.models.base import BaseModel
-from datetime import datetime, timezone
-from tuned.models.enums import RevisionRequestStatus, Priority
+import uuid
 from sqlalchemy.orm import validates, Mapped, mapped_column, relationship
+from sqlalchemy.dialects.postgresql import UUID, ENUM
 from typing import Optional, TYPE_CHECKING, Any
+from datetime import datetime, timezone
+from tuned.models.base import BaseModel
+from tuned.models.enums import RevisionRequestStatus, Priority
+from tuned.extensions import db
 
 if TYPE_CHECKING:
     from tuned.models.order import Order
@@ -13,16 +15,16 @@ if TYPE_CHECKING:
 class OrderRevisionRequest(BaseModel):
     __tablename__ = 'order_revision_requests'
 
-    order_id: Mapped[str] = mapped_column(db.String(36), db.ForeignKey('order.id', ondelete='CASCADE'), nullable=False, index=True)
-    delivery_id: Mapped[str] = mapped_column(db.String(36), db.ForeignKey('order_delivery.id', ondelete='CASCADE'), nullable=False)
-    requested_by: Mapped[str] = mapped_column(db.String(36), db.ForeignKey('users.id'), nullable=False)
-    reviewed_by: Mapped[Optional[str]] = mapped_column(db.String(36), db.ForeignKey('users.id'), nullable=True)
+    order_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), db.ForeignKey('order.id', ondelete='CASCADE'), nullable=False, index=True)
+    delivery_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), db.ForeignKey('order_delivery.id', ondelete='CASCADE'), nullable=False, index=True)
+    requested_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), db.ForeignKey('users.id'), nullable=False, index=True)
+    reviewed_by: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), db.ForeignKey('users.id'), nullable=True, index=True)
     
     revision_notes: Mapped[str] = mapped_column(db.Text, nullable=False)
     internal_notes: Mapped[Optional[str]] = mapped_column(db.Text, nullable=True)
     
-    status: Mapped[RevisionRequestStatus] = mapped_column(db.Enum(RevisionRequestStatus), default=RevisionRequestStatus.PENDING, nullable=False, index=True)
-    priority: Mapped[Priority] = mapped_column(db.Enum(Priority), default=Priority.NORMAL, nullable=False)
+    status: Mapped[RevisionRequestStatus] = mapped_column(ENUM(RevisionRequestStatus, name="revisionrequeststatus"), default=RevisionRequestStatus.PENDING, nullable=False, index=True)
+    priority: Mapped[Priority] = mapped_column(ENUM(Priority, name="priority"), default=Priority.NORMAL, nullable=False)
     
 
     requested_at: Mapped[datetime] = mapped_column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)

@@ -46,7 +46,7 @@ class ReferralEventHandlers:
             from tuned.tasks.notifications import create_in_app_notification
             from tuned.models.enums import NotificationType
             room = f"user_{referrer_id}"
-            socketio.emit('dashboard:points_updated', payload, room=room)
+            socketio.emit('dashboard:points_updated', payload, to=room)
             create_in_app_notification.delay(
                 user_id=str(referrer_id),
                 title="Referral Points Earned!",

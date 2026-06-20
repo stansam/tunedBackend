@@ -4,6 +4,7 @@ import click
 from flask.cli import with_appcontext
 
 from tuned.manage.commands.create_users import create_users as _create_users
+from tuned.manage.commands.create_payment_methods import create_payment_methods as _create_payment_methods
 from tuned.manage.commands.create_content import create_content as _create_content
 from tuned.manage.commands.create_prices import create_prices as _create_prices
 from tuned.manage.commands.create_services import create_services as _create_services
@@ -32,14 +33,15 @@ def seed_db(ctx: click.Context) -> None:
     click.echo("=" * 60)
 
     steps = [
-        (_create_users,        "Users"),
-        (_create_content,      "Content (Academic Levels + Deadlines)"),
-        (_create_prices,       "Prices (Categories + Rates)"),
-        (_create_services,     "Services (Categories + Services)"),
-        (_create_samples,      "Samples"),
-        (_create_testimonials, "Testimonials"),
-        (_create_faqs,         "FAQs"),
-        (_create_blogs,        "Blog (Categories + Posts)"),
+        (_create_users,           "Users"),
+        (_create_payment_methods, "Payment Methods"),
+        (_create_content,         "Content (Academic Levels + Deadlines)"),
+        (_create_prices,          "Prices (Categories + Rates)"),
+        (_create_services,        "Services (Categories + Services)"),
+        (_create_samples,         "Samples"),
+        (_create_testimonials,    "Testimonials"),
+        (_create_faqs,            "FAQs"),
+        (_create_blogs,           "Blog (Categories + Posts)"),
     ]
 
     for cmd, label in steps:

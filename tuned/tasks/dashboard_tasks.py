@@ -41,7 +41,7 @@ def emit_actionable_alert(
                 "metadata":   metadata or {},
                 "created_at": datetime.now(timezone.utc).isoformat(),
             },
-            room=f"user_{client_id}",
+            to=f"user_{client_id}",
         )
         logger.info(
             "[emit_actionable_alert] Sent %s alert to user %s",

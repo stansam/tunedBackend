@@ -1,9 +1,11 @@
-from tuned.extensions import db
-from tuned.models.base import BaseModel
-from datetime import datetime, timezone
-from tuned.models.enums import ExtensionRequestStatus, Priority
+import uuid
 from sqlalchemy.orm import validates, Mapped, mapped_column, relationship
 from typing import Optional, TYPE_CHECKING, Any
+from sqlalchemy.dialects.postgresql import UUID, ENUM
+from datetime import datetime, timezone
+from tuned.extensions import db
+from tuned.models.base import BaseModel
+from tuned.models.enums import ExtensionRequestStatus, Priority
 
 if TYPE_CHECKING:
     from tuned.models.order import Order
@@ -12,9 +14,9 @@ if TYPE_CHECKING:
 class OrderDeadlineExtensionRequest(BaseModel):    
     __tablename__ = 'order_deadline_extension_requests'
     
-    order_id: Mapped[str] = mapped_column(db.String(36), db.ForeignKey('order.id', ondelete='CASCADE'), nullable=False, index=True)
-    requested_by: Mapped[str] = mapped_column(db.String(36), db.ForeignKey('users.id'), nullable=False)
-    reviewed_by: Mapped[Optional[str]] = mapped_column(db.String(36), db.ForeignKey('users.id'), nullable=True)
+    order_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), db.ForeignKey('order.id', ondelete='CASCADE'), nullable=False, index=True)
+    requested_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), db.ForeignKey('users.id'), nullable=False, index=True)
+    reviewed_by: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), db.ForeignKey('users.id'), nullable=True, index=True)
     
     requested_hours: Mapped[int] = mapped_column(db.Integer, nullable=False)  # Hours of extension requested by admin
     reason: Mapped[str] = mapped_column(db.Text, nullable=False)  # Admin's reason for needing more time
@@ -23,8 +25,8 @@ class OrderDeadlineExtensionRequest(BaseModel):
     original_due_date: Mapped[datetime] = mapped_column(db.DateTime(timezone=True), nullable=False)
     new_due_date: Mapped[Optional[datetime]] = mapped_column(db.DateTime(timezone=True), nullable=True)  # Set when approved by client
 
-    status: Mapped[ExtensionRequestStatus] = mapped_column(db.Enum(ExtensionRequestStatus), default=ExtensionRequestStatus.PENDING, nullable=False, index=True)
-    priority: Mapped[Priority] = mapped_column(db.Enum(Priority), default=Priority.NORMAL, nullable=False)
+    status: Mapped[ExtensionRequestStatus] = mapped_column(ENUM(ExtensionRequestStatus, name="extensionrequeststatus"), default=ExtensionRequestStatus.PENDING, nullable=False, index=True)
+    priority: Mapped[Priority] = mapped_column(ENUM(Priority, name="priority"), default=Priority.NORMAL, nullable=False)
 
     requested_at: Mapped[datetime] = mapped_column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
     reviewed_at: Mapped[Optional[datetime]] = mapped_column(db.DateTime(timezone=True), nullable=True)

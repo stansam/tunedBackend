@@ -33,3 +33,15 @@ def rate_limit(max_requests: int = 5, window: int = 60, key_prefix: str = 'rate_
             return f(*args, **kwargs)
         return wrapped
     return decorator
+
+def admin_required(f: Callable[..., Any]) -> Callable[..., Any]:
+    @wraps(f)
+    def decorated(*args: Any, **kwargs: Any) -> Any:
+        from flask_login import current_user
+        from tuned.utils.responses import error_response
+        if not current_user.is_authenticated:
+            return error_response(message="Authentication required", status=401)
+        if not getattr(current_user, "is_admin", False):
+            return error_response(message="Administrator privilege required", status=403)
+        return f(*args, **kwargs)
+    return decorated

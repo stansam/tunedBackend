@@ -68,12 +68,12 @@ class ServiceResponseDTO(BaseDTO):
     @classmethod
     def from_model(cls, model: "Service") -> "ServiceResponseDTO":
         return cls(
-            id=model.id,
+            id=str(model.id),
             name=model.name,
             description=model.description,
-            category_id=model.category_id,
+            category_id=str(model.category_id),
             featured=model.featured,
-            pricing_category_id=model.pricing_category_id,
+            pricing_category_id=str(model.pricing_category_id),
             slug=model.slug,
             is_active=model.is_active,
 
@@ -91,7 +91,7 @@ class ServiceCategoryResponseDTO(BaseDTO):
     @classmethod
     def from_model(cls, model: "ServiceCategory") -> "ServiceCategoryResponseDTO":
         return cls(
-            id=model.id,
+            id=str(model.id),
             name=model.name,
             description=model.description,
             order=model.order,

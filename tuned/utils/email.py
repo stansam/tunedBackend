@@ -1,9 +1,14 @@
+from tuned.dtos.audit import EmailLogCreateDTO, EmailLogUpdateDTO
 from flask import current_app, render_template
+# from tuned.interface.audit import AuditService
+from tuned.core.exceptions import DatabaseError
+from tuned.utils.dependencies import get_services
 from flask_mail import Mail, Message
-from tuned.models.audit import EmailLog
+from tuned.models.enums import EmailStatus
 from tuned.extensions import db, mail
 from typing import List, Optional, Dict, Any, cast
 import logging
+from datetime import datetime, timezone
 
 
 logger = logging.getLogger(__name__)
@@ -17,12 +22,21 @@ def send_email(
     **context: Any
 ) -> bool:
     recipients: List[str] = [to] if isinstance(to, str) else list(to)
-    
-    email_log = EmailLog.log_email(
+    data = EmailLogCreateDTO(
         recipient=recipients[0] if recipients else '',
         subject=subject,
-        template=template
+        template=template,
+        user_id=None,
+        order_id=None,
+        created_by=None
     )
+    try:
+        email_log = get_services().audit.email_log.log(data)
+        db.session.commit()
+    except DatabaseError as e:
+        db.session.rollback()
+        logger.error(f"Failed to log email: {str(e)}")
+        email_log = None
     
     try:
         html = render_template(f'emails/{template}.html', **context)
@@ -35,14 +49,33 @@ def send_email(
         )
         
         mail.send(msg)
-        
-        email_log.mark_sent()
+        try:
+            if email_log is not None:
+                update_data = EmailLogUpdateDTO(
+                    status=EmailStatus.SENT,
+                    sent_at=datetime.now(timezone.utc)
+                )
+                _ =  get_services().audit.email_log.update_status(email_log.id, update_data)
+                db.session.commit()
+        except DatabaseError as e:
+            db.session.rollback()
+            logger.error(f"Failed to mark email as sent: {str(e)}")
         
         logger.info(f"Email sent successfully to {recipients[0]}: {subject}")
         return True
         
     except Exception as e:
-        email_log.mark_failed(str(e))
+        try:
+            if email_log is not None:
+                update_data = EmailLogUpdateDTO(
+                    status=EmailStatus.FAILED,
+                    error_message=str(e)
+                )
+                _ =  get_services().audit.email_log.update_status(email_log.id, update_data)
+                db.session.commit()
+        except DatabaseError as e:
+            db.session.rollback()
+            logger.error(f"Failed to mark email as failed: {str(e)}")
         
         logger.error(f"Failed to send email to {recipients[0]}: {str(e)}")
         return False

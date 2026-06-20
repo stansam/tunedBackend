@@ -1,4 +1,5 @@
-from typing import Any
+from typing import Any, Optional
+from uuid import UUID
 from sqlalchemy.orm import Session
 from sqlalchemy import select, func
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
@@ -25,10 +26,10 @@ class CreatePayment:
             except ValueError:
                 raise ValueError(f"Invalid payment status: {data.status}")
             payment = Payment(
-                order_id=data.order_id,
-                user_id=data.user_id,
+                order_id=UUID(data.order_id),
+                user_id=UUID(data.user_id),
                 amount=data.amount,
-                accepted_method_id=data.accepted_method_id,
+                accepted_method_id=UUID(data.accepted_method_id),
                 status=status,
             )
             self.session.add(payment)
@@ -45,13 +46,13 @@ class GetPaymentByID:
     def __init__(self, session: Session) -> None:
         self.session = session
 
-    def execute(self, payment_id: str) -> PaymentResponseDTO:
+    def execute(self, payment_id: str) -> Payment:
         try:
             stmt = select(Payment).where(Payment.id == payment_id)
             payment = self.session.scalar(stmt)
             if not payment:
                 raise NotFound("Payment not found.")
-            return PaymentResponseDTO.from_model(payment)
+            return payment
         except SQLAlchemyError as e:
             logger.error(f"[GetPaymentByID] DB error: {e}")
             raise DatabaseError("Database error while fetching payment.") from e
@@ -109,9 +110,9 @@ class GetSpendingVelocity:
         self.session = session
 
     def _month_label_expr(self, column: Any) -> Any: # TODO: Type Hint the data dict
-        if current_app.config["FLASK_ENV"] == Variables.PRODUCTION:
-            return func.to_char(column, "YYYY-MM")
-        return func.strftime("%Y-%m", column)
+        # if current_app.config["FLASK_ENV"] == Variables.PRODUCTION:
+        return func.to_char(column, "YYYY-MM")
+        # return func.strftime("%Y-%m", column)
 
     def execute(self, client_id: str, months: int = 6) -> list[tuple[str, float]]:
         try:
@@ -136,3 +137,73 @@ class GetSpendingVelocity:
         except SQLAlchemyError as exc:
             logger.error("[GetSpendingVelocity] DB error: %s", exc)
             raise DatabaseError(str(exc)) from exc
+
+class GetPendingPaymentByOrderID:
+    def __init__(self, session: Session) -> None:
+        self.session = session
+
+    def execute(self, order_id: str, accepted_method_id: str) -> Payment:
+        try:
+            stmt = select(Payment).where(
+                Payment.order_id == order_id,
+                Payment.accepted_method_id == accepted_method_id,
+                Payment.status == PaymentStatus.PENDING
+            )
+            payment = self.session.scalar(stmt)
+            if not payment:
+                raise NotFound("Payment not found.")
+            return payment
+        except SQLAlchemyError as e:
+            logger.error(f"[GetPendingPaymentByOrderID] DB error: {e}")
+            raise DatabaseError("Database error while fetching payments for order.") from e
+
+class GetPendingPaymentByReferenceID:
+    def __init__(self, session: Session) -> None:
+        self.session = session
+
+    def execute(self, reference_id: str) -> Payment:
+        try:
+            stmt = select(Payment).where(
+                Payment.client_proof_reference == reference_id,
+                Payment.status.in_([PaymentStatus.PENDING, PaymentStatus.PENDING_VERIFICATION])
+            )
+            payment = self.session.scalar(stmt)
+            if not payment:
+                raise NotFound("Payment not found.")
+            return payment
+        except SQLAlchemyError as e:
+            logger.error(f"[GetPendingPaymentByReferenceID] DB error: {e}")
+            raise DatabaseError("Database error while fetching payments for order.") from e
+
+
+class GetPaymentsList:
+    def __init__(self, session: Session) -> None:
+        self.session = session
+
+    def execute(self, user_id: Optional[str] = None, status: Optional[str] = None, page: int = 1, per_page: int = 10) -> tuple[list[PaymentResponseDTO], int]:
+        try:
+            stmt = select(Payment)
+            if user_id:
+                stmt = stmt.where(Payment.user_id == UUID(user_id))
+            if status:
+                try:
+                    stmt = stmt.where(Payment.status == PaymentStatus(status.lower()))
+                except ValueError:
+                    try:
+                        stmt = stmt.where(Payment.status == PaymentStatus[status.upper()])
+                    except KeyError:
+                        raise ValueError(f"Invalid payment status filter: {status}")
+            
+            # Count query
+            count_stmt = select(func.count()).select_from(stmt.subquery())
+            total = self.session.scalar(count_stmt) or 0
+            
+            # Pagination & ordering (newest first)
+            stmt = stmt.order_by(Payment.created_at.desc()).offset((page - 1) * per_page).limit(per_page)
+            payments = self.session.scalars(stmt).all()
+            
+            return [PaymentResponseDTO.from_model(p) for p in payments], total
+        except SQLAlchemyError as e:
+            logger.error(f"[GetPaymentsList] DB error: {e}")
+            raise DatabaseError("Database error while listing payments.") from e
+

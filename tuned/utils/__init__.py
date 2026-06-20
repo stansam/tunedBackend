@@ -42,7 +42,6 @@ from tuned.utils.decorators import (
     rate_limit
 )
 
-
 __all__ = [
     # Response utilities
     'success_response',

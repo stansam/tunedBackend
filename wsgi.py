@@ -1,16 +1,15 @@
-"""
-WSGI production entry point.
+from gevent import monkey
+monkey.patch_all()
 
-Use with Gunicorn:
-    gunicorn -w 4 -b 0.0.0.0:8000 wsgi:app
-    
-For SocketIO support with Gunicorn:
-    gunicorn -k eventlet -w 1 -b 0.0.0.0:8000 wsgi:app
-    
-or with gevent:
-    gunicorn -k gevent -w 4 -b 0.0.0.0:8000 wsgi:app
-"""
 from tuned import create_app
+from tuned.extensions import socketio
 
-# Create production app instance
-app = create_app('production')
+app = create_app()
+
+if __name__ == '__main__':
+    socketio.run(
+        app,
+        host='0.0.0.0',
+        port=5000,
+        debug=app.debug
+    )

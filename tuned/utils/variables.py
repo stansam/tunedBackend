@@ -9,7 +9,7 @@ class Variables:
     AVATAR_UPDATE_ACTION = "avatar_update"
     AVATAR_DELETE_ACTION = "avatar_delete"
 
-    ORDER_ENTITY_TYPE = "Order"
+    # ORDER_ENTITY_TYPE = "Order"
     
     PAYMENT_CREATE_ACTION = "payment_create"
     PAYMENT_UPDATE_ACTION = "payment_update"
@@ -45,5 +45,50 @@ class Variables:
     # ALREADY_EXISTS = "already_exists"
     # INVALID = "invalid"
     # NO_TOKEN = "no_token"
+
+    ORDER_FILE_ENTITY_TYPE = "OrderFile"
+    ORDER_DRAFT_CREATED = "order_draft_created"
+    ORDER_ENTITY_TYPE = "Order"
+    ORDER_REORDERED = "order_reordered"
+    ORDER_CREATED = "order_created"
+    ORDER_FILES_UPLOADED = "order_files_uploaded"
+    ORDER_PAID = "order_paid"
+    ORDER_CANCELLED = "order_cancelled"
+    ORDER_DELIVERED = "order_delivered"
+    ORDER_COMPLETED = "order_completed"
+    ORDER_REFUNDED = "refunded"
+    ORDER_PARTIALLY_REFUNDED = "partially_refunded"
+    ORDER_LATE = "late"
+    ORDER_LATE_COMPLETED = "late_completed"
+
+    ORDER_DELIVERY_CREATED = "order_delivery_created"
+    ORDER_DELIVERY_UPDATED = "order_delivery_updated"
+    ORDER_DELIVERY_DELETED = "order_delivery_deleted"
+    ORDER_DELIVERY_FILE_UPLOADED_ACTION = "order_delivery_file_uploaded"
+    ORDER_DELIVERY_ENTITY_TYPE = "OrderDelivery"
     
+    BLOG_POST_CREATED = "blog_post_created"
+    BLOG_POST_UPDATED = "blog_post_updated"
+    BLOG_POST_DELETED = "blog_post_deleted"
+    BLOG_POST_ENTITY_TYPE = "BlogPost"
+
+    BLOG_COMMENT_CREATED = "blog_comment_created"
+    BLOG_COMMENT_UPDATED = "blog_comment_updated"
+    BLOG_COMMENT_DELETED = "blog_comment_deleted"
+    BLOG_COMMENT_ENTITY_TYPE = "BlogComment"
+
+    BLOG_CATEGORY_CREATED = "blog_category_created"
+    BLOG_CATEGORY_UPDATED = "blog_category_updated"
+    BLOG_CATEGORY_DELETED = "blog_category_deleted"
+    BLOG_CATEGORY_ENTITY_TYPE = "BlogCategory"
+
+    BLOG_COMMENT_REACTION_CREATED = "blog_comment_reaction_created"
+    BLOG_COMMENT_REACTION_UPDATED = "blog_comment_reaction_updated"
+    BLOG_COMMENT_REACTION_DELETED = "blog_comment_reaction_deleted"
+    BLOG_COMMENT_REACTION_ENTITY_TYPE = "BlogCommentReaction"
+
+    NEWSLETTER_SUBSCRIBER_SUBSCRIBED = "newsletter_subscriber_subscribed"
+    NEWSLETTER_SUBSCRIBER_UNSUBSCRIBED = "newsletter_subscriber_unsubscribed"
+    NEWSLETTER_SUBSCRIBER_RESUBSCRIBED = "newsletter_subscriber_resubscribed"
+    NEWSLETTER_SUBSCRIBER_ENTITY_TYPE = "NewsletterSubscriber"
     

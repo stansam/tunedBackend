@@ -6,6 +6,7 @@ from tuned.manage.data.samples import samples_dict
 from tuned.manage.data.testimonials import testimonials_dict
 from tuned.manage.data.faqs import faqs_dict
 from tuned.manage.data.blogs import blogCategories, blogPosts
+from tuned.manage.data.accepted_methods import accepted_methods_list
 
 __all__ = [
     "users_dict",
@@ -22,4 +23,5 @@ __all__ = [
     "faqs_dict",
     "blogCategories",
     "blogPosts",
+    "accepted_methods_list",
 ]

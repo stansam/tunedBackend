@@ -1,3 +1,4 @@
+from uuid import UUID
 from sqlalchemy import select
 from tuned.models import User
 from sqlalchemy.orm import Session
@@ -11,7 +12,11 @@ class GetUserByID:
 
     def execute(self, user_id: str) -> User:
         try:
-            stmt = select(User).where(User.id == user_id)
+            if isinstance(user_id, UUID):
+                user_uuid = user_id
+            else:
+                user_uuid = UUID(user_id)
+            stmt = select(User).where(User.id == user_uuid)
             user = self.session.scalar(stmt)
             if not user:
                 raise NotFound("User not found")
@@ -39,7 +44,7 @@ class GetUserByUsername:
 
     def execute(self, username: str) -> User:
         try:
-            stmt = select(User).where(User.username == username)
+            stmt = select(User).where(User.username.ilike(f"%{username}%"))
             user = self.session.scalar(stmt)
             if not user:
                 raise NotFound("User not found")
@@ -81,7 +86,7 @@ class GetUserByReferralCode:
         
     def execute(self, referral_code: str) -> Optional[User]:
         try:
-            stmt = select(User).where(User.referral_code == referral_code)
+            stmt = select(User).where(User.referral_code.ilike(f"{referral_code}%"))
             user = self.session.scalar(stmt)
             return user
         except SQLAlchemyError as e:

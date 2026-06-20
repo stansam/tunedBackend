@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
-from tuned.repository.exceptions import DatabaseError
+from tuned.core.exceptions import DatabaseError
 from tuned.models.preferences import (
     UserAccessibilityPreferences,
     UserBillingPreferences,

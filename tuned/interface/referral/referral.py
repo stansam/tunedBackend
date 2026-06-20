@@ -3,10 +3,10 @@ from typing import Optional, Sequence, TYPE_CHECKING
 from tuned.core.events import get_event_bus
 from tuned.core.logging import get_logger
 from tuned.dtos import ReferralResponseDTO, ReferralRedemptionResultDTO
-from tuned.repository.protocols import(
-    ReferralRepositoryProtocol, UserRepositoryProtocol,
-    OrderRepositoryProtocol, ActivityLogRepositoryProtocol
-)
+# from tuned.repository.protocols import(
+#     ReferralRepositoryProtocol, UserRepositoryProtocol,
+#     OrderRepositoryProtocol, ActivityLogRepositoryProtocol
+# )
 from tuned.services.referral_service import ReferralService
 from tuned.interface.protocols import ReferralInterfaceProtocol
 

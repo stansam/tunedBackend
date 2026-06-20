@@ -42,8 +42,8 @@ class ReferralResponseDTO(BaseDTO):
             raise ValueError("Referral model is missing required user identifiers")
         return cls(
             id=str(model.id),
-            referrer_id=model.referrer_id,
-            referred_id=model.referred_id,
+            referrer_id=str(model.referrer_id),
+            referred_id=str(model.referred_id),
             code=model.code,
             status=model.status.value if hasattr(model.status, 'value') else model.status,
             points_earned=model.points_earned,

@@ -38,7 +38,7 @@ class NotificationReadAPI(MethodView):
     def post(self, notification_id: str) -> tuple[Any, int]:
         try:
             user_id = current_user.id
-            notification = get_services().notification.mark_read(str(notification_id), str(user_id))
+            notification = get_services().notification.mark_read(notification_id, str(user_id))
             return success_response({"notification": asdict(notification)})
         except NotFound:
             return error_response("Notification not found", status=404)

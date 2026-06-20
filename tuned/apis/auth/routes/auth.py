@@ -26,13 +26,17 @@ logger: logging.Logger = get_logger(__name__)
 
 class AuthCheck(MethodView):
     def get(self) -> tuple[Any, int]:
-        if current_user.is_authenticated:
-            data = UserResponseDTO.from_model(current_user)
-            logger.debug(f'User {current_user.email} is authenticated')
-            return success_response(asdict(data))
-        else:
-            logger.debug('User is not authenticated')
-            return error_response('User is not authenticated', status=401)
+        try:
+            if current_user.is_authenticated:
+                user = get_services().user.get_user_by_id(current_user.id)
+                logger.debug(f'User {current_user.email} is authenticated')
+                return success_response(user)
+            else:
+                logger.debug('User is not authenticated')
+                return error_response('User is not authenticated', status=401)
+        except Exception as e:
+            logger.error(f'Authentication check failed: {str(e)}')
+            return error_response('Authentication check failed', status=500)
 
 
 class Login(MethodView):

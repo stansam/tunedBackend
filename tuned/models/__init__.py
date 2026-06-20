@@ -12,6 +12,7 @@ from tuned.models.tag import Tag, service_tags, sample_tags, blog_post_tags
 from tuned.models.audit import PriceHistory, OrderStatusHistory, ActivityLog, EmailLog
 from tuned.models.deadline_extension import OrderDeadlineExtensionRequest
 from tuned.models.revision_request import OrderRevisionRequest
+from tuned.models.media import MediaAsset
 
 from tuned.models.preferences import (
     UserNotificationPreferences, UserEmailPreferences, UserPrivacySettings,
@@ -21,7 +22,8 @@ from tuned.models.preferences import (
 from tuned.models.enums import (
     OrderStatus, SupportTicketStatus, PaymentStatus, PaymentMethod, MethodCategory,
     TransactionType, TransactionStatus, RefundStatus, NotificationType, ChatStatus, EmailStatus,
-    DeliveryStatus, FileType, ReferralStatus, DiscountType, Currency, GenderEnum, BlogReactionType
+    DeliveryStatus, FileType, ReferralStatus, DiscountType, Currency, GenderEnum,
+    BlogReactionType, ReportType, LineSpacing, FormatStyle
 )
 
 __all__ = [
@@ -30,6 +32,7 @@ __all__ = [
     "Sample", "FAQ", "Testimonial",
     "BlogCategory", "BlogPost", "BlogComment", "CommentReaction",
     "Order", "OrderComment", "OrderFile",
+    "MediaAsset",
     "PricingCategory", "PriceRate",
     "Payment", "Invoice", "Transaction", "Refund", "Discount", "AcceptedPaymentMethod",
     "OrderDelivery", "OrderDeliveryFile",
@@ -43,5 +46,6 @@ __all__ = [
     "UserLocalizationSettings", "UserAccessibilityPreferences", "UserBillingPreferences",
     "OrderStatus", "SupportTicketStatus", "PaymentStatus", "PaymentMethod", "MethodCategory",
     "TransactionType", "TransactionStatus", "RefundStatus", "NotificationType", "ChatStatus", "EmailStatus",
-    "DeliveryStatus", "FileType", "ReferralStatus", "DiscountType", "Currency", "GenderEnum", "BlogReactionType"
+    "DeliveryStatus", "FileType", "ReferralStatus", "DiscountType", "Currency",
+    "GenderEnum", "BlogReactionType", "ReportType", "LineSpacing", "FormatStyle"
 ]

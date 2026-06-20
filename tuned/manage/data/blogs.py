@@ -43,7 +43,7 @@ blogPosts = [
         "is_published": True,
         "is_featured": True,
         "published_at": datetime.now() - timedelta(days=1),
-        "featured_image": "https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?w=1200&q=80",
+        "image_url": "https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?w=1200&q=80",
         "meta_description": "Step-by-step guide to writing a powerful thesis statement for academic essays, dissertations, and research papers.",
     },
     {
@@ -61,7 +61,7 @@ blogPosts = [
         "is_published": True,
         "is_featured": True,
         "published_at": datetime.now() - timedelta(days=3),
-        "featured_image": "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=1200&q=80",
+        "image_url": "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=1200&q=80",
         "meta_description": "Compare quantitative and qualitative research approaches and learn how to pick the right one for your study.",
     },
     {
@@ -83,7 +83,7 @@ blogPosts = [
         "is_published": True,
         "is_featured": False,
         "published_at": datetime.now() - timedelta(days=7),
-        "featured_image": "https://images.unsplash.com/photo-1506784365847-bbad939e9335?w=1200&q=80",
+        "image_url": "https://images.unsplash.com/photo-1506784365847-bbad939e9335?w=1200&q=80",
         "meta_description": "Proven time management strategies for students — from Pomodoro to time-blocking — to boost academic performance.",
     },
     {
@@ -103,7 +103,7 @@ blogPosts = [
         "is_published": True,
         "is_featured": False,
         "published_at": datetime.now() - timedelta(days=14),
-        "featured_image": "https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=1200&q=80",
+        "image_url": "https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=1200&q=80",
         "meta_description": "Comprehensive guide to APA, MLA, and Chicago citation styles with examples and tips for avoiding plagiarism.",
     },
     {
@@ -124,7 +124,7 @@ blogPosts = [
         "is_published": True,
         "is_featured": True,
         "published_at": datetime.now() - timedelta(days=4),
-        "featured_image": "https://images.unsplash.com/photo-1586281380349-632531db7ed4?w=1200&q=80",
+        "image_url": "https://images.unsplash.com/photo-1586281380349-632531db7ed4?w=1200&q=80",
         "meta_description": "Expert tips on crafting a CV that impresses recruiters — structure, format, tailoring, and common mistakes to avoid.",
     },
     {
@@ -143,7 +143,7 @@ blogPosts = [
         "is_published": False,
         "is_featured": False,
         "published_at": None,
-        "featured_image": "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=1200&q=80",
+        "image_url": "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=1200&q=80",
         "meta_description": "Step-by-step guide to writing a winning dissertation proposal — structure, tips, and annotated examples.",
     },
     {
@@ -160,7 +160,7 @@ blogPosts = [
         "is_published": True,
         "is_featured": True,
         "published_at": datetime.now() - timedelta(days=2),
-        "featured_image": "https://images.unsplash.com/photo-1475721028070-dfc798ce0a90?w=1200&q=80",
+        "image_url": "https://images.unsplash.com/photo-1475721028070-dfc798ce0a90?w=1200&q=80",
         "meta_description": "Enhance your academic public speaking skills and deliver presentations with confidence and clarity.",
     },
     {
@@ -177,7 +177,7 @@ blogPosts = [
         "is_published": True,
         "is_featured": True,
         "published_at": datetime.now() - timedelta(days=5),
-        "featured_image": "https://images.unsplash.com/photo-1455390582262-044cdead277a?w=1200&q=80",
+        "image_url": "https://images.unsplash.com/photo-1455390582262-044cdead277a?w=1200&q=80",
         "meta_description": "Step-by-step guide to finding, analyzing, and synthesizing scholarly sources for your literature review.",
     },
     {
@@ -194,7 +194,7 @@ blogPosts = [
         "is_published": True,
         "is_featured": True,
         "published_at": datetime.now() - timedelta(days=8),
-        "featured_image": "https://images.unsplash.com/photo-1515162816999-a0c47dc192f7?w=1200&q=80",
+        "image_url": "https://images.unsplash.com/photo-1515162816999-a0c47dc192f7?w=1200&q=80",
         "meta_description": "A guide for researchers on how to build and maintain a strong professional network both online and offline.",
     },
 ]

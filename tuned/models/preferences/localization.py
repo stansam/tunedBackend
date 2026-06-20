@@ -1,8 +1,10 @@
+import uuid
+from sqlalchemy.dialects.postgresql import UUID, ENUM
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+from typing import TYPE_CHECKING, Optional, Any
 from tuned.extensions import db
 from tuned.models.enums import DateFormat, TimeFormat, NumberFormat, WeekStart
 from tuned.models.base import BaseModel
-from sqlalchemy.orm import Mapped, mapped_column, relationship
-from typing import TYPE_CHECKING, Optional, Any
 
 if TYPE_CHECKING:
     from tuned.models.user import User
@@ -10,8 +12,8 @@ if TYPE_CHECKING:
 class UserLocalizationSettings(BaseModel):
     __tablename__ = 'user_localization_settings'
     
-    user_id: Mapped[str] = mapped_column(
-        db.String(36),
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
         db.ForeignKey('users.id', ondelete='CASCADE'),
         unique=True,
         nullable=False,
@@ -24,25 +26,25 @@ class UserLocalizationSettings(BaseModel):
     timezone: Mapped[str] = mapped_column(db.String(50), default='UTC', nullable=False)  # IANA timezone
     
     date_format: Mapped[DateFormat] = mapped_column(
-        db.Enum(DateFormat),
+        ENUM(DateFormat, name="dateformat", create_type=True),
         default=DateFormat.MM_DD_YYYY,
         nullable=False
     )
     time_format: Mapped[TimeFormat] = mapped_column(
-        db.Enum(TimeFormat),
+        ENUM(TimeFormat, name="timeformat", create_type=True),
         default=TimeFormat.TWELVE_HOUR,
         nullable=False
     )
     
     currency: Mapped[str] = mapped_column(db.String(3), default='USD', nullable=False)  # ISO 4217
     number_format: Mapped[NumberFormat] = mapped_column(
-        db.Enum(NumberFormat),
+        ENUM(NumberFormat, name="numberformat", create_type=True),
         default=NumberFormat.COMMA_DOT,
         nullable=False
     )
     
     week_start: Mapped[WeekStart] = mapped_column(
-        db.Enum(WeekStart),
+        ENUM(WeekStart, name="weekstart"),
         default=WeekStart.SUNDAY,
         nullable=False
     )
@@ -62,6 +64,9 @@ class UserLocalizationSettings(BaseModel):
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None
         }
+    
+    def __init__(self, **kwargs: Any) -> None:
+        super(UserLocalizationSettings, self).__init__(**kwargs)
     
     def __repr__(self) -> str:
         return f'<UserLocalizationSettings user_id={self.user_id} language={self.language} timezone={self.timezone}>'

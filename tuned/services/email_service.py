@@ -1,7 +1,8 @@
 from __future__ import annotations
 from flask import current_app
 from tuned.core.logging import get_logger
-from tuned.models import User
+from tuned.models import User, Order, Payment
+from tuned.dtos import InvoiceResponseDTO
 from tuned.utils.auth import get_user_ip
 from datetime import datetime
 import logging
@@ -129,6 +130,45 @@ def send_invoice_email(user: User, invoice: Any) -> None:
     
     logger.info(f"Invoice email sent to user {user.id} for invoice {invoice.invoice_number}")
 
+def send_payment_client_marked_paid(client: User, order: Order, payment: Payment)-> None:
+    from tuned.utils.email import send_async_email
+    frontend_url = current_app.config.get('FRONTEND_URL', 'http://localhost:3000')
+    order_url = f"{frontend_url}/client/orders/{order.id}"
+    
+    send_async_email(
+        to=client.email,
+        subject=f"Payment Proof Received - Order #{order.order_number}",
+        template="client/payment_proof_submitted",
+        client_name=client.get_name(),
+        order_number=order.order_number,
+        payment_method=payment.accepted_method.name if payment.accepted_method else "Manual Transfer",
+        amount=payment.amount,
+        proof_reference=payment.client_proof_reference,
+        order_url=order_url,
+        support_email=current_app.config.get('MAIL_DEFAULT_SENDER', 'support@tunedessays.com'),
+        current_year=datetime.now().year
+    )
+
+    logger.info(f"Payment email sent to client {client.id} for payment {payment.id}")
+            
+def send_admin_payment_proof_submitted(admin: User, payment: Payment, client_name: str, order_number)-> None:
+    from tuned.utils.email import send_async_email
+    frontend_url = current_app.config.get('FRONTEND_URL', 'http://localhost:3000')    
+    admin_verify_url = f"{frontend_url}/admin/orders/{order_number}"
+    
+    send_async_email(
+        to=admin.email,
+        subject=f"Action Required: Verify Payment for Order #{order_number}",
+        template="admin/payment_proof_submitted",
+        client_name=client_name,
+        order_number=order_number,
+        payment_method=payment.accepted_method.name if payment.accepted_method else "Manual Transfer",
+        amount=payment.amount,
+        proof_reference=payment.client_proof_reference,
+        admin_verify_url=admin_verify_url,
+        current_year=datetime.now().year
+    )
+    logger.info(f"Payment email sent to admin {admin.id} for payment {payment.id}")
 
 def send_password_reset_email(user: User, reset_token: str) -> None:    
     from tuned.utils.email import send_async_email
@@ -156,6 +196,74 @@ def send_password_reset_email(user: User, reset_token: str) -> None:
         logger.error(f'Password reset email failed for user {user.id}: {str(e)}')
         raise
 
+def send_client_payment_verification_success_email(user: User, payment: Payment, order: Order) -> None:
+    from tuned.utils.email import send_async_email
+    frontend_url = current_app.config.get('FRONTEND_URL', 'http://localhost:3000')
+    order_url = f"{frontend_url}/client/orders/{order.id}"
+    invoice_url = f"{frontend_url}/client/billing/invoices/{order.invoice.id}" if getattr(order, 'invoice', None) else f"{frontend_url}/client/billing"
+    
+    send_async_email(
+        to=user.email,
+        subject=f"Payment Successful - Order #{order.order_number}",
+        template="client/payment_confirmed",
+        client_name=user.get_name(),
+        order_number=order.order_number,
+        payment_method=payment.accepted_method.name if payment.accepted_method else "Manual Transfer",
+        amount_paid=payment.amount,
+        transaction_id=payment.payment_id,
+        payment_date=payment.admin_verified_at.strftime('%Y-%m-%d %H:%M:%S UTC') if payment.admin_verified_at else datetime.now().strftime('%Y-%m-%d'),
+        due_date=order.due_date.strftime('%B %d, %Y') if order.due_date else "N/A",
+        order_url=order_url,
+        invoice_url=invoice_url,
+        support_email=current_app.config.get('MAIL_DEFAULT_SENDER', 'support@tunedessays.com'),
+        support_phone="+1 (800) 555-0199",
+        company_name="Tuned Essays",
+        current_year=datetime.now().year
+    )
+
+    logger.info(f"Payment verification success email sent to user {user.id}")
+    
+def send_client_payment_verification_failure_email(client: User, order_number: str, rejection_reason: str) -> None:
+    from tuned.utils.email import send_async_email
+
+    frontend_url = current_app.config.get('FRONTEND_URL', 'http://localhost:3000')
+    order_url = f"{frontend_url}/client/orders/{order_number}"
+    
+    send_async_email(
+        to=client.email,
+        subject=f"Payment Verification Failed - Order #{order_number}",
+        template="client/payment_rejected",
+        client_name=client.get_name(),
+        order_number=order_number,
+        rejection_reason=rejection_reason,
+        order_url=order_url,
+        support_email=current_app.config.get('MAIL_DEFAULT_SENDER', 'support@tunedessays.com'),
+        current_year=datetime.now().year
+    )
+
+    logger.info(f"Payment verification failure email sent to user {client.id}")
+
+def send_invoice_created_email(client: User, invoice: InvoiceResponseDTO, order_number) -> None:
+    from tuned.utils.email import send_async_email
+    frontend_url = current_app.config.get('FRONTEND_URL', 'http://localhost:3000')
+    invoice_url = f"{frontend_url}/client/billing/invoices/{invoice.id}"
+    
+    send_async_email(
+        to=client.email,
+        subject=f"New Invoice Generated - {invoice.invoice_number}",
+        template="client/invoice_created",
+        client_name=client.get_name(),
+        order_number=order_number,
+        invoice_number=invoice.invoice_number,
+        subtotal=invoice.subtotal,
+        discount=invoice.discount or 0.0,
+        total=invoice.total,
+        invoice_url=invoice_url,
+        support_email=current_app.config.get('MAIL_DEFAULT_SENDER', 'support@tunedessays.com'),
+        current_year=datetime.now().year
+    )
+
+    logger.info(f"Invoice created email sent to user {client.id} for invoice {invoice.id}")
 
 def send_password_changed_email(user: User) -> None:
     from tuned.utils.email import send_async_email
@@ -304,3 +412,28 @@ def send_order_created_email_admin(order: Any) -> None:
         logger.info('New order email sent to admins')
     except Exception as e:
         logger.error(f'Order notification to admins failed: {str(e)}')
+
+
+def send_refund_processed_email(client: User, order: Order, refund: Any) -> None:
+    from tuned.utils.email import send_async_email
+    try:
+        subject = f"Refund Processed - Order #{order.order_number}"
+        html_body = f"""
+        <h2>Your refund has been processed</h2>
+        <p>Dear {client.get_name()},</p>
+        <p>A refund has been successfully processed for Order <strong>#{order.order_number}</strong>.</p>
+        <p>Refund Amount: <strong>${refund.amount:.2f}</strong></p>
+        <p>If you have any questions or require further assistance, please feel free to reach out to our support team.</p>
+        <p>Best regards,</p>
+        <p>Tuned Essays Team</p>
+        """
+        send_async_email(
+            to=client.email,
+            subject=subject,
+            template="generic_notification",
+            body=html_body,
+            current_year=datetime.now().year
+        )
+        logger.info(f"Refund processed email sent to client {client.id} for refund {refund.id}")
+    except Exception as e:
+        logger.error(f"Failed to send refund processed email for user {client.id}: {str(e)}")

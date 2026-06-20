@@ -7,10 +7,12 @@ from tuned.interface.blogs.reactions import CommentReactionService
 
 if TYPE_CHECKING:
     from tuned.repository import Repository
+    from tuned.interface import Services
 
 class Blogs:
-    def __init__(self, repos: Repository) -> None:
+    def __init__(self, repos: Repository, services: Services) -> None:
         self._repos = repos
+        self._services = services
         self._post: BlogPostService | None = None
         self._category: BlogCategoryService | None = None
         self._comment: BlogCommentService | None = None
@@ -19,25 +21,25 @@ class Blogs:
     @property
     def post(self) -> BlogPostService:
         if not self._post:
-            self._post = BlogPostService(repos=self._repos)
+            self._post = BlogPostService(repos=self._repos, services=self._services)
         return self._post
 
     @property
     def category(self) -> BlogCategoryService:
         if not self._category:
-            self._category = BlogCategoryService(repos=self._repos)
+            self._category = BlogCategoryService(repos=self._repos, services=self._services)
         return self._category
 
     @property
     def comment(self) -> BlogCommentService:
         if not self._comment:
-            self._comment = BlogCommentService(repos=self._repos)
+            self._comment = BlogCommentService(repos=self._repos, services=self._services)
         return self._comment
 
     @property
     def reaction(self) -> CommentReactionService:
         if not self._reaction:
-            self._reaction = CommentReactionService(repos=self._repos)
+            self._reaction = CommentReactionService(repos=self._repos, services=self._services)
         return self._reaction
 
 __all__ = [

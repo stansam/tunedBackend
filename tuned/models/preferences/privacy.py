@@ -1,8 +1,10 @@
+import uuid
+from sqlalchemy.dialects.postgresql import UUID, ENUM
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+from typing import TYPE_CHECKING, Any
 from tuned.extensions import db
 from tuned.models.enums import ProfileVisibility
 from tuned.models.base import BaseModel
-from sqlalchemy.orm import Mapped, mapped_column, relationship
-from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from tuned.models.user import User
@@ -10,8 +12,8 @@ if TYPE_CHECKING:
 class UserPrivacySettings(BaseModel):
     __tablename__ = 'user_privacy_settings'
 
-    user_id: Mapped[str] = mapped_column(
-        db.String(36),
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
         db.ForeignKey('users.id', ondelete='CASCADE'),
         unique=True,
         nullable=False,
@@ -19,7 +21,7 @@ class UserPrivacySettings(BaseModel):
     )
     
     profile_visibility: Mapped[ProfileVisibility] = mapped_column(
-        db.Enum(ProfileVisibility),
+        ENUM(ProfileVisibility, name="profilevisibility"),
         default=ProfileVisibility.PRIVATE,
         nullable=False
     )
@@ -53,6 +55,9 @@ class UserPrivacySettings(BaseModel):
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None
         }
+    
+    def __init__(self, **kwargs: Any) -> None:
+        super(UserPrivacySettings, self).__init__(**kwargs)
     
     def __repr__(self) -> str:
         return f'<UserPrivacySettings user_id={self.user_id}>'

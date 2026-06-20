@@ -23,33 +23,34 @@ def create_app(config_name: Optional[str] = None) -> Flask:
 
     app.config.from_object(config[config_name])
     
-    from tuned.extensions import db, migrate, login_manager, jwt, cors, socketio, mail
+    from tuned.extensions import db, migrate, login_manager, cors, socketio, mail #jwt
     
     db.init_app(app)
     migrate.init_app(app, db)
     login_manager.init_app(app)
-    jwt.init_app(app)
     mail.init_app(app)
     
     cors_origins = app.config.get('CORS_ORIGINS', '*')
-    cors.init_app(app, origins=cors_origins, supports_credentials=True)
-    
-    socketio_kwargs = {
-        'cors_allowed_origins': cors_origins,
-        'async_mode': 'eventlet',
-        'logger': app.config.get('DEBUG', False),
-        'engineio_logger': app.config.get('DEBUG', False)
-    }
-    if app.config.get('SOCKETIO_MESSAGE_QUEUE'):
-        socketio_kwargs['message_queue'] = app.config['SOCKETIO_MESSAGE_QUEUE']
-    
-    socketio.init_app(app, **socketio_kwargs)
+    cors.init_app(app,
+        origins=cors_origins, 
+        supports_credentials=True, 
+        methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+        allow_headers=["Authorization", "Content-Type", "Accept", "X-Requested-With"],
+    )
+
+    socketio.init_app(app,
+        async_mode='gevent',
+        cors_allowed_origins=cors_origins,
+        cors_credentials=True,
+        logger=app.config.get('DEBUG', False),
+        engineio_logger=app.config.get('DEBUG', False),
+        message_queue=app.config.get('SOCKETIO_MESSAGE_QUEUE'),
+    )
     
     from tuned.celery_app import celery_app, init_celery
     from tuned.core.events.bootstrap import init_events
     init_celery(app)
     init_events()
-    # app.celery = celery_app  # Removed: Flask has no .celery attribute, already in extensions
     app.extensions['celery'] = celery_app
     
     with app.app_context():
@@ -68,29 +69,39 @@ def create_app(config_name: Optional[str] = None) -> Flask:
     def load_user(user_id: str) -> Optional["User"]:
         from tuned.models.user import User
         from tuned.extensions import db
-        return db.session.query(User).filter(User.id == user_id).first()
-    
-    @jwt.token_in_blocklist_loader
-    def check_if_token_revoked(jwt_header: dict[str, Any], jwt_payload: dict[str, Any]) -> bool:
-        from tuned.redis_client import is_token_blacklisted
-        jti = jwt_payload['jti']
-        return is_token_blacklisted(jti)
+        import uuid
+        try:
+            uuid_obj = uuid.UUID(user_id)
+        except (ValueError, AttributeError):
+            return None
+        return db.session.query(User).filter(User.id == uuid_obj).first()
+        
+    @login_manager.unauthorized_handler
+    def unauthorized():
+        return {"message": "unauthorized"}, 401
     
     from tuned.apis import(
-        main_bp, auth_bp, notification_bp, client_bp
+        main_bp, auth_bp, notification_bp, client_bp, orders_bp, order_deliveries_bp, payments_bp, media_bp, admin_bp
     ) 
     from tuned.manage import manage_bp
+    from tuned.health import health_bp
     
     app.register_blueprint(auth_bp, url_prefix='/api')
     app.register_blueprint(notification_bp, url_prefix='/api/notifications')
     app.register_blueprint(client_bp, url_prefix='/api/client')
+    app.register_blueprint(orders_bp, url_prefix='/api/orders')
+    app.register_blueprint(order_deliveries_bp, url_prefix='/api/orders/delivery')
+    app.register_blueprint(payments_bp, url_prefix='/api/payments')
+    app.register_blueprint(media_bp, url_prefix='/api/media')
+    app.register_blueprint(admin_bp, url_prefix='/api/admin')
     app.register_blueprint(manage_bp)
     
     # from tuned.apis.client.routes.settings.preferences import preferences_bp
     # app.register_blueprint(preferences_bp, url_prefix='/client/settings/preferences')
     
     app.register_blueprint(main_bp, url_prefix="/api")  # No prefix - root routes
-
+    
+    app.register_blueprint(health_bp)
     
     if app.config.get('PROXY_FIX'):
         from werkzeug.middleware.proxy_fix import ProxyFix
@@ -103,10 +114,7 @@ def create_app(config_name: Optional[str] = None) -> Flask:
         )
     
     register_error_handlers(app)
-    
     register_shell_context(app)
-
-
 
     return app
 

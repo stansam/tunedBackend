@@ -1,54 +1,73 @@
-# Flask Application Dependencies
-# Production-ready package versions for tunedBundle backend
-
-# Core Flask
-Flask
-Werkzeug
-
-# Database
-Flask-SQLAlchemy
-SQLAlchemy
-Flask-Migrate
-Alembic
-
-# Authentication & Authorization
-Flask-Login
-Flask-JWT-Extended
-
-# API & Frontend Integration
-Flask-CORS
-
-# Real-time Communication
-Flask-SocketIO
-python-socketio
-python-engineio
-eventlet
-
-# Email
-Flask-Mail
-
-# Validation
-marshmallow
-marshmallow-sqlalchemy
-
-# Background Tasks
-celery
-redis
-
-# Database Drivers
-# PostgreSQL (production)
-psycopg2-binary
-# SQLite (development) - comes with Python
-
-# Security & Password Hashing
+alembic
+alembic-postgresql-enum
+amqp
 bcrypt
+bidict
+billiard
+blinker
+celery
+click
+click-didyoumean
+click-plugins
+click-repl
+coverage
+dnspython
+Flask
+flask-cors
+Flask-Login
+Flask-Mail
+Flask-Migrate
+flask-redis
+Flask-SocketIO
+Flask-SQLAlchemy
+flower
+gevent
+gevent-websocket
+greenlet
+gunicorn
+h11
+humanize
+iniconfig
 itsdangerous
-
-# Python Standard Enhancements
-python-dotenv
-
-# Development Dependencies
-# These should be in a separate requirements-dev.txt in production
+Jinja2
+kombu
+librt
+Mako
+MarkupSafe
+marshmallow
+mypy
+mypy_extensions
+packaging
+pathspec
+pillow
+pip
+pluggy
+prometheus_client
+prompt_toolkit
+psycopg2-binary
+Pygments
 pytest
-pytest-flask
 pytest-cov
+pytest-flask
+pytest-mock
+python-dateutil
+python-dotenv
+python-engineio
+python-socketio
+pytz
+redis
+simple-websocket
+six
+SQLAlchemy
+tornado
+types-python-dateutil
+typing_extensions
+tzdata
+tzlocal
+vine
+wcwidth
+Werkzeug
+wsproto
+reportlab
+requests
+

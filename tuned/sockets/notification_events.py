@@ -25,6 +25,10 @@ def handle_connect() -> bool:
         
         logger.info(f"User {user_id} connected to WebSocket, joined room: {room}")
         
+        if getattr(current_user, "is_admin", False):
+            join_room("admin_room")
+            logger.info(f"Admin User {user_id} joined admin_room")
+        
         unread = get_services().notification.get_unread_count(str(user_id))
         emit('notification:count', {'unread_count': unread})
         

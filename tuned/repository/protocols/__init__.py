@@ -11,6 +11,7 @@ from tuned.repository.protocols.audit import (
     OrderStatusHistoryRepositoryProtocol, PriceHistoryRepositoryProtocol
 )
 from tuned.repository.protocols.order import OrderRepositoryProtocol
+from tuned.repository.protocols.order_delivery import OrderDeliveryRepositoryProtocol
 from tuned.repository.protocols.payment import (
     PaymentsManagerProtocol, InvoiceManagerProtocol, TransactionManagerProtocol,
     DiscountManagerProtocol, RefundManagerProtocol, AcceptedMethodManagerProtocol,
@@ -20,6 +21,7 @@ from tuned.repository.protocols.preferences import PreferenceRepositoryProtocol
 from tuned.repository.protocols.price import (
     PricingCategoryRepositoryProtocol, PriceRateRepositoryProtocol
 )
+from tuned.repository.protocols.media import MediaRepositoryProtocol
 
 __all__ = [
     "UserRepositoryProtocol",
@@ -37,6 +39,7 @@ __all__ = [
     "OrderStatusHistoryRepositoryProtocol",
     "PriceHistoryRepositoryProtocol",
     "OrderRepositoryProtocol",
+    "OrderDeliveryRepositoryProtocol",
     "PaymentsManagerProtocol",
     "InvoiceManagerProtocol",
     "TransactionManagerProtocol",
@@ -46,5 +49,6 @@ __all__ = [
     "PaymentRepositoryProtocol",
     "PreferenceRepositoryProtocol",
     "PricingCategoryRepositoryProtocol",
-    "PriceRateRepositoryProtocol"
+    "PriceRateRepositoryProtocol",
+    "MediaRepositoryProtocol"
 ]

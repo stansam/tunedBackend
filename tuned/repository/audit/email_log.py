@@ -18,7 +18,7 @@ class CreateEmailLog:
                 template=data.template,
                 user_id=data.user_id,
                 order_id=data.order_id,
-                status=EmailStatus.PENDING
+                created_by=data.created_by,
             )
             self.session.add(log)
             self.session.flush()
@@ -79,12 +79,12 @@ class UpdateEmailLogStatus:
             if not log:
                 raise NotFound("Email log record not found.")
             
-            log.status = EmailStatus(data.status.lower()) if isinstance(data.status, str) else data.status
+            log.status = data.status
             if data.error_message:
                 log.error_message = data.error_message
             if data.sent_at:
                 log.sent_at = data.sent_at
-            elif data.status == "sent":
+            elif data.status == EmailStatus.SENT:
                 log.sent_at = datetime.now(timezone.utc)
                 
             self.session.flush()

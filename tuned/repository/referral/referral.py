@@ -22,8 +22,8 @@ class GetReferralGrowth:
         self.session = session
 
     def _month_label_expr(self, column: Any) -> Any:
-        dialect_name = self.session.bind.dialect.name if self.session.bind else "postgresql"
-        if dialect_name == "postgresql":
+        dialect_name = self.session.get_bind().dialect.name # if self.session.bind else "postgresql"
+        if dialect_name is not None and dialect_name == "postgresql":
             return func.to_char(column, "YYYY-MM")
         return func.strftime("%Y-%m", column)
 

@@ -9,11 +9,13 @@ from tuned.interface.price import PriceRateService, PricingCategoryService
 from tuned.interface.blogs import Blogs, BlogPostService, BlogCategoryService, BlogCommentService, CommentReactionService
 from tuned.interface.notification import NotificationInterface
 from tuned.interface.order import OrderService
+from tuned.interface.order_delivery import OrderDeliveryService
 from tuned.interface.preferences.service import PreferenceService
 from tuned.interface.analytics import Analytics, AnalyticsService
 from tuned.interface.audit import AuditService
 from tuned.interface.payment import PaymentService
 from tuned.interface.communication.newsletter import NewsletterService
+from tuned.interface.media import MediaService
 
 if TYPE_CHECKING:
     from tuned.repository import Repository
@@ -36,17 +38,19 @@ class Services:
         self._pricing_category: Optional[PricingCategoryService] = None
         self._notification: Optional[NotificationInterface] = None
         self._order: Optional[OrderService] = None
+        self._order_delivery: Optional[OrderDeliveryService] = None
         self._preferences: Optional[PreferenceService] = None
-        self._analytics_agg: Optional[Analytics] = None
+        self._analytics: Optional[Analytics] = None
         self._audit: Optional[AuditService] = None
         self._payment: Optional[PaymentService] = None
         self._newsletter: Optional[NewsletterService] = None
         self._search: Optional[SearchService] = None
+        self._media: Optional[MediaService] = None
 
     @property
     def user(self) -> UserService:
         if not self._user:
-            self._user = UserService(repos=self._repos)
+            self._user = UserService(repos=self._repos, interfaces=self)
         return self._user
     
     @property
@@ -106,7 +110,7 @@ class Services:
     @property
     def blogs(self) -> Blogs:
         if not self._blogs:
-            self._blogs = Blogs(repos=self._repos)
+            self._blogs = Blogs(repos=self._repos, services=self)
         return self._blogs
 
     @property
@@ -146,8 +150,14 @@ class Services:
     @property
     def order(self) -> OrderService:
         if not self._order:
-            self._order = OrderService(repos=self._repos)
+            self._order = OrderService(repos=self._repos, interfaces=self)
         return self._order
+
+    @property
+    def order_delivery(self) -> OrderDeliveryService:
+        if not self._order_delivery:
+            self._order_delivery = OrderDeliveryService(repos=self._repos, interfaces=self)
+        return self._order_delivery
 
     @property
     def preferences(self) -> PreferenceService:
@@ -156,14 +166,10 @@ class Services:
         return self._preferences
 
     @property
-    def analytics_agg(self) -> Analytics:
-        if not self._analytics_agg:
-            self._analytics_agg = Analytics(repos=self._repos)
-        return self._analytics_agg
-
-    @property
-    def analytics(self) -> AnalyticsService:
-        return self.analytics_agg.client
+    def analytics(self) -> Analytics:
+        if not self._analytics:
+            self._analytics = Analytics(repos=self._repos, interfaces=self)
+        return self._analytics
 
     @property
     def audit(self) -> AuditService:
@@ -188,5 +194,11 @@ class Services:
         if not self._search:
             self._search = SearchService(repos=self._repos)
         return self._search
+
+    @property
+    def media(self) -> MediaService:
+        if not self._media:
+            self._media = MediaService(repos=self._repos, interfaces=self)
+        return self._media
 
 

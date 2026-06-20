@@ -14,7 +14,7 @@ class NavStats(MethodView):
 
     def get(self) -> tuple[Any, int]:
         try:
-            dto = get_services().analytics.get_nav_stats(str(current_user.id))
+            dto = get_services().analytics.client.get_nav_stats(str(current_user.id))
             return success_response(data=asdict(dto), message="Successfully loaded", status=200)
         except Exception as e:
             logger.error("Failed to load nav stats: %s", e)

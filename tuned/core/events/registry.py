@@ -23,12 +23,14 @@ class EventRegistry:
         from tuned.interface.preferences.events import PreferenceEventHandlers
         from tuned.interface.payment.events import PaymentEventHandlers
         from tuned.interface.referral.events import ReferralEventHandlers
+        from tuned.interface.order_delivery.events import OrderDeliveryEventHandlers
 
         UserEventHandlers(bus).register()
         OrderEventHandlers(bus).register()
         PreferenceEventHandlers(bus).register()
         PaymentEventHandlers(bus).register()
         ReferralEventHandlers(bus).register()
+        OrderDeliveryEventHandlers(bus).register()
 
         self._registered = True
         logger.info("[EventRegistry] All domain handlers registered.")

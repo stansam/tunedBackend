@@ -4,7 +4,7 @@ from tuned.core.logging import get_logger
 from tuned.dtos import SearchResponseDTO, SearchCountsDTO
 from tuned.repository import Repository
 
-logger = logging.getLogger(__name__)
+logger :logging.Logger = get_logger(__name__)
 
 class SearchService:
     def __init__(self, repos: Repository) -> None:

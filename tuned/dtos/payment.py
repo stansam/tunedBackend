@@ -1,4 +1,4 @@
-from tuned.models import (
+from tuned.models.enums import (
     RefundStatus, PaymentStatus, MethodCategory, TransactionType,
     TransactionStatus, DiscountType, Currency
 )
@@ -51,7 +51,7 @@ class PaymentCreateDTO:
     order_id: str
     user_id: str
     amount: float
-    accepted_method_id: int
+    accepted_method_id: str
     status: PaymentStatus = PaymentStatus.PENDING
 
 @dataclass(kw_only=True)
@@ -77,7 +77,7 @@ class PaymentResponseDTO(BaseDTO):
     user_id: str
     amount: float
     status: PaymentStatus
-    accepted_method_id: int
+    accepted_method_id: str
     currency: Currency
     client_proof_reference: Optional[str]
     client_marked_paid_at: Optional[datetime]
@@ -88,11 +88,11 @@ class PaymentResponseDTO(BaseDTO):
         return cls(
             id=str(model.id),
             payment_id=model.payment_id,
-            order_id=model.order_id,
-            user_id=model.user_id,
+            order_id=str(model.order_id),
+            user_id=str(model.user_id),
             amount=model.amount,
             status=model.status,
-            accepted_method_id=model.accepted_method_id,
+            accepted_method_id=str(model.accepted_method_id),
             currency=model.currency,
             client_proof_reference=model.client_proof_reference,
             client_marked_paid_at=model.client_marked_paid_at,
@@ -138,9 +138,9 @@ class InvoiceResponseDTO(BaseDTO):
         return cls(
             id=str(model.id),
             invoice_number=model.invoice_number,
-            order_id=model.order_id,
-            user_id=model.user_id,
-            payment_id=model.payment_id,
+            order_id=str(model.order_id),
+            user_id=str(model.user_id),
+            payment_id=str(model.payment_id) if model.payment_id else None,
             subtotal=model.subtotal,
             discount=model.discount,
             tax=model.tax,
@@ -155,7 +155,6 @@ class InvoiceResponseDTO(BaseDTO):
 @dataclass(kw_only=True)
 class TransactionCreateDTO:
     payment_id: str
-    transaction_id: str
     type: TransactionType
     amount: float
     status: TransactionStatus
@@ -164,7 +163,7 @@ class TransactionCreateDTO:
 class TransactionResponseDTO(BaseDTO):
     id: str
     payment_id: str
-    transaction_id: str
+    # transaction_id: str
     type: TransactionType
     amount: float
     status: TransactionStatus
@@ -173,8 +172,8 @@ class TransactionResponseDTO(BaseDTO):
     def from_model(cls, model: "Transaction") -> 'TransactionResponseDTO':
         return cls(
             id=str(model.id),
-            payment_id=model.payment_id,
-            transaction_id=model.transaction_id,
+            payment_id=str(model.payment_id),
+            # transaction_id=str(model.transaction_id,)
             type=model.type,
             amount=model.amount,
             status=model.status,
@@ -266,14 +265,39 @@ class RefundResponseDTO(BaseDTO):
     def from_model(cls, model: "Refund") -> 'RefundResponseDTO':
         return cls(
             id=str(model.id),
-            payment_id=model.payment_id,
+            payment_id=str(model.payment_id) if model.payment_id else None,
             amount=model.amount,
             reason=model.reason,
             status=model.status,
-            processed_by=model.processed_by,
-            admin_reference_id=model.admin_reference_id,
+            processed_by=str(model.processed_by) if model.processed_by else None,
+            admin_reference_id=str(model.admin_reference_id) if model.admin_reference_id else None,
             refund_date=model.refund_date,
             created_at=model.created_at,
             updated_at=model.updated_at,
             is_deleted=getattr(model, 'is_deleted', False)
         )
+
+@dataclass
+class ValidateDiscountRequestDTO:
+    code: str
+    subtotal: float
+
+@dataclass
+class ValidateDiscountResponseDTO:
+    valid: bool
+    discount_amount: float
+    description: Optional[str] = None
+
+@dataclass
+class PaymentListRequestDTO:
+    status: Optional[str] = None
+    page: Optional[int] = 1
+    per_page: Optional[int] = 10
+
+@dataclass
+class PaymentListResponseDTO:
+    payments: list[PaymentResponseDTO]
+    total: int
+    page: int
+    per_page: int
+

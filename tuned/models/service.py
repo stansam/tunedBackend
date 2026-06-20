@@ -1,10 +1,12 @@
+import uuid
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy import text
+from sqlalchemy.orm import Mapped, mapped_column, relationship #, Query
+from typing import TYPE_CHECKING, Optional, Any
 from tuned.extensions import db
 from tuned.models.base import BaseModel
 from tuned.models.utils import generate_slug
 from tuned.models.tag import service_tags
-# from datetime import datetime
-from typing import TYPE_CHECKING, Optional, Any
-from sqlalchemy.orm import Mapped, mapped_column, relationship #, Query
 
 if TYPE_CHECKING:
     from tuned.models.order import Order
@@ -37,11 +39,11 @@ class Service(BaseModel):
     __tablename__ = 'service'
     name: Mapped[str] = mapped_column(db.String(100), nullable=False)
     description: Mapped[Optional[str]] = mapped_column(db.Text, nullable=True)
-    category_id: Mapped[str] = mapped_column(db.String(36), db.ForeignKey('service_category.id'), nullable=False)
-    featured: Mapped[bool] = mapped_column(db.Boolean, default=False, nullable=False)
-    pricing_category_id: Mapped[str] = mapped_column(db.String(36), db.ForeignKey('pricing_category.id'), nullable=False)
+    category_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), db.ForeignKey('service_category.id'), nullable=False, index=True)
+    featured: Mapped[bool] = mapped_column(db.Boolean, default=False, nullable=False, index=True)
+    pricing_category_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), db.ForeignKey('pricing_category.id'), nullable=False, index=True)
     slug: Mapped[str] = mapped_column(db.String(200), unique=True, nullable=False)
-    is_active: Mapped[bool] = mapped_column(db.Boolean, default=True, server_default='true', nullable=False)
+    is_active: Mapped[bool] = mapped_column(db.Boolean, default=True, server_default=text('true'), nullable=False, index=True)
     
     __table_args__ = (
         db.Index('ix_service_category_featured', 'category_id', 'featured'),
@@ -88,6 +90,9 @@ class AcademicLevel(BaseModel):
     orders: Mapped[list["Order"]] = relationship('Order', back_populates='academic_level', lazy=True)
     price_rates: Mapped[list["PriceRate"]] = relationship('PriceRate', back_populates='academic_level', lazy=True)
 
+    def __init__(self, **kwargs: Any) -> None:
+        super(AcademicLevel, self).__init__(**kwargs)
+
     def __repr__(self) -> str:
         return f'<AcademicLevel {self.name}>'
     def to_dict(self) -> dict[str, Any]:
@@ -111,6 +116,9 @@ class Deadline(BaseModel):
     orders: Mapped[list["Order"]] = relationship('Order', back_populates='deadline', lazy=True)
     price_rates: Mapped[list["PriceRate"]] = relationship('PriceRate', back_populates='deadline', lazy=True)
     
+    def __init__(self, **kwargs: Any) -> None:
+        super(Deadline, self).__init__(**kwargs)
+
     def __repr__(self) -> str:
         return f'<Deadline {self.name}>'
     def to_dict(self) -> dict[str, Any]:

@@ -7,6 +7,9 @@ class DatabaseError(Exception):
 class NotFound(Exception):
     pass
 
+class ValidationError(Exception):
+    pass
+
 class AlreadyExists(Exception):
     pass
 

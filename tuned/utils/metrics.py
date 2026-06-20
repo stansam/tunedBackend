@@ -62,7 +62,7 @@ class MetricsCollector:
             redis_client.hincrby(f'metrics:requests:{today}:status', f'{endpoint}:{status_code}', 1)
             
             # Track response times (store in list, limit to last 100)
-            redis_client.lpush(f'metrics:duration:{endpoint}', float(duration_ms))
+            redis_client.lpush(f'metrics:duration:{endpoint}', duration_ms)
             redis_client.ltrim(f'metrics:duration:{endpoint}', 0, 99)
             
             # Track errors

@@ -18,7 +18,7 @@ def create_in_app_notification(
     user_id: str,
     title: str,
     message: str,
-    notification_type: NotificationType = NotificationType.INFO,
+    notification_type: str = "info",
     action_url: Optional[str] = None,
     category: str = 'general',
 ) -> None:
@@ -27,11 +27,17 @@ def create_in_app_notification(
         from tuned.dtos.notification import NotificationCreateDTO
         from tuned.extensions import socketio
 
+        # Normalize the type defensively
+        try:
+            notif_type = NotificationType(notification_type.lower())
+        except (ValueError, AttributeError):
+            notif_type = NotificationType.INFO
+
         dto = NotificationCreateDTO(
             user_id=user_id,
             title=title,
             message=message,
-            notification_type=notification_type,
+            notification_type=notif_type,
             link=action_url,
             category=category
         )
@@ -40,21 +46,39 @@ def create_in_app_notification(
         socketio.emit(
             'notification:new',
             {
-                'id': notif.id, 
+                'id': str(notif.id), 
                 'title': title, 
                 'message': message, 
-                'type': notification_type,
+                'type': notif_type.value,
                 'link': action_url,
                 'is_read': False,
-                'created_at': notif.created_at
+                'created_at': notif.created_at.isoformat() if hasattr(notif.created_at, "isoformat") else notif.created_at
             },
             to=f'user_{user_id}',
         )
-        logger.info(f"[notif] Created notification for user {user_id}")
+        logger.info("[notif] Created notification for user %s", user_id)
 
     except Exception as exc:
-        logger.error(f"[notif] Error creating notification for user {user_id}: {exc!r}")
+        logger.error("[notif] Error creating notification for user %s: %r", user_id, exc)
         raise self.retry(exc=exc, countdown=30)
+
+@celery_app.task(
+    name="tuned.tasks.notifications.push_unread_count_task",
+    bind=True,
+    queue="notifications",
+    max_retries=1,
+    acks_late=True,
+)
+def push_unread_count_task(self: Task, user_id: str) -> None:
+    try:
+        from tuned.utils.dependencies import get_services
+        from tuned.extensions import socketio
+        unread = get_services().notification.get_unread_count(user_id)
+        socketio.emit("notification:count", {"unread_count": unread}, to=f"user_{user_id}")
+    except Exception as exc:
+        logger.error("[push_unread_count_task] Failed for user %s: %r", user_id, exc)
+        raise self.retry(exc=exc, countdown=5)
+
 
 @celery_app.task  # type: ignore[untyped-decorator]
 def test_flask_context() -> Any:

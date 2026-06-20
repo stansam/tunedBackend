@@ -70,8 +70,8 @@ class ReferralInterface(ReferralInterfaceProtocol):
             "points_earned": reward_result.points_earned,
             "new_total": referrer.reward_points if referrer else reward_result.points_earned,
         }
-        get_event_bus().emit("ReferralCommissionEarned", payload)
-        logger.info(f"[ReferralInterface] Successfully rewarded {reward_result.points_earned} points to user {reward_result.referrer_id}")
+        get_event_bus().emit("referral.commission_earned", payload)
+        logger.info("[ReferralInterface] Successfully rewarded %d points to user %s", reward_result.points_earned, reward_result.referrer_id)
 
     def redeem_points(
         self,

@@ -1,26 +1,38 @@
+from __future__ import annotations
+
 import logging
-from typing import Any
-from celery import shared_task
-from tuned.utils.dependencies import get_services
+from celery import Task
+from celery.utils.log import get_task_logger
+from tuned.celery_app import celery_app
 
-logger = logging.getLogger(__name__)
+logger = get_task_logger(__name__)
 
-@shared_task(name="referral_tasks.process_referral_reward_task")  # type: ignore[untyped-decorator]
-def process_referral_reward_task(payment_id: str, user_id: str) -> None:
+@celery_app.task(
+    name="tuned.tasks.referral_tasks.process_referral_reward_task",
+    bind=True,
+    queue="notifications",
+    max_retries=2,
+    acks_late=True,
+)
+def process_referral_reward_task(self: Task, payment_id: str, user_id: str) -> None:
     try:
-        logger.info(f"[ReferralTasks] Processing referral reward for payment {payment_id}, user {user_id}")
-
+        logger.info(
+            "[ReferralTasks] Processing referral reward for payment %s, user %s",
+            payment_id, user_id
+        )
+        from tuned.utils.dependencies import get_services
         payment = get_services().payment.payment.get_details(payment_id)
         if not payment:
-            logger.warning(f"[ReferralTasks] Payment {payment_id} not found. Cannot award referral.")
+            logger.warning("[ReferralTasks] Payment %s not found. Cannot award referral.", payment_id)
             return
         
         order_value = payment.amount
         get_services().referral.reward_referrer(
             referred_id=user_id,
-            order_value=order_value
+            order_value=float(order_value)
         )
-        logger.info(f"[ReferralTasks] Successfully completed referral reward processing for user {user_id}")
+        logger.info("[ReferralTasks] Successfully completed referral reward processing for user %s", user_id)
         
     except Exception as exc:
-        logger.error(f"[ReferralTasks] Error processing referral reward for payment {payment_id}: {exc!r}", exc_info=True)
+        logger.error("[ReferralTasks] Error processing referral reward for payment %s: %r", payment_id, exc, exc_info=True)
+        raise self.retry(exc=exc, countdown=120)

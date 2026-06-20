@@ -1,10 +1,14 @@
+import threading
+
+_lock = threading.Lock()
 _initialized = False
 
 def init_events() -> None:
     global _initialized
-    if _initialized:
-        return
-
+    with _lock:
+        if _initialized:
+            return
+        _initialized = True
+    
     from tuned.core.events.registry import register_all_handlers
     register_all_handlers()
-    _initialized = True

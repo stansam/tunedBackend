@@ -71,7 +71,7 @@ class PreferenceService:
             self._audit_service.log(audit_data)
             self._repo.save()
 
-            self._event_bus.emit("SETTINGS_UPDATED", {
+            self._event_bus.emit("preferences.settings_updated", {
                 "user_id": user_id,
                 "category": category,
                 "payload": after_snapshot
@@ -80,7 +80,7 @@ class PreferenceService:
             return updated_obj
         except Exception as e:
             self._repo.rollback()
-            logger.error(f"Error updating {category} preferences for user {user_id}: {str(e)}")
+            logger.error("Error updating %s preferences for user %s: %r", category, user_id, e)
             raise
 
     def _get_snapshot(self, obj: object) -> dict[str, Any]:

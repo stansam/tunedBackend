@@ -48,7 +48,7 @@ class PaymentsManager:
     def get_by_order_id(self, order_id: str) -> list[PaymentResponseDTO]:
         return GetPaymentByOrderID(self.session).execute(order_id)
 
-    def update(self, payment_id: str, data: PaymentUpdateDTO) -> PaymentResponseDTO:
+    def update(self, payment_id: str, data: PaymentUpdateDTO) -> "Payment":
         return UpdatePayment(self.session).execute(payment_id, data)
 
     def get_spending_velocity(self, client_id: str, months: int = 6) -> list[tuple[str, float]]:
@@ -141,5 +141,5 @@ class AcceptedMethodRepositoryManager:
     def get_all_active(self) -> list[AcceptedMethodResponseDTO]:
         return self._repo.get_all_active()
     
-    def get_by_name(self, name: str) -> "AcceptedPaymentMethod":
+    def get_by_name(self, name: str) -> "AcceptedPaymentMethod"| None:
         return self._repo.get_by_name(name)

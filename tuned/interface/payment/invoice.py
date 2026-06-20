@@ -15,6 +15,7 @@ logger: logging.Logger = get_logger(__name__)
 class GenerateInvoice:
     def __init__(self, repos: Repository) -> None:
         self._repo = repos.payment.invoice
+        self._repos = repos
         from tuned.interface.audit import AuditService
         self._audit = AuditService(repos=repos)
 
@@ -34,18 +35,33 @@ class GenerateInvoice:
                     user_agent="system"
                 ))
             except Exception as audit_exc:
-                logger.error(f"[GenerateInvoice] Audit failed for invoice {invoice.id}: {audit_exc!r}")
+                logger.error("[GenerateInvoice] Audit failed for invoice %s: %r", invoice.id, audit_exc)
 
             try:
+                order = self._repos.order.get_by_id(str(invoice.order_id))
+                client = self._repos.user.get_user_by_id(str(invoice.user_id))
+
+                # Email notification
+                try:
+                    from tuned.services.email_service import send_invoice_created_email
+                    send_invoice_created_email(client, invoice, order.order_number)
+                except Exception as email_exc:
+                    logger.error("[GenerateInvoice] Email notification failed: %r", email_exc)
+
                 get_event_bus().emit("invoice.created", {
-                    "invoice_id": invoice.id,
-                    "order_id": invoice.order_id,
-                    "user_id": invoice.user_id,
+                    "invoice_id":     str(invoice.id),
+                    "invoice_number": invoice.invoice_number,
+                    "order_id":       str(invoice.order_id),
+                    "order_number":   order.order_number,
+                    "user_id":        str(invoice.user_id),
+                    "client_name":    client.get_name(),
+                    "client_email":   client.email,
+                    "total":          float(invoice.total),
                 })
             except Exception as event_exc:
-                logger.error(f"[GenerateInvoice] Event emit failed for invoice {invoice.id}: {event_exc!r}")
+                logger.error("[GenerateInvoice] Event emit failed for invoice %s: %r", invoice.id, event_exc)
 
-            logger.info(f"[GenerateInvoice] Generated invoice {invoice.invoice_number} for user {data.user_id}")
+            logger.info("[GenerateInvoice] Generated invoice %s for user %s", invoice.invoice_number, data.user_id)
             return invoice
         except Exception as exc:
             logger.error(f"[GenerateInvoice] Failed to generate invoice: {exc!r}")

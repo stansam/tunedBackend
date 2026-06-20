@@ -47,6 +47,10 @@ def create_app(config_name: Optional[str] = None) -> Flask:
         message_queue=app.config.get('SOCKETIO_MESSAGE_QUEUE'),
     )
     
+    from tuned.sockets import init_sockets
+    init_sockets(socketio)
+
+    
     from tuned.celery_app import celery_app, init_celery
     from tuned.core.events.bootstrap import init_events
     init_celery(app)

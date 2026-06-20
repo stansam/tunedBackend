@@ -74,7 +74,7 @@ class UpdatePayment:
     def __init__(self, session: Session) -> None:
         self.session = session
 
-    def execute(self, payment_id: str, data: PaymentUpdateDTO) -> PaymentResponseDTO:
+    def execute(self, payment_id: str, data: PaymentUpdateDTO) -> Payment:
         try:
             stmt = select(Payment).where(Payment.id == payment_id)
             payment = self.session.scalar(stmt)
@@ -97,7 +97,7 @@ class UpdatePayment:
                 payment.admin_verified_at = data.admin_verified_at
                 
             self.session.flush()
-            return PaymentResponseDTO.from_model(payment)
+            return payment
         except IntegrityError as e:
             logger.error(f"[UpdatePayment] Integrity error: {e}")
             raise DatabaseError("Conflict updating payment.") from e

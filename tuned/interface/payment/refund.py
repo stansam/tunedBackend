@@ -57,6 +57,7 @@ class ProcessRefund:
 class ApproveRefund:
     def __init__(self, repos: Repository) -> None:
         self._repo = repos.payment.refund
+        self._repos = repos
         from tuned.interface.audit import AuditService
         self._audit = AuditService(repos=repos)
 
@@ -77,18 +78,35 @@ class ApproveRefund:
                     user_agent="system"
                 ))
             except Exception as audit_exc:
-                logger.error(f"[ApproveRefund] Audit failed for refund {refund.id}: {audit_exc!r}")
+                logger.error("[ApproveRefund] Audit failed for refund %s: %r", refund.id, audit_exc)
 
             try:
+                payment = self._repos.payment.payment.get_by_id(str(refund.payment_id))
+                order = self._repos.order.get_by_id(str(payment.order_id))
+                client = self._repos.user.get_user_by_id(str(payment.user_id))
+
+                # Email notification
+                try:
+                    from tuned.services.email_service import send_refund_processed_email
+                    send_refund_processed_email(client, order, refund)
+                except Exception as email_exc:
+                    logger.error("[ApproveRefund] Email confirmation failed: %r", email_exc)
+
                 event_bus.emit("refund.processed", {
-                    "refund_id": refund.id,
-                    "payment_id": refund.payment_id,
-                    "status": refund.status
+                    "refund_id":    str(refund.id),
+                    "payment_id":   str(refund.payment_id),
+                    "order_id":     str(payment.order_id),
+                    "order_number": order.order_number,
+                    "user_id":      str(payment.user_id),
+                    "client_name":  client.get_name(),
+                    "client_email": client.email,
+                    "amount":       float(refund.amount),
+                    "reason":       refund.reason,
                 })
             except Exception as event_exc:
-                logger.error(f"[ApproveRefund] Event emit failed for refund {refund.id}: {event_exc!r}")
+                logger.error("[ApproveRefund] Event emit failed for refund %s: %r", refund.id, event_exc)
 
-            logger.info(f"[ApproveRefund] Refund {refund.id} approved by admin {admin_id}")
+            logger.info("[ApproveRefund] Refund %s approved by admin %s", refund.id, admin_id)
             return refund
         except Exception as exc:
             logger.error(f"[ApproveRefund] Failed to approve refund {refund_id}: {exc!r}")

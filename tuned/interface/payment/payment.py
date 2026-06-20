@@ -87,8 +87,10 @@ class ClientMarkAsPaid:
         self._audit = AuditService(repos=repos)
         
     def execute(self, payment_id: str, client_proof_reference: str, client_id: str) -> PaymentResponseDTO:
-        try:  
+        try:
+            client = self._repos.user.get_user_by_id(client_id)
             payment = self._repo.get_by_id(payment_id)
+            order = self._repos.order.get_by_id(str(payment.order_id))
             if payment.status != PaymentStatus.PENDING:
                 raise ValueError(f"Payment is not in a pending state, current state: {payment.status}")
                 
@@ -101,7 +103,7 @@ class ClientMarkAsPaid:
 
             try:
                 self._repos.payment.transaction.create(TransactionCreateDTO(
-                    payment_id=updated_payment.id,
+                    payment_id=str(updated_payment.id),
                     type=TransactionType.PAYMENT,
                     amount=updated_payment.amount,
                     status=TransactionStatus.PENDING
@@ -112,9 +114,9 @@ class ClientMarkAsPaid:
             try:
                 self._audit.activity_log.log(ActivityLogCreateDTO(
                     action=Variables.PAYMENT_UPDATE_ACTION,
-                    user_id=updated_payment.user_id,
+                    user_id=str(updated_payment.user_id),
                     entity_type=Variables.PAYMENT_ENTITY_TYPE,
-                    entity_id=updated_payment.id,
+                    entity_id=str(updated_payment.id),
                     before=payment,
                     after=updated_payment,
                     created_by=client_id,
@@ -125,20 +127,33 @@ class ClientMarkAsPaid:
                 logger.error(f"[ClientMarkAsPaid] Audit failed for payment {updated_payment.id}: {audit_exc!r}")
             self._repos.payment.save()
 
+            # 2. Email confirmation to the client and admin
+            try:
+                from tuned.services.email_service import send_payment_client_marked_paid, send_admin_payment_proof_submitted
+                send_payment_client_marked_paid(client, order, updated_payment)
+                admin = self._repos.user.get_admin_user()
+                send_admin_payment_proof_submitted(admin, updated_payment, client.get_name(), order.order_number)
+            except Exception as email_exc:
+                logger.error("[ClientMarkAsPaid] Email confirmation failed: %r", email_exc)
+
             try:
                 event_bus.emit("payment.client_marked_paid", {
-                    "payment_id": updated_payment.id,
-                    "order_id": updated_payment.order_id,
-                    "user_id": updated_payment.user_id,
-                    "status": updated_payment.status
+                    "payment_id":      str(updated_payment.id),
+                    "order_id":        str(updated_payment.order_id),
+                    "order_number":    order.order_number,
+                    "user_id":         str(updated_payment.user_id),
+                    "client_name":     client.get_name(),
+                    "client_email":    client.email,
+                    "status":          updated_payment.status.value,
+                    "amount":          float(updated_payment.amount),
                 })
             except Exception as event_exc:
-                logger.error(f"[ClientMarkAsPaid] Event emit failed for payment {updated_payment.id}: {event_exc!r}")
+                logger.error("[ClientMarkAsPaid] Event emit failed for payment %s: %r", updated_payment.id, event_exc)
 
-            logger.info(f"[ClientMarkAsPaid] Payment {updated_payment.id} marked as paid by client {client_id}")
-            return updated_payment
+            logger.info("[ClientMarkAsPaid] Payment %s marked as paid by client %s", updated_payment.id, client_id)
+            return PaymentResponseDTO.from_model(updated_payment)
         except Exception as exc:
-            logger.error(f"[ClientMarkAsPaid] Failed to mark payment {payment_id} as paid: {exc!r}")
+            logger.error("[ClientMarkAsPaid] Failed to mark payment %s as paid: %r", payment_id, exc)
             raise
 
 class AdminVerifyPayment:
@@ -162,15 +177,15 @@ class AdminVerifyPayment:
 
             try:
                 self._repos.payment.transaction.create(TransactionCreateDTO(
-                    payment_id=updated_payment.id,
+                    payment_id=str(updated_payment.id),
                     type=TransactionType.PAYMENT,
                     amount=updated_payment.amount,
                     status=TransactionStatus.COMPLETED
                 ))
             except Exception as tx_exc:
-                logger.error(f"[AdminVerifyPayment] Transaction record creation failed for payment {updated_payment.id}: {tx_exc!r}")
+                logger.error("[AdminVerifyPayment] Transaction record creation failed for payment %s: %r", updated_payment.id, tx_exc)
 
-            order = self._repos.order.get_by_id(updated_payment.order_id)
+            order = self._repos.order.get_by_id(str(updated_payment.order_id))
             # Update Order paid status and transition to ACTIVE
             if order:
                 order.paid = True
@@ -183,7 +198,7 @@ class AdminVerifyPayment:
                     subtotal=float(order.subtotal or order.total_price or 0.0),
                     total=float(order.total_price or 0.0),
                     due_date=datetime.now(timezone.utc) + timedelta(days=14),
-                    payment_id=updated_payment.id,
+                    payment_id=str(updated_payment.id),
                     discount=float(order.discount_amount or 0.0),
                     tax=0.0,
                     paid=True
@@ -194,9 +209,9 @@ class AdminVerifyPayment:
             try:
                 self._audit.activity_log.log(ActivityLogCreateDTO(
                     action=Variables.PAYMENT_UPDATE_ACTION,
-                    user_id=updated_payment.user_id,
+                    user_id=str(updated_payment.user_id),
                     entity_type=Variables.PAYMENT_ENTITY_TYPE,
-                    entity_id=updated_payment.id,
+                    entity_id=str(updated_payment.id),
                     before=payment,
                     after=updated_payment,
                     created_by=admin_id,
@@ -204,22 +219,37 @@ class AdminVerifyPayment:
                     user_agent="system"
                 ))
             except Exception as audit_exc:
-                logger.error(f"[AdminVerifyPayment] Audit failed for payment {updated_payment.id}: {audit_exc!r}")
+                logger.error("[AdminVerifyPayment] Audit failed for payment %s: %r", updated_payment.id, audit_exc)
             self._repos.payment.save()
+
+            # Email notification
             try:
+                from tuned.services.email_service import send_client_payment_verification_success_email
+                client = self._repos.user.get_user_by_id(str(updated_payment.user_id))
+                send_client_payment_verification_success_email(user=client, payment=updated_payment, order=order)
+            except Exception as email_exc:
+                logger.error("[AdminVerifyPayment] Email confirmation failed: %r", email_exc)
+
+            try:
+                order = self._repos.order.get_by_id(str(updated_payment.order_id))
+                client = self._repos.user.get_user_by_id(str(updated_payment.user_id))
                 event_bus.emit("payment.verified_by_admin", {
-                    "payment_id": updated_payment.id,
-                    "order_id": updated_payment.order_id,
-                    "user_id": updated_payment.user_id,
-                    "status": updated_payment.status
+                    "payment_id":    str(updated_payment.id),
+                    "order_id":      str(updated_payment.order_id),
+                    "order_number":  order.order_number,
+                    "user_id":       str(updated_payment.user_id),
+                    "client_name":   client.get_name(),
+                    "client_email":  client.email,
+                    "status":        updated_payment.status.value,
+                    "amount":        float(updated_payment.amount),
                 })
             except Exception as event_exc:
-                logger.error(f"[AdminVerifyPayment] Event emit failed for payment {updated_payment.id}: {event_exc!r}")
+                logger.error("[AdminVerifyPayment] Event emit failed for payment %s: %r", updated_payment.id, event_exc)
 
-            logger.info(f"[AdminVerifyPayment] Payment {updated_payment.id} verified by admin {admin_id}")
-            return updated_payment
+            logger.info("[AdminVerifyPayment] Payment %s verified by admin %s", updated_payment.id, admin_id)
+            return PaymentResponseDTO.from_model(updated_payment)
         except Exception as exc:
-            logger.error(f"[AdminVerifyPayment] Failed to verify payment {payment_id}: {exc!r}")
+            logger.error("[AdminVerifyPayment] Failed to verify payment %s: %r", payment_id, exc)
             raise
 
 class AdminRejectPayment:
@@ -243,20 +273,20 @@ class AdminRejectPayment:
 
             try:
                 self._repos.payment.transaction.create(TransactionCreateDTO(
-                    payment_id=updated_payment.id,
+                    payment_id=str(updated_payment.id),
                     type=TransactionType.PAYMENT,
                     amount=updated_payment.amount,
                     status=TransactionStatus.FAILED
                 ))
             except Exception as tx_exc:
-                logger.error(f"[AdminRejectPayment] Transaction record creation failed for payment {updated_payment.id}: {tx_exc!r}")
+                logger.error("[AdminRejectPayment] Transaction record creation failed for payment %s: %r", updated_payment.id, tx_exc)
 
             try:
                 self._audit.activity_log.log(ActivityLogCreateDTO(
                     action=Variables.PAYMENT_UPDATE_ACTION,
-                    user_id=updated_payment.user_id,
+                    user_id=str(updated_payment.user_id),
                     entity_type=Variables.PAYMENT_ENTITY_TYPE,
-                    entity_id=updated_payment.id,
+                    entity_id=str(updated_payment.id),
                     before=payment,
                     after=updated_payment,
                     created_by=user_id,
@@ -264,18 +294,36 @@ class AdminRejectPayment:
                     user_agent=user_agent
                 ))
             except Exception as audit_exc:
-                logger.error(f"[AdminRejectPayment] Audit failed for payment {updated_payment.id}: {audit_exc!r}")
+                logger.error("[AdminRejectPayment] Audit failed for payment %s: %r", updated_payment.id, audit_exc)
             self._repos.payment.save()
+
+            # Email notification
             try:
+                from tuned.services.email_service import send_client_payment_verification_failure_email
+                order = self._repos.order.get_by_id(str(updated_payment.order_id))
+                client = self._repos.user.get_user_by_id(str(updated_payment.user_id))
+                send_client_payment_verification_failure_email(client, order.order_number, rejection_reason)
+            except Exception as email_exc:
+                logger.error("[AdminRejectPayment] Email notification failed: %r", email_exc)
+
+            try:
+                order = self._repos.order.get_by_id(str(updated_payment.order_id))
+                client = self._repos.user.get_user_by_id(str(updated_payment.user_id))
                 event_bus.emit("payment.marked_failed", {
-                    "payment_id": updated_payment.id,
-                    "rejection_reason": rejection_reason
+                    "payment_id":       str(updated_payment.id),
+                    "order_id":         str(updated_payment.order_id),
+                    "order_number":     order.order_number,
+                    "user_id":          str(updated_payment.user_id),
+                    "client_name":      client.get_name(),
+                    "client_email":     client.email,
+                    "status":           updated_payment.status.value,
+                    "rejection_reason": rejection_reason,
                 })
             except Exception as event_exc:
-                logger.error(f"[AdminRejectPayment] Event emit failed for payment {updated_payment.id}: {event_exc!r}")
+                logger.error("[AdminRejectPayment] Event emit failed for payment %s: %r", updated_payment.id, event_exc)
 
-            logger.info(f"[AdminRejectPayment] Payment {updated_payment.id} rejected by admin {user_id}")
-            return updated_payment
+            logger.info("[AdminRejectPayment] Payment %s rejected by admin %s", updated_payment.id, user_id)
+            return PaymentResponseDTO.from_model(updated_payment)
         except Exception as exc:
             logger.error(f"[AdminRejectPayment] Failed to reject payment {payment_id}: {exc!r}")
             raise

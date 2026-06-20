@@ -42,8 +42,10 @@ class AdminOrderService:
                 "order_number": order.order_number,
                 "progress": 40,
                 "delivered_at": None,
+                "title": order.title or "",
+                "due_date": order.due_date.isoformat() if order.due_date else None,
             })
-            get_event_bus().emit("admin.order.activated", {
+            get_event_bus().emit("order.admin.activated", {
                 "order_id": str(order.id),
                 "order_number": order.order_number,
             })
@@ -56,9 +58,10 @@ class AdminOrderService:
         self._repos.session.commit()
         try:
             from tuned.core.events import get_event_bus
-            get_event_bus().emit("admin.order.escalated", {
+            get_event_bus().emit("order.admin.escalated", {
                 "order_id": str(order.id),
                 "order_number": order.order_number,
+                "client_id": str(order.client_id),
             })
         except Exception as exc:
             logger.error("[AdminOrderService.escalate_order] Event emit failed: %r", exc)
@@ -83,6 +86,21 @@ class AdminOrderService:
         if str(req.order_id) != order_id:
             raise NotFound("Revision request not found for this order")
         self._repos.session.commit()
+
+        try:
+            order = self._repos.order.get_by_id(order_id)
+            from tuned.core.events import get_event_bus
+            get_event_bus().emit("order.revision_status_changed", {
+                "order_id":     str(req.order_id),
+                "order_number": order.order_number,
+                "client_id":    str(order.client_id),
+                "revision_id":  str(req.id),
+                "new_status":   new_status.value,
+                "priority":     req.priority.value if hasattr(req.priority, "value") else str(req.priority),
+            })
+        except Exception as exc:
+            logger.error("[AdminOrderService.update_revision_request_status] Event emit failed: %r", exc)
+
         return AdminRevisionRequestResponseDTO.from_model(req)
 
     def get_deadline_extensions(self, order_id: str) -> list[AdminDeadlineExtensionResponseDTO]:

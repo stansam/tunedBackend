@@ -118,14 +118,16 @@ class OrderDeliveryService:
 
             response = OrderDeliveryResponseDTO.from_model(delivery_resp)
 
+            from tuned.utils.socket_payload import safe_payload
             from tuned.core.events import get_event_bus
             get_event_bus().emit(
                 "delivery.created",
                 {
-                    "client_id": user_id,
+                    "client_id": str(order.client_id),
+                    "acting_user_id": user_id,
                     "order_id": order_id,
                     "order_number": order.order_number,
-                    "delivery": asdict(response),
+                    "delivery": safe_payload(asdict(response)),
                 }
             )
 
@@ -186,14 +188,17 @@ class OrderDeliveryService:
             self._repo.save()
 
             response = OrderDeliveryResponseDTO.from_model(delivery_resp)
+            from tuned.utils.socket_payload import safe_payload
             from tuned.core.events import get_event_bus
+            order = self._repos.order.get_by_id(order_id)
             get_event_bus().emit(
                 "delivery.files_added",
                 {
-                    "client_id": user_id,
+                    "client_id": str(order.client_id),
+                    "acting_user_id": user_id,
                     "order_id": order_id,
                     "delivery_id": delivery_id,
-                    "delivery": asdict(response),
+                    "delivery": safe_payload(asdict(response)),
                 }
             )
 
@@ -235,6 +240,7 @@ class OrderDeliveryService:
 
             response = OrderDeliveryResponseDTO.from_model(delivery_resp)
 
+            from tuned.utils.socket_payload import safe_payload
             from tuned.core.events import get_event_bus
             get_event_bus().emit(
                 "delivery.status_changed",
@@ -242,7 +248,7 @@ class OrderDeliveryService:
                     "client_id": user_id,
                     "order_id": str(delivery_resp.order_id),
                     "delivery_id": delivery_id,
-                    "delivery": asdict(response),
+                    "delivery": safe_payload(asdict(response)),
                 }
             )
 

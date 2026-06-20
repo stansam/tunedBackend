@@ -237,6 +237,11 @@ class UserService:
             created_by=user_id
         ))
         self._repo.save()
+        try:
+            from tuned.core.events import get_event_bus
+            get_event_bus().emit("user.password_changed", {"user_id": str(user_id)})
+        except Exception as exc:
+            logger.error("[UserService.change_password] Event emit failed: %r", exc)
         return True
 
     def upload_avatar(self, user_id: str, file: Any, locale: BaseRequestDTO) -> Dict[str, Any]:

@@ -40,6 +40,10 @@ celery_app = Celery(
         'tuned.tasks.notifications',
         'tuned.tasks.order_tasks',
         'tuned.tasks.dashboard_tasks',
+        'tuned.tasks.user_tasks',
+        'tuned.tasks.referral_tasks',
+        'tuned.tasks.payment_tasks',
+        'tuned.tasks.media_tasks',
     ],
 )
 
@@ -56,6 +60,8 @@ celery_app.conf.update(
         'tuned.tasks.notifications.*': {'queue': 'notifications'},
         'tuned.tasks.order_tasks.*': {'queue': 'orders'},
         'tuned.tasks.dashboard_tasks.*': {'queue': 'notifications'},
+        'tuned.tasks.user_tasks.*': {'queue': 'notifications'},
+        'tuned.tasks.referral_tasks.*': {'queue': 'notifications'}, # TODO: Check if media tasks ought to be included here
     },
     broker_transport_options={
         'visibility_timeout': 3600,  # 1 hour

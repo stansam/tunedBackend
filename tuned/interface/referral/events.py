@@ -7,12 +7,12 @@ logger = logging.getLogger(__name__)
 
 class ReferralEventHandlers:
     def __init__(self, bus: EventBus) -> None:
-        self.bus = bus
+        self._bus = bus
 
     def register(self) -> None:
-        self.bus.on("PaymentCompleted", self.handle_payment_completed)
-        self.bus.on("ReferralCommissionEarned", self.handle_commission_earned)
-        self.bus.on("user.registered_with_referral", self.handle_user_registered_with_referral)
+        self._bus.on("payment.completed", self.handle_payment_completed)
+        self._bus.on("referral.commission_earned", self.handle_commission_earned)
+        self._bus.on("user.registered_with_referral", self.handle_user_registered_with_referral)
         logger.info("[ReferralEventHandlers] Registered.")
 
     def handle_user_registered_with_referral(self, payload: Dict[str, Any]) -> None:
@@ -20,26 +20,26 @@ class ReferralEventHandlers:
         referral_code = payload.get("referral_code")
         
         if new_user_id and referral_code:
-            logger.info(f"[ReferralEventHandlers] Processing referral for new user {new_user_id} with code {referral_code}")
+            logger.info("[ReferralEventHandlers] Processing referral for new user %s with code %s", new_user_id, referral_code)
             try:
                 from tuned.utils.dependencies import get_services
                 get_services().referral.process_signup(str(new_user_id), str(referral_code))
             except Exception as e:
-                logger.error(f"[ReferralEventHandlers] Failed to process referral signup: {e}")
+                logger.error("[ReferralEventHandlers] Failed to process referral signup: %r", e)
 
     def handle_payment_completed(self, payload: Dict[str, Any]) -> None:
         payment_id = payload.get("payment_id")
         user_id = payload.get("user_id")
         
         if payment_id and user_id:
-            logger.info(f"[ReferralEventHandlers] PaymentCompleted event received for user {user_id}. Enqueueing referral check task.")
+            logger.info("[ReferralEventHandlers] payment.completed event received for user %s. Enqueueing referral check task.", user_id)
             from tuned.tasks.referral_tasks import process_referral_reward_task
             process_referral_reward_task.delay(str(payment_id), str(user_id))
 
     def handle_commission_earned(self, payload: Dict[str, Any]) -> None:
         referrer_id = payload.get("referrer_id")
         commission = payload.get("commission_earned")
-        logger.info(f"[ReferralEventHandlers] ReferralCommissionEarned for {referrer_id}: {commission}")
+        logger.info("[ReferralEventHandlers] referral.commission_earned for %s: %s", referrer_id, commission)
         
         try:
             from tuned.extensions import socketio
@@ -51,8 +51,8 @@ class ReferralEventHandlers:
                 user_id=str(referrer_id),
                 title="Referral Points Earned!",
                 message=f"Congratulations! You just earned {payload.get('points_earned')} reward points from a successful referral.",
-                notification_type=NotificationType.SUCCESS,
+                notification_type=NotificationType.SUCCESS.value,
                 action_url='/dashboard/referrals'
             )
         except Exception as e:
-            logger.error(f"[ReferralEventHandlers] Failed to emit socket event: {e}")
+            logger.error("[ReferralEventHandlers] Failed to emit socket event: %r", e)

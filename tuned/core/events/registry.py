@@ -7,14 +7,7 @@ logger: logging.Logger = get_logger(__name__)
 
 
 class EventRegistry:
-    def __init__(self) -> None:
-        self._registered = False
-
     def register_all(self) -> None:
-        if self._registered:
-            logger.debug("[EventRegistry] Already registered — skipping.")
-            return
-
         from tuned.core.events import get_event_bus
         bus = get_event_bus()
 
@@ -24,6 +17,7 @@ class EventRegistry:
         from tuned.interface.payment.events import PaymentEventHandlers
         from tuned.interface.referral.events import ReferralEventHandlers
         from tuned.interface.order_delivery.events import OrderDeliveryEventHandlers
+        from tuned.interface.communication.events import ChatEventHandlers
 
         UserEventHandlers(bus).register()
         OrderEventHandlers(bus).register()
@@ -31,8 +25,8 @@ class EventRegistry:
         PaymentEventHandlers(bus).register()
         ReferralEventHandlers(bus).register()
         OrderDeliveryEventHandlers(bus).register()
+        ChatEventHandlers(bus).register()
 
-        self._registered = True
         logger.info("[EventRegistry] All domain handlers registered.")
 
 

@@ -1,16 +1,15 @@
 import logging
 from tuned.core.events import EventBus, EventPayload
-from tuned.extensions import socketio
 from tuned.core.logging import get_logger
 
 logger: logging.Logger = get_logger(__name__)
 
 class PreferenceEventHandlers:
     def __init__(self, bus: EventBus) -> None:
-        self.bus = bus
+        self._bus = bus
 
     def register(self) -> None:
-        self.bus.on("SETTINGS_UPDATED", self.handle_settings_updated)
+        self._bus.on("preferences.settings_updated", self.handle_settings_updated)
         logger.debug("[PreferenceEventHandlers] Registered handlers.")
 
     def handle_settings_updated(self, payload: EventPayload) -> None:
@@ -23,16 +22,16 @@ class PreferenceEventHandlers:
                 return
 
             room = f"user_{user_id}"
-            logger.info(f"[Socket] Emitting settings_updated for user {user_id} in room {room}")
+            logger.info("[Socket] Emitting preferences:updated for user %s in room %s", user_id, room)
             
+            from tuned.extensions import socketio
             socketio.emit(
-                "settings_updated",
+                "preferences:updated",
                 {
                     "category": category,
                     "payload": data
                 },
-                to=room,
-                namespace="/"
+                to=room
             )
         except Exception as e:
-            logger.error(f"Error in handle_settings_updated: {str(e)}")
+            logger.error("Error in handle_settings_updated: %r", e)

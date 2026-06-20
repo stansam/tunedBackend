@@ -24,8 +24,8 @@ class UserEventHandlers:
         from tuned.services.email_service import send_verification_email
         from tuned.utils.dependencies import get_services
 
-        user_id   = payload.get("user_id")
-        raw_token = payload.get("raw_token")
+        user_id    = payload.get("user_id")
+        raw_token  = payload.get("raw_token")
         ip_address = payload.get("ip_address")
 
         if user_id is None:

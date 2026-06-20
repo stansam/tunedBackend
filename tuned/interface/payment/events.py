@@ -10,8 +10,10 @@ if TYPE_CHECKING:
 logger: logging.Logger = get_logger(__name__)
 
 
+
 class PaymentEventHandlers:
     def __init__(self, bus: EventBus) -> None:
+        self._bus = bus
         self._bus = bus
 
     def register(self) -> None:
@@ -26,13 +28,16 @@ class PaymentEventHandlers:
     def _on_payment_created(self, event_data: Dict[str, Any]) -> None:
         try:
             logger.info("[PaymentEventHandlers] Processing payment.created: %s", event_data.get("payment_id"))
+            logger.info("[PaymentEventHandlers] Processing payment.created: %s", event_data.get("payment_id"))
             from tuned.extensions import socketio
+            room = f"user_{event_data.get('user_id')}"
             room = f"user_{event_data.get('user_id')}"
             socketio.emit("dashboard:payment_updated", {
                 "payment_id": str(event_data.get("payment_id")),
                 "status": event_data.get("status")
             }, to=room)
         except Exception as exc:
+            logger.error("[PaymentEventHandlers] Error in payment.created handler: %r", exc)
             logger.error("[PaymentEventHandlers] Error in payment.created handler: %r", exc)
 
     def _on_payment_client_marked_paid(self, event_data: Dict[str, Any]) -> None:
@@ -80,6 +85,7 @@ class PaymentEventHandlers:
             
         except Exception as exc:
             logger.error("[PaymentEventHandlers] Error in payment.client_marked_paid handler: %r", exc)
+            logger.error("[PaymentEventHandlers] Error in payment.client_marked_paid handler: %r", exc)
 
     def _on_payment_verified_by_admin(self, event_data: Dict[str, Any]) -> None:
         try:
@@ -122,6 +128,7 @@ class PaymentEventHandlers:
             
         except Exception as exc:
             logger.error("[PaymentEventHandlers] Error in payment.verified_by_admin handler: %r", exc)
+            logger.error("[PaymentEventHandlers] Error in payment.verified_by_admin handler: %r", exc)
 
     def _on_invoice_created(self, event_data: Dict[str, Any]) -> None:
         try:
@@ -143,7 +150,7 @@ class PaymentEventHandlers:
             
         except Exception as exc:
             logger.error("[PaymentEventHandlers] Error in invoice.created handler: %r", exc)
-
+    
     def _on_marked_failed(self, event_data: Dict[str, Any]) -> None:
         try:
             logger.info("[PaymentEventHandlers] Processing payment.marked_failed: %s", event_data.get("payment_id"))
@@ -196,4 +203,4 @@ class PaymentEventHandlers:
                 to=f"user_{user_id}",
             )
         except Exception as exc:
-            logger.error("[PaymentEventHandlers] Error in refund.processed handler: %r", exc)
+            logger.error(f"[PaymentEventHandlers] Error in refund.processed handler: {exc!r}")

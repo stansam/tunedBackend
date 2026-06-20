@@ -7,8 +7,10 @@ logger: logging.Logger = get_logger(__name__)
 class PreferenceEventHandlers:
     def __init__(self, bus: EventBus) -> None:
         self._bus = bus
+        self._bus = bus
 
     def register(self) -> None:
+        self._bus.on("preferences.settings_updated", self.handle_settings_updated)
         self._bus.on("preferences.settings_updated", self.handle_settings_updated)
         logger.debug("[PreferenceEventHandlers] Registered handlers.")
 
@@ -23,9 +25,12 @@ class PreferenceEventHandlers:
 
             room = f"user_{user_id}"
             logger.info("[Socket] Emitting preferences:updated for user %s in room %s", user_id, room)
+            logger.info("[Socket] Emitting preferences:updated for user %s in room %s", user_id, room)
             
             from tuned.extensions import socketio
+            from tuned.extensions import socketio
             socketio.emit(
+                "preferences:updated",
                 "preferences:updated",
                 {
                     "category": category,
@@ -34,4 +39,5 @@ class PreferenceEventHandlers:
                 to=room
             )
         except Exception as e:
+            logger.error("Error in handle_settings_updated: %r", e)
             logger.error("Error in handle_settings_updated: %r", e)

@@ -14,7 +14,6 @@ logger: logging.Logger = get_logger(__name__)
 class PaymentEventHandlers:
     def __init__(self, bus: EventBus) -> None:
         self._bus = bus
-        self._bus = bus
 
     def register(self) -> None:
         self._bus.on("payment.created", self._on_payment_created)
@@ -28,16 +27,13 @@ class PaymentEventHandlers:
     def _on_payment_created(self, event_data: Dict[str, Any]) -> None:
         try:
             logger.info("[PaymentEventHandlers] Processing payment.created: %s", event_data.get("payment_id"))
-            logger.info("[PaymentEventHandlers] Processing payment.created: %s", event_data.get("payment_id"))
             from tuned.extensions import socketio
-            room = f"user_{event_data.get('user_id')}"
             room = f"user_{event_data.get('user_id')}"
             socketio.emit("dashboard:payment_updated", {
                 "payment_id": str(event_data.get("payment_id")),
                 "status": event_data.get("status")
             }, to=room)
         except Exception as exc:
-            logger.error("[PaymentEventHandlers] Error in payment.created handler: %r", exc)
             logger.error("[PaymentEventHandlers] Error in payment.created handler: %r", exc)
 
     def _on_payment_client_marked_paid(self, event_data: Dict[str, Any]) -> None:
@@ -85,7 +81,6 @@ class PaymentEventHandlers:
             
         except Exception as exc:
             logger.error("[PaymentEventHandlers] Error in payment.client_marked_paid handler: %r", exc)
-            logger.error("[PaymentEventHandlers] Error in payment.client_marked_paid handler: %r", exc)
 
     def _on_payment_verified_by_admin(self, event_data: Dict[str, Any]) -> None:
         try:
@@ -127,7 +122,6 @@ class PaymentEventHandlers:
             }, to=room)
             
         except Exception as exc:
-            logger.error("[PaymentEventHandlers] Error in payment.verified_by_admin handler: %r", exc)
             logger.error("[PaymentEventHandlers] Error in payment.verified_by_admin handler: %r", exc)
 
     def _on_invoice_created(self, event_data: Dict[str, Any]) -> None:

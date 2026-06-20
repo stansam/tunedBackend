@@ -30,22 +30,14 @@ class OrderEventHandlers:
         client_id    = payload.get("client_id")
         new_status   = payload.get("new_status", "")
         progress     = payload.get("progress", 0)
-        order_id     = payload.get("order_id")
-        client_id    = payload.get("client_id")
-        new_status   = payload.get("new_status", "")
-        progress     = payload.get("progress", 0)
         delivered_at = payload.get("delivered_at")
         order_number = payload.get("order_number", "")
-        title        = payload.get("title", "")
-        due_date     = payload.get("due_date")
-
         title        = payload.get("title", "")
         due_date     = payload.get("due_date")
 
         try:
             from tuned.extensions import socketio
             socketio.emit(
-                "order:updated",
                 "order:updated",
                 {
                     "id":           str(order_id),

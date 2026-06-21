@@ -99,3 +99,33 @@ class UpdateOrDeleteBlogCategory:
 
         except SQLAlchemyError as e:
             raise DatabaseError(f"Database error while updating category: {str(e)}") from e
+
+
+class ListBlogCategoriesWithCount:
+    """Admin-only: lists all blog categories with the count of associated posts.
+
+    Returns a list of (BlogCategory, post_count: int) tuples so the caller
+    can map them to AdminBlogCategoryWithCountDTO.
+    """
+
+    def __init__(self, session: Session) -> None:
+        self.session = session
+
+    def execute(self) -> list[tuple[BlogCategory, int]]:
+        from tuned.models.blog import BlogPost
+        from sqlalchemy import func, outerjoin, label
+        try:
+            # LEFT JOIN blog_category ON blog_post.category_id = blog_category.id
+            # GROUP BY blog_category.id to get post count per category
+            stmt = (
+                select(BlogCategory, func.count(BlogPost.id).label("post_count"))
+                .outerjoin(BlogPost, BlogPost.category_id == BlogCategory.id)
+                .group_by(BlogCategory.id)
+                .order_by(BlogCategory.name.asc())
+            )
+            rows = self.session.execute(stmt).all()
+            return [(row[0], row[1]) for row in rows]
+        except SQLAlchemyError as e:
+            raise DatabaseError(
+                f"Database error while fetching categories with counts: {str(e)}"
+            ) from e

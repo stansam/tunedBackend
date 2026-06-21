@@ -23,6 +23,12 @@ from tuned.apis.admin.routes.services_list import AdminServicesListView
 from tuned.apis.admin.routes.services_detail import (
     AdminServiceCategoryDetailView, AdminServiceDetailView
 )
+from tuned.apis.admin.routes.blogs import (
+    AdminBlogStatsView, AdminBlogPostsListView, AdminBlogPostsCollectionView,
+    AdminBlogPostDetailView, AdminBlogPostPublishView, AdminBlogPostFeatureView,
+    AdminBlogPostCommentsView, AdminBlogCategoriesListView, AdminBlogCategoryDetailView,
+    AdminBlogCommentApproveView, AdminBlogCommentDetailView, AdminBlogReactionDetailView,
+)
 
 ADMIN_ROUTES: list[dict[str, Any]] = [
     {
@@ -150,5 +156,65 @@ ADMIN_ROUTES: list[dict[str, Any]] = [
         "view_func": AdminPricingCategoriesListView.as_view("admin_pricing_categories_list"),
         "methods": ["GET"],
     },
+    # ── Blogs ──────────────────────────────────────────────────────────────
+    {
+        "url_rule": "/blogs/stats",
+        "view_func": AdminBlogStatsView.as_view("admin_blog_stats"),
+        "methods": ["GET"],
+    },
+    {
+        "url_rule": "/blogs/list",
+        "view_func": AdminBlogPostsListView.as_view("admin_blog_posts_list"),
+        "methods": ["POST"],
+    },
+    {
+        "url_rule": "/blogs/posts",
+        "view_func": AdminBlogPostsCollectionView.as_view("admin_blog_posts_collection"),
+        "methods": ["POST"],
+    },
+    {
+        "url_rule": "/blogs/posts/<string:slug>",
+        "view_func": AdminBlogPostDetailView.as_view("admin_blog_post_detail"),
+        "methods": ["GET", "PATCH", "DELETE"],
+    },
+    {
+        "url_rule": "/blogs/posts/<string:post_id>/publish",
+        "view_func": AdminBlogPostPublishView.as_view("admin_blog_post_publish"),
+        "methods": ["PATCH"],
+    },
+    {
+        "url_rule": "/blogs/posts/<string:post_id>/feature",
+        "view_func": AdminBlogPostFeatureView.as_view("admin_blog_post_feature"),
+        "methods": ["PATCH"],
+    },
+    {
+        "url_rule": "/blogs/posts/<string:post_id>/comments",
+        "view_func": AdminBlogPostCommentsView.as_view("admin_blog_post_comments"),
+        "methods": ["GET"],
+    },
+    {
+        "url_rule": "/blogs/categories",
+        "view_func": AdminBlogCategoriesListView.as_view("admin_blog_categories_list"),
+        "methods": ["GET", "POST"],
+    },
+    {
+        "url_rule": "/blogs/categories/<string:category_id>",
+        "view_func": AdminBlogCategoryDetailView.as_view("admin_blog_category_detail"),
+        "methods": ["PATCH", "DELETE"],
+    },
+    {
+        "url_rule": "/blogs/comments/<string:comment_id>/approve",
+        "view_func": AdminBlogCommentApproveView.as_view("admin_blog_comment_approve"),
+        "methods": ["PATCH"],
+    },
+    {
+        "url_rule": "/blogs/comments/<string:comment_id>",
+        "view_func": AdminBlogCommentDetailView.as_view("admin_blog_comment_detail"),
+        "methods": ["DELETE"],
+    },
+    {
+        "url_rule": "/blogs/reactions/<string:reaction_id>",
+        "view_func": AdminBlogReactionDetailView.as_view("admin_blog_reaction_detail"),
+        "methods": ["DELETE"],
+    },
 ]
-

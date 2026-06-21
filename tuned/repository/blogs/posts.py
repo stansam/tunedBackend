@@ -231,3 +231,22 @@ class GetBlogsByCategory:
             raise DatabaseError(f"Database error while fetching posts: {str(e)}")
         
     
+
+class GetAllBlogPosts:
+    """Admin-only: returns all posts regardless of is_published status.
+
+    Delegates to the shared getBlogPostListResponse helper so pagination,
+    sorting, search, and category filtering remain DRY.
+    """
+
+    def __init__(self, session: Session, req: BlogPostListRequestDTO) -> None:
+        self.session = session
+        self.req = req
+
+    def execute(self) -> BlogPostListResponseDTO:
+        try:
+            # No is_published filter – admins see drafts and published posts
+            stmt = select(BlogPost)
+            return getBlogPostListResponse(self.session, stmt, self.req)
+        except SQLAlchemyError as e:
+            raise DatabaseError(f"Database error while fetching all blog posts: {str(e)}")

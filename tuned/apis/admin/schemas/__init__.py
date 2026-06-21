@@ -10,6 +10,16 @@ from tuned.apis.admin.schemas.services import (
     AdminServiceCategorySchema, AdminServiceCategoryUpdateSchema,
     AdminServiceSchema, AdminServiceUpdateSchema
 )
+from tuned.apis.admin.schemas.blogs import (
+    AdminBlogPostListRequestSchema,
+    AdminCreateBlogPostSchema,
+    AdminUpdateBlogPostSchema,
+    AdminTogglePublishSchema,
+    AdminToggleFeaturedSchema,
+    AdminCreateBlogCategorySchema,
+    AdminUpdateBlogCategorySchema,
+    AdminApproveCommentSchema,
+)
 __all__ = [
     "AdminNavStatsResponseSchema",
     "AdminKPIResponseSchema",
@@ -23,4 +33,12 @@ __all__ = [
     "AdminServiceCategoryUpdateSchema",
     "AdminServiceSchema",
     "AdminServiceUpdateSchema",
+    "AdminBlogPostListRequestSchema",
+    "AdminCreateBlogPostSchema",
+    "AdminUpdateBlogPostSchema",
+    "AdminTogglePublishSchema",
+    "AdminToggleFeaturedSchema",
+    "AdminCreateBlogCategorySchema",
+    "AdminUpdateBlogCategorySchema",
+    "AdminApproveCommentSchema",
 ]

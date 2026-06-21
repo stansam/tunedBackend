@@ -30,6 +30,7 @@ if TYPE_CHECKING:
 
 logger: logging.Logger = get_logger(__name__)
 
+# TODO: Implement audit logging
 
 class OrderService:
     def __init__(
@@ -384,7 +385,11 @@ class OrderService:
             raise DatabaseError("Failed to fetch draft") from e
 
     def get_order_comments(self, order_id: str, user_id: str) -> list[OrderCommentResponseDTO]:
-        self._repo.get_order_by_id_for_client(order_id, user_id)  # auth check
+        user = self._repos.user.get_admin_user()
+        if str(user.id) == user_id:
+            self._repo.get_by_id(order_id)
+        else:
+            self._repo.get_order_by_id_for_client(order_id, user_id)  # auth check
         try:
             self._repo.mark_comments_read(order_id, user_id)
         except Exception:
@@ -394,7 +399,11 @@ class OrderService:
         return [OrderCommentResponseDTO.from_model(c) for c in comments]
 
     def create_order_comment(self, order_id: str, user_id: str, dto: CreateCommentRequestDTO, ip: str, ua: str) -> OrderCommentResponseDTO:
-        self._repo.get_order_by_id_for_client(order_id, user_id)  # auth check
+        user = self._repos.user.get_admin_user()
+        if str(user.id) == user_id:
+            self._repo.get_by_id(order_id)
+        else:
+            self._repo.get_order_by_id_for_client(order_id, user_id)  # auth check
         dto.order_id = order_id
         comment = self._repo.create_order_comment(order_id, user_id, dto.content)
         if dto.attachment_ids:

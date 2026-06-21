@@ -13,7 +13,7 @@ from tuned.repository.order import OrderRepository
 from tuned.repository.order_delivery import OrderDeliveryRepository
 from tuned.repository.preferences import PreferenceRepository
 from tuned.repository.payment import PaymentRepository
-from tuned.repository.communication import NewsletterRepository
+from tuned.repository.communication import NewsletterRepository, ChatRepository
 from tuned.repository.user.notification import NotificationRepository
 from tuned.repository.media import MediaRepository
 from tuned.repository.admin import AdminAnalyticsRepository, AdminOrderRepository, AdminUserRepository, AdminPaymentRepository
@@ -42,6 +42,7 @@ class Repository:
         self._notification: Optional[NotificationRepository] = None
         self._tag: Optional[TagRepository] = None
         self._newsletter: Optional[NewsletterRepository] = None
+        self._chat: Optional[ChatRepository] = None
         self._media: Optional[MediaRepository] = None
         self._admin_analytics: Optional[AdminAnalyticsRepository] = None
         self._admin_orders: Optional[AdminOrderRepository] = None
@@ -167,6 +168,12 @@ class Repository:
         if not self._newsletter:
             self._newsletter = NewsletterRepository(self.session)
         return self._newsletter
+
+    @property
+    def chat(self) -> ChatRepository:
+        if not self._chat:
+            self._chat = ChatRepository(self.session)
+        return self._chat
 
     @property
     def media(self) -> MediaRepository:

@@ -101,4 +101,10 @@ class Variables:
     SERVICE_CREATE_ACTION = "service_create"
     SERVICE_UPDATE_ACTION = "service_update"
     SERVICE_DELETE_ACTION = "service_delete"
-    
+
+    CHAT_ENTITY_TYPE = "Chat"
+    CHAT_MESSAGE_ENTITY_TYPE = "ChatMessage"
+    CHAT_CREATED_ACTION = "chat_created"
+    CHAT_MESSAGE_SENT_ACTION = "chat_message_sent"
+    CHAT_STATUS_CHANGED_ACTION = "chat_status_changed"
+    CHAT_ASSIGNED_ACTION = "chat_assigned"

@@ -87,6 +87,9 @@ class Chat(BaseModel):
     admin: Mapped[Optional["User"]] = relationship('User', foreign_keys=[admin_id], back_populates='admin_chats')
     order: Mapped[Optional["Order"]] = relationship('Order', back_populates='chats')
     
+    def __init__(self, **kwargs: Any) -> None:
+        super(Chat, self).__init__(**kwargs)
+
     def __repr__(self) -> str:
         return f'<Chat {self.id}>'
     
@@ -104,6 +107,9 @@ class ChatMessage(BaseModel):
     __table_args__ = (
         db.Index('ix_chat_message_chat_created', 'chat_id', 'created_at'),
     )
+    
+    def __init__(self, **kwargs: Any) -> None:
+        super(ChatMessage, self).__init__(**kwargs)
     
     def __repr__(self) -> str:
         return f'<ChatMessage {self.id} by User {self.user_id}>'

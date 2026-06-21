@@ -15,6 +15,7 @@ from tuned.interface.analytics import Analytics, AnalyticsService
 from tuned.interface.audit import AuditService
 from tuned.interface.payment import PaymentService
 from tuned.interface.communication.newsletter import NewsletterService
+from tuned.interface.communication.chats import ChatService
 from tuned.interface.media import MediaService
 
 if TYPE_CHECKING:
@@ -44,6 +45,7 @@ class Services:
         self._audit: Optional[AuditService] = None
         self._payment: Optional[PaymentService] = None
         self._newsletter: Optional[NewsletterService] = None
+        self._chat: Optional[ChatService] = None
         self._search: Optional[SearchService] = None
         self._media: Optional[MediaService] = None
 
@@ -188,6 +190,12 @@ class Services:
         if not self._newsletter:
             self._newsletter = NewsletterService(repos=self._repos, services=self)
         return self._newsletter
+
+    @property
+    def chat(self) -> ChatService:
+        if not self._chat:
+            self._chat = ChatService(repos=self._repos, services=self)
+        return self._chat
 
     @property
     def search(self) -> SearchService:

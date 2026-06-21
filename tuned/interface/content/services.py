@@ -26,8 +26,12 @@ class ServiceService(ServiceQueryService):
 
     def _log_activity(self, action: str, entity_id: str, actor_id: str, before: Any = None, after: Any = None) -> None:
         try:
+            user_id = None
+            if actor_id != "system":
+                user_id = actor_id
+
             self._audit.activity_log.log(ActivityLogCreateDTO(
-                action=action, user_id=actor_id, entity_type=Variables.SERVICE_ENTITY_TYPE,
+                action=action, user_id=user_id, entity_type=Variables.SERVICE_ENTITY_TYPE,
                 entity_id=entity_id, before=before, after=after, created_by=actor_id,
                 ip_address="system", user_agent="system"
             ))

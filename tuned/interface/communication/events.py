@@ -12,6 +12,8 @@ class ChatEvents:
     STATUS_CHANGED = "chat.status_changed"
     ASSIGNED = "chat.assigned"
     MESSAGE_READ = "chat.message_read"
+    MESSAGE_EDITED = "chat.message_edited"
+    MESSAGE_DELETED = "chat.message_deleted"
 
 class ChatEventHandlers:
     def __init__(self, event_bus: EventBus) -> None:
@@ -23,6 +25,8 @@ class ChatEventHandlers:
         self._bus.on(ChatEvents.STATUS_CHANGED, self._on_chat_status_changed)
         self._bus.on(ChatEvents.ASSIGNED, self._on_chat_assigned)
         self._bus.on(ChatEvents.MESSAGE_READ, self._on_message_read)
+        self._bus.on(ChatEvents.MESSAGE_EDITED, self._on_message_edited)
+        self._bus.on(ChatEvents.MESSAGE_DELETED, self._on_message_deleted)
         logger.info("[ChatEventHandlers] registered")
 
     def _on_message_sent(self, payload: EventPayload) -> None:
@@ -151,4 +155,46 @@ class ChatEventHandlers:
                 socketio.emit("chat:read", socket_payload, to="admin_room")
         except Exception as exc:
             logger.error("[ChatEventHandlers._on_message_read] Socket emit failed: %r", exc)
+
+    def _on_message_edited(self, payload: EventPayload) -> None:
+        chat_id = payload.get("chat_id")
+        message_id = payload.get("message_id")
+        recipient_id = payload.get("recipient_id")
+        content = payload.get("content", "")
+        updated_at = payload.get("updated_at", "")
+
+        socket_payload = {
+            "chat_id": str(chat_id),
+            "message_id": str(message_id),
+            "content": content,
+            "is_edited": True,
+            "updated_at": updated_at
+        }
+
+        try:
+            from tuned.extensions import socketio
+            if recipient_id:
+                socketio.emit("chat:message:updated", socket_payload, to=f"user_{recipient_id}")
+            socketio.emit("chat:message:updated", socket_payload, to="admin_room")
+        except Exception as exc:
+            logger.error("[ChatEventHandlers._on_message_edited] Socket emit failed: %r", exc)
+
+    def _on_message_deleted(self, payload: EventPayload) -> None:
+        chat_id = payload.get("chat_id")
+        message_id = payload.get("message_id")
+        recipient_id = payload.get("recipient_id")
+
+        socket_payload = {
+            "chat_id": str(chat_id),
+            "message_id": str(message_id),
+            "is_deleted": True
+        }
+
+        try:
+            from tuned.extensions import socketio
+            if recipient_id:
+                socketio.emit("chat:message:deleted", socket_payload, to=f"user_{recipient_id}")
+            socketio.emit("chat:message:deleted", socket_payload, to="admin_room")
+        except Exception as exc:
+            logger.error("[ChatEventHandlers._on_message_deleted] Socket emit failed: %r", exc)
 

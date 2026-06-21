@@ -10,6 +10,7 @@ from tuned.models.enums import NotificationType, ChatStatus, NewsletterFrequency
 if TYPE_CHECKING:
     from tuned.models.user import User
     from tuned.models.order import Order
+    from tuned.models.media import MediaAsset
 
 class Notification(BaseModel):
     __tablename__ = 'notification'
@@ -99,10 +100,16 @@ class ChatMessage(BaseModel):
     chat_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), db.ForeignKey('chat.id'), nullable=True)
     content: Mapped[Optional[str]] = mapped_column(db.Text, nullable=True)
     is_read: Mapped[bool] = mapped_column(db.Boolean, default=False, nullable=False)
+    is_edited: Mapped[bool] = mapped_column(db.Boolean, default=False, nullable=False)
     
-    # Relationships
     user: Mapped[Optional["User"]] = relationship('User', foreign_keys=[user_id], back_populates='chat_messages')
     chat: Mapped[Optional["Chat"]] = relationship('Chat', foreign_keys=[chat_id], back_populates='messages')
+    attachments: Mapped[list["MediaAsset"]] = relationship(
+        "MediaAsset",
+        primaryjoin="and_(ChatMessage.id==foreign(MediaAsset.owner_id), MediaAsset.owner_type=='CHAT_MESSAGE')",
+        cascade="all, delete-orphan",
+        lazy="selectin"
+    )
     
     __table_args__ = (
         db.Index('ix_chat_message_chat_created', 'chat_id', 'created_at'),

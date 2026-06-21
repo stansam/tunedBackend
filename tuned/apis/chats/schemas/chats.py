@@ -29,3 +29,6 @@ class AssignAdminSchema(Schema):
 
 class ChangeStatusSchema(Schema):
     status = fields.String(required=True, validate=validate.OneOf(["active", "closed"]))
+
+class EditMessageSchema(Schema):
+    content = fields.String(required=True, validate=validate.Length(min=1, max=5000))

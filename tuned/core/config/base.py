@@ -23,7 +23,7 @@ class BaseConfig:
     
     SESSION_COOKIE_NAME: str = 'tuned_session'
     SESSION_COOKIE_HTTPONLY: bool = True
-    SESSION_COOKIE_SAMESITE: str = 'Lax'
+    SESSION_COOKIE_SAMESITE: str | None = 'Lax'
     SESSION_COOKIE_PATH: str = '/'
     PERMANENT_SESSION_LIFETIME: timedelta = timedelta(days=7)
     

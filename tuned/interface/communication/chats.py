@@ -4,12 +4,13 @@ from typing import Optional, List, TYPE_CHECKING
 from tuned.dtos.communication import (
     CreateChatDTO, ChatMessageCreateDTO, ChatResponseDTO, ChatMessageResponseDTO
 )
+from tuned.dtos.user import UserResponseDTO
 from tuned.dtos import ActivityLogCreateDTO
 from tuned.repository.exceptions import DatabaseError, NotFound, ValidationError
 from tuned.core.logging import get_logger
 from datetime import datetime, timezone
 from tuned.core.events import get_event_bus
-from tuned.repository.communication.events import ChatEvents
+from tuned.interface.communication.events import ChatEvents
 from tuned.utils.variables import Variables
 
 if TYPE_CHECKING:
@@ -267,4 +268,86 @@ class ChatService:
         except Exception as e:
             self._repo.rollback()
             logger.error("[ChatService.mark_chat_as_read] Failed: %r", e)
+            raise
+
+    def edit_message(self, chat_id: str, message_id: str, content: str, user_id: str, is_admin: bool = False, ip_address: Optional[str] = "system", user_agent: Optional[str] = "system") -> ChatMessageResponseDTO:
+        try:
+            chat = self._repo.get_by_id(chat_id)
+            if not chat:
+                raise NotFound("Chat room not found")
+
+            msg = self._repo.get_message_by_id(message_id)
+            if not msg:
+                raise NotFound("Message not found")
+
+            if str(msg.chat_id) != str(chat_id):
+                raise ValidationError("Message does not belong to this chat")
+
+            if str(msg.user_id) != str(user_id):
+                raise ValidationError("Not authorized to edit this message")
+
+            updated_msg = self._repo.update_message_content(message_id, content)
+            recipient_id = chat.user_id if is_admin else chat.admin_id
+
+            try:
+                get_event_bus().emit(ChatEvents.MESSAGE_EDITED, {
+                    "chat_id": chat_id,
+                    "message_id": message_id,
+                    "recipient_id": str(recipient_id) if recipient_id else None,
+                    "content": content,
+                    "updated_at": updated_msg.updated_at.isoformat() if updated_msg.updated_at else datetime.now(timezone.utc).isoformat()
+                })
+            except Exception as e:
+                logger.error("[ChatService.edit_message] Event emit failed: %r", e)
+
+            self._repo.save()
+            return ChatMessageResponseDTO.from_model(updated_msg)
+        except Exception as e:
+            self._repo.rollback()
+            logger.error("[ChatService.edit_message] Failed: %r", e)
+            raise
+
+    def delete_message(self, chat_id: str, message_id: str, user_id: str, is_admin: bool = False, ip_address: Optional[str] = "system", user_agent: Optional[str] = "system") -> None:
+        try:
+            chat = self._repo.get_by_id(chat_id)
+            if not chat:
+                raise NotFound("Chat room not found")
+
+            msg = self._repo.get_message_by_id(message_id)
+            if not msg:
+                raise NotFound("Message not found")
+
+            if str(msg.chat_id) != str(chat_id):
+                raise ValidationError("Message does not belong to this chat")
+
+            if not is_admin and str(msg.user_id) != str(user_id):
+                raise ValidationError("Not authorized to delete this message")
+
+            self._repo.delete_message(message_id, user_id)
+            recipient_id = chat.user_id if is_admin else chat.admin_id
+
+            try:
+                get_event_bus().emit(ChatEvents.MESSAGE_DELETED, {
+                    "chat_id": chat_id,
+                    "message_id": message_id,
+                    "recipient_id": str(recipient_id) if recipient_id else None
+                })
+            except Exception as e:
+                logger.error("[ChatService.delete_message] Event emit failed: %r", e)
+
+            self._repo.save()
+        except Exception as e:
+            self._repo.rollback()
+            logger.error("[ChatService.delete_message] Failed: %r", e)
+            raise
+
+    def list_support_agents(self) -> List[UserResponseDTO]:
+        try:
+            from tuned.models import User
+            from sqlalchemy import select
+            stmt = select(User).where(User.is_admin == True)
+            agents = list(self._repos.session.scalars(stmt).all())
+            return [UserResponseDTO.from_model(a) for a in agents]
+        except Exception as e:
+            logger.error("[ChatService.list_support_agents] Failed: %r", e)
             raise

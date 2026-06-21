@@ -1,6 +1,7 @@
 from dataclasses import dataclass
-from typing import Optional, TYPE_CHECKING
+from typing import Optional, TYPE_CHECKING, List
 from tuned.dtos.base import BaseDTO
+from tuned.dtos.media import MediaAssetResponseDTO
 
 if TYPE_CHECKING:
     from tuned.models.communication import NewsletterSubscriber, Chat, ChatMessage
@@ -49,6 +50,9 @@ class ChatMessageResponseDTO(BaseDTO):
     is_read: bool
     sender_name: str
     is_admin: bool
+    is_edited: bool
+    is_deleted: bool
+    attachments: List[MediaAssetResponseDTO]
 
     @classmethod
     def from_model(cls, obj: "ChatMessage") -> "ChatMessageResponseDTO":
@@ -57,14 +61,23 @@ class ChatMessageResponseDTO(BaseDTO):
         if obj.user:
             is_admin = getattr(obj.user, 'is_admin', False)
             sender_name = obj.user.get_name() if hasattr(obj.user, 'get_name') else (obj.user.first_name + " " + obj.user.last_name if obj.user.first_name else obj.user.username)
+        
+        att_list = []
+        if hasattr(obj, 'attachments') and obj.attachments:
+            att_list = [MediaAssetResponseDTO.from_model(a) for a in obj.attachments if not getattr(a, 'is_deleted', False)]
+
+        is_deleted = getattr(obj, 'is_deleted', False)
         return cls(
             id=str(obj.id),
             chat_id=str(obj.chat_id) if obj.chat_id else "",
             user_id=str(obj.user_id) if obj.user_id else None,
-            content=obj.content,
+            content=None if is_deleted else obj.content,
             is_read=obj.is_read,
             sender_name=sender_name,
             is_admin=is_admin,
+            is_edited=getattr(obj, 'is_edited', False),
+            is_deleted=is_deleted,
+            attachments=att_list if not is_deleted else [],
             created_at=obj.created_at,
             updated_at=obj.updated_at
         )

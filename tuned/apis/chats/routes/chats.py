@@ -9,7 +9,7 @@ from tuned.utils.decorators import admin_required
 from tuned.utils.dependencies import get_services
 from tuned.repository.exceptions import NotFound
 from tuned.apis.chats.schemas.chats import (
-    CreateChatSchema, SendMessageSchema, AssignAdminSchema, ChangeStatusSchema
+    CreateChatSchema, SendMessageSchema, AssignAdminSchema, ChangeStatusSchema, EditMessageSchema
 )
 from tuned.core.logging import get_logger
 from tuned.utils.auth import get_user_ip, get_user_agent
@@ -167,3 +167,89 @@ class AdminStatusView(MethodView):
         except Exception as e:
             logger.error("[AdminStatusView] %s", e)
             return error_response(message="Failed to update status", status=500)
+
+class AdminListAgentsView(MethodView):
+    decorators = [login_required, admin_required]
+
+    def get(self):
+        try:
+            agents = get_services().chat.list_support_agents()
+            return success_response(data=[asdict(a) for a in agents], status=200)
+        except Exception as e:
+            logger.error("[AdminListAgentsView] %s", e)
+            return error_response(message="Failed to fetch support agents", status=500)
+
+class EditMessageView(MethodView):
+    decorators = [login_required]
+
+    def patch(self, chat_id, message_id):
+        try:
+            data = request.get_json()
+            if not data:
+                return error_response(message="No input data provided", status=400)
+            try:
+                validated = EditMessageSchema().load(data)
+            except ValidationError as err:
+                return validation_error_response(err.messages)
+
+            user_id = current_user.id
+            is_admin = current_user.is_admin
+            ip_address = get_user_ip() or "127.0.0.1"
+            user_agent = get_user_agent() or request.user_agent.string
+
+            response_dto = get_services().chat.edit_message(
+                chat_id, message_id, validated["content"], user_id, is_admin,
+                ip_address=ip_address, user_agent=user_agent
+            )
+            return success_response(data=asdict(response_dto), message="Message updated successfully", status=200)
+        except NotFound as e:
+            return error_response(message=str(e), status=404)
+        except Exception as e:
+            logger.error("[EditMessageView] %s", e)
+            return error_response(message="Failed to update message", status=500)
+
+class DeleteMessageView(MethodView):
+    decorators = [login_required]
+
+    def delete(self, chat_id, message_id):
+        try:
+            user_id = current_user.id
+            is_admin = current_user.is_admin
+            ip_address = get_user_ip() or "127.0.0.1"
+            user_agent = get_user_agent() or request.user_agent.string
+
+            get_services().chat.delete_message(
+                chat_id, message_id, user_id, is_admin,
+                ip_address=ip_address, user_agent=user_agent
+            )
+            return success_response(data={"success": True}, message="Message deleted successfully", status=200)
+        except NotFound as e:
+            return error_response(message=str(e), status=404)
+        except Exception as e:
+            logger.error("[DeleteMessageView] %s", e)
+            return error_response(message="Failed to delete message", status=500)
+
+class UploadAttachmentView(MethodView):
+    decorators = [login_required]
+
+    def post(self, chat_id):
+        if 'file' not in request.files:
+            return error_response('No file uploaded', status=400)
+            
+        file = request.files['file']
+        if file.filename == '':
+            return error_response('No file selected', status=400)
+
+        try:
+            from tuned.models.enums import AssetOwnerType
+            owner_id = chat_id
+            result = get_services().media.upload_file(
+                file=file,
+                owner_type=AssetOwnerType.CHAT_MESSAGE,
+                owner_id=owner_id,
+                is_public=False
+            )
+            return success_response(data=asdict(result), message="File uploaded successfully", status=201)
+        except Exception as e:
+            logger.error(f'Chat attachment upload error: {str(e)}')
+            return error_response('Failed to upload attachment', status=500)

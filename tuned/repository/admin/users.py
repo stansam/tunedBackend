@@ -1,7 +1,8 @@
 from __future__ import annotations
 import logging
 from datetime import datetime, timezone, timedelta
-from typing import Optional
+from typing import Optional, Any
+from sqlalchemy.sql.elements import ColumnElement
 from sqlalchemy.orm import Session
 from sqlalchemy import select, func, and_, desc, asc, or_
 from tuned.models import User, Order
@@ -71,6 +72,8 @@ class GetAdminUserList:
                         User.email.ilike(pattern),
                     )
                 )
+
+            col: ColumnElement[Any]
 
             # CLV status filter
             if req.clv_status:

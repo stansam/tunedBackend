@@ -90,6 +90,7 @@ class AssetOwnerType(str, Enum):
     ORDER = "order"
     USER = "user"
     BLOG_POST = "blog_post"
+    CHAT_MESSAGE = "chat_message"
 
 class DeliveryStatus(str, Enum):
     DELIVERED = "delivered"

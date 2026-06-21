@@ -112,6 +112,41 @@ class ChatRepository:
         except SQLAlchemyError as e:
             raise DatabaseError(f"Database error while updating status: {str(e)}") from e
 
+    def get_message_by_id(self, message_id: str) -> Optional[ChatMessage]:
+        try:
+            stmt = select(ChatMessage).where(ChatMessage.id == message_id)
+            return self.session.scalar(stmt)
+        except SQLAlchemyError as e:
+            raise DatabaseError(f"Database error while fetching message: {str(e)}") from e
+
+    def update_message_content(self, message_id: str, content: str) -> ChatMessage:
+        try:
+            stmt = select(ChatMessage).where(ChatMessage.id == message_id)
+            msg = self.session.scalar(stmt)
+            if not msg:
+                raise NotFound("Message not found")
+            msg.content = content
+            msg.is_edited = True
+            self.session.flush()
+            return msg
+        except SQLAlchemyError as e:
+            raise DatabaseError(f"Database error while updating message: {str(e)}") from e
+
+    def delete_message(self, message_id: str, user_id: str) -> ChatMessage:
+        try:
+            from datetime import datetime, timezone
+            stmt = select(ChatMessage).where(ChatMessage.id == message_id)
+            msg = self.session.scalar(stmt)
+            if not msg:
+                raise NotFound("Message not found")
+            msg.is_deleted = True
+            msg.deleted_at = datetime.now(timezone.utc)
+            msg.deleted_by = UUID(user_id)
+            self.session.flush()
+            return msg
+        except SQLAlchemyError as e:
+            raise DatabaseError(f"Database error while deleting message: {str(e)}") from e
+
     def save(self) -> None:
         try:
             self.session.commit()

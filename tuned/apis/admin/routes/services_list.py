@@ -1,6 +1,6 @@
 from flask import request
 from flask.views import MethodView
-from flask_login import login_required
+from flask_login import login_required, current_user
 from dataclasses import asdict
 from marshmallow import ValidationError
 from typing import Any
@@ -10,7 +10,6 @@ from tuned.utils.responses import (
     success_response, error_response, validation_error_response, created_response
 )
 from tuned.utils.dependencies import get_services
-from tuned.extensions import db, socketio
 from tuned.dtos import ServiceDTO, ServiceResponseDTO
 from tuned.core.logging import get_logger
 from tuned.apis.admin.schemas.services import AdminServiceSchema
@@ -73,13 +72,12 @@ class AdminServicesListView(MethodView):
                 is_active=validated["is_active"],
                 tags=validated["tags"],
             )
-            res = get_services().service.create_service(dto)
-            db.session.commit()
-            socketio.emit("admin:service:created", asdict(res), to="admin_room")
+            res = get_services().service.create_service(
+                dto, actor_id=str(current_user.id)
+            )
             return created_response(data=asdict(res))
         except ValidationError as err:
             return validation_error_response(err.messages)
         except Exception as exc:
-            db.session.rollback()
             logger.error("[AdminServicesList.post] %r", exc)
             return error_response("Failed to create service", status=500)

@@ -91,4 +91,14 @@ class Variables:
     NEWSLETTER_SUBSCRIBER_UNSUBSCRIBED = "newsletter_subscriber_unsubscribed"
     NEWSLETTER_SUBSCRIBER_RESUBSCRIBED = "newsletter_subscriber_resubscribed"
     NEWSLETTER_SUBSCRIBER_ENTITY_TYPE = "NewsletterSubscriber"
+
+    SERVICE_CATEGORY_ENTITY_TYPE = "ServiceCategory"
+    SERVICE_CATEGORY_CREATE_ACTION = "service_category_create"
+    SERVICE_CATEGORY_UPDATE_ACTION = "service_category_update"
+    SERVICE_CATEGORY_DELETE_ACTION = "service_category_delete"
+
+    SERVICE_ENTITY_TYPE = "Service"
+    SERVICE_CREATE_ACTION = "service_create"
+    SERVICE_UPDATE_ACTION = "service_update"
+    SERVICE_DELETE_ACTION = "service_delete"
     

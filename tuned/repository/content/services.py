@@ -202,3 +202,13 @@ class ServiceRepository(ServiceRepositoryProtocol):
 
     def get_service_mix(self, client_id: str) -> list[tuple[str, int]]:
         return GetServiceMix(self.session).execute(client_id)
+    
+    def save(self) -> None:
+        try:
+            self.session.commit()
+        except SQLAlchemyError as exc:
+            self.session.rollback()
+            raise DatabaseError(f"Database error while saving user changes: {exc}") from exc
+
+    def rollback(self) -> None:
+        self.session.rollback()

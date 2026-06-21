@@ -18,6 +18,7 @@ class EventRegistry:
         from tuned.interface.referral.events import ReferralEventHandlers
         from tuned.interface.order_delivery.events import OrderDeliveryEventHandlers
         from tuned.interface.communication.events import ChatEventHandlers
+        from tuned.interface.content.events import ContentEventHandlers
 
         UserEventHandlers(bus).register()
         OrderEventHandlers(bus).register()
@@ -26,6 +27,7 @@ class EventRegistry:
         ReferralEventHandlers(bus).register()
         OrderDeliveryEventHandlers(bus).register()
         ChatEventHandlers(bus).register()
+        ContentEventHandlers(bus).register()
 
         logger.info("[EventRegistry] All domain handlers registered.")
 

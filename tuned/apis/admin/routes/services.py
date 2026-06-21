@@ -1,6 +1,6 @@
 from flask import request
 from flask.views import MethodView
-from flask_login import login_required
+from flask_login import login_required, current_user
 from dataclasses import asdict
 from marshmallow import ValidationError
 from tuned.utils.decorators import admin_required
@@ -8,7 +8,6 @@ from tuned.utils.responses import (
     success_response, error_response, validation_error_response, created_response
 )
 from tuned.utils.dependencies import get_services
-from tuned.extensions import db, socketio
 from tuned.dtos import ServiceCategoryDTO
 from tuned.core.logging import get_logger
 from tuned.apis.admin.schemas import AdminServiceCategorySchema
@@ -35,14 +34,13 @@ class AdminServiceCategoriesListView(MethodView):
                 description=validated["description"],
                 order=validated["order"]
             )
-            res = get_services().service_category.create_category(dto)
-            db.session.commit()
-            socketio.emit("admin:category:created", asdict(res), to="admin_room")
+            res = get_services().service_category.create_category(
+                dto, actor_id=str(current_user.id)
+            )
             return created_response(data=asdict(res))
         except ValidationError as err:
             return validation_error_response(err.messages)
         except Exception as exc:
-            db.session.rollback()
             logger.error("[AdminServiceCategoriesList.post] %r", exc)
             return error_response("Failed to create category", status=500)
 

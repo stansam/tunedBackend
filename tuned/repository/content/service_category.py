@@ -108,3 +108,13 @@ class ServiceCategoryRepository(ServiceCategoryRepositoryProtocol):
 
     def delete(self, category_id: str) -> None:
         return DeleteServiceCategory(self.session).execute(category_id)
+    
+    def save(self) -> None:
+        try:
+            self.session.commit()
+        except SQLAlchemyError as exc:
+            self.session.rollback()
+            raise DatabaseError(f"Database error while saving user changes: {exc}") from exc
+
+    def rollback(self) -> None:
+        self.session.rollback()

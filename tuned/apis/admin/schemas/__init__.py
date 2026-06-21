@@ -6,7 +6,10 @@ from tuned.apis.admin.schemas.dashboard import (
 from tuned.apis.admin.schemas.users import (
     AdminUserListRequestSchema, BroadcastMessageSchema, DirectMessageSchema
 )
-
+from tuned.apis.admin.schemas.services import (
+    AdminServiceCategorySchema, AdminServiceCategoryUpdateSchema,
+    AdminServiceSchema, AdminServiceUpdateSchema
+)
 __all__ = [
     "AdminNavStatsResponseSchema",
     "AdminKPIResponseSchema",
@@ -16,4 +19,8 @@ __all__ = [
     "AdminUserListRequestSchema",
     "BroadcastMessageSchema",
     "DirectMessageSchema",
+    "AdminServiceCategorySchema",
+    "AdminServiceCategoryUpdateSchema",
+    "AdminServiceSchema",
+    "AdminServiceUpdateSchema",
 ]

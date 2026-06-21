@@ -16,6 +16,13 @@ from tuned.apis.admin.routes.users import (
     AdminBroadcastView, AdminMessageUserView, AdminUsersExportView
 )
 from tuned.apis.admin.routes.payments import AdminPaymentsListView
+from tuned.apis.admin.routes.services import (
+    AdminServiceCategoriesListView, AdminPricingCategoriesListView
+)
+from tuned.apis.admin.routes.services_list import AdminServicesListView
+from tuned.apis.admin.routes.services_detail import (
+    AdminServiceCategoryDetailView, AdminServiceDetailView
+)
 
 ADMIN_ROUTES: list[dict[str, Any]] = [
     {
@@ -117,6 +124,31 @@ ADMIN_ROUTES: list[dict[str, Any]] = [
         "url_rule": "/payments/list",
         "view_func": AdminPaymentsListView.as_view("admin_payments_list"),
         "methods": ["POST"],
+    },
+    {
+        "url_rule": "/services/categories",
+        "view_func": AdminServiceCategoriesListView.as_view("admin_service_categories_list"),
+        "methods": ["GET", "POST"],
+    },
+    {
+        "url_rule": "/services/categories/<string:category_id>",
+        "view_func": AdminServiceCategoryDetailView.as_view("admin_service_category_detail"),
+        "methods": ["PUT", "DELETE"],
+    },
+    {
+        "url_rule": "/services",
+        "view_func": AdminServicesListView.as_view("admin_services_list"),
+        "methods": ["GET", "POST"],
+    },
+    {
+        "url_rule": "/services/<string:service_id>",
+        "view_func": AdminServiceDetailView.as_view("admin_service_detail"),
+        "methods": ["PUT", "DELETE"],
+    },
+    {
+        "url_rule": "/pricing-categories",
+        "view_func": AdminPricingCategoriesListView.as_view("admin_pricing_categories_list"),
+        "methods": ["GET"],
     },
 ]
 

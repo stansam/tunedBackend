@@ -18,6 +18,7 @@ class ServiceDTO:
     pricing_category_id: str
     slug: Optional[str] = None
     is_active: Optional[bool] = True
+    tags: Optional[List[str]] = None
 
 @dataclass
 class ServiceUpdateDTO:
@@ -28,6 +29,7 @@ class ServiceUpdateDTO:
     pricing_category_id: Optional[str] = None
     slug: Optional[str] = None
     is_active: Optional[bool] = None
+    tags: Optional[List[str]] = None
 
 
 @dataclass

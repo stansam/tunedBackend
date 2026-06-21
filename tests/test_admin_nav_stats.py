@@ -6,7 +6,7 @@ from tuned.models.content import Testimonial
 from tuned.models.enums import OrderStatus
 
 def test_admin_nav_stats_unauthenticated(client):
-    response = client.get('/admin/nav-stats')
+    response = client.get('/api/admin/nav-stats')
     # Unauthorized redirect or 401 response
     assert response.status_code in (302, 401)
 
@@ -17,7 +17,7 @@ def test_admin_nav_stats_unauthorized(client, sample_user, mock_redis):
                     data=json.dumps({'identifier': sample_user.email, 'password': 'TestPass123!'}),
                     content_type='application/json')
         
-        response = client.get('/admin/nav-stats')
+        response = client.get('/api/admin/nav-stats')
         # Expected: 403 Forbidden because is_admin is False
         assert response.status_code == 403
         data = response.get_json()
@@ -67,7 +67,7 @@ def test_admin_nav_stats_success(client, db, admin_user, mock_redis):
                     data=json.dumps({'identifier': admin_user.email, 'password': 'AdminPass123!'}),
                     content_type='application/json')
         
-        response = client.get('/admin/nav-stats')
+        response = client.get('/api/admin/nav-stats')
         assert response.status_code == 200
         data = response.get_json()
         assert data['success'] is True

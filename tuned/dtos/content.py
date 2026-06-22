@@ -196,6 +196,7 @@ class TestimonialResponseDTO(BaseDTO):
     user_id: Optional[str] = None
     service_id: Optional[str] = None
     order_id: Optional[str] = None
+    order_number: Optional[str] = None
     content: str
     rating: int
     is_approved: bool
@@ -209,6 +210,7 @@ class TestimonialResponseDTO(BaseDTO):
             user_id=str(obj.user_id) if obj.user_id else None,
             service_id=str(obj.service_id) if obj.service_id else None,
             order_id=str(obj.order_id) if obj.order_id else None,
+            order_number=obj.order.order_number if obj.order else None,
             content=obj.content,
             rating=obj.rating,
             is_approved=obj.is_approved,

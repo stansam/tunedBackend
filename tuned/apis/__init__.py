@@ -8,6 +8,7 @@ from tuned.apis.payments import payments_bp
 from tuned.apis.media import media_bp
 from tuned.apis.admin import admin_bp
 from tuned.apis.chats import chats_bp
+from tuned.apis.legal import legal_bp
 
 __all__ = [
     'main_bp',
@@ -20,4 +21,5 @@ __all__ = [
     'media_bp',
     'admin_bp',
     'chats_bp',
+    'legal_bp',
 ]

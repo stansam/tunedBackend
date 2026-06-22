@@ -17,6 +17,7 @@ from tuned.repository.communication import NewsletterRepository, ChatRepository
 from tuned.repository.user.notification import NotificationRepository
 from tuned.repository.media import MediaRepository
 from tuned.repository.admin import AdminAnalyticsRepository, AdminOrderRepository, AdminUserRepository, AdminPaymentRepository
+from tuned.repository.policy import PolicyRepository
 from typing import Optional, Any
 
 class Repository:
@@ -48,6 +49,13 @@ class Repository:
         self._admin_orders: Optional[AdminOrderRepository] = None
         self._admin_users: Optional[AdminUserRepository] = None
         self._admin_payments: Optional[AdminPaymentRepository] = None
+        self._policy: Optional[PolicyRepository] = None
+
+    @property
+    def policy(self) -> PolicyRepository:
+        if not self._policy:
+            self._policy = PolicyRepository(self.session)
+        return self._policy
 
     @property
     def user(self) -> UserRepository:

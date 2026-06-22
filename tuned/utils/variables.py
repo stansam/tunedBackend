@@ -8,6 +8,8 @@ class Variables:
     AVATAR_UPLOAD_ACTION = "avatar_upload"
     AVATAR_UPDATE_ACTION = "avatar_update"
     AVATAR_DELETE_ACTION = "avatar_delete"
+    POLICY_ACCEPTANCE_ACTION = "policy_acceptance"
+    POLICY_ENTITY_TYPE = "PolicyAcceptance"
 
     # ORDER_ENTITY_TYPE = "Order"
     

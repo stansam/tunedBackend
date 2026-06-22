@@ -17,6 +17,7 @@ from tuned.interface.payment import PaymentService
 from tuned.interface.communication.newsletter import NewsletterService
 from tuned.interface.communication.chats import ChatService
 from tuned.interface.media import MediaService
+from tuned.interface.policy import LegalService
 
 if TYPE_CHECKING:
     from tuned.repository import Repository
@@ -48,6 +49,13 @@ class Services:
         self._chat: Optional[ChatService] = None
         self._search: Optional[SearchService] = None
         self._media: Optional[MediaService] = None
+        self._legal: Optional[LegalService] = None
+
+    @property
+    def legal(self) -> LegalService:
+        if not self._legal:
+            self._legal = LegalService(repos=self._repos, interfaces=self)
+        return self._legal
 
     @property
     def user(self) -> UserService:

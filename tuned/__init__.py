@@ -85,7 +85,7 @@ def create_app(config_name: Optional[str] = None) -> Flask:
         return {"message": "unauthorized"}, 401
     
     from tuned.apis import(
-        main_bp, auth_bp, notification_bp, client_bp, orders_bp, order_deliveries_bp, payments_bp, media_bp, admin_bp, chats_bp
+        main_bp, auth_bp, notification_bp, client_bp, orders_bp, order_deliveries_bp, payments_bp, media_bp, admin_bp, chats_bp, legal_bp
     ) 
     from tuned.manage import manage_bp
     from tuned.health import health_bp
@@ -99,6 +99,7 @@ def create_app(config_name: Optional[str] = None) -> Flask:
     app.register_blueprint(media_bp, url_prefix='/api/media')
     app.register_blueprint(admin_bp, url_prefix='/api/admin')
     app.register_blueprint(chats_bp, url_prefix='/api/chats')
+    app.register_blueprint(legal_bp, url_prefix='/api/legal')
     app.register_blueprint(manage_bp)
     
     # from tuned.apis.client.routes.settings.preferences import preferences_bp

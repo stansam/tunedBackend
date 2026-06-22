@@ -57,10 +57,10 @@ class SampleListView(MethodView):
             )
 
             return paginated_response(
-                items=samples_data.get("samples", []),
-                page=samples_data.get("page", 1),
-                per_page=samples_data.get("per_page", 12),
-                total=samples_data.get("total", 0)
+                items=samples_data.get("samples") or [],
+                page=samples_data.get("page") or 1,
+                per_page=samples_data.get("per_page") or 12,
+                total=samples_data.get("total") or 0
             )
         except Exception as e:
             logger.error(f'Error fetching samples: {str(e)}')

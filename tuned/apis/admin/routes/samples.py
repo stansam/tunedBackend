@@ -59,8 +59,10 @@ class AdminSamplesListView(MethodView):
             res = get_services().sample.create_sample(dto, actor_id=str(current_user.id))
             return created_response(data=asdict(res))
         except ValidationError as err:
+            logger.error("[AdminSamplesListView.post] Validation Error: %r", err)
             return validation_error_response(err.messages)
         except AlreadyExists as exc:
+            logger.error("[AdminSamplesListView.post] Already Exists: %r", exc)
             return error_response(str(exc), status=400)
         except Exception as exc:
             logger.error("[AdminSamplesListView.post] %r", exc)
@@ -87,10 +89,13 @@ class AdminSampleDetailView(MethodView):
             res = get_services().sample.update_sample(sample_id, dto, actor_id=str(current_user.id))
             return success_response(data=asdict(res))
         except ValidationError as err:
+            logger.error("[AdminSampleDetailView.put] Validation Error: %r", err)
             return validation_error_response(err.messages)
         except NotFound as exc:
+            logger.error("[AdminSampleDetailView.put] Not Found: %r", exc)
             return error_response(str(exc), status=404)
         except AlreadyExists as exc:
+            logger.error("[AdminSampleDetailView.put] Already Exists: %r", exc)
             return error_response(str(exc), status=400)
         except Exception as exc:
             logger.error("[AdminSampleDetailView.put] %r", exc)
@@ -101,6 +106,7 @@ class AdminSampleDetailView(MethodView):
             get_services().sample.delete_sample(sample_id, actor_id=str(current_user.id))
             return no_content_response()
         except NotFound as exc:
+            logger.error("[AdminSampleDetailView.delete] Not Found: %r", exc)
             return error_response(str(exc), status=404)
         except Exception as exc:
             logger.error("[AdminSampleDetailView.delete] %r", exc)

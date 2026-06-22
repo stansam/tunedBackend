@@ -30,6 +30,9 @@ from tuned.apis.admin.routes.blogs import (
     AdminBlogCommentApproveView, AdminBlogCommentDetailView, AdminBlogReactionDetailView,
 )
 from tuned.apis.admin.routes.samples import AdminSamplesListView, AdminSampleDetailView
+from tuned.apis.admin.routes.testimonials import (
+    AdminTestimonialsListView, AdminTestimonialApproveView, AdminTestimonialDetailView
+)
 
 ADMIN_ROUTES: list[dict[str, Any]] = [
     {
@@ -165,6 +168,21 @@ ADMIN_ROUTES: list[dict[str, Any]] = [
     {
         "url_rule": "/samples/<string:sample_id>",
         "view_func": AdminSampleDetailView.as_view("admin_sample_detail"),
+        "methods": ["PUT", "DELETE"],
+    },
+    {
+        "url_rule": "/testimonials",
+        "view_func": AdminTestimonialsListView.as_view("admin_testimonials_list"),
+        "methods": ["GET"],
+    },
+    {
+        "url_rule": "/testimonials/<string:testimonial_id>/approve",
+        "view_func": AdminTestimonialApproveView.as_view("admin_testimonial_approve"),
+        "methods": ["PATCH"],
+    },
+    {
+        "url_rule": "/testimonials/<string:testimonial_id>",
+        "view_func": AdminTestimonialDetailView.as_view("admin_testimonial_detail"),
         "methods": ["PUT", "DELETE"],
     },
     # ── Blogs ──────────────────────────────────────────────────────────────

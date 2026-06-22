@@ -24,6 +24,10 @@ from tuned.apis.admin.schemas.samples import (
     AdminSampleSchema,
     AdminSampleUpdateSchema,
 )
+from tuned.apis.admin.schemas.testimonials import (
+    AdminTestimonialFilterSchema,
+    AdminTestimonialUpdateSchema,
+)
 __all__ = [
     "AdminNavStatsResponseSchema",
     "AdminKPIResponseSchema",
@@ -47,4 +51,6 @@ __all__ = [
     "AdminApproveCommentSchema",
     "AdminSampleSchema",
     "AdminSampleUpdateSchema",
+    "AdminTestimonialFilterSchema",
+    "AdminTestimonialUpdateSchema",
 ]

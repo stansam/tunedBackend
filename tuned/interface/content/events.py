@@ -24,6 +24,9 @@ class ContentEventHandlers:
         self._bus.on("sample.created", self._on_sample_created)
         self._bus.on("sample.updated", self._on_sample_updated)
         self._bus.on("sample.deleted", self._on_sample_deleted)
+        self._bus.on("testimonial.created", self._on_testimonial_created)
+        self._bus.on("testimonial.updated", self._on_testimonial_updated)
+        self._bus.on("testimonial.deleted", self._on_testimonial_deleted)
         logger.info("[ContentEventHandlers] registered")
 
     def _on_category_created(self, event_data: Dict[str, Any]) -> None:
@@ -97,3 +100,27 @@ class ContentEventHandlers:
             socketio.emit("admin:sample:deleted", event_data, to="admin_room")
         except Exception as exc:
             logger.error("[ContentEventHandlers] Error in sample.deleted handler: %r", exc)
+
+    def _on_testimonial_created(self, event_data: Dict[str, Any]) -> None:
+        try:
+            logger.info("[ContentEventHandlers] Processing testimonial.created: %s", event_data.get("id"))
+            from tuned.extensions import socketio
+            socketio.emit("admin:testimonial:created", event_data, to="admin_room")
+        except Exception as exc:
+            logger.error("[ContentEventHandlers] Error in testimonial.created handler: %r", exc)
+
+    def _on_testimonial_updated(self, event_data: Dict[str, Any]) -> None:
+        try:
+            logger.info("[ContentEventHandlers] Processing testimonial.updated: %s", event_data.get("id"))
+            from tuned.extensions import socketio
+            socketio.emit("admin:testimonial:updated", event_data, to="admin_room")
+        except Exception as exc:
+            logger.error("[ContentEventHandlers] Error in testimonial.updated handler: %r", exc)
+
+    def _on_testimonial_deleted(self, event_data: Dict[str, Any]) -> None:
+        try:
+            logger.info("[ContentEventHandlers] Processing testimonial.deleted: %s", event_data.get("id"))
+            from tuned.extensions import socketio
+            socketio.emit("admin:testimonial:deleted", event_data, to="admin_room")
+        except Exception as exc:
+            logger.error("[ContentEventHandlers] Error in testimonial.deleted handler: %r", exc)

@@ -226,6 +226,13 @@ class TestimonialListResponseDTO(PaginationDTO):
 class TestimonialListRequestDTO(PaginationDTO):
     service_id: Optional[str] = None
 
+@dataclass
+class AdminTestimonialListRequestDTO(PaginationDTO):
+    status: Optional[str] = "all"
+    service_id: Optional[str] = None
+    rating: Optional[int] = None
+    q: Optional[str] = None
+
 
 @dataclass
 class FaqResponseDTO(BaseDTO):

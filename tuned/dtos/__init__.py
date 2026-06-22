@@ -12,7 +12,8 @@ from tuned.dtos.content import (
     AcademicLevelDTO, AcademicLevelResponseDTO, DeadlineDTO, DeadlineResponseDTO, SampleDTO, TestimonialDTO, FaqDTO,
     TestimonialResponseDTO, TestimonialListResponseDTO, TestimonialListRequestDTO, FaqResponseDTO, SampleResponseDTO, 
     SampleListResponseDTO, SampleListRequestDTO, SampleServiceResponseDTO,
-    AcademicLevelUpdateDTO, DeadlineUpdateDTO, FaqUpdateDTO, SampleUpdateDTO, TestimonialUpdateDTO
+    AcademicLevelUpdateDTO, DeadlineUpdateDTO, FaqUpdateDTO, SampleUpdateDTO, TestimonialUpdateDTO,
+    AdminTestimonialListRequestDTO
 )
 from tuned.dtos.price import (
     PricingCategoryDTO, PriceRateDTO, PricingCategoryResponseDTO, PriceRateResponseDTO, PriceRateLookupDTO, 
@@ -82,7 +83,7 @@ __all__ = [
     "BlogCategoryDTO", "BlogCategoryResponseDTO", "BlogPostDTO", "BlogPostResponseDTO", "BlogCommentDTO",
     "BlogCommentResponseDTO", "CommentReactionDTO", "CommentReactionResponseDTO", "BlogPostListResponseDTO", "BlogPostListRequestDTO", "PostByCategoryRequestDTO",
     "AcademicLevelDTO", "AcademicLevelResponseDTO", "DeadlineDTO", "DeadlineResponseDTO", "SampleDTO", "TestimonialDTO", "FaqDTO",
-    "TestimonialResponseDTO", "TestimonialListResponseDTO", "TestimonialListRequestDTO", "FaqResponseDTO", "SampleResponseDTO", 
+    "TestimonialResponseDTO", "TestimonialListResponseDTO", "TestimonialListRequestDTO", "AdminTestimonialListRequestDTO", "FaqResponseDTO", "SampleResponseDTO", 
     "SampleListResponseDTO", "SampleListRequestDTO", "SampleServiceResponseDTO",
     "AcademicLevelUpdateDTO", "DeadlineUpdateDTO", "FaqUpdateDTO", "SampleUpdateDTO", "TestimonialUpdateDTO",
     "PricingCategoryDTO", "PriceRateDTO", "PricingCategoryResponseDTO", "PriceRateResponseDTO", "PriceRateLookupDTO", 

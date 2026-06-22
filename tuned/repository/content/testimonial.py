@@ -1,12 +1,12 @@
 from typing import Any
 from sqlalchemy.orm import Session
-from sqlalchemy import select, func
+from sqlalchemy import select, func, or_, asc, desc
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 
 from tuned.models import Testimonial
 from tuned.dtos.content import (
     TestimonialDTO, TestimonialResponseDTO, TestimonialUpdateDTO,
-    TestimonialListRequestDTO, TestimonialListResponseDTO
+    TestimonialListRequestDTO, TestimonialListResponseDTO, AdminTestimonialListRequestDTO
 )
 from tuned.repository.exceptions import DatabaseError, NotFound
 from tuned.repository.protocols import TestimonialRepositoryProtocol
@@ -178,6 +178,50 @@ class DeleteTestimonial:
         except SQLAlchemyError as e:
             raise DatabaseError("Database error while deleting testimonial.") from e
 
+class ListAllTestimonials:
+    def __init__(self, session: Session) -> None:
+        self.session = session
+
+    def execute(self, req: AdminTestimonialListRequestDTO) -> TestimonialListResponseDTO:
+        try:
+            stmt = select(Testimonial)
+            if req.status == "approved":
+                stmt = stmt.where(Testimonial.is_approved == True)
+            elif req.status == "pending":
+                stmt = stmt.where(Testimonial.is_approved == False)
+            if req.service_id:
+                stmt = stmt.where(Testimonial.service_id == req.service_id)
+            if req.rating is not None:
+                stmt = stmt.where(Testimonial.rating == req.rating)
+            if req.q:
+                from tuned.models.user import User
+                pat = f"%{req.q}%"
+                stmt = stmt.outerjoin(User, Testimonial.user_id == User.id).where(
+                    or_(
+                        Testimonial.content.ilike(pat),
+                        User.first_name.ilike(pat),
+                        User.last_name.ilike(pat),
+                        User.email.ilike(pat)
+                    )
+                )
+            sort_map = {"created_at": Testimonial.created_at, "rating": Testimonial.rating}
+            sort_field = sort_map.get(req.sort or "created_at", Testimonial.created_at)
+            order_func = asc if req.order == "asc" else desc
+            stmt = stmt.order_by(order_func(sort_field))
+
+            count_stmt = select(func.count()).select_from(stmt.subquery())
+            total = self.session.scalar(count_stmt) or 0
+
+            page, per_page = max(req.page or 1, 1), min(req.per_page or 10, 100)
+            stmt = stmt.offset((page - 1) * per_page).limit(per_page)
+            results = self.session.scalars(stmt).all()
+            return TestimonialListResponseDTO(
+                testimonials=[TestimonialResponseDTO.from_model(t) for t in results],
+                total=total, page=page, per_page=per_page, sort=req.sort, order=req.order
+            )
+        except SQLAlchemyError as e:
+            raise DatabaseError(f"Database error: {e}") from e
+
 class TestimonialRepository(TestimonialRepositoryProtocol):
     def __init__(self, session: Session) -> None:
         self.session = session
@@ -205,3 +249,16 @@ class TestimonialRepository(TestimonialRepositoryProtocol):
 
     def delete(self, testimonial_id: str) -> None:
         return DeleteTestimonial(self.session).execute(testimonial_id)
+
+    def list_all(self, req: AdminTestimonialListRequestDTO) -> TestimonialListResponseDTO:
+        return ListAllTestimonials(self.session).execute(req)
+
+    def save(self) -> None:
+        try:
+            self.session.commit()
+        except SQLAlchemyError as exc:
+            self.session.rollback()
+            raise DatabaseError(f"Database error while saving testimonial changes: {exc}") from exc
+
+    def rollback(self) -> None:
+        self.session.rollback()

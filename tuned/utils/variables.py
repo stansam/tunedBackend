@@ -113,3 +113,9 @@ class Variables:
     SAMPLE_CREATE_ACTION = "sample_create"
     SAMPLE_UPDATE_ACTION = "sample_update"
     SAMPLE_DELETE_ACTION = "sample_delete"
+
+    TESTIMONIAL_ENTITY_TYPE = "Testimonial"
+    TESTIMONIAL_CREATE_ACTION = "testimonial_create"
+    TESTIMONIAL_UPDATE_ACTION = "testimonial_update"
+    TESTIMONIAL_DELETE_ACTION = "testimonial_delete"
+    TESTIMONIAL_APPROVE_ACTION = "testimonial_approve"

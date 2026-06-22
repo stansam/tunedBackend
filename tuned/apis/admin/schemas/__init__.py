@@ -20,6 +20,10 @@ from tuned.apis.admin.schemas.blogs import (
     AdminUpdateBlogCategorySchema,
     AdminApproveCommentSchema,
 )
+from tuned.apis.admin.schemas.samples import (
+    AdminSampleSchema,
+    AdminSampleUpdateSchema,
+)
 __all__ = [
     "AdminNavStatsResponseSchema",
     "AdminKPIResponseSchema",
@@ -41,4 +45,6 @@ __all__ = [
     "AdminCreateBlogCategorySchema",
     "AdminUpdateBlogCategorySchema",
     "AdminApproveCommentSchema",
+    "AdminSampleSchema",
+    "AdminSampleUpdateSchema",
 ]

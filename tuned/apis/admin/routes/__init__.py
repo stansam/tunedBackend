@@ -29,6 +29,7 @@ from tuned.apis.admin.routes.blogs import (
     AdminBlogPostCommentsView, AdminBlogCategoriesListView, AdminBlogCategoryDetailView,
     AdminBlogCommentApproveView, AdminBlogCommentDetailView, AdminBlogReactionDetailView,
 )
+from tuned.apis.admin.routes.samples import AdminSamplesListView, AdminSampleDetailView
 
 ADMIN_ROUTES: list[dict[str, Any]] = [
     {
@@ -155,6 +156,16 @@ ADMIN_ROUTES: list[dict[str, Any]] = [
         "url_rule": "/pricing-categories",
         "view_func": AdminPricingCategoriesListView.as_view("admin_pricing_categories_list"),
         "methods": ["GET"],
+    },
+    {
+        "url_rule": "/samples",
+        "view_func": AdminSamplesListView.as_view("admin_samples_list"),
+        "methods": ["GET", "POST"],
+    },
+    {
+        "url_rule": "/samples/<string:sample_id>",
+        "view_func": AdminSampleDetailView.as_view("admin_sample_detail"),
+        "methods": ["PUT", "DELETE"],
     },
     # ── Blogs ──────────────────────────────────────────────────────────────
     {

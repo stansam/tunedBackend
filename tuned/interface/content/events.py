@@ -21,6 +21,9 @@ class ContentEventHandlers:
         self._bus.on("service.created", self._on_service_created)
         self._bus.on("service.updated", self._on_service_updated)
         self._bus.on("service.deleted", self._on_service_deleted)
+        self._bus.on("sample.created", self._on_sample_created)
+        self._bus.on("sample.updated", self._on_sample_updated)
+        self._bus.on("sample.deleted", self._on_sample_deleted)
         logger.info("[ContentEventHandlers] registered")
 
     def _on_category_created(self, event_data: Dict[str, Any]) -> None:
@@ -70,3 +73,27 @@ class ContentEventHandlers:
             socketio.emit("admin:service:deleted", event_data, to="admin_room")
         except Exception as exc:
             logger.error("[ContentEventHandlers] Error in service.deleted handler: %r", exc)
+
+    def _on_sample_created(self, event_data: Dict[str, Any]) -> None:
+        try:
+            logger.info("[ContentEventHandlers] Processing sample.created: %s", event_data.get("id"))
+            from tuned.extensions import socketio
+            socketio.emit("admin:sample:created", event_data, to="admin_room")
+        except Exception as exc:
+            logger.error("[ContentEventHandlers] Error in sample.created handler: %r", exc)
+
+    def _on_sample_updated(self, event_data: Dict[str, Any]) -> None:
+        try:
+            logger.info("[ContentEventHandlers] Processing sample.updated: %s", event_data.get("id"))
+            from tuned.extensions import socketio
+            socketio.emit("admin:sample:updated", event_data, to="admin_room")
+        except Exception as exc:
+            logger.error("[ContentEventHandlers] Error in sample.updated handler: %r", exc)
+
+    def _on_sample_deleted(self, event_data: Dict[str, Any]) -> None:
+        try:
+            logger.info("[ContentEventHandlers] Processing sample.deleted: %s", event_data.get("id"))
+            from tuned.extensions import socketio
+            socketio.emit("admin:sample:deleted", event_data, to="admin_room")
+        except Exception as exc:
+            logger.error("[ContentEventHandlers] Error in sample.deleted handler: %r", exc)

@@ -27,6 +27,9 @@ class CreateSample:
                 image=data.image,
                 slug=data.slug or None,
             )
+            if data.tags:
+                from tuned.repository.blogs.helper import handle_tags
+                sample.tag_list = handle_tags(data.tags, self.session)
             self.session.add(sample)
             self.session.flush()
             return SampleResponseDTO.from_model(sample)
@@ -161,6 +164,10 @@ class UpdateSample:
             if not sample:
                 raise NotFound("Sample not found.")
             update_data = {k: v for k, v in updates.__dict__.items() if v is not None}
+            if "tags" in update_data:
+                from tuned.repository.blogs.helper import handle_tags
+                sample.tag_list = handle_tags(update_data["tags"], self.session)
+                del update_data["tags"]
             for key, value in update_data.items():
                 if hasattr(sample, key):
                     setattr(sample, key, value)
@@ -280,3 +287,13 @@ class SampleRepository(SampleRepositoryProtocol):
 
     def get_distinct_services(self) -> list[SampleServiceResponseDTO]:
         return GetDistinctServices(self.session).execute()
+
+    def save(self) -> None:
+        try:
+            self.session.commit()
+        except SQLAlchemyError as exc:
+            self.session.rollback()
+            raise DatabaseError(f"Database error while saving sample changes: {exc}") from exc
+
+    def rollback(self) -> None:
+        self.session.rollback()

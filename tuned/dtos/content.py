@@ -43,6 +43,7 @@ class SampleDTO(BaseDTO):
     featured: bool = False
     image: str = ""
     slug: Optional[str] = None
+    tags: Optional[List[str]] = None
 
 @dataclass
 class SampleUpdateDTO:
@@ -54,6 +55,7 @@ class SampleUpdateDTO:
     featured: Optional[bool] = None
     image: Optional[str] = None
     slug: Optional[str] = None
+    tags: Optional[List[str]] = None
 
 
 @dataclass

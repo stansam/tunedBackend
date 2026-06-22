@@ -108,3 +108,8 @@ class Variables:
     CHAT_MESSAGE_SENT_ACTION = "chat_message_sent"
     CHAT_STATUS_CHANGED_ACTION = "chat_status_changed"
     CHAT_ASSIGNED_ACTION = "chat_assigned"
+
+    SAMPLE_ENTITY_TYPE = "Sample"
+    SAMPLE_CREATE_ACTION = "sample_create"
+    SAMPLE_UPDATE_ACTION = "sample_update"
+    SAMPLE_DELETE_ACTION = "sample_delete"

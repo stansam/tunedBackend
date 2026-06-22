@@ -5,6 +5,7 @@ from tuned.interface.content import (
     AcademicLevelService, DeadlineService, FAQService, SampleService,
     ServiceCategoryService, ServiceService, TestimonialService, TagService, SearchService
 )
+from tuned.interface.content.search_analytics import SearchAnalyticsService
 from tuned.interface.price import PriceRateService, PricingCategoryService
 from tuned.interface.blogs import Blogs, BlogPostService, BlogCategoryService, BlogCommentService, CommentReactionService
 from tuned.interface.notification import NotificationInterface
@@ -48,6 +49,7 @@ class Services:
         self._newsletter: Optional[NewsletterService] = None
         self._chat: Optional[ChatService] = None
         self._search: Optional[SearchService] = None
+        self._search_analytics: Optional[SearchAnalyticsService] = None
         self._media: Optional[MediaService] = None
         self._legal: Optional[LegalService] = None
 
@@ -210,6 +212,12 @@ class Services:
         if not self._search:
             self._search = SearchService(repos=self._repos)
         return self._search
+
+    @property
+    def search_analytics(self) -> SearchAnalyticsService:
+        if not self._search_analytics:
+            self._search_analytics = SearchAnalyticsService(repos=self._repos)
+        return self._search_analytics
 
     @property
     def media(self) -> MediaService:

@@ -29,5 +29,5 @@ class SearchCountsDTO:
 class SearchResponseDTO:
     query: str
     type: str
-    results: dict[str, List[dict[str, Any]]]
+    results: dict[str, List[SearchResultItemDTO]]
     counts: SearchCountsDTO

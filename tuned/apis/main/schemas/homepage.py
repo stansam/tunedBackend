@@ -82,6 +82,18 @@ class SearchQuerySchema(Schema):
         }
     )
 
+class SuggestionsQuerySchema(Schema):
+    q = fields.Str(
+        required=True,
+        validate=validate.Length(min=2, max=100),
+        error_messages={
+            'required': 'Query is required',
+            'invalid': 'Query must be a string',
+            'min': 'Query must be at least 2 characters',
+            'max': 'Query must not exceed 100 characters'
+        }
+    )
+
 class CalculatePriceSchema(Schema):
     service_id = fields.Str(
         required=True,

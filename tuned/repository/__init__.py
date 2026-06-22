@@ -18,6 +18,8 @@ from tuned.repository.user.notification import NotificationRepository
 from tuned.repository.media import MediaRepository
 from tuned.repository.admin import AdminAnalyticsRepository, AdminOrderRepository, AdminUserRepository, AdminPaymentRepository
 from tuned.repository.policy import PolicyRepository
+from tuned.repository.search import SearchRepository
+from tuned.repository.search.analytics import SearchAnalyticsRepository
 from typing import Optional, Any
 
 class Repository:
@@ -50,6 +52,8 @@ class Repository:
         self._admin_users: Optional[AdminUserRepository] = None
         self._admin_payments: Optional[AdminPaymentRepository] = None
         self._policy: Optional[PolicyRepository] = None
+        self._search: Optional[SearchRepository] = None
+        self._search_analytics: Optional[SearchAnalyticsRepository] = None
 
     @property
     def policy(self) -> PolicyRepository:
@@ -212,4 +216,18 @@ class Repository:
         if not self._admin_payments:
             self._admin_payments = AdminPaymentRepository(self.session)
         return self._admin_payments
+
+    @property
+    def search(self) -> SearchRepository:
+        if not self._search:
+            self._search = SearchRepository(self.session)
+        return self._search
+
+    @property
+    def search_analytics(self) -> SearchAnalyticsRepository:
+        if not self._search_analytics:
+            self._search_analytics = SearchAnalyticsRepository(self.session)
+        return self._search_analytics
+
+
 

@@ -2,6 +2,10 @@ from tuned.apis.main.routes.homepage import(
     GetFeaturedContent, GetQuoteFormOptions, CalculatePrice, NewsletterSubscribeView,
     NewsletterUnsubscribeView, GlobalSearchView
 )
+from tuned.apis.main.routes.homepage.search_analytics import (
+    TrackSearchEventView, TrackSearchClickView, GetPopularSearchesView, GetTrendingSearchesView
+)
+from tuned.apis.main.routes.homepage.suggestions import GetSearchSuggestions
 from tuned.apis.main.routes.services.list import(
     GetServicesList, GetServicesBySlug, GetServicesByCategory,
     GetServiceCategoriesList, GetServicesRelated
@@ -27,6 +31,11 @@ ROUTES: list[dict[str, Any]] = [
     {"url_rule": "/newsletter/subscribe", "view_func": NewsletterSubscribeView.as_view("newsletter_subscribe"), 'methods': ['POST']},
     {"url_rule": "/newsletter/unsubscribe", "view_func": NewsletterUnsubscribeView.as_view("newsletter_unsubscribe"), 'methods': ['POST']},
     {"url_rule": "/search", "view_func": GlobalSearchView.as_view("global_search"), 'methods': ['GET']},
+    {"url_rule": "/search/track/event", "view_func": TrackSearchEventView.as_view("track_search_event"), 'methods': ['POST']},
+    {"url_rule": "/search/track/click", "view_func": TrackSearchClickView.as_view("track_search_click"), 'methods': ['POST']},
+    {"url_rule": "/search/analytics/popular", "view_func": GetPopularSearchesView.as_view("popular_searches"), 'methods': ['GET']},
+    {"url_rule": "/search/analytics/trending", "view_func": GetTrendingSearchesView.as_view("trending_searches"), 'methods': ['GET']},
+    {"url_rule": "/search/suggestions", "view_func": GetSearchSuggestions.as_view("search_suggestions"), 'methods': ['GET']},
 
     {"url_rule": "/services", "view_func": GetServicesList.as_view("services"), 'methods': ['GET']},
     {"url_rule": "/services/<string:slug>", "view_func": GetServicesBySlug.as_view("service_by_slug"), 'methods': ['GET']},

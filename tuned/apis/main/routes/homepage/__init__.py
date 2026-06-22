@@ -1,6 +1,7 @@
 from tuned.apis.main.routes.homepage.featured import GetFeaturedContent
 from tuned.apis.main.routes.homepage.quote_form import GetQuoteFormOptions, CalculatePrice
 from tuned.apis.main.routes.homepage.newsletter_subscribe import NewsletterSubscribeView
+from tuned.apis.main.routes.homepage.newsletter_unsubscribe import NewsletterUnsubscribeView
 from tuned.apis.main.routes.homepage.search import GlobalSearchView
 
 __all__ = [
@@ -8,5 +9,6 @@ __all__ = [
     'GetQuoteFormOptions',
     'CalculatePrice',
     'NewsletterSubscribeView',
+    'NewsletterUnsubscribeView',
     'GlobalSearchView'
 ]

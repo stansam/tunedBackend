@@ -7,9 +7,11 @@ from typing import Any
 class NewsletterSubscribeSchema(Schema):
     email = fields.Email(
         required=True,
+        validate=validate.Length(max=255),
         error_messages={
             'required': 'Email address is required',
-            'invalid': 'Invalid email address format'
+            'invalid': 'Invalid email address format',
+            'max': 'Email address must not exceed 255 characters'
         }
     )
     

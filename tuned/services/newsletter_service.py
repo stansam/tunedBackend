@@ -2,6 +2,7 @@ from typing import Optional
 from flask import current_app
 from tuned.utils.email import send_async_email
 from datetime import datetime
+from itsdangerous import URLSafeSerializer
 import logging
 
 logger = logging.getLogger(__name__)
@@ -11,7 +12,11 @@ def send_newsletter_subscription_email(email: str, name: Optional[str] = None) -
     frontend_url = current_app.config.get('FRONTEND_URL', 'http://localhost:3000')
     blog_url = f"{frontend_url}/blog"
     services_url = f"{frontend_url}/services"
-    unsubscribe_url = f"{frontend_url}/newsletter/unsubscribe?email={email}"
+    
+    secret_key = current_app.config.get('SECRET_KEY', 'default-secret-key')
+    serializer = URLSafeSerializer(secret_key, salt='newsletter-unsubscribe')
+    token = serializer.dumps(email)
+    unsubscribe_url = f"{frontend_url}/newsletter/unsubscribe?token={token}"
     
     send_async_email(
         to=email,

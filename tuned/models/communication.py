@@ -47,7 +47,7 @@ class Notification(BaseModel):
 
 class NewsletterSubscriber(BaseModel):
     __tablename__ = 'newsletter_subscriber'
-    email: Mapped[str] = mapped_column(db.String(120), unique=True, nullable=False)
+    email: Mapped[str] = mapped_column(db.String(255), unique=True, nullable=False)
     name: Mapped[Optional[str]] = mapped_column(db.String(100), nullable=True)
     is_active: Mapped[bool] = mapped_column(db.Boolean, default=True, nullable=False, index=True)
     subscribed_at: Mapped[datetime] = mapped_column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)

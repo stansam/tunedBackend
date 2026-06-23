@@ -31,6 +31,11 @@ class NotificationInterface:
     def get_unread_count(self, user_id: str) -> int:
         return self._repo.get_unread_count(user_id)
 
+    def delete_notification(self, notification_id: str, user_id: str) -> bool:
+        res = self._repo.delete(notification_id, user_id)
+        self._repo.save()
+        return res
+
     def get_user_notifications(
         self,
         user_id: str,

@@ -188,7 +188,11 @@ class TunedNamespace(Namespace):
             notification = get_services().notification.mark_read(
                 str(notification_id), str(current_user.id)
             )
-            emit("notification:read", {"notification_id": str(notification.id)})
+            emit(
+                "notification:read",
+                {"notification_id": str(notification.id)},
+                to=f"user_{current_user.id}",
+            )
         except Exception as exc:
             logger.error("[Socket] mark_read error: %r", exc)
             emit("error", {"code": 500, "message": "Internal error"})

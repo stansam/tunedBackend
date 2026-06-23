@@ -95,6 +95,17 @@ class NotificationRepository:
     def rollback(self) -> None:
         self.session.rollback()
 
+    def delete(self, notification_id: str, user_id: str) -> bool:
+        try:
+            notification = self._get_by_id_for_user(notification_id, user_id)
+            if not notification:
+                raise NotFound("Notification not found")
+            self.session.delete(notification)
+            self.session.flush()
+            return True
+        except SQLAlchemyError as e:
+            raise DatabaseError(f"Database error: {str(e)}") from e
+
     def _get_by_id_for_user(self, notification_id: str, user_id: str) -> Notification | None:
         stmt = select(Notification).where(
             Notification.id == notification_id,

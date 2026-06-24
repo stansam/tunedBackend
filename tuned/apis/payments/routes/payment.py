@@ -7,7 +7,7 @@ from marshmallow import ValidationError
 from datetime import datetime, timezone
 
 from tuned.utils import success_response
-from tuned.utils.responses import error_response
+from tuned.utils.responses import error_response, success_response, paginated_response
 from tuned.utils.dependencies import get_services
 from tuned.utils.decorators import rate_limit, admin_required
 from tuned.models import MethodCategory, PaymentStatus, OrderStatus
@@ -187,7 +187,6 @@ class ListPaymentsView(MethodView):
             payments, total = services.payment.payment.list_payments(
                 user_id=user_id, status=status, page=page, per_page=per_page
             )
-            from tuned.utils.responses import paginated_response
             return paginated_response(
                 items=[asdict(p) for p in payments], page=page, per_page=per_page, total=total,
                 message="Payments fetched successfully"

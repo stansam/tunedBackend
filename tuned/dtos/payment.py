@@ -78,9 +78,9 @@ class PaymentResponseDTO(BaseDTO):
     order_id: str
     user_id: str
     amount: float
-    status: PaymentStatus
+    status: str
     accepted_method_id: str
-    currency: Currency
+    currency: str
     client_proof_reference: Optional[str]
     pesapal_tracking_id: Optional[str]
     admin_notes: Optional[str]
@@ -95,9 +95,9 @@ class PaymentResponseDTO(BaseDTO):
             order_id=str(model.order_id),
             user_id=str(model.user_id),
             amount=float(model.amount),
-            status=model.status,
+            status=model.status.value,
             accepted_method_id=str(model.accepted_method_id),
-            currency=model.currency,
+            currency=model.currency.value,
             client_proof_reference=model.client_proof_reference,
             pesapal_tracking_id=getattr(model, 'pesapal_tracking_id', None),
             admin_notes=getattr(model, 'admin_notes', None),

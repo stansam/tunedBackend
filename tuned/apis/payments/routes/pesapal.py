@@ -16,8 +16,7 @@ class PesapalIpnView(MethodView):
             from tuned.interface.payment.pesapal import PESAPAL_IPN_ALLOWED_IPS
             caller_ip = get_user_ip()
             if caller_ip not in PESAPAL_IPN_ALLOWED_IPS:
-                logger.warning("[IPN] Rejected request from unauthorized IP: %s", caller_ip)
-                return error_response(message="Forbidden", status=403)
+                logger.warning("[IPN] Received IPN request from non-whitelisted IP %s. Relying on secure Pesapal V3 status verification.", caller_ip)
 
         services = None
         try:
@@ -52,6 +51,4 @@ class PesapalIpnView(MethodView):
 
         except Exception as e:
             logger.error("[IPN] Unhandled exception: %r", e)
-            if services is not None:
-                services._repos.session.rollback()
             return jsonify({"response": "ERR", "message": "Internal processing error"}), 200

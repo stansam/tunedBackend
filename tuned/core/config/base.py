@@ -76,4 +76,4 @@ class BaseConfig:
     PESAPAL_CONSUMER_SECRET: str = os.environ.get('PESAPAL_CONSUMER_SECRET', '')
     PESAPAL_SANDBOX: bool = os.environ.get('PESAPAL_SANDBOX', 'True').lower() == 'true'
     PESAPAL_IPN_URL: str = os.environ.get('PESAPAL_IPN_URL', 'http://localhost:5000/api/payments/pesapal/ipn')
-    PESAPAL_CALLBACK_URL: str = os.environ.get('PESAPAL_CALLBACK_URL', 'http://localhost:3000/order/checkout/callback')
+    PESAPAL_CALLBACK_URL: str = os.environ.get('PESAPAL_CALLBACK_URL', 'http://localhost:3000/order/checkout/pesapal-bridge')

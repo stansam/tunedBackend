@@ -3,7 +3,7 @@ from typing import Optional, TYPE_CHECKING, Sequence
 
 from tuned.interface.payment.payment import (
     ProcessPayment, GetPaymentDetails, ClientMarkAsPaid, AdminVerifyPayment, AdminRejectPayment, ListPayments,
-    InitiatePesapalCheckout, HandlePesapalIpn
+    InitiatePesapalCheckout, HandlePesapalIpn, GetPaymentByReference
 )
 from tuned.interface.payment.invoice import GenerateInvoice, GetInvoiceDetails, MarkInvoicePaid
 from tuned.interface.payment.discount import ApplyDiscount, CreateDiscount, GetDiscountDetails
@@ -24,6 +24,7 @@ if TYPE_CHECKING:
 
 class PaymentServiceManager:
     def __init__(self, repos: Repository) -> None:
+        self._repos = repos
         self._process = ProcessPayment(repos=repos)
         self._get = GetPaymentDetails(repos=repos)
         self._mark_paid_client = ClientMarkAsPaid(repos=repos)
@@ -32,12 +33,24 @@ class PaymentServiceManager:
         self._list_payments = ListPayments(repos=repos)
         self._initiate_pesapal = InitiatePesapalCheckout(repos=repos)
         self._handle_ipn = HandlePesapalIpn(repos=repos)
+        self._get_by_reference = GetPaymentByReference(repos=repos)
 
     def process(self, data: PaymentCreateDTO) -> PaymentResponseDTO:
         return self._process.execute(data)
 
     def get_details(self, payment_id: str) -> PaymentResponseDTO:
         return self._get.execute(payment_id)
+
+    def get_by_reference(self, payment_ref: str) -> PaymentResponseDTO:
+        return self._get_by_reference.execute(payment_ref)
+
+    def get_pending_payment_by_order_id(self, order_id: str, method_id: str) -> Optional[PaymentResponseDTO]:
+        try:
+            payment = self._repos.payment.payment.get_pending_payment_by_order_id(order_id, method_id)
+            return PaymentResponseDTO.from_model(payment)
+        except Exception as exc:
+            from tuned.interface.payment.payment import _translate_exception
+            raise _translate_exception(exc)
 
     def mark_as_paid_client(self, payment_id: str, client_proof_reference: str, client_id: str) -> PaymentResponseDTO:
         return self._mark_paid_client.execute(payment_id, client_proof_reference, client_id)

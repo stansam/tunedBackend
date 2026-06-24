@@ -21,6 +21,33 @@ if TYPE_CHECKING:
 logger: logging.Logger = get_logger(__name__)
 event_bus = get_event_bus()
 
+def _translate_exception(exc: Exception) -> Exception:
+    from tuned.repository import exceptions as repo_exc
+    from tuned.core import exceptions as core_exc
+
+    if isinstance(exc, repo_exc.NotFound):
+        return core_exc.NotFound(str(exc))
+    elif isinstance(exc, repo_exc.ValidationError):
+        return core_exc.ValidationError(str(exc))
+    elif isinstance(exc, repo_exc.AlreadyExists):
+        return core_exc.AlreadyExists(str(exc))
+    elif isinstance(exc, repo_exc.InvalidCredentials):
+        return core_exc.InvalidCredentials(str(exc))
+    elif isinstance(exc, repo_exc.DatabaseError):
+        return core_exc.DatabaseError(str(exc))
+    elif isinstance(exc, repo_exc.RepositoryException):
+        return core_exc.ServiceError(str(exc))
+    elif isinstance(exc, ValueError):
+        return core_exc.ValidationError(str(exc))
+    return exc
+
+def _handle_exception(repos: Repository, exc: Exception) -> Exception:
+    try:
+        repos.payment.rollback()
+    except Exception as rollback_err:
+        logger.error("[PaymentService] Rollback failed: %r", rollback_err)
+    return _translate_exception(exc)
+
 class ProcessPayment:
     def __init__(self, repos: Repository) -> None:
         self._repo = repos.payment.payment
@@ -71,7 +98,7 @@ class ProcessPayment:
             return payment
         except Exception as exc:
             logger.error(f"[ProcessPayment] Failed to process payment: {exc!r}")
-            raise
+            raise _handle_exception(self._repos, exc)
 
 class GetPaymentDetails:
     def __init__(self, repos: Repository) -> None:
@@ -83,7 +110,7 @@ class GetPaymentDetails:
             return PaymentResponseDTO.from_model(payment)
         except Exception as exc:
             logger.error(f"[GetPaymentDetails] Failed to get payment {payment_id}: {exc!r}")
-            raise
+            raise _translate_exception(exc)
 
 class ClientMarkAsPaid:
     def __init__(self, repos: Repository) -> None:
@@ -95,7 +122,7 @@ class ClientMarkAsPaid:
     def execute(self, payment_id: str, client_proof_reference: str, client_id: str) -> PaymentResponseDTO:
         try:
             client = self._repos.user.get_user_by_id(client_id)
-            payment = self._repo.get_by_id(payment_id)
+            payment = self._repo.get_by_id(payment_id, for_update=True)
             order = self._repos.order.get_by_id(str(payment.order_id))
             if payment.status != PaymentStatus.PENDING:
                 raise ValueError(f"Payment is not in a pending state, current state: {payment.status}")
@@ -169,7 +196,7 @@ class ClientMarkAsPaid:
             return PaymentResponseDTO.from_model(updated_payment)
         except Exception as exc:
             logger.error("[ClientMarkAsPaid] Failed to mark payment %s as paid: %r", payment_id, exc)
-            raise
+            raise _handle_exception(self._repos, exc)
 
 class AdminVerifyPayment:
     def __init__(self, repos: Repository) -> None:
@@ -180,7 +207,7 @@ class AdminVerifyPayment:
         
     def execute(self, payment_id: str, admin_id: str, admin_notes: Optional[str] = None) -> PaymentResponseDTO:
         try:
-            payment = self._repo.get_by_id(payment_id)
+            payment = self._repo.get_by_id(payment_id, for_update=True)
             if payment.status not in (PaymentStatus.PENDING, PaymentStatus.PENDING_VERIFICATION):
                 raise ValueError(
                     f"Payment '{payment.payment_id}' cannot be verified in state: {payment.status.value}. "
@@ -311,7 +338,7 @@ class AdminVerifyPayment:
             return PaymentResponseDTO.from_model(updated_payment)
         except Exception as exc:
             logger.error("[AdminVerifyPayment] Failed to verify payment %s: %r", payment_id, exc)
-            raise
+            raise _handle_exception(self._repos, exc)
 
 class AdminRejectPayment:
     def __init__(self, repos: Repository) -> None:
@@ -322,7 +349,7 @@ class AdminRejectPayment:
         
     def execute(self, payment_id: str, user_id: str, rejection_reason: str = "Payment marked as failed by Admin", ip_address: str = "system", user_agent: str = "system") -> PaymentResponseDTO:
         try:
-            payment = self._repo.get_by_id(payment_id)
+            payment = self._repo.get_by_id(payment_id, for_update=True)
             if payment.status not in (PaymentStatus.PENDING, PaymentStatus.PENDING_VERIFICATION):
                 raise ValueError(f"Payment is not in correct status to reject, current state: {payment.status}")
                 
@@ -390,8 +417,7 @@ class AdminRejectPayment:
             return PaymentResponseDTO.from_model(updated_payment)
         except Exception as exc:
             logger.error(f"[AdminRejectPayment] Failed to reject payment {payment_id}: {exc!r}")
-            raise
-
+            raise _handle_exception(self._repos, exc)
 
 class ListPayments:
     def __init__(self, repos: Repository) -> None:
@@ -402,8 +428,7 @@ class ListPayments:
             return self._repo.list_payments(user_id=user_id, status=status, page=page, per_page=per_page)
         except Exception as exc:
             logger.error(f"[ListPayments] Failed to list payments: {exc!r}")
-            raise
-
+            raise _translate_exception(exc)
 
 class InitiatePesapalCheckout:
     def __init__(self, repos: Repository) -> None:
@@ -421,112 +446,114 @@ class InitiatePesapalCheckout:
         user_data: dict,
     ) -> dict:
         from tuned.interface.payment.pesapal import PesapalHelper
-
-        # 1. Create the pending payment record first so we have a PAY-XXXX slug
-        payment_dto = PaymentCreateDTO(
-            order_id=order_id,
-            user_id=user_id,
-            amount=amount,
-            accepted_method_id=method_id,
-            status=PaymentStatus.PENDING,
-        )
-        payment = self._repo.create(payment_dto)
-        logger.info(
-            "[InitiatePesapalCheckout] Created pending payment %s for order %s",
-            payment.payment_id, order_id
-        )
-
-        # 2. Submit to Pesapal — use payment.payment_id (PAY-XXXX) as merchant reference
-        pesapal = PesapalHelper()
-        submit_data = PesapalSubmitOrderDTO(
-            merchant_reference=payment.payment_id,
-            amount=amount,
-            currency="USD",
-            email=user_data.get("email", ""),
-            phone=user_data.get("phone", ""),
-            first_name=user_data.get("first_name", ""),
-            last_name=user_data.get("last_name", ""),
-            description=f"Payment {payment.payment_id} for Order #{user_data.get('order_number', order_id)}",
-        )
         try:
-            pesapal_resp = pesapal.submit_order(submit_data)
-        except Exception as pesapal_exc:
-            logger.error(
-                "[InitiatePesapalCheckout] Pesapal submit_order failed for payment %s: %r",
-                payment.payment_id, pesapal_exc
-            )
-            raise
-
-        # 3. Store Pesapal tracking ID on the payment record
-        update_dto = PaymentUpdateDTO(
-            pesapal_tracking_id=pesapal_resp.order_tracking_id
-        )
-        updated_payment = self._repo.update(str(payment.id), update_dto)
-
-        # 4. Create a PENDING transaction record for the audit trail
-        try:
-            self._repos.payment.transaction.create(TransactionCreateDTO(
-                payment_id=str(updated_payment.id),
-                type=TransactionType.PAYMENT,
-                amount=amount,
-                status=TransactionStatus.PENDING,
-                reference=pesapal_resp.order_tracking_id,
-            ))
-        except Exception as tx_exc:
-            logger.error(
-                "[InitiatePesapalCheckout] Transaction record creation failed for payment %s: %r",
-                updated_payment.payment_id, tx_exc
-            )
-
-        # 5. Audit log
-        try:
-            self._audit.activity_log.log(ActivityLogCreateDTO(
-                action=Variables.PAYMENT_CREATE_ACTION,
+            # 1. Create the pending payment record first so we have a PAY-XXXX slug
+            payment_dto = PaymentCreateDTO(
+                order_id=order_id,
                 user_id=user_id,
-                entity_type=Variables.PAYMENT_ENTITY_TYPE,
-                entity_id=str(updated_payment.id),
-                after=updated_payment,
-                created_by=user_id,
-                ip_address="system",
-                user_agent="system",
-            ))
-        except Exception as audit_exc:
-            logger.error(
-                "[InitiatePesapalCheckout] Audit log failed for payment %s: %r",
-                updated_payment.payment_id, audit_exc
+                amount=amount,
+                accepted_method_id=method_id,
+                status=PaymentStatus.PENDING,
+            )
+            payment = self._repo.create(payment_dto)
+            logger.info(
+                "[InitiatePesapalCheckout] Created pending payment %s for order %s",
+                payment.payment_id, order_id
             )
 
-        # 6. Commit
-        self._repos.payment.save()
+            # 2. Submit to Pesapal — use payment.payment_id (PAY-XXXX) as merchant reference
+            pesapal = PesapalHelper()
+            submit_data = PesapalSubmitOrderDTO(
+                merchant_reference=payment.payment_id,
+                amount=amount,
+                currency="USD",
+                email=user_data.get("email", ""),
+                phone=user_data.get("phone", ""),
+                first_name=user_data.get("first_name", ""),
+                last_name=user_data.get("last_name", ""),
+                description=f"Payment {payment.payment_id} for Order #{user_data.get('order_number', order_id)}",
+            )
+            try:
+                pesapal_resp = pesapal.submit_order(submit_data)
+            except Exception as pesapal_exc:
+                logger.error(
+                    "[InitiatePesapalCheckout] Pesapal submit_order failed for payment %s: %r",
+                    payment.payment_id, pesapal_exc
+                )
+                raise
 
-        # 7. Emit event
-        try:
-            event_bus.emit("payment.pesapal_initiated", {
+            # 3. Store Pesapal tracking ID on the payment record
+            update_dto = PaymentUpdateDTO(
+                pesapal_tracking_id=pesapal_resp.order_tracking_id
+            )
+            updated_payment = self._repo.update(str(payment.id), update_dto)
+
+            # 4. Create a PENDING transaction record for the audit trail
+            try:
+                self._repos.payment.transaction.create(TransactionCreateDTO(
+                    payment_id=str(updated_payment.id),
+                    type=TransactionType.PAYMENT,
+                    amount=amount,
+                    status=TransactionStatus.PENDING,
+                    reference=pesapal_resp.order_tracking_id,
+                ))
+            except Exception as tx_exc:
+                logger.error(
+                    "[InitiatePesapalCheckout] Transaction record creation failed for payment %s: %r",
+                    updated_payment.payment_id, tx_exc
+                )
+
+            # 5. Audit log
+            try:
+                self._audit.activity_log.log(ActivityLogCreateDTO(
+                    action=Variables.PAYMENT_CREATE_ACTION,
+                    user_id=user_id,
+                    entity_type=Variables.PAYMENT_ENTITY_TYPE,
+                    entity_id=str(updated_payment.id),
+                    after=updated_payment,
+                    created_by=user_id,
+                    ip_address="system",
+                    user_agent="system",
+                ))
+            except Exception as audit_exc:
+                logger.error(
+                    "[InitiatePesapalCheckout] Audit log failed for payment %s: %r",
+                    updated_payment.payment_id, audit_exc
+                )
+
+            # 6. Commit
+            self._repos.payment.save()
+
+            # 7. Emit event
+            try:
+                event_bus.emit("payment.pesapal_initiated", {
+                    "payment_id": str(updated_payment.id),
+                    "payment_ref": updated_payment.payment_id,
+                    "order_id": order_id,
+                    "user_id": user_id,
+                    "tracking_id": pesapal_resp.order_tracking_id,
+                    "amount": amount,
+                })
+            except Exception as event_exc:
+                logger.error(
+                    "[InitiatePesapalCheckout] Event emit failed for payment %s: %r",
+                    updated_payment.payment_id, event_exc
+                )
+
+            logger.info(
+                "[InitiatePesapalCheckout] Payment %s initiated via Pesapal. TrackingId=%s",
+                updated_payment.payment_id, pesapal_resp.order_tracking_id
+            )
+
+            return {
+                "redirect_url": pesapal_resp.redirect_url,
+                "order_tracking_id": pesapal_resp.order_tracking_id,
                 "payment_id": str(updated_payment.id),
                 "payment_ref": updated_payment.payment_id,
-                "order_id": order_id,
-                "user_id": user_id,
-                "tracking_id": pesapal_resp.order_tracking_id,
-                "amount": amount,
-            })
-        except Exception as event_exc:
-            logger.error(
-                "[InitiatePesapalCheckout] Event emit failed for payment %s: %r",
-                updated_payment.payment_id, event_exc
-            )
-
-        logger.info(
-            "[InitiatePesapalCheckout] Payment %s initiated via Pesapal. TrackingId=%s",
-            updated_payment.payment_id, pesapal_resp.order_tracking_id
-        )
-
-        return {
-            "redirect_url": pesapal_resp.redirect_url,
-            "order_tracking_id": pesapal_resp.order_tracking_id,
-            "payment_id": str(updated_payment.id),
-            "payment_ref": updated_payment.payment_id,
-        }
-
+            }
+        except Exception as exc:
+            logger.error(f"[InitiatePesapalCheckout] Failed to initiate: {exc!r}")
+            raise _handle_exception(self._repos, exc)
 
 class HandlePesapalIpn:
     def __init__(self, repos: Repository) -> None:
@@ -537,83 +564,99 @@ class HandlePesapalIpn:
         tracking_id: str,
         status_result: PesapalTransactionStatusDTO,
     ) -> dict:
-        status_desc = status_result.payment_status_description.lower().strip()
-        logger.info(
-            "[HandlePesapalIpn] Processing IPN for tracking_id=%s, status=%s",
-            tracking_id, status_desc
-        )
-
-        if status_desc in ("completed", "success"):
-            try:
-                payment = self._repos.payment.payment.get_by_pesapal_tracking_id(tracking_id)
-            except Exception as e:
-                logger.warning(
-                    "[HandlePesapalIpn] No payment found for tracking_id=%s: %r",
-                    tracking_id, e
-                )
-                return {"status": "not_found", "tracking_id": tracking_id}
-
-            # IDEMPOTENCY CHECK
-            if payment.status == PaymentStatus.COMPLETED:
-                logger.info(
-                    "[HandlePesapalIpn] Payment %s already COMPLETED — idempotent IPN, skipping.",
-                    payment.payment_id
-                )
-                return {"status": "already_completed", "payment_id": str(payment.id)}
-
-            if payment.status not in (PaymentStatus.PENDING, PaymentStatus.PENDING_VERIFICATION):
-                logger.warning(
-                    "[HandlePesapalIpn] Payment %s is in unexpected state %s for IPN completion.",
-                    payment.payment_id, payment.status
-                )
-                return {"status": "unexpected_state", "payment_id": str(payment.id)}
-
-            try:
-                result = AdminVerifyPayment(self._repos).execute(
-                    payment_id=str(payment.id),
-                    admin_id="system_pesapal",
-                )
-                logger.info(
-                    "[HandlePesapalIpn] Payment %s auto-verified via IPN. Order activated.",
-                    payment.payment_id
-                )
-                return {"status": "completed", "payment_id": str(result.id)}
-            except Exception as verify_exc:
-                logger.error(
-                    "[HandlePesapalIpn] AdminVerifyPayment failed for payment %s: %r",
-                    payment.payment_id, verify_exc
-                )
-                raise
-
-        elif status_desc == "failed":
-            try:
-                payment = self._repos.payment.payment.get_by_pesapal_tracking_id(tracking_id)
-            except Exception:
-                logger.warning(
-                    "[HandlePesapalIpn] No payment for failed IPN tracking_id=%s", tracking_id
-                )
-                return {"status": "not_found", "tracking_id": tracking_id}
-
-            if payment.status == PaymentStatus.FAILED:
-                return {"status": "already_failed", "payment_id": str(payment.id)}
-
-            try:
-                result = AdminRejectPayment(self._repos).execute(
-                    payment_id=str(payment.id),
-                    user_id="system_pesapal",
-                    rejection_reason="Pesapal gateway reported payment as failed.",
-                )
-                return {"status": "failed", "payment_id": str(result.id)}
-            except Exception as reject_exc:
-                logger.error(
-                    "[HandlePesapalIpn] AdminRejectPayment failed for payment %s: %r",
-                    payment.payment_id, reject_exc
-                )
-                raise
-
-        else:
+        try:
+            status_desc = status_result.payment_status_description.lower().strip()
             logger.info(
-                "[HandlePesapalIpn] Status '%s' for tracking_id=%s — no action taken.",
-                status_desc, tracking_id
+                "[HandlePesapalIpn] Processing IPN for tracking_id=%s, status=%s",
+                tracking_id, status_desc
             )
-            return {"status": "pending", "tracking_id": tracking_id}
+
+            if status_desc in ("completed", "success"):
+                try:
+                    payment = self._repos.payment.payment.get_by_pesapal_tracking_id(tracking_id, for_update=True)
+                except Exception as e:
+                    logger.warning(
+                        "[HandlePesapalIpn] No payment found for tracking_id=%s: %r",
+                        tracking_id, e
+                    )
+                    return {"status": "not_found", "tracking_id": tracking_id}
+
+                # IDEMPOTENCY CHECK
+                if payment.status == PaymentStatus.COMPLETED:
+                    logger.info(
+                        "[HandlePesapalIpn] Payment %s already COMPLETED — idempotent IPN, skipping.",
+                        payment.payment_id
+                    )
+                    return {"status": "already_completed", "payment_id": str(payment.id)}
+
+                if payment.status not in (PaymentStatus.PENDING, PaymentStatus.PENDING_VERIFICATION):
+                    logger.warning(
+                        "[HandlePesapalIpn] Payment %s is in unexpected state %s for IPN completion.",
+                        payment.payment_id, payment.status
+                    )
+                    return {"status": "unexpected_state", "payment_id": str(payment.id)}
+
+                try:
+                    result = AdminVerifyPayment(self._repos).execute(
+                        payment_id=str(payment.id),
+                        admin_id="system_pesapal",
+                    )
+                    logger.info(
+                        "[HandlePesapalIpn] Payment %s auto-verified via IPN. Order activated.",
+                        payment.payment_id
+                    )
+                    return {"status": "completed", "payment_id": str(result.id)}
+                except Exception as verify_exc:
+                    logger.error(
+                        "[HandlePesapalIpn] AdminVerifyPayment failed for payment %s: %r",
+                        payment.payment_id, verify_exc
+                    )
+                    raise
+
+            elif status_desc == "failed":
+                try:
+                    payment = self._repos.payment.payment.get_by_pesapal_tracking_id(tracking_id, for_update=True)
+                except Exception:
+                    logger.warning(
+                        "[HandlePesapalIpn] No payment for failed IPN tracking_id=%s", tracking_id
+                    )
+                    return {"status": "not_found", "tracking_id": tracking_id}
+
+                if payment.status == PaymentStatus.FAILED:
+                    return {"status": "already_failed", "payment_id": str(payment.id)}
+
+                try:
+                    result = AdminRejectPayment(self._repos).execute(
+                        payment_id=str(payment.id),
+                        user_id="system_pesapal",
+                        rejection_reason="Pesapal gateway reported payment as failed.",
+                    )
+                    return {"status": "failed", "payment_id": str(result.id)}
+                except Exception as reject_exc:
+                    logger.error(
+                        "[HandlePesapalIpn] AdminRejectPayment failed for payment %s: %r",
+                        payment.payment_id, reject_exc
+                    )
+                    raise
+
+            else:
+                logger.info(
+                    "[HandlePesapalIpn] Status '%s' for tracking_id=%s — no action taken.",
+                    status_desc, tracking_id
+                )
+                return {"status": "pending", "tracking_id": tracking_id}
+        except Exception as exc:
+            logger.error(f"[HandlePesapalIpn] IPN execution failed: {exc!r}")
+            raise _handle_exception(self._repos, exc)
+
+class GetPaymentByReference:
+    def __init__(self, repos: Repository) -> None:
+        self._repo = repos.payment.payment
+
+    def execute(self, payment_ref: str) -> PaymentResponseDTO:
+        try:
+            payment = self._repo.get_by_payment_id(payment_ref)
+            return PaymentResponseDTO.from_model(payment)
+        except Exception as exc:
+            logger.error(f"[GetPaymentByReference] Failed to get payment reference {payment_ref}: {exc!r}")
+            raise _translate_exception(exc)

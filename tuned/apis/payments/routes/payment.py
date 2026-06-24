@@ -78,8 +78,6 @@ class CheckoutView(MethodView):
                     )
                 except Exception as ex:
                     logger.error("[CheckoutView] Pesapal initiation failed: %r", ex)
-                    if services is not None:
-                        services._repos.session.rollback()
                     return error_response(message="Failed to initiate payment gateway. Please try again.", status=502)
 
             else:
@@ -87,7 +85,7 @@ class CheckoutView(MethodView):
                 if proof_ref:
                     from tuned.core.exceptions import NotFound
                     try:
-                        payment = services._repos.payment.payment.get_pending_payment_by_order_id(str(order.id), method.id)
+                        payment = services.payment.payment.get_pending_payment_by_order_id(str(order.id), method.id)
                     except NotFound:
                         payment = None
                     
@@ -118,8 +116,6 @@ class CheckoutView(MethodView):
 
         except Exception as e:
             logger.error(f"Checkout error: {e}")
-            if services is not None:
-                services._repos.session.rollback()
             return error_response(message="Failed to process checkout", status=500)
 
 class AdminVerifyPaymentView(MethodView):
@@ -139,7 +135,6 @@ class AdminVerifyPaymentView(MethodView):
             return error_response(message=str(val_ex), status=400)
         except Exception as e:
             logger.error(f"Failed to verify payment {payment_id}: {e}")
-            services._repos.session.rollback()
             return error_response(message="Failed to verify payment manual proof", status=500)
 
 class AdminRejectPaymentView(MethodView):
@@ -169,7 +164,6 @@ class AdminRejectPaymentView(MethodView):
             )
         except Exception as e:
             logger.error(f"Failed to reject payment {payment_id}: {e}")
-            services._repos.session.rollback()
             return error_response(message="Failed to reject payment manual proof", status=500)
 
 class ListPaymentsView(MethodView):
@@ -275,3 +269,37 @@ class DownloadReceiptView(MethodView):
         except Exception as e:
             logger.error(f"Failed to download receipt: {e}")
             return error_response(message="Failed to generate receipt download", status=500)
+
+
+class ResolvePaymentReferenceView(MethodView):
+    decorators = [login_required]
+
+    def get(self, payment_ref):
+        try:
+            services = get_services()
+            from tuned.core.exceptions import NotFound
+            try:
+                payment = services.payment.payment.get_by_reference(payment_ref)
+            except NotFound:
+                return error_response(message="Payment not found", status=404)
+
+            # Check authorization
+            if not current_user.is_admin and str(payment.user_id) != str(current_user.id):
+                return error_response(message="Forbidden: Access denied", status=403)
+
+            return success_response(
+                data={
+                    "id": payment.id,
+                    "payment_id": payment.payment_id,
+                    "order_id": payment.order_id,
+                    "user_id": payment.user_id,
+                    "amount": payment.amount,
+                    "status": payment.status.value if hasattr(payment.status, 'value') else str(payment.status),
+                },
+                message="Payment resolved successfully",
+                status=200
+            )
+        except Exception as e:
+            logger.error(f"Failed to resolve payment reference {payment_ref}: {e}")
+            return error_response(message="Failed to resolve payment reference", status=500)
+

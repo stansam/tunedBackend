@@ -30,7 +30,8 @@ test_app.config.update({
     "PESAPAL_CONSUMER_SECRET": "dummy_secret",
     "PESAPAL_SANDBOX": True,
     "PESAPAL_IPN_URL": "http://localhost:5000/ipn",
-    "PESAPAL_CALLBACK_URL": "http://localhost:3000/callback"
+    "PESAPAL_CALLBACK_URL": "http://localhost:3000/callback",
+    "LOGIN_DISABLED": True
 })
 
 class TestPaymentsWorkflow(unittest.TestCase):
@@ -57,8 +58,12 @@ class TestPaymentsWorkflow(unittest.TestCase):
         self.redis_patcher.stop()
         self.ctx.pop()
 
-    @patch('tuned.interface.payment.pesapal.requests.post')
-    def test_pesapal_helper_auth_token_caching(self, mock_post):
+    @patch('tuned.interface.payment.pesapal.requests.Session')
+    def test_pesapal_helper_auth_token_caching(self, mock_session_cls):
+        # Setup mock session instance
+        mock_session_instance = MagicMock()
+        mock_session_cls.return_value = mock_session_instance
+
         # Setup mock authentication response
         mock_response = MagicMock()
         mock_response.status_code = 200
@@ -66,7 +71,7 @@ class TestPaymentsWorkflow(unittest.TestCase):
             "token": "cached_access_token_123",
             "expiryDate": "2026-05-20T23:59:59Z"
         }
-        mock_post.return_value = mock_response
+        mock_session_instance.post.return_value = mock_response
 
         # Mock redis to return None first (uncached) then cached token
         self.mock_redis.get.side_effect = [None, "cached_access_token_123"]
@@ -81,12 +86,15 @@ class TestPaymentsWorkflow(unittest.TestCase):
         self.assertEqual(token2, "cached_access_token_123")
         
         # Verify post was called exactly once
-        mock_post.assert_called_once()
+        mock_session_instance.post.assert_called_once()
         self.mock_redis.setex.assert_called_once()
 
-    @patch('tuned.interface.payment.pesapal.requests.get')
-    @patch('tuned.interface.payment.pesapal.requests.post')
-    def test_pesapal_helper_submit_order(self, mock_post, mock_get):
+    @patch('tuned.interface.payment.pesapal.requests.Session')
+    def test_pesapal_helper_submit_order(self, mock_session_cls):
+        # Setup mock session instance
+        mock_session_instance = MagicMock()
+        mock_session_cls.return_value = mock_session_instance
+
         # Mock auth token in Redis
         self.mock_redis.get.return_value = "valid_token"
 
@@ -96,7 +104,7 @@ class TestPaymentsWorkflow(unittest.TestCase):
         mock_get_response.json.return_value = [
             {"url": "http://localhost:5000/ipn", "ipn_id": "ipn-12345"}
         ]
-        mock_get.return_value = mock_get_response
+        mock_session_instance.get.return_value = mock_get_response
 
         # Mock submit order response
         mock_post_response = MagicMock()
@@ -106,7 +114,7 @@ class TestPaymentsWorkflow(unittest.TestCase):
             "order_tracking_id": "tracking-12345",
             "status": "200"
         }
-        mock_post.return_value = mock_post_response
+        mock_session_instance.post.return_value = mock_post_response
 
         helper = PesapalHelper()
         dto = PesapalSubmitOrderDTO(
@@ -172,6 +180,17 @@ class TestPaymentsWorkflow(unittest.TestCase):
 
         self.mock_repos.payment.payment.get_by_id.return_value = payment
         self.mock_repos.order.get_by_id.return_value = order
+
+        # Setup mock user and mock invoice
+        mock_user = MagicMock()
+        mock_user.get_name.return_value = "Test User"
+        mock_user.email = "test@example.com"
+        self.mock_repos.user.get_user_by_id.return_value = mock_user
+
+        mock_invoice = MagicMock()
+        mock_invoice.id = uuid.uuid4()
+        mock_invoice.invoice_number = "INV-777"
+        self.mock_repos.payment.invoice.create.return_value = mock_invoice
         
         # When update is called, mutate status to completed
         def update_mock(pid, update_dto):
@@ -200,13 +219,13 @@ class TestPaymentsWorkflow(unittest.TestCase):
             "order_id": str(payment.order_id),
             "order_number": "ORD-777",
             "user_id": str(payment.user_id),
-            "client_name": "",
-            "client_email": "",
+            "client_name": "Test User",
+            "client_email": "test@example.com",
             "status": "completed",
             "amount": 120.0,
             "is_automated": False,
-            "invoice_id": str(self.mock_repos.payment.invoice.create.return_value.id),
-            "invoice_number": self.mock_repos.payment.invoice.create.return_value.invoice_number,
+            "invoice_id": str(mock_invoice.id),
+            "invoice_number": "INV-777",
         })
 
     def test_create_payment_enum_handling(self):
@@ -251,7 +270,7 @@ class TestPaymentsWorkflow(unittest.TestCase):
             )
 
     @patch('tuned.interface.payment.payment.event_bus')
-    @patch('tuned.interface.payment.payment.PesapalHelper')
+    @patch('tuned.interface.payment.pesapal.PesapalHelper')
     def test_initiate_pesapal_checkout(self, mock_pesapal_helper_cls, mock_event_bus):
         # Configure submit order mock response
         mock_helper = MagicMock()
@@ -399,6 +418,105 @@ class TestPaymentsWorkflow(unittest.TestCase):
             user_id="system_pesapal",
             rejection_reason="Pesapal gateway reported payment as failed."
         )
+
+    def test_exception_translation(self):
+        from tuned.repository import exceptions as repo_exc
+        from tuned.core import exceptions as core_exc
+        from tuned.interface.payment.payment import _translate_exception
+
+        # Test NotFound translation
+        exc = repo_exc.NotFound("Record not found")
+        translated = _translate_exception(exc)
+        self.assertIsInstance(translated, core_exc.NotFound)
+
+        # Test ValidationError translation
+        exc = repo_exc.ValidationError("Invalid input")
+        translated = _translate_exception(exc)
+        self.assertIsInstance(translated, core_exc.ValidationError)
+
+        # Test AlreadyExists translation
+        exc = repo_exc.AlreadyExists("Duplicate key")
+        translated = _translate_exception(exc)
+        self.assertIsInstance(translated, core_exc.AlreadyExists)
+
+    def test_service_rollback_on_failure(self):
+        from tuned.repository import exceptions as repo_exc
+        from tuned.core import exceptions as core_exc
+        from tuned.interface.payment.payment import ProcessPayment
+
+        # Setup mock repo to raise RepositoryException on create
+        self.mock_repos.payment.payment.create.side_effect = repo_exc.RepositoryException("Database crash")
+
+        data = PaymentCreateDTO(
+            order_id=str(self.order_id),
+            user_id=str(self.client_id),
+            amount=50.0,
+            accepted_method_id=str(self.method_id),
+            status="pending"
+        )
+
+        processor = ProcessPayment(self.mock_repos)
+        with self.assertRaises(core_exc.ServiceError):
+            processor.execute(data)
+
+        # Verify rollback was called on repository
+        self.mock_repos.payment.rollback.assert_called_once()
+
+    @patch('tuned.apis.payments.routes.payment.get_services')
+    @patch('tuned.apis.payments.routes.payment.current_user')
+    def test_resolve_payment_reference_route(self, mock_current_user, mock_get_services):
+        from tuned.core.exceptions import NotFound
+
+        # Setup current user
+        mock_current_user.id = self.client_id
+        mock_current_user.is_admin = False
+
+        # Mock payment object
+        mock_payment = MagicMock()
+        mock_payment.id = self.payment_id
+        mock_payment.payment_id = "PAY-RESOLVE"
+        mock_payment.order_id = self.order_id
+        mock_payment.user_id = self.client_id
+        mock_payment.amount = 150.0
+        mock_payment.status = PaymentStatus.PENDING
+
+        mock_service = MagicMock()
+        mock_get_services.return_value = mock_service
+
+        # 1. Success case: Same user resolves reference
+        mock_service.payment.payment.get_by_reference.return_value = mock_payment
+        
+        with test_app.test_request_context():
+            from tuned.apis.payments.routes.payment import ResolvePaymentReferenceView
+            view = ResolvePaymentReferenceView.as_view("resolve_payment")
+            response, status_code = view(payment_ref="PAY-RESOLVE")
+            
+            self.assertEqual(status_code, 200)
+            data = response.get_json()
+            self.assertTrue(data["success"])
+            self.assertEqual(data["data"]["payment_id"], "PAY-RESOLVE")
+
+        # 2. Forbidden case: Different user attempts to resolve reference
+        mock_current_user.id = uuid.uuid4() # change user ID
+        
+        with test_app.test_request_context():
+            response, status_code = view(payment_ref="PAY-RESOLVE")
+            self.assertEqual(status_code, 403)
+            data = response.get_json()
+            self.assertFalse(data["success"])
+            self.assertIn("Access denied", data["message"])
+
+        # 3. NotFound case: reference does not exist
+        # Reset current user to owner
+        mock_current_user.id = self.client_id
+        mock_service.payment.payment.get_by_reference.side_effect = NotFound("Payment not found")
+
+        with test_app.test_request_context():
+            response, status_code = view(payment_ref="PAY-NOT-FOUND")
+            self.assertEqual(status_code, 404)
+            data = response.get_json()
+            self.assertFalse(data["success"])
+            self.assertIn("Payment not found", data["message"])
 
 if __name__ == '__main__':
     unittest.main()

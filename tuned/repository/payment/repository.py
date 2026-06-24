@@ -11,7 +11,7 @@ from tuned.dtos.payment import (
 from tuned.repository.payment.payment import (
     CreatePayment, GetPaymentByID, GetPaymentByOrderID, UpdatePayment, GetSpendingVelocity,
     GetPendingPaymentByOrderID, GetPendingPaymentByReferenceID, GetPaymentsList,
-    GetPaymentByPesapalTrackingId, GetActivePaymentForOrder
+    GetPaymentByPesapalTrackingId, GetActivePaymentForOrder, GetPaymentByPaymentID
 )
 from tuned.repository.payment.invoice import (
     CreateInvoice, GetInvoiceByID, GetInvoiceByNumber, UpdateInvoice, GetInvoiceByPaymentID,
@@ -38,8 +38,8 @@ class PaymentsManager:
     def create(self, data: PaymentCreateDTO) -> PaymentResponseDTO:
         return CreatePayment(self.session).execute(data)
 
-    def get_by_id(self, payment_id: str) -> "Payment":
-        return GetPaymentByID(self.session).execute(payment_id)
+    def get_by_id(self, payment_id: str, for_update: bool = False) -> "Payment":
+        return GetPaymentByID(self.session).execute(payment_id, for_update=for_update)
 
     def get_pending_payment_by_order_id(self, order_id: str, accepted_method_id: str) -> "Payment":
         return GetPendingPaymentByOrderID(self.session).execute(order_id, accepted_method_id)
@@ -59,11 +59,15 @@ class PaymentsManager:
     def list_payments(self, user_id: Optional[str] = None, status: Optional[str] = None, page: int = 1, per_page: int = 10) -> tuple[list[PaymentResponseDTO], int]:
         return GetPaymentsList(self.session).execute(user_id=user_id, status=status, page=page, per_page=per_page)
 
-    def get_by_pesapal_tracking_id(self, tracking_id: str) -> "Payment":
-        return GetPaymentByPesapalTrackingId(self.session).execute(tracking_id)
+    def get_by_pesapal_tracking_id(self, tracking_id: str, for_update: bool = False) -> "Payment":
+        return GetPaymentByPesapalTrackingId(self.session).execute(tracking_id, for_update=for_update)
 
     def get_active_payment_for_order(self, order_id: str) -> Optional["Payment"]:
         return GetActivePaymentForOrder(self.session).execute(order_id)
+
+    def get_by_payment_id(self, payment_ref: str) -> "Payment":
+        return GetPaymentByPaymentID(self.session).execute(payment_ref)
+
 
 class InvoiceManager:
     def __init__(self, session: Session) -> None:

@@ -15,8 +15,7 @@ from tuned.repository.exceptions import AlreadyExists
 from tuned.core.logging import get_logger
 from tuned.apis.auth.schemas.login import LoginSchema
 from tuned.apis.auth.schemas.registration import RegistrationSchema
-from tuned.dtos import UserResponseDTO, LoginRequestDTO, CreateUserDTO
-from dataclasses import asdict
+from tuned.dtos import LoginRequestDTO, CreateUserDTO
 from marshmallow import ValidationError
 import logging
 from typing import Any

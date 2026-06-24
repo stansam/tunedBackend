@@ -1,7 +1,8 @@
 from tuned.apis.payments.routes.method import PaymentMethodsView
 from tuned.apis.payments.routes.payment import (
     CheckoutView, AdminVerifyPaymentView, AdminRejectPaymentView,
-    ListPaymentsView, DownloadInvoiceView, DownloadReceiptView, GetOrderPaymentView
+    ListPaymentsView, DownloadInvoiceView, DownloadReceiptView, GetOrderPaymentView,
+    ResolvePaymentReferenceView
 )
 from tuned.apis.payments.routes.pesapal import PesapalIpnView
 from tuned.apis.payments.routes.invoice import ListInvoicesView, GetInvoiceView
@@ -16,6 +17,7 @@ PAYMENT_ROUTES = [
     {"url_rule": "/checkout", "view_func": CheckoutView.as_view("checkout"), "methods": ["POST"]},
     {"url_rule": "/", "view_func": ListPaymentsView.as_view("list_payments"), "methods": ["GET"]},
     {"url_rule": "/order/<order_id>", "view_func": GetOrderPaymentView.as_view("get_order_payment"), "methods": ["GET"]},
+    {"url_rule": "/resolve/<payment_ref>", "view_func": ResolvePaymentReferenceView.as_view("resolve_payment"), "methods": ["GET"]},
     {"url_rule": "/<payment_id>/invoice", "view_func": DownloadInvoiceView.as_view("download_invoice"), "methods": ["GET"]},
     {"url_rule": "/<payment_id>/receipt", "view_func": DownloadReceiptView.as_view("download_receipt"), "methods": ["GET"]},
     {"url_rule": "/invoices", "view_func": ListInvoicesView.as_view("list_invoices"), "methods": ["GET"]},

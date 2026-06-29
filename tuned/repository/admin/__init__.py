@@ -6,6 +6,7 @@ from tuned.models.deadline_extension import OrderDeadlineExtensionRequest
 from tuned.models.enums import RevisionRequestStatus, Priority
 from tuned.dtos.admin import AdminOrderListResponseDTO, AdminOrdersStatsResponseDTO
 from tuned.dtos import OrderListRequestDTO
+from tuned.dtos.payment import AdminPaymentResponseDTO
 from tuned.dtos.admin import(
     AdminDashboardAnalyticsDTO, AdminDashboardTrackingDTO,
     AdminDashboardAlertsDTO, AdminKPIDTO,
@@ -92,9 +93,28 @@ class AdminUserRepository:
 
     def get_geography(self) -> list[GeographicDistributionDTO]:
         return GetGeographicDistribution(self.session).execute()
-    
+
+
+class AdminPaymentRepository:
+    def __init__(self, session: Session) -> None:
+        self.session = session
+
+    def list_payments(
+        self,
+        status: Optional[str] = None,
+        q: Optional[str] = None,
+        page: int = 1,
+        per_page: int = 10
+    ) -> tuple[list[AdminPaymentResponseDTO], int]:
+        from tuned.repository.admin.payments import GetAdminPaymentsList
+        return GetAdminPaymentsList(self.session).execute(
+            status=status, q=q, page=page, per_page=per_page
+        )
+
+
 __all__ = [
     "AdminAnalyticsRepository",
     "AdminOrderRepository",
     "AdminUserRepository",
+    "AdminPaymentRepository",
 ]

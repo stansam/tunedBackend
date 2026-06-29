@@ -51,7 +51,7 @@ def create_services() -> None:
                 description=str(description),
                 order=int(order_idx),
             )
-            services.service_category.create_category(sc_dto)
+            services.service_category.create_category(sc_dto, "system")
             click.echo(f"  ✓ Created service category: {cat_name}")
             sc_created += 1
         except AlreadyExists:
@@ -96,7 +96,7 @@ def create_services() -> None:
                     pricing_category_id=str(pricing_cat_id),
                     is_active=True,
                 )
-                services.service.create_service(svc_dto)
+                services.service.create_service(svc_dto, "system")
                 click.echo(f"  ✓ Created service: {svc_name}")
                 svc_created += 1
             except AlreadyExists:

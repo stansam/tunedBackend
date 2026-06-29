@@ -1,102 +1,98 @@
 from __future__ import annotations
-import logging
-from typing import Optional, TYPE_CHECKING
-
+from typing import TYPE_CHECKING, Any
+from dataclasses import asdict
 from tuned.dtos import (
     TestimonialDTO, TestimonialResponseDTO, TestimonialUpdateDTO,
-    TestimonialListRequestDTO, TestimonialListResponseDTO
+    TestimonialListRequestDTO, TestimonialListResponseDTO, AdminTestimonialListRequestDTO
 )
+from tuned.dtos.audit import ActivityLogCreateDTO
 from tuned.repository.exceptions import AlreadyExists, DatabaseError, NotFound
 from tuned.core.logging import get_logger
+from tuned.core.events import get_event_bus
+from tuned.utils.variables import Variables
 
 if TYPE_CHECKING:
     from tuned.repository import Repository
 
-logger: logging.Logger = get_logger(__name__)
-
+logger = get_logger(__name__)
+event_bus = get_event_bus()
 
 class TestimonialService:
     def __init__(self, repos: Repository) -> None:
         self._repo = repos.testimonial
+        from tuned.interface.audit import AuditService
+        self._audit = AuditService(repos=repos)
 
-    def create_testimonial(self, data: TestimonialDTO) -> TestimonialResponseDTO:
+    def _log_activity(self, action: str, entity_id: str, actor_id: str, before: Any = None, after: Any = None) -> None:
         try:
-            logger.info("Creating testimonial from user %s", data.user_id)
-            result = self._repo.create(data)
-            logger.info("Testimonial created: id=%s", result.id)
-            return result
-        except AlreadyExists:
-            logger.error("Testimonial already exists")
-            raise AlreadyExists("Testimonial already exists")
-        except DatabaseError:
-            logger.error("Database error while creating testimonial")
-            raise DatabaseError("Database error while creating testimonial")
+            self._audit.activity_log.log(ActivityLogCreateDTO(
+                action=action, user_id=None if actor_id == "system" else actor_id,
+                entity_type=Variables.TESTIMONIAL_ENTITY_TYPE, entity_id=entity_id,
+                before=before, after=after, created_by=actor_id, ip_address="system", user_agent="system"
+            ))
+        except Exception as exc:
+            logger.error("[TestimonialService] Audit failed: %r", exc)
 
-    def get_testimonial(self, testimonial_id: str) -> TestimonialResponseDTO:
+    def create_testimonial(self, data: TestimonialDTO, actor_id: str = "system") -> TestimonialResponseDTO:
         try:
-            return self._repo.get_by_id(testimonial_id)
-        except NotFound:
-            logger.error("Testimonial not found: %s", testimonial_id)
-            raise NotFound("Testimonial not found")
-        except DatabaseError:
-            logger.error("Database error while fetching testimonial")
-            raise DatabaseError("Database error while fetching testimonial")
+            res = self._repo.create(data)
+            self._log_activity(Variables.TESTIMONIAL_CREATE_ACTION, res.id, actor_id, after=asdict(res))
+            self._repo.save()
+            event_bus.emit("testimonial.created", asdict(res))
+            return res
+        except AlreadyExists as e:
+            self._repo.rollback()
+            raise AlreadyExists(str(e))
+        except DatabaseError as e:
+            self._repo.rollback()
+            raise DatabaseError(str(e))
 
-    def list_approved_testimonials(self, service_id: str | None = None) -> list[TestimonialResponseDTO]:
-        try:
-            return self._repo.get_approved(service_id=service_id)
-        except DatabaseError:
-            logger.error("Database error while fetching approved testimonials")
-            raise DatabaseError("Database error while fetching approved testimonials")
+    def get_testimonial(self, t_id: str) -> TestimonialResponseDTO:
+        return self._repo.get_by_id(t_id)
+
+    def list_approved_testimonials(self, svc_id: str | None = None) -> list[TestimonialResponseDTO]:
+        return self._repo.get_approved(service_id=svc_id)
 
     def list_approved_paginated(self, req: TestimonialListRequestDTO) -> TestimonialListResponseDTO:
-        try:
-            return self._repo.get_approved_paginated(req)
-        except DatabaseError:
-            logger.error("Database error while fetching paginated testimonials")
-            raise DatabaseError("Database error while fetching paginated testimonials")
+        return self._repo.get_approved_paginated(req)
 
     def list_pending_testimonials(self) -> list[TestimonialResponseDTO]:
-        try:
-            return self._repo.get_pending()
-        except DatabaseError:
-            logger.error("Database error while fetching pending testimonials")
-            raise DatabaseError("Database error while fetching pending testimonials")
+        return self._repo.get_pending()
 
-    def approve_testimonial(self, testimonial_id: str) -> TestimonialResponseDTO:
-        try:
-            logger.info("Approving testimonial id=%s", testimonial_id)
-            result = self._repo.approve(testimonial_id)
-            logger.info("Testimonial approved: id=%s", testimonial_id)
-            return result
-        except NotFound:
-            logger.error("Testimonial not found: %s", testimonial_id)
-            raise NotFound("Testimonial not found")
-        except DatabaseError:
-            logger.error("Database error while approving testimonial")
-            raise DatabaseError("Database error while approving testimonial")
+    def list_all_testimonials(self, req: AdminTestimonialListRequestDTO) -> TestimonialListResponseDTO:
+        return self._repo.list_all(req)
 
-    def update_testimonial(self, testimonial_id: str, updates: TestimonialUpdateDTO) -> TestimonialResponseDTO:
+    def approve_testimonial(self, t_id: str, actor_id: str = "system") -> TestimonialResponseDTO:
         try:
-            logger.info("Updating testimonial id=%s", testimonial_id)
-            result = self._repo.update(testimonial_id, updates)
-            logger.info("Testimonial updated: id=%s", testimonial_id)
-            return result
-        except NotFound:
-            logger.error("Testimonial not found: %s", testimonial_id)
-            raise NotFound("Testimonial not found")
-        except DatabaseError:
-            logger.error("Database error while updating testimonial")
-            raise DatabaseError("Database error while updating testimonial")
+            before = asdict(self._repo.get_by_id(t_id))
+            res = self._repo.approve(t_id)
+            self._log_activity(Variables.TESTIMONIAL_APPROVE_ACTION, t_id, actor_id, before=before, after=asdict(res))
+            self._repo.save()
+            event_bus.emit("testimonial.updated", asdict(res))
+            return res
+        except (NotFound, DatabaseError):
+            self._repo.rollback()
+            raise
 
-    def delete_testimonial(self, testimonial_id: str) -> None:
+    def update_testimonial(self, t_id: str, updates: TestimonialUpdateDTO, actor_id: str = "system") -> TestimonialResponseDTO:
         try:
-            logger.info("Deleting testimonial id=%s", testimonial_id)
-            self._repo.delete(testimonial_id)
-            logger.info("Testimonial deleted: id=%s", testimonial_id)
-        except NotFound:
-            logger.error("Testimonial not found: %s", testimonial_id)
-            raise NotFound("Testimonial not found")
-        except DatabaseError:
-            logger.error("Database error while deleting testimonial")
-            raise DatabaseError("Database error while deleting testimonial")
+            before = asdict(self._repo.get_by_id(t_id))
+            res = self._repo.update(t_id, updates)
+            self._log_activity(Variables.TESTIMONIAL_UPDATE_ACTION, t_id, actor_id, before=before, after=asdict(res))
+            self._repo.save()
+            event_bus.emit("testimonial.updated", asdict(res))
+            return res
+        except (NotFound, DatabaseError):
+            self._repo.rollback()
+            raise
+
+    def delete_testimonial(self, t_id: str, actor_id: str = "system") -> None:
+        try:
+            before = asdict(self._repo.get_by_id(t_id))
+            self._repo.delete(t_id)
+            self._log_activity(Variables.TESTIMONIAL_DELETE_ACTION, t_id, actor_id, before=before)
+            self._repo.save()
+            event_bus.emit("testimonial.deleted", {"id": t_id})
+        except (NotFound, DatabaseError):
+            self._repo.rollback()
+            raise

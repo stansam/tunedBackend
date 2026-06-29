@@ -10,6 +10,7 @@ from tuned.models.enums import NotificationType, ChatStatus, NewsletterFrequency
 if TYPE_CHECKING:
     from tuned.models.user import User
     from tuned.models.order import Order
+    from tuned.models.media import MediaAsset
 
 class Notification(BaseModel):
     __tablename__ = 'notification'
@@ -41,12 +42,15 @@ class Notification(BaseModel):
             'created_at': self.created_at.isoformat() if self.created_at else None
         }
     
+    def __init__(self, **kwargs: Any) -> None:
+        super(Notification, self).__init__(**kwargs)
+    
     def __repr__(self) -> str:
         return f'<Notification {self.title}>'
 
 class NewsletterSubscriber(BaseModel):
     __tablename__ = 'newsletter_subscriber'
-    email: Mapped[str] = mapped_column(db.String(120), unique=True, nullable=False)
+    email: Mapped[str] = mapped_column(db.String(255), unique=True, nullable=False)
     name: Mapped[Optional[str]] = mapped_column(db.String(100), nullable=True)
     is_active: Mapped[bool] = mapped_column(db.Boolean, default=True, nullable=False, index=True)
     subscribed_at: Mapped[datetime] = mapped_column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
@@ -87,6 +91,9 @@ class Chat(BaseModel):
     admin: Mapped[Optional["User"]] = relationship('User', foreign_keys=[admin_id], back_populates='admin_chats')
     order: Mapped[Optional["Order"]] = relationship('Order', back_populates='chats')
     
+    def __init__(self, **kwargs: Any) -> None:
+        super(Chat, self).__init__(**kwargs)
+
     def __repr__(self) -> str:
         return f'<Chat {self.id}>'
     
@@ -96,14 +103,23 @@ class ChatMessage(BaseModel):
     chat_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), db.ForeignKey('chat.id'), nullable=True)
     content: Mapped[Optional[str]] = mapped_column(db.Text, nullable=True)
     is_read: Mapped[bool] = mapped_column(db.Boolean, default=False, nullable=False)
+    is_edited: Mapped[bool] = mapped_column(db.Boolean, default=False, nullable=False)
     
-    # Relationships
     user: Mapped[Optional["User"]] = relationship('User', foreign_keys=[user_id], back_populates='chat_messages')
     chat: Mapped[Optional["Chat"]] = relationship('Chat', foreign_keys=[chat_id], back_populates='messages')
+    attachments: Mapped[list["MediaAsset"]] = relationship(
+        "MediaAsset",
+        primaryjoin="and_(ChatMessage.id==foreign(MediaAsset.owner_id), MediaAsset.owner_type=='CHAT_MESSAGE')",
+        cascade="all, delete-orphan",
+        lazy="selectin"
+    )
     
     __table_args__ = (
         db.Index('ix_chat_message_chat_created', 'chat_id', 'created_at'),
     )
+    
+    def __init__(self, **kwargs: Any) -> None:
+        super(ChatMessage, self).__init__(**kwargs)
     
     def __repr__(self) -> str:
         return f'<ChatMessage {self.id} by User {self.user_id}>'

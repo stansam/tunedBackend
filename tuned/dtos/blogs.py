@@ -45,6 +45,7 @@ class BlogPostDTO(BaseDTO):
     is_featured: bool = False
     slug: Optional[str] = None
     published_at: Optional[datetime] = None
+    tags: List[str] = field(default_factory=list)
 
 @dataclass
 class BlogPostResponseDTO(BaseDTO):

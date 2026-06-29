@@ -26,6 +26,9 @@ class CreateService:
                 slug=data.slug or None,
                 is_active=data.is_active if data.is_active is not None else True,
             )
+            if data.tags:
+                from tuned.repository.blogs.helper import handle_tags
+                service.tag_list = handle_tags(data.tags, self.session)
             self.session.add(service)
             self.session.flush()
             return ServiceResponseDTO.from_model(service)
@@ -104,6 +107,10 @@ class UpdateService:
             if not service:
                 raise NotFound("Service not found.")
             update_data = {k: v for k, v in updates.__dict__.items() if v is not None}
+            if "tags" in update_data:
+                from tuned.repository.blogs.helper import handle_tags
+                service.tag_list = handle_tags(update_data["tags"], self.session)
+                del update_data["tags"]
             for key, value in update_data.items():
                 if hasattr(service, key):
                     setattr(service, key, value)
@@ -195,3 +202,13 @@ class ServiceRepository(ServiceRepositoryProtocol):
 
     def get_service_mix(self, client_id: str) -> list[tuple[str, int]]:
         return GetServiceMix(self.session).execute(client_id)
+    
+    def save(self) -> None:
+        try:
+            self.session.commit()
+        except SQLAlchemyError as exc:
+            self.session.rollback()
+            raise DatabaseError(f"Database error while saving user changes: {exc}") from exc
+
+    def rollback(self) -> None:
+        self.session.rollback()

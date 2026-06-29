@@ -25,6 +25,7 @@ class NewsletterRepository:
             subscriber = NewsletterSubscriber(
                 email=data.email,
                 name=data.name,
+                client_id=data.client_id,
                 is_active=True
             )
             self.session.add(subscriber)

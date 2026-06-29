@@ -4,7 +4,14 @@ import uuid
 class CheckoutSchema(Schema):
     order_id = fields.String(required=True, validate=validate.Length(min=1))
     payment_method_id = fields.String(required=True, validate=validate.Length(min=1))
-    client_proof_reference = fields.String(required=False, allow_none=True)
+    client_proof_reference = fields.String(
+        required=False,
+        allow_none=True,
+        validate=[
+            validate.Length(min=3, max=255),
+            validate.Regexp(r"^[a-zA-Z0-9\-_/]+$", error="Reference must only contain alphanumeric characters, hyphens, underscores, or slashes.")
+        ]
+    )
 
     @validates("order_id")
     def validate_order_id_uuid(self, value: str, **kwargs) -> None:

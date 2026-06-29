@@ -13,10 +13,13 @@ from tuned.repository.order import OrderRepository
 from tuned.repository.order_delivery import OrderDeliveryRepository
 from tuned.repository.preferences import PreferenceRepository
 from tuned.repository.payment import PaymentRepository
-from tuned.repository.communication import NewsletterRepository
+from tuned.repository.communication import NewsletterRepository, ChatRepository
 from tuned.repository.user.notification import NotificationRepository
 from tuned.repository.media import MediaRepository
-from tuned.repository.admin import AdminAnalyticsRepository, AdminOrderRepository, AdminUserRepository
+from tuned.repository.admin import AdminAnalyticsRepository, AdminOrderRepository, AdminUserRepository, AdminPaymentRepository
+from tuned.repository.policy import PolicyRepository
+from tuned.repository.search import SearchRepository
+from tuned.repository.search.analytics import SearchAnalyticsRepository
 from typing import Optional, Any
 
 class Repository:
@@ -42,10 +45,21 @@ class Repository:
         self._notification: Optional[NotificationRepository] = None
         self._tag: Optional[TagRepository] = None
         self._newsletter: Optional[NewsletterRepository] = None
+        self._chat: Optional[ChatRepository] = None
         self._media: Optional[MediaRepository] = None
         self._admin_analytics: Optional[AdminAnalyticsRepository] = None
         self._admin_orders: Optional[AdminOrderRepository] = None
         self._admin_users: Optional[AdminUserRepository] = None
+        self._admin_payments: Optional[AdminPaymentRepository] = None
+        self._policy: Optional[PolicyRepository] = None
+        self._search: Optional[SearchRepository] = None
+        self._search_analytics: Optional[SearchAnalyticsRepository] = None
+
+    @property
+    def policy(self) -> PolicyRepository:
+        if not self._policy:
+            self._policy = PolicyRepository(self.session)
+        return self._policy
 
     @property
     def user(self) -> UserRepository:
@@ -168,6 +182,12 @@ class Repository:
         return self._newsletter
 
     @property
+    def chat(self) -> ChatRepository:
+        if not self._chat:
+            self._chat = ChatRepository(self.session)
+        return self._chat
+
+    @property
     def media(self) -> MediaRepository:
         if not self._media:
             self._media = MediaRepository(self.session)
@@ -190,3 +210,24 @@ class Repository:
         if not self._admin_users:
             self._admin_users = AdminUserRepository(self.session)
         return self._admin_users
+
+    @property
+    def admin_payments(self) -> AdminPaymentRepository:
+        if not self._admin_payments:
+            self._admin_payments = AdminPaymentRepository(self.session)
+        return self._admin_payments
+
+    @property
+    def search(self) -> SearchRepository:
+        if not self._search:
+            self._search = SearchRepository(self.session)
+        return self._search
+
+    @property
+    def search_analytics(self) -> SearchAnalyticsRepository:
+        if not self._search_analytics:
+            self._search_analytics = SearchAnalyticsRepository(self.session)
+        return self._search_analytics
+
+
+

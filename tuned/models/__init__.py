@@ -13,6 +13,8 @@ from tuned.models.audit import PriceHistory, OrderStatusHistory, ActivityLog, Em
 from tuned.models.deadline_extension import OrderDeadlineExtensionRequest
 from tuned.models.revision_request import OrderRevisionRequest
 from tuned.models.media import MediaAsset
+from tuned.models.search_analytics import SearchSession, SearchEvent, SearchClick, PopularSearch
+from tuned.models.policy import UserPolicyAcceptance
 
 from tuned.models.preferences import (
     UserNotificationPreferences, UserEmailPreferences, UserPrivacySettings,
@@ -42,6 +44,8 @@ __all__ = [
     "PriceHistory", "OrderStatusHistory", "ActivityLog", "EmailLog",
     "OrderDeadlineExtensionRequest",
     "OrderRevisionRequest",
+    "UserPolicyAcceptance",
+    "SearchSession", "SearchEvent", "SearchClick", "PopularSearch",
     "UserNotificationPreferences", "UserEmailPreferences", "UserPrivacySettings",
     "UserLocalizationSettings", "UserAccessibilityPreferences", "UserBillingPreferences",
     "OrderStatus", "SupportTicketStatus", "PaymentStatus", "PaymentMethod", "MethodCategory",

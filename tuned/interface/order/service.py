@@ -383,8 +383,11 @@ class OrderService:
             logger.error("[OrderService.get_draft] Failed: %r", e)
             raise DatabaseError("Failed to fetch draft") from e
 
-    def get_order_comments(self, order_id: str, user_id: str) -> list[OrderCommentResponseDTO]:
-        self._repo.get_order_by_id_for_client(order_id, user_id)  # auth check
+    def get_order_comments(self, order_id: str, user_id: str, is_admin: bool) -> list[OrderCommentResponseDTO]:
+        if is_admin:
+            self._repo.get_by_id(order_id)
+        else:
+            self._repo.get_order_by_id_for_client(order_id, user_id)  # auth check
         try:
             self._repo.mark_comments_read(order_id, user_id)
         except Exception:
@@ -392,9 +395,17 @@ class OrderService:
         comments = self._repo.get_order_comments(order_id)
         self._repo.save()
         return [OrderCommentResponseDTO.from_model(c) for c in comments]
+    
+    # def get_admin_order_comments(self, order_id: str) -> list[OrderCommentResponseDTO]:
+    #     self._repo.get_by_id(order_id)
+    #     comments = self._repo.get_order_comments(order_id)
+    #     return [OrderCommentResponseDTO.from_model(c) for c in comments]
 
-    def create_order_comment(self, order_id: str, user_id: str, dto: CreateCommentRequestDTO, ip: str, ua: str) -> OrderCommentResponseDTO:
-        self._repo.get_order_by_id_for_client(order_id, user_id)  # auth check
+    def create_order_comment(self, order_id: str, user_id: str, dto: CreateCommentRequestDTO, is_admin: bool, ip: str, ua: str) -> OrderCommentResponseDTO:
+        if not is_admin:
+            self._repo.get_order_by_id_for_client(order_id, user_id)  # auth check
+        else:
+            self._repo.get_by_id(order_id)
         dto.order_id = order_id
         comment = self._repo.create_order_comment(order_id, user_id, dto.content)
         if dto.attachment_ids:

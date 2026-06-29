@@ -29,6 +29,7 @@ if TYPE_CHECKING:
     from tuned.models.preferences.email import UserEmailPreferences
     from tuned.models.preferences.billing import UserBillingPreferences
     from tuned.models.preferences.accessibility import UserAccessibilityPreferences
+    from tuned.models.policy import UserPolicyAcceptance
 
 class User(UserMixin, BaseModel):  # type: ignore[misc]
     __tablename__ = 'users'
@@ -93,6 +94,7 @@ class User(UserMixin, BaseModel):  # type: ignore[misc]
     email_preferences: Mapped["UserEmailPreferences"] = relationship("UserEmailPreferences", foreign_keys="UserEmailPreferences.user_id", back_populates="user", uselist=False, cascade="all, delete-orphan")
     billing_preferences: Mapped["UserBillingPreferences"] = relationship("UserBillingPreferences", foreign_keys="UserBillingPreferences.user_id", back_populates="user", uselist=False, cascade="all, delete-orphan")
     accessibility_preferences: Mapped["UserAccessibilityPreferences"] = relationship("UserAccessibilityPreferences", foreign_keys="UserAccessibilityPreferences.user_id", back_populates="user", uselist=False, cascade="all, delete-orphan")
+    policy_acceptances: Mapped[list["UserPolicyAcceptance"]] = relationship("UserPolicyAcceptance", foreign_keys="UserPolicyAcceptance.user_id", back_populates="user", cascade="all, delete-orphan", lazy=True)
 
     def __init__(self: 'User', **kwargs: Any) -> None:
         super(User, self).__init__(**kwargs)
@@ -140,10 +142,10 @@ class User(UserMixin, BaseModel):  # type: ignore[misc]
                 if self.gender == GenderEnum.FEMALE:
                     return f"{current_app.config.get('FRONTEND_URL')}/static/ladyDefault.png"
                 return f"{current_app.config.get('FRONTEND_URL')}/static/manDefault.png"
-
-            if self.gender == GenderEnum.FEMALE:
-                return f"{current_app.config.get('FRONTEND_URL')}/uploads/profile_pics/ladyDefault.png"
-            return f"{current_app.config.get('FRONTEND_URL')}/uploads/profile_pics/manDefault.png"
+            else:
+                if self.gender == GenderEnum.FEMALE:
+                    return f"{current_app.config.get('FRONTEND_URL')}/uploads/profile_pics/ladyDefault.png"
+                return f"{current_app.config.get('FRONTEND_URL')}/uploads/profile_pics/manDefault.png"
     
     def __repr__(self: 'User') -> str:
         return f'<User {self.username}>'

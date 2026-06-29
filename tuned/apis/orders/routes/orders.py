@@ -181,7 +181,9 @@ class ListOrderCommentsView(MethodView):
     def get(self, order_id: str):
         try:
             user_id = current_user.id
-            dtos = get_services().order.get_order_comments(order_id, user_id)
+            is_admin = current_user.is_admin
+
+            dtos = get_services().order.get_order_comments(order_id, user_id, is_admin)
             return success_response(data=[asdict(d) for d in dtos], message="Comments fetched", status=200)
         except Exception as e:
             logger.error("[ListOrderCommentsView] %s", e)
@@ -200,7 +202,7 @@ class CreateOrderCommentView(MethodView):
                 return error_response(message="Validation failed", status=400)
             ip = get_user_ip() or "127.0.0.1"
             ua = get_user_agent() or request.user_agent.string
-            result = get_services().order.create_order_comment(order_id, current_user.id, dto, ip, ua)
+            result = get_services().order.create_order_comment(order_id, current_user.id, dto, current_user.is_admin, ip, ua)
             return success_response(data=asdict(result), message="Comment posted", status=201)
         except Exception as e:
             logger.error("[CreateOrderCommentView] %s", e)

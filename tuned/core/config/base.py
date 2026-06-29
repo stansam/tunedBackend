@@ -23,7 +23,7 @@ class BaseConfig:
     
     SESSION_COOKIE_NAME: str = 'tuned_session'
     SESSION_COOKIE_HTTPONLY: bool = True
-    SESSION_COOKIE_SAMESITE: str = 'Lax'
+    SESSION_COOKIE_SAMESITE: str | None = 'Lax'
     SESSION_COOKIE_PATH: str = '/'
     PERMANENT_SESSION_LIFETIME: timedelta = timedelta(days=7)
     
@@ -76,4 +76,4 @@ class BaseConfig:
     PESAPAL_CONSUMER_SECRET: str = os.environ.get('PESAPAL_CONSUMER_SECRET', '')
     PESAPAL_SANDBOX: bool = os.environ.get('PESAPAL_SANDBOX', 'True').lower() == 'true'
     PESAPAL_IPN_URL: str = os.environ.get('PESAPAL_IPN_URL', 'http://localhost:5000/api/payments/pesapal/ipn')
-    PESAPAL_CALLBACK_URL: str = os.environ.get('PESAPAL_CALLBACK_URL', 'http://localhost:3000/order/checkout/callback')
+    PESAPAL_CALLBACK_URL: str = os.environ.get('PESAPAL_CALLBACK_URL', 'http://localhost:3000/order/checkout/pesapal-bridge')

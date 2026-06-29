@@ -5,11 +5,11 @@ from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 from tuned.repository.blogs.posts import (
     CreateBlog, GetBlogPostBySlug, GetBlogsByCategory,
     GetFeaturedBlogPosts, GetPublishedBlogPosts,
-    UpdateOrDeleteBlogPost, GetBlogPostByID,
+    UpdateOrDeleteBlogPost, GetBlogPostByID, GetAllBlogPosts,
 )
 from tuned.repository.blogs.categories import (
     CreateBlogCategory, GetBlogCategoryBySlug, ListBlogCategories,
-    UpdateOrDeleteBlogCategory, GetBlogCategoryByID
+    UpdateOrDeleteBlogCategory, GetBlogCategoryByID, ListBlogCategoriesWithCount
 )
 from tuned.repository.blogs.comments import (
     CreateBlogComment, GetBlogComment, GetBlogComments,
@@ -51,6 +51,10 @@ class BlogRepository(BlogRepositoryProtocol):
     
     def get_published(self, req: BlogPostListRequestDTO) -> BlogPostListResponseDTO:
         return GetPublishedBlogPosts(self.session, req).execute()
+
+    def get_all_posts(self, req: BlogPostListRequestDTO) -> BlogPostListResponseDTO:
+        """Admin-only: returns all posts regardless of published status."""
+        return GetAllBlogPosts(self.session, req).execute()
     
     def update_or_delete_post(self, id: str, data: BlogPostDTO) -> BlogPost:
         return UpdateOrDeleteBlogPost(self.session).execute(id, data)
@@ -70,6 +74,10 @@ class BlogRepository(BlogRepositoryProtocol):
     
     def list_blog_categories(self) -> List[BlogCategory]:
         return ListBlogCategories(self.session).execute()
+
+    def list_blog_categories_with_count(self) -> list[tuple[BlogCategory, int]]:
+        """Admin-only: returns categories with associated post counts."""
+        return ListBlogCategoriesWithCount(self.session).execute()
     
     def update_or_delete_category(self, id: str, data: BlogCategoryDTO) -> BlogCategory:
         return UpdateOrDeleteBlogCategory(self.session).execute(id, data)

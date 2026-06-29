@@ -7,9 +7,11 @@ from typing import Any
 class NewsletterSubscribeSchema(Schema):
     email = fields.Email(
         required=True,
+        validate=validate.Length(max=255),
         error_messages={
             'required': 'Email address is required',
-            'invalid': 'Invalid email address format'
+            'invalid': 'Invalid email address format',
+            'max': 'Email address must not exceed 255 characters'
         }
     )
     
@@ -77,6 +79,18 @@ class SearchQuerySchema(Schema):
         error_messages={
             'invalid': 'Items per page must be an integer',
             'validator_failed': 'Items per page must be between 1 and 100'
+        }
+    )
+
+class SuggestionsQuerySchema(Schema):
+    q = fields.Str(
+        required=True,
+        validate=validate.Length(min=2, max=100),
+        error_messages={
+            'required': 'Query is required',
+            'invalid': 'Query must be a string',
+            'min': 'Query must be at least 2 characters',
+            'max': 'Query must not exceed 100 characters'
         }
     )
 

@@ -36,6 +36,7 @@ Analysis.md
 TODO
 app.db
 temp/
+tmp/
 audit_report.md
 implementation_plan.md
 .codex

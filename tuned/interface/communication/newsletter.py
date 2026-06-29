@@ -10,6 +10,18 @@ if TYPE_CHECKING:
 
 logger: logging.Logger = get_logger(__name__)
 
+def _mask_email(email: str) -> str:
+    try:
+        parts = email.split("@")
+        if len(parts) == 2:
+            name, domain = parts
+            prefix = name[0] if name else ""
+            return f"{prefix}***@{domain}"
+    except Exception:
+        pass
+    return "***"
+
+
 class NewsletterService:
     def __init__(self, repos: "Repository", services: "Services") -> None:
         self._repo = repos.newsletter
@@ -24,7 +36,7 @@ class NewsletterService:
                     return NewsletterSubscriberResponseDTO.from_model(existing)
                 
                 result = self._repo.update_status(str(existing.id), True, data.name)
-                logger.info(f"Newsletter subscription reactivated for {data.email}")
+                logger.info(f"Newsletter subscription reactivated for {_mask_email(data.email)}")
                 
                 self._services.audit.activity_log.log(
                     ActivityLogCreateDTO(
@@ -44,7 +56,7 @@ class NewsletterService:
                 return NewsletterSubscriberResponseDTO.from_model(result)
 
             result = self._repo.create(data)
-            logger.info(f"New newsletter subscription for {data.email}")
+            logger.info(f"New newsletter subscription for {_mask_email(data.email)}")
             
             self._services.audit.activity_log.log(
                 ActivityLogCreateDTO(
@@ -65,6 +77,33 @@ class NewsletterService:
 
         except DatabaseError as e:
             logger.error(f"Database error in newsletter subscription: {str(e)}")
+            raise
+
+    def unsubscribe(self, email: str, ip_address: Optional[str] = "system", user_agent: Optional[str] = "system") -> None:
+        try:
+            existing = self._repo.get_by_email(email)
+            if not existing or not existing.is_active:
+                logger.info(f"Unsubscribe request for non-existent or inactive email: {_mask_email(email)}")
+                return
+            
+            result = self._repo.update_status(str(existing.id), False)
+            logger.info(f"Newsletter subscription deactivated for {_mask_email(email)}")
+            
+            self._services.audit.activity_log.log(
+                ActivityLogCreateDTO(
+                    action=Variables.NEWSLETTER_SUBSCRIBER_UNSUBSCRIBED,
+                    entity_type=Variables.NEWSLETTER_SUBSCRIBER_ENTITY_TYPE,
+                    entity_id=str(result.id),
+                    before=existing,
+                    after=result,
+                    ip_address=ip_address,
+                    user_agent=user_agent
+                )
+            )
+
+            self._repo.save()
+        except DatabaseError as e:
+            logger.error(f"Database error in newsletter unsubscription: {str(e)}")
             raise
 
     def _send_confirmation(self, email: str, name: str) -> None:

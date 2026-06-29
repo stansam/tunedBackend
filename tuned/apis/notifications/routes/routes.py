@@ -35,7 +35,7 @@ class NotificationListAPI(MethodView):
 class NotificationReadAPI(MethodView):
     decorators = [login_required]
 
-    def post(self, notification_id: str) -> tuple[Any, int]:
+    def put(self, notification_id: str) -> tuple[Any, int]:
         try:
             user_id = current_user.id
             notification = get_services().notification.mark_read(notification_id, str(user_id))
@@ -52,7 +52,7 @@ class NotificationReadAPI(MethodView):
 class NotificationReadAllAPI(MethodView):
     decorators = [login_required]
 
-    def post(self) -> tuple[Any, int]:
+    def put(self) -> tuple[Any, int]:
         try:
             user_id = current_user.id
             updated_count = get_services().notification.mark_all_read(str(user_id))
@@ -63,3 +63,20 @@ class NotificationReadAllAPI(MethodView):
         except Exception as e:
             logger.error(f"Error marking all notifications read: {e}")
             return error_response("Failed to mark all read", status=500)
+
+class NotificationDeleteAPI(MethodView):
+    decorators = [login_required]
+
+    def delete(self, notification_id: str) -> tuple[Any, int]:
+        try:
+            user_id = current_user.id
+            get_services().notification.delete_notification(notification_id, str(user_id))
+            return success_response({"deleted_id": notification_id})
+        except NotFound:
+            return error_response("Notification not found", status=404)
+        except DatabaseError as e:
+            logger.error(f"Error deleting notification: {e}")
+            return error_response("Failed to delete", status=500)
+        except Exception as e:
+            logger.error(f"Error deleting notification: {e}")
+            return error_response("Failed to delete", status=500)

@@ -5,6 +5,7 @@ from tuned.interface.content import (
     AcademicLevelService, DeadlineService, FAQService, SampleService,
     ServiceCategoryService, ServiceService, TestimonialService, TagService, SearchService
 )
+from tuned.interface.content.search_analytics import SearchAnalyticsService
 from tuned.interface.price import PriceRateService, PricingCategoryService
 from tuned.interface.blogs import Blogs, BlogPostService, BlogCategoryService, BlogCommentService, CommentReactionService
 from tuned.interface.notification import NotificationInterface
@@ -15,7 +16,9 @@ from tuned.interface.analytics import Analytics, AnalyticsService
 from tuned.interface.audit import AuditService
 from tuned.interface.payment import PaymentService
 from tuned.interface.communication.newsletter import NewsletterService
+from tuned.interface.communication.chats import ChatService
 from tuned.interface.media import MediaService
+from tuned.interface.policy import LegalService
 
 if TYPE_CHECKING:
     from tuned.repository import Repository
@@ -44,8 +47,17 @@ class Services:
         self._audit: Optional[AuditService] = None
         self._payment: Optional[PaymentService] = None
         self._newsletter: Optional[NewsletterService] = None
+        self._chat: Optional[ChatService] = None
         self._search: Optional[SearchService] = None
+        self._search_analytics: Optional[SearchAnalyticsService] = None
         self._media: Optional[MediaService] = None
+        self._legal: Optional[LegalService] = None
+
+    @property
+    def legal(self) -> LegalService:
+        if not self._legal:
+            self._legal = LegalService(repos=self._repos, interfaces=self)
+        return self._legal
 
     @property
     def user(self) -> UserService:
@@ -190,10 +202,22 @@ class Services:
         return self._newsletter
 
     @property
+    def chat(self) -> ChatService:
+        if not self._chat:
+            self._chat = ChatService(repos=self._repos, services=self)
+        return self._chat
+
+    @property
     def search(self) -> SearchService:
         if not self._search:
             self._search = SearchService(repos=self._repos)
         return self._search
+
+    @property
+    def search_analytics(self) -> SearchAnalyticsService:
+        if not self._search_analytics:
+            self._search_analytics = SearchAnalyticsService(repos=self._repos)
+        return self._search_analytics
 
     @property
     def media(self) -> MediaService:

@@ -40,10 +40,10 @@ class ListBlogPosts(MethodView):
                 logger.debug(f'Returning blogs from cache')
                 data = json.loads(raw)
                 return paginated_response(
-                    items=data.get("blogs", []),
-                    page=data.get("page", 1),
-                    per_page=data.get("per_page", 12),
-                    total=data.get("total", 0)
+                    items=data.get("blogs") or [],
+                    page=data.get("page") or 1,
+                    per_page=data.get("per_page") or 12,
+                    total=data.get("total") or 0
                     )
             
             blog_req = BlogPostListRequestDTO(**params)
@@ -57,10 +57,10 @@ class ListBlogPosts(MethodView):
             )
             
             return paginated_response(
-                items=data.get("blogs", []),
-                page=data.get("page", 1),
-                per_page=data.get("per_page", 12),
-                total=data.get("total", 0)
+                items=data.get("blogs") or [],
+                page=data.get("page") or 1,
+                per_page=data.get("per_page") or 12,
+                total=data.get("total") or 0
                 )
         except Exception as e:
             logger.error(f'Error fetching blogs: {str(e)}')

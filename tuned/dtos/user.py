@@ -36,7 +36,7 @@ class UserResponseDTO:
     name: str
     email: str
     avatar_url: str
-    # role: str
+    is_admin: bool = False
     session_created_at: Optional[str] = None
 
     @classmethod
@@ -46,7 +46,7 @@ class UserResponseDTO:
             name=" ".join(filter(None, [obj.first_name, obj.last_name])),
             email=obj.email,
             avatar_url=obj.get_profile_pic_url(),
-            # role=obj.role,
+            is_admin=obj.is_admin,
             session_created_at=datetime.now(timezone.utc).isoformat(),
         )
 UserUpdateValue = Union[str, int, bool, datetime]

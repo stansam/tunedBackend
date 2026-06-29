@@ -8,6 +8,8 @@ class Variables:
     AVATAR_UPLOAD_ACTION = "avatar_upload"
     AVATAR_UPDATE_ACTION = "avatar_update"
     AVATAR_DELETE_ACTION = "avatar_delete"
+    POLICY_ACCEPTANCE_ACTION = "policy_acceptance"
+    POLICY_ENTITY_TYPE = "PolicyAcceptance"
 
     # ORDER_ENTITY_TYPE = "Order"
     
@@ -91,4 +93,31 @@ class Variables:
     NEWSLETTER_SUBSCRIBER_UNSUBSCRIBED = "newsletter_subscriber_unsubscribed"
     NEWSLETTER_SUBSCRIBER_RESUBSCRIBED = "newsletter_subscriber_resubscribed"
     NEWSLETTER_SUBSCRIBER_ENTITY_TYPE = "NewsletterSubscriber"
-    
+
+    SERVICE_CATEGORY_ENTITY_TYPE = "ServiceCategory"
+    SERVICE_CATEGORY_CREATE_ACTION = "service_category_create"
+    SERVICE_CATEGORY_UPDATE_ACTION = "service_category_update"
+    SERVICE_CATEGORY_DELETE_ACTION = "service_category_delete"
+
+    SERVICE_ENTITY_TYPE = "Service"
+    SERVICE_CREATE_ACTION = "service_create"
+    SERVICE_UPDATE_ACTION = "service_update"
+    SERVICE_DELETE_ACTION = "service_delete"
+
+    CHAT_ENTITY_TYPE = "Chat"
+    CHAT_MESSAGE_ENTITY_TYPE = "ChatMessage"
+    CHAT_CREATED_ACTION = "chat_created"
+    CHAT_MESSAGE_SENT_ACTION = "chat_message_sent"
+    CHAT_STATUS_CHANGED_ACTION = "chat_status_changed"
+    CHAT_ASSIGNED_ACTION = "chat_assigned"
+
+    SAMPLE_ENTITY_TYPE = "Sample"
+    SAMPLE_CREATE_ACTION = "sample_create"
+    SAMPLE_UPDATE_ACTION = "sample_update"
+    SAMPLE_DELETE_ACTION = "sample_delete"
+
+    TESTIMONIAL_ENTITY_TYPE = "Testimonial"
+    TESTIMONIAL_CREATE_ACTION = "testimonial_create"
+    TESTIMONIAL_UPDATE_ACTION = "testimonial_update"
+    TESTIMONIAL_DELETE_ACTION = "testimonial_delete"
+    TESTIMONIAL_APPROVE_ACTION = "testimonial_approve"

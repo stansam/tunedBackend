@@ -20,11 +20,16 @@ class CreatePayment:
 
     def execute(self, data: PaymentCreateDTO) -> PaymentResponseDTO:
         try:
-            try:
-                # TODO: Implement TransactionStatus Enum
-                status = PaymentStatus(data.status.lower()) if data.status else PaymentStatus.PENDING
-            except ValueError:
-                raise ValueError(f"Invalid payment status: {data.status}")
+            if isinstance(data.status, PaymentStatus):
+                status = data.status
+            elif isinstance(data.status, str):
+                try:
+                    status = PaymentStatus(data.status.lower())
+                except ValueError:
+                    raise ValueError(f"Invalid payment status string: '{data.status}'")
+            else:
+                status = PaymentStatus.PENDING
+
             payment = Payment(
                 order_id=UUID(data.order_id),
                 user_id=UUID(data.user_id),
@@ -46,9 +51,11 @@ class GetPaymentByID:
     def __init__(self, session: Session) -> None:
         self.session = session
 
-    def execute(self, payment_id: str) -> Payment:
+    def execute(self, payment_id: str, for_update: bool = False) -> Payment:
         try:
             stmt = select(Payment).where(Payment.id == payment_id)
+            if for_update:
+                stmt = stmt.with_for_update()
             payment = self.session.scalar(stmt)
             if not payment:
                 raise NotFound("Payment not found.")
@@ -81,16 +88,22 @@ class UpdatePayment:
             if not payment:
                 raise NotFound("Payment not found.")
                 
-            if data.status:
-                try:
-                    payment.status = PaymentStatus(data.status.lower())
-                except ValueError:
+            if data.status is not None:
+                if isinstance(data.status, PaymentStatus):
+                    payment.status = data.status
+                elif isinstance(data.status, str):
                     try:
-                        payment.status = PaymentStatus[data.status.upper()]
-                    except KeyError:
-                        raise ValueError(f"Invalid payment status: {data.status}")
+                        payment.status = PaymentStatus(data.status.lower())
+                    except ValueError:
+                        raise ValueError(f"Invalid payment status: '{data.status}'")
+                else:
+                    raise ValueError(f"Unexpected type for status: {type(data.status)}")
             if data.client_proof_reference is not None:
                 payment.client_proof_reference = data.client_proof_reference
+            if data.pesapal_tracking_id is not None:
+                payment.pesapal_tracking_id = data.pesapal_tracking_id
+            if data.admin_notes is not None:
+                payment.admin_notes = data.admin_notes
             if data.client_marked_paid_at is not None:
                 payment.client_marked_paid_at = data.client_marked_paid_at
             if data.admin_verified_at is not None:
@@ -206,4 +219,65 @@ class GetPaymentsList:
         except SQLAlchemyError as e:
             logger.error(f"[GetPaymentsList] DB error: {e}")
             raise DatabaseError("Database error while listing payments.") from e
+
+
+class GetPaymentByPesapalTrackingId:
+    def __init__(self, session: Session) -> None:
+        self.session = session
+
+    def execute(self, tracking_id: str, for_update: bool = False) -> Payment:
+        try:
+            stmt = select(Payment).where(
+                Payment.pesapal_tracking_id == tracking_id
+            )
+            if for_update:
+                stmt = stmt.with_for_update()
+            payment = self.session.scalar(stmt)
+            if not payment:
+                raise NotFound(f"No payment found for Pesapal tracking ID: {tracking_id}")
+            return payment
+        except SQLAlchemyError as e:
+            logger.error("[GetPaymentByPesapalTrackingId] DB error: %s", e)
+            raise DatabaseError("Database error while fetching payment by Pesapal tracking ID.") from e
+
+
+class GetActivePaymentForOrder:
+    def __init__(self, session: Session) -> None:
+        self.session = session
+
+    def execute(self, order_id: str) -> Optional[Payment]:
+        try:
+            stmt = (
+                select(Payment)
+                .where(
+                    Payment.order_id == UUID(order_id),
+                    Payment.status.in_([
+                        PaymentStatus.PENDING,
+                        PaymentStatus.PENDING_VERIFICATION,
+                        PaymentStatus.COMPLETED,
+                    ])
+                )
+                .order_by(Payment.created_at.desc())
+            )
+            return self.session.scalar(stmt)
+        except SQLAlchemyError as e:
+            logger.error("[GetActivePaymentForOrder] DB error: %s", e)
+            raise DatabaseError("Database error while fetching active payment for order.") from e
+
+
+class GetPaymentByPaymentID:
+    def __init__(self, session: Session) -> None:
+        self.session = session
+
+    def execute(self, payment_ref: str) -> Payment:
+        try:
+            stmt = select(Payment).where(Payment.payment_id == payment_ref)
+            payment = self.session.scalar(stmt)
+            if not payment:
+                raise NotFound(f"Payment with reference {payment_ref} not found.")
+            return payment
+        except SQLAlchemyError as e:
+            logger.error(f"[GetPaymentByPaymentID] DB error: {e}")
+            raise DatabaseError("Database error while fetching payment by reference.") from e
+
 

@@ -15,19 +15,26 @@ class CreateTransaction:
 
     def execute(self, data: TransactionCreateDTO) -> TransactionResponseDTO:
         try:
-            try:
-                type = TransactionType(data.type.lower()) if data.type else TransactionType.PAYMENT
-            except ValueError:
-                raise ValueError(f"Invalid transaction type: {data.type}")
-            try:
-                status = TransactionStatus(data.status.lower()) if data.status else TransactionStatus.PENDING
-            except ValueError:
-                raise ValueError(f"Invalid transaction status: {data.status}")
+            if isinstance(data.type, TransactionType):
+                tx_type = data.type
+            elif isinstance(data.type, str):
+                tx_type = TransactionType(data.type.lower())
+            else:
+                tx_type = TransactionType.PAYMENT
+
+            if isinstance(data.status, TransactionStatus):
+                tx_status = data.status
+            elif isinstance(data.status, str):
+                tx_status = TransactionStatus(data.status.lower())
+            else:
+                tx_status = TransactionStatus.PENDING
+
             transaction = Transaction(
                 payment_id=UUID(data.payment_id),
-                type=type,
+                type=tx_type,
                 amount=data.amount,
-                status=status,
+                status=tx_status,
+                reference=data.reference,
             )
             self.session.add(transaction)
             self.session.flush()

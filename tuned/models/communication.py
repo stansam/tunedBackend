@@ -26,10 +26,6 @@ class Notification(BaseModel):
     )
 
     user: Mapped["User"] = relationship("User", foreign_keys=[user_id], back_populates="notifications")
-
-    def mark_as_read(self) -> None:
-        self.is_read = True
-        db.session.commit()
     
     def to_dict(self) -> dict[str, Any]:
         return {

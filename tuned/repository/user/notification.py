@@ -34,6 +34,7 @@ class NotificationRepository:
             stmt = select(func.count(Notification.id)).where(
                 Notification.user_id == user_id,
                 Notification.is_read.is_(False),
+                Notification.is_deleted.is_(False),
             )
             return self.session.scalar(stmt) or 0
         except SQLAlchemyError as e:
@@ -58,6 +59,7 @@ class NotificationRepository:
                 .where(
                     Notification.user_id == user_id,
                     Notification.is_read.is_(False),
+                    Notification.is_deleted.is_(False),
                 )
                 .values(is_read=True)
             )
@@ -75,13 +77,26 @@ class NotificationRepository:
         try:
             stmt = (
                 select(Notification)
-                .where(Notification.user_id == user_id)
+                .where(
+                    Notification.user_id == user_id,
+                    Notification.is_deleted.is_(False),
+                )
                 .order_by(Notification.created_at.desc())
                 .limit(limit)
                 .offset(offset)
             )
             notifications = self.session.scalars(stmt).all()
             return [NotificationResponseDTO.from_model(item) for item in notifications]
+        except SQLAlchemyError as e:
+            raise DatabaseError(f"Database error: {str(e)}") from e
+
+    def get_total_count(self, user_id: str) -> int:
+        try:
+            stmt = select(func.count(Notification.id)).where(
+                Notification.user_id == user_id,
+                Notification.is_deleted.is_(False),
+            )
+            return self.session.scalar(stmt) or 0
         except SQLAlchemyError as e:
             raise DatabaseError(f"Database error: {str(e)}") from e
 
@@ -100,7 +115,9 @@ class NotificationRepository:
             notification = self._get_by_id_for_user(notification_id, user_id)
             if not notification:
                 raise NotFound("Notification not found")
-            self.session.delete(notification)
+            notification.is_deleted = True
+            notification.deleted_at = datetime.now(timezone.utc)
+            notification.deleted_by = notification.user_id
             self.session.flush()
             return True
         except SQLAlchemyError as e:
@@ -110,5 +127,6 @@ class NotificationRepository:
         stmt = select(Notification).where(
             Notification.id == notification_id,
             Notification.user_id == user_id,
+            Notification.is_deleted.is_(False),
         )
         return self.session.scalar(stmt)

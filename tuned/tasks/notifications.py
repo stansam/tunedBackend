@@ -1,3 +1,4 @@
+import re
 from tuned.models import NotificationType
 from tuned.celery_app import celery_app
 from celery.utils.log import get_task_logger
@@ -27,18 +28,23 @@ def create_in_app_notification(
         from tuned.dtos.notification import NotificationCreateDTO
         from tuned.extensions import socketio
 
-        # Normalize the type defensively
         try:
             notif_type = NotificationType(notification_type.lower())
         except (ValueError, AttributeError):
             notif_type = NotificationType.INFO
+
+        sanitized_url = None
+        if action_url:
+            trimmed_url = action_url.strip()
+            if re.match(r'^(/|https?://)', trimmed_url, re.IGNORECASE) and not re.match(r'^(javascript|data):', trimmed_url, re.IGNORECASE):
+                sanitized_url = trimmed_url
 
         dto = NotificationCreateDTO(
             user_id=user_id,
             title=title,
             message=message,
             notification_type=notif_type,
-            link=action_url,
+            link=sanitized_url,
             category=category
         )
         notif = get_services().notification.create_notification(dto)
@@ -79,8 +85,3 @@ def push_unread_count_task(self: Task, user_id: str) -> None:
         logger.error("[push_unread_count_task] Failed for user %s: %r", user_id, exc)
         raise self.retry(exc=exc, countdown=5)
 
-
-@celery_app.task  # type: ignore[untyped-decorator]
-def test_flask_context() -> Any:
-    from flask import current_app
-    return current_app.config.get("APP_VERSION")

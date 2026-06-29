@@ -17,14 +17,27 @@ class NotificationListAPI(MethodView):
     def get(self) -> tuple[Any, int]:
         try:
             user_id = current_user.id
-            limit = int(request.args.get('limit', 20))
-            offset = int(request.args.get('offset', 0))
+            raw_limit = request.args.get('limit', '20')
+            raw_offset = request.args.get('offset', '0')
             
-            notifications = get_services().notification.get_user_notifications(str(user_id), limit, offset)
-            return success_response([asdict(item) for item in notifications])
-        except ValueError as e:
-            logger.error(f"Invalid notification pagination request: {e}")
-            return error_response("Invalid pagination parameters", status=400)
+            try:
+                limit = max(1, min(int(raw_limit), 100))
+                offset = max(0, int(raw_offset))
+            except ValueError as e:
+                logger.error(f"Invalid notification pagination request: {e}")
+                return error_response("limit and offset must be non-negative integers", status=400)
+            
+            services = get_services()
+            notifications = services.notification.get_user_notifications(str(user_id), limit, offset)
+            total = services.notification.get_total_count(str(user_id))
+            
+            return success_response({
+                "notifications": [asdict(item) for item in notifications],
+                "total": total,
+                "limit": limit,
+                "offset": offset,
+                "has_more": (offset + limit) < total,
+            })
         except DatabaseError as e:
             logger.error(f"Error fetching notifications: {e}")
             return error_response("Failed to fetch notifications", status=500)

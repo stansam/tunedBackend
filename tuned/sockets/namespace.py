@@ -199,6 +199,15 @@ class TunedNamespace(Namespace):
 
     @socket_login_required
     def on_notification__get_unread_count(self, data: dict[str, Any]) -> None:
+        from tuned.utils.rate_limit import socket_rate_limit
+        if not socket_rate_limit(
+            key=f"socket:unread_count:{current_user.id}",
+            limit=10,
+            window=60,
+        ):
+            emit("error", {"code": 429, "message": "Rate limit exceeded"})
+            return
+
         try:
             from tuned.utils.dependencies import get_services
             unread = get_services().notification.get_unread_count(str(current_user.id))

@@ -47,6 +47,14 @@ def create_app(config_name: Optional[str] = None) -> Flask:
         message_queue=app.config.get('SOCKETIO_MESSAGE_QUEUE'),
     )
     
+    message_queue = app.config.get('SOCKETIO_MESSAGE_QUEUE')
+    if not message_queue:
+        logger.warning(
+            "[SocketIO] SOCKETIO_MESSAGE_QUEUE is not configured. "
+            "Celery workers will not be able to push socket events. "
+            "Set SOCKETIO_MESSAGE_QUEUE=redis://... in your environment."
+        )
+
     from tuned.sockets import init_sockets
     init_sockets(socketio)
 

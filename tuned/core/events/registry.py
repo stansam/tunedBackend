@@ -19,6 +19,7 @@ class EventRegistry:
         from tuned.interface.order_delivery.events import OrderDeliveryEventHandlers
         from tuned.interface.communication.events import ChatEventHandlers
         from tuned.interface.content.events import ContentEventHandlers
+        from tuned.interface.notification import NotificationEventHandlers
 
         UserEventHandlers(bus).register()
         OrderEventHandlers(bus).register()
@@ -28,6 +29,7 @@ class EventRegistry:
         OrderDeliveryEventHandlers(bus).register()
         ChatEventHandlers(bus).register()
         ContentEventHandlers(bus).register()
+        NotificationEventHandlers(bus).register()
 
         logger.info("[EventRegistry] All domain handlers registered.")
 

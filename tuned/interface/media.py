@@ -123,9 +123,9 @@ class MediaService:
             try:
                 if self._audit_service:
                     self._audit_service.log(ActivityLogCreateDTO(
-                        action=getattr(Variables, "MEDIA_UPLOADED", "media_uploaded"),
+                        action=Variables.MEDIA_UPLOAD_ACTION,
                         user_id=owner_id if owner_type == AssetOwnerType.USER else "system",
-                        entity_type=getattr(Variables, "MEDIA_ENTITY_TYPE", "MediaAsset"),
+                        entity_type=Variables.MEDIA_ENTITY_TYPE,
                         entity_id=str(asset.id),
                         after=MediaAssetResponseDTO.from_model(asset),
                         created_by=owner_id if owner_type == AssetOwnerType.USER else "system",
@@ -208,9 +208,9 @@ class MediaService:
             try:
                 if self._audit_service:
                     self._audit_service.log(ActivityLogCreateDTO(
-                        action="media_bulk_download",
+                        action=Variables.MEDIA_BULK_DOWNLOAD_ACTION,
                         user_id=str(user.id),
-                        entity_type="MediaAsset",
+                        entity_type=Variables.MEDIA_ENTITY_TYPE,
                         entity_id=zip_filename,
                         before=None,
                         after={"count": len(allowed_assets)},

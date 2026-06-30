@@ -123,3 +123,8 @@ class Variables:
     TESTIMONIAL_UPDATE_ACTION = "testimonial_update"
     TESTIMONIAL_DELETE_ACTION = "testimonial_delete"
     TESTIMONIAL_APPROVE_ACTION = "testimonial_approve"
+
+    MEDIA_ENTITY_TYPE = "MediaAsset"
+    MEDIA_UPLOAD_ACTION = "media_upload"
+    MEDIA_DELETE_ACTION = "media_delete"
+    MEDIA_BULK_DOWNLOAD_ACTION = "media_bulk_download"

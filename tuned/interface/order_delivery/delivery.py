@@ -87,8 +87,17 @@ class OrderDeliveryService:
     ) -> OrderDeliveryResponseDTO:
         delivery_id = str(uuid.uuid4()) # TODO Check on this smells a bit
         all_file_dtos: list[OrderDeliveryFileDTO] = []
-        
-        try:
+
+        try:        
+            # 1. Create the delivery record first (without files) so it exists in DB
+            create_dto = CreateOrderDeliveryDTO(
+                id=delivery_id,
+                order_id=order_id,
+                delivery_files=[],
+            )
+            delivery_resp = self._repo.create_order_delivery(create_dto)
+
+            # 2. Now process and upload files (since the delivery now exists in DB, media.upload_file won't fail)
             all_file_dtos.extend(
                 self._process_and_save_files(order_id, delivery_files, FileType.DELIVERY, delivery_id)
             )
@@ -96,12 +105,10 @@ class OrderDeliveryService:
                 self._process_and_save_files(order_id, plagiarism_reports, FileType.PLAGIARISM_REPORT, delivery_id)
             )
 
-            create_dto = CreateOrderDeliveryDTO(
-                id=delivery_id,
-                order_id=order_id,
-                delivery_files=all_file_dtos,
-            )
-            delivery_resp = self._repo.create_order_delivery(create_dto)
+            # 3. Add the uploaded files to the delivery record
+            if all_file_dtos:
+                add_dto = AddDeliveryFilesDTO(delivery_files=all_file_dtos)
+                delivery_resp = self._repo.add_files(delivery_id, add_dto)
 
             order = self._repos.order.update_order_status(order_id, OrderStatus.COMPLETED_PENDING_REVIEW)
 
@@ -136,7 +143,7 @@ class OrderDeliveryService:
         except Exception as exc:
             self._repo.rollback()
             for f in all_file_dtos:
-                upload_root = current_app.config.get("UPLOAD_ROOT", "/tmp")
+                upload_root = current_app.config.get("UPLOAD_ROOT", current_app.instance_path)
                 abs_path = os.path.join(upload_root, f.file_path)
                 if os.path.exists(abs_path):
                     try:
@@ -207,7 +214,7 @@ class OrderDeliveryService:
         except Exception as exc:
             self._repo.rollback()
             for f in all_file_dtos:
-                upload_root = current_app.config.get("UPLOAD_ROOT", "/tmp")
+                upload_root = current_app.config.get("UPLOAD_ROOT", current_app.instance_path)
                 abs_path = os.path.join(upload_root, f.file_path)
                 if os.path.exists(abs_path):
                     try:
@@ -240,12 +247,13 @@ class OrderDeliveryService:
 
             response = OrderDeliveryResponseDTO.from_model(delivery_resp)
 
+            order = self._repos.order.get_by_id(str(delivery_resp.order_id))
             from tuned.utils.socket_payload import safe_payload
             from tuned.core.events import get_event_bus
             get_event_bus().emit(
                 "delivery.status_changed",
                 {
-                    "client_id": user_id,
+                    "client_id": str(order.client_id),
                     "order_id": str(delivery_resp.order_id),
                     "delivery_id": delivery_id,
                     "delivery": safe_payload(asdict(response)),
@@ -276,6 +284,11 @@ class OrderDeliveryService:
         try:
             delivery = self._repo.get_by_id(delivery_id)
             
+            # soft-delete associated media assets
+            for file in delivery.delivery_files:
+                if file.asset_id:
+                    self._interfaces.media.delete_media(str(file.asset_id))
+
             self._repo.delete(delivery_id, user_id)
 
             self._audit_service.log(ActivityLogCreateDTO(
@@ -290,11 +303,12 @@ class OrderDeliveryService:
 
             self._repo.save()
 
+            order = self._repos.order.get_by_id(str(delivery.order_id))
             from tuned.core.events import get_event_bus
             get_event_bus().emit(
                 "delivery.deleted",
                 {
-                    "client_id": user_id,
+                    "client_id": str(order.client_id),
                     "order_id": str(delivery.order_id),
                     "delivery_id": delivery_id,
                 }

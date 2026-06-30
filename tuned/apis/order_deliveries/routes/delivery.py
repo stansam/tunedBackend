@@ -5,12 +5,14 @@ from typing import Any
 from flask import request
 from flask.views import MethodView
 from flask_login import login_required, current_user
-from marshmallow import ValidationError
+from marshmallow import ValidationError as MarshmallowValidationError
 
 from tuned.core.logging import get_logger
 from tuned.utils.responses import success_response, error_response
 from tuned.utils.dependencies import get_services
 from tuned.utils.auth import get_user_ip, get_user_agent
+from tuned.utils.decorators import admin_required
+from tuned.core.exceptions import NotFound, ValidationError as CoreValidationError
 
 from tuned.apis.order_deliveries.schemas.delivery import UpdateOrderDeliveryStatusSchema
 from tuned.dtos.order_delivery import UpdateOrderDeliveryStatusDTO
@@ -18,7 +20,7 @@ from tuned.dtos.order_delivery import UpdateOrderDeliveryStatusDTO
 logger: logging.Logger = get_logger(__name__)
 
 class CreateDeliveryView(MethodView):
-    decorators = [login_required]
+    decorators = [login_required, admin_required]
 
     def post(self, order_id: str) -> tuple[Any, int]:
         try:
@@ -51,9 +53,15 @@ class CreateDeliveryView(MethodView):
                 message="Delivery created successfully",
                 status=201
             )
+        except NotFound as e:
+            logger.error(f"Failed to create delivery: {e}")
+            return error_response(message="Failed to create delivery. Resource not found.", status=404)
+        except CoreValidationError as e:
+            logger.error(f"Failed to create delivery: {e}")
+            return error_response(message="Failed to create delivery. Invalid data.", status=400)
         except Exception as e:
             logger.error(f"Failed to create delivery: {e}")
-            return error_response(message="Failed to create delivery", status=500)
+            return error_response(message="Failed to create delivery. Server error.", status=500)
 
 
 class GetOrderDeliveriesView(MethodView):
@@ -61,15 +69,29 @@ class GetOrderDeliveriesView(MethodView):
 
     def get(self, order_id: str) -> tuple[Any, int]:
         try:
-            deliveries = get_services().order_delivery.get_deliveries_by_order(order_id)
+            services = get_services()
+            order = services._repos.order.get_by_id(order_id)
+            if not order:
+                logger.error(f"Failed to fetch deliveries: {e}")
+                return error_response(message="Failed to fetch deliveries. Resource not found.", status=404)
+
+            # Access check: Admin or client owning the order
+            if not current_user.is_admin and str(order.client_id) != str(current_user.id):
+                logger.error(f"Failed to fetch deliveries: {e}")
+                return error_response(message="Failed to fetch deliveries. Forbidden.", status=403)
+
+            deliveries = services.order_delivery.get_deliveries_by_order(order_id)
             return success_response(
                 data=[asdict(d) for d in deliveries],
                 message="Deliveries fetched successfully",
                 status=200
             )
+        except NotFound as e:
+            logger.error(f"Failed to fetch deliveries: {e}")
+            return error_response(message="Failed to fetch deliveries. Resource not found.", status=404)
         except Exception as e:
             logger.error(f"Failed to fetch deliveries: {e}")
-            return error_response(message="Failed to fetch deliveries", status=500)
+            return error_response(message="Failed to fetch deliveries. Server error.", status=500)
 
 
 class GetDeliveryByIdView(MethodView):
@@ -77,19 +99,36 @@ class GetDeliveryByIdView(MethodView):
 
     def get(self, delivery_id: str) -> tuple[Any, int]:
         try:
-            delivery = get_services().order_delivery.get_delivery_by_id(delivery_id)
+            services = get_services()
+            delivery = services.order_delivery.get_delivery_by_id(delivery_id)
+            if not delivery:
+                logger.error(f"Failed to fetch delivery: {e}")
+                return error_response(message="Failed to fetch delivery. Resource not found.", status=404)
+
+            # Access check: Admin or client owning the order
+            order = services._repos.order.get_by_id(str(delivery.order_id))
+            if not order:
+                logger.error(f"Failed to fetch delivery: {e}")
+                return error_response(message="Failed to fetch delivery. Resource not found.", status=404)
+
+            if not current_user.is_admin and str(order.client_id) != str(current_user.id):
+                return error_response(message="Forbidden: Access denied", status=403)
+
             return success_response(
                 data=asdict(delivery),
                 message="Delivery fetched successfully",
                 status=200
             )
+        except NotFound as e:
+            logger.error(f"Failed to fetch delivery: {e}")
+            return error_response(message="Failed to fetch delivery. Resource not found.", status=404)
         except Exception as e:
             logger.error(f"Failed to fetch delivery: {e}")
-            return error_response(message="Failed to fetch delivery", status=500)
+            return error_response(message="Failed to fetch delivery. Server error.", status=500)
 
 
 class AddDeliveryFilesView(MethodView):
-    decorators = [login_required]
+    decorators = [login_required, admin_required]
 
     def post(self, delivery_id: str) -> tuple[Any, int]:
         try:
@@ -107,7 +146,8 @@ class AddDeliveryFilesView(MethodView):
 
             delivery = get_services().order_delivery.get_delivery_by_id(delivery_id)
             if not delivery:
-                return error_response(message="Delivery not found", status=404)
+                logger.error(f"Failed to add delivery files: {e}")
+                return error_response(message="Failed to add delivery files. Resource not found.", status=404)
 
             ip_address = get_user_ip() or "127.0.0.1"
             user_agent = get_user_agent() or request.user_agent.string
@@ -127,13 +167,19 @@ class AddDeliveryFilesView(MethodView):
                 message="Files added successfully",
                 status=200
             )
+        except NotFound as e:
+            logger.error(f"Failed to add delivery files: {e}")
+            return error_response(message="Failed to add delivery files. Resource not found.", status=404)
+        except CoreValidationError as e:
+            logger.error(f"Failed to add delivery files: {e}")
+            return error_response(message="Failed to add delivery files. Invalid data.", status=400)
         except Exception as e:
-            logger.error(f"Failed to add files to delivery: {e}")
-            return error_response(message="Failed to add files", status=500)
+            logger.error(f"Failed to add delivery files: {e}")
+            return error_response(message="Failed to add delivery files. Server error.", status=500)
 
 
 class UpdateDeliveryStatusView(MethodView):
-    decorators = [login_required]
+    decorators = [login_required, admin_required]
 
     def patch(self, delivery_id: str) -> tuple[Any, int]:
         try:
@@ -144,7 +190,7 @@ class UpdateDeliveryStatusView(MethodView):
             try:
                 schema_data = UpdateOrderDeliveryStatusSchema().load(data)
                 dto = UpdateOrderDeliveryStatusDTO(**schema_data)
-            except ValidationError as err:
+            except MarshmallowValidationError as err:
                 logger.error(f"Validation failed: {err}")
                 return error_response(message="Validation failed", status=400)
 
@@ -165,13 +211,19 @@ class UpdateDeliveryStatusView(MethodView):
                 message="Delivery status updated successfully",
                 status=200
             )
+        except NotFound as e:
+            logger.error(f"Failed to update delivery status: {e}")
+            return error_response(message="Failed to update delivery status. Resource not found.", status=404)
+        except CoreValidationError as e:
+            logger.error(f"Failed to update delivery status: {e}")
+            return error_response(message="Failed to update delivery status. Invalid data.", status=400)
         except Exception as e:
             logger.error(f"Failed to update delivery status: {e}")
             return error_response(message="Failed to update delivery status", status=500)
 
 
 class MarkClientNotifiedView(MethodView):
-    decorators = [login_required]
+    decorators = [login_required, admin_required]
 
     def patch(self, delivery_id: str) -> tuple[Any, int]:
         try:
@@ -181,13 +233,19 @@ class MarkClientNotifiedView(MethodView):
                 message="Client marked as notified successfully",
                 status=200
             )
+        except NotFound as e:
+            logger.error(f"Failed to mark client as notified: {e}")
+            return error_response(message="Failed to mark client as notified. Resource not found.", status=404)
+        except CoreValidationError as e:
+            logger.error(f"Failed to mark client as notified: {e}")
+            return error_response(message="Failed to mark client as notified. Invalid data.", status=400)
         except Exception as e:
             logger.error(f"Failed to mark client as notified: {e}")
-            return error_response(message="Failed to mark client as notified", status=500)
+            return error_response(message="Failed to mark client as notified. Server error.", status=500)
 
 
 class DeleteDeliveryView(MethodView):
-    decorators = [login_required]
+    decorators = [login_required, admin_required]
 
     def delete(self, delivery_id: str) -> tuple[Any, int]:
         try:
@@ -207,6 +265,12 @@ class DeleteDeliveryView(MethodView):
                 message="Delivery deleted successfully",
                 status=200
             )
+        except NotFound as e:
+            logger.error(f"Failed to delete delivery: {e}")
+            return error_response(message="Failed to delete delivery. Resource not found.", status=404)
+        except CoreValidationError as e:
+            logger.error(f"Failed to delete delivery: {e}")
+            return error_response(message="Failed to delete delivery. Invalid data.", status=400)
         except Exception as e:
             logger.error(f"Failed to delete delivery: {e}")
             return error_response(message="Failed to delete delivery", status=500)

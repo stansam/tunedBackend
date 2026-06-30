@@ -180,6 +180,12 @@ class DeleteOrderDelivery:
             delivery.is_deleted = True
             delivery.deleted_at = datetime.now(timezone.utc)
             delivery.deleted_by = UUID(user_id) if user_id else None
+
+            for file in delivery.delivery_files:
+                file.is_deleted = True
+                file.deleted_at = datetime.now(timezone.utc)
+                file.deleted_by = UUID(user_id) if user_id else None
+
             self.session.flush()
         except NotFound:
             raise

@@ -39,6 +39,7 @@ class TunedNamespace(Namespace):
     - User room management (user_{id}, admin_room)
     - Dashboard subscription / unsubscription
     - Order room join / leave
+    - Chat room join / leave / typing indicators
     - Notification mark-read and unread-count queries
 
     Domain-specific server-push events (order.updated, notification:new, etc.)
@@ -162,6 +163,71 @@ class TunedNamespace(Namespace):
         leave_room(room)
         logger.debug("[Socket] User %s left order room %s", current_user.id, room)
         emit("order:left", {"order_id": str(order_id)})
+
+    # -----------------------------------------------------------------------
+    # Chat room management
+    # -----------------------------------------------------------------------
+
+    @socket_login_required
+    def on_join__chat(self, data: dict[str, Any]) -> None:
+        """
+        Client joins a specific chat room.
+        Validates ownership: only the chat's client or an admin may join.
+        """
+        chat_id = data.get("chatId") or data.get("chat_id")
+        if not chat_id:
+            emit("error", {"code": 400, "message": "chat_id required"})
+            return
+
+        try:
+            from tuned.utils.dependencies import get_services
+            chat = get_services().chat.get_chat_details(
+                str(chat_id), str(current_user.id), getattr(current_user, "is_admin", False)
+            )
+        except Exception:
+            emit("error", {"code": 403, "message": "Forbidden or Chat not found"})
+            return
+
+        room = f"chat_{chat_id}"
+        join_room(room)
+        logger.debug("[Socket] User %s joined chat room %s", current_user.id, room)
+        emit("chat:joined", {"chat_id": str(chat_id)})
+
+    @socket_login_required
+    def on_leave__chat(self, data: dict[str, Any]) -> None:
+        """Client leaves a chat room."""
+        chat_id = data.get("chatId") or data.get("chat_id")
+        if not chat_id:
+            return
+        room = f"chat_{chat_id}"
+        leave_room(room)
+        logger.debug("[Socket] User %s left chat room %s", current_user.id, room)
+        emit("chat:left", {"chat_id": str(chat_id)})
+
+    @socket_login_required
+    def on_chat__typing(self, data: dict[str, Any]) -> None:
+        """Client started typing in a chat."""
+        chat_id = data.get("chatId") or data.get("chat_id")
+        if not chat_id:
+            return
+        room = f"chat_{chat_id}"
+        emit("chat:typing", {
+            "chat_id": str(chat_id),
+            "user_id": str(current_user.id),
+            "username": current_user.username if hasattr(current_user, "username") else "Someone"
+        }, to=room, include_self=False)
+
+    @socket_login_required
+    def on_chat__typing_stop(self, data: dict[str, Any]) -> None:
+        """Client stopped typing in a chat."""
+        chat_id = data.get("chatId") or data.get("chat_id")
+        if not chat_id:
+            return
+        room = f"chat_{chat_id}"
+        emit("chat:typing_stop", {
+            "chat_id": str(chat_id),
+            "user_id": str(current_user.id)
+        }, to=room, include_self=False)
 
     # -----------------------------------------------------------------------
     # Notification events

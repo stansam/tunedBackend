@@ -49,12 +49,15 @@ class ChatEventHandlers:
 
         try:
             from tuned.extensions import socketio
-            # Emit to recipient
-            if recipient_id:
-                socketio.emit("chat:message", socket_payload, to=f"user_{recipient_id}")
-            # Always inform admin room if message from client
+            # Broadcast to the active chat room
+            socketio.emit("chat:message", socket_payload, to=f"chat_{chat_id}")
+            # Inform admin room for new message notifications/counters if message is from client
             if not is_admin:
                 socketio.emit("chat:message", socket_payload, to="admin_room")
+            else:
+                # Inform the specific recipient's room for badge updates
+                if recipient_id:
+                    socketio.emit("chat:message", socket_payload, to=f"user_{recipient_id}")
         except Exception as exc:
             logger.error("[ChatEventHandlers._on_message_sent] Socket emit failed: %r", exc)
 
@@ -110,6 +113,7 @@ class ChatEventHandlers:
 
         try:
             from tuned.extensions import socketio
+            socketio.emit("chat:status_changed", socket_payload, to=f"chat_{chat_id}")
             socketio.emit("chat:status_changed", socket_payload, to=f"user_{user_id}")
             socketio.emit("chat:status_changed", socket_payload, to="admin_room")
         except Exception as exc:
@@ -129,6 +133,7 @@ class ChatEventHandlers:
 
         try:
             from tuned.extensions import socketio
+            socketio.emit("chat:assigned", socket_payload, to=f"chat_{chat_id}")
             socketio.emit("chat:assigned", socket_payload, to=f"user_{user_id}")
             socketio.emit("chat:assigned", socket_payload, to="admin_room")
         except Exception as exc:
@@ -137,7 +142,7 @@ class ChatEventHandlers:
     def _on_message_read(self, payload: EventPayload) -> None:
         chat_id = payload.get("chat_id")
         reader_id = payload.get("reader_id")
-        recipient_id = payload.get("recipient_id")  # This is the sender of the read messages who needs to be informed
+        recipient_id = payload.get("recipient_id")
         message_ids = payload.get("message_ids", [])
 
         socket_payload = {
@@ -148,11 +153,7 @@ class ChatEventHandlers:
 
         try:
             from tuned.extensions import socketio
-            if recipient_id:
-                socketio.emit("chat:read", socket_payload, to=f"user_{recipient_id}")
-            else:
-                # If recipient is admin or not set, notify admin room or everyone in the chat room
-                socketio.emit("chat:read", socket_payload, to="admin_room")
+            socketio.emit("chat:read", socket_payload, to=f"chat_{chat_id}")
         except Exception as exc:
             logger.error("[ChatEventHandlers._on_message_read] Socket emit failed: %r", exc)
 
@@ -173,9 +174,7 @@ class ChatEventHandlers:
 
         try:
             from tuned.extensions import socketio
-            if recipient_id:
-                socketio.emit("chat:message:updated", socket_payload, to=f"user_{recipient_id}")
-            socketio.emit("chat:message:updated", socket_payload, to="admin_room")
+            socketio.emit("chat:message:updated", socket_payload, to=f"chat_{chat_id}")
         except Exception as exc:
             logger.error("[ChatEventHandlers._on_message_edited] Socket emit failed: %r", exc)
 
@@ -192,9 +191,6 @@ class ChatEventHandlers:
 
         try:
             from tuned.extensions import socketio
-            if recipient_id:
-                socketio.emit("chat:message:deleted", socket_payload, to=f"user_{recipient_id}")
-            socketio.emit("chat:message:deleted", socket_payload, to="admin_room")
+            socketio.emit("chat:message:deleted", socket_payload, to=f"chat_{chat_id}")
         except Exception as exc:
             logger.error("[ChatEventHandlers._on_message_deleted] Socket emit failed: %r", exc)
-

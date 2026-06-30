@@ -93,23 +93,28 @@ class ChatResponseDTO(BaseDTO):
     order_id: Optional[str]
     order_number: Optional[str]
     status: str
-    messages: list[ChatMessageResponseDTO]
-    unread_count: int
+    messages: Optional[list[ChatMessageResponseDTO]] = None
+    unread_count: int = 0
 
     @classmethod
-    def from_model(cls, obj: "Chat", current_user_id: Optional[str] = None) -> "ChatResponseDTO":
+    def from_model(cls, obj: "Chat", current_user_id: Optional[str] = None, include_messages: bool = True, unread_count: Optional[int] = None) -> "ChatResponseDTO":
         user_name = (obj.user.get_name() if hasattr(obj.user, 'get_name') else (obj.user.first_name + " " + obj.user.last_name if obj.user.first_name else obj.user.username)) if obj.user else "Client"
         admin_name = ""
         if obj.admin:
             admin_name = obj.admin.get_name() if hasattr(obj.admin, 'get_name') else (obj.admin.first_name + " " + obj.admin.last_name if obj.admin.first_name else obj.admin.username)
         
-        unread = 0
-        for m in obj.messages:
-            if not m.is_read:
-                if current_user_id and str(m.user_id) != str(current_user_id):
-                    unread += 1
-                elif not current_user_id:
-                    unread += 1
+        if unread_count is None:
+            unread_count = 0
+            for m in obj.messages:
+                if not m.is_read:
+                    if current_user_id and str(m.user_id) != str(current_user_id):
+                        unread_count += 1
+                    elif not current_user_id:
+                        unread_count += 1
+
+        messages_dto = None
+        if include_messages:
+            messages_dto = [ChatMessageResponseDTO.from_model(m) for m in obj.messages]
 
         return cls(
             id=str(obj.id),
@@ -121,9 +126,14 @@ class ChatResponseDTO(BaseDTO):
             order_id=str(obj.order_id) if obj.order_id else None,
             order_number=obj.order.order_number if obj.order else None,
             status=obj.status.value if hasattr(obj.status, 'value') else str(obj.status),
-            messages=[ChatMessageResponseDTO.from_model(m) for m in obj.messages],
-            unread_count=unread,
+            messages=messages_dto,
+            unread_count=unread_count,
             created_at=obj.created_at,
             updated_at=obj.updated_at
         )
 
+@dataclass
+class ChatMessagePageDTO:
+    messages: List[ChatMessageResponseDTO]
+    has_more: bool
+    next_cursor: Optional[str]

@@ -1,12 +1,13 @@
 from uuid import UUID
 from sqlalchemy.orm import Session
-from sqlalchemy import select, and_, or_
+from sqlalchemy import select, and_, or_, func
 from tuned.models.communication import Chat, ChatMessage
 from tuned.dtos.communication import CreateChatDTO
 from tuned.repository.exceptions import DatabaseError, NotFound
 from sqlalchemy.exc import SQLAlchemyError
 from tuned.models.enums import ChatStatus
 from typing import Optional, List
+from datetime import datetime, timezone
 
 class ChatRepository:
     def __init__(self, session: Session) -> None:
@@ -134,7 +135,6 @@ class ChatRepository:
 
     def delete_message(self, message_id: str, user_id: str) -> ChatMessage:
         try:
-            from datetime import datetime, timezone
             stmt = select(ChatMessage).where(ChatMessage.id == message_id)
             msg = self.session.scalar(stmt)
             if not msg:
@@ -146,6 +146,51 @@ class ChatRepository:
             return msg
         except SQLAlchemyError as e:
             raise DatabaseError(f"Database error while deleting message: {str(e)}") from e
+
+    def get_unread_counts_for_user(self, user_id: str) -> dict[str, int]:
+        try:
+            stmt = (
+                select(ChatMessage.chat_id, func.count(ChatMessage.id))
+                .where(
+                    and_(
+                        ChatMessage.user_id != user_id,
+                        ChatMessage.is_read == False,
+                        ChatMessage.chat_id.isnot(None)
+                    )
+                )
+                .group_by(ChatMessage.chat_id)
+            )
+            results = self.session.execute(stmt).all()
+            return {str(chat_id): count for chat_id, count in results}
+        except SQLAlchemyError as e:
+            raise DatabaseError(f"Database error while fetching unread counts: {str(e)}") from e
+
+    def get_messages_paginated(self, chat_id: str, before_id: Optional[str] = None, limit: int = 50) -> List[ChatMessage]:
+        try:
+            stmt = select(ChatMessage).where(ChatMessage.chat_id == chat_id)
+            if before_id:
+                before_msg = self.get_message_by_id(before_id)
+                if before_msg:
+                    stmt = stmt.where(ChatMessage.created_at < before_msg.created_at)
+            
+            stmt = stmt.order_by(ChatMessage.created_at.desc()).limit(limit)
+            messages = list(self.session.scalars(stmt).all())
+            messages.reverse()
+            return messages
+        except SQLAlchemyError as e:
+            raise DatabaseError(f"Database error while fetching paginated messages: {str(e)}") from e
+
+    def get_messages_since(self, chat_id: str, after_timestamp: datetime) -> List[ChatMessage]:
+        try:
+            stmt = select(ChatMessage).where(
+                and_(
+                    ChatMessage.chat_id == chat_id,
+                    ChatMessage.created_at > after_timestamp
+                )
+            ).order_by(ChatMessage.created_at.asc())
+            return list(self.session.scalars(stmt).all())
+        except SQLAlchemyError as e:
+            raise DatabaseError(f"Database error while fetching messages since: {str(e)}") from e
 
     def save(self) -> None:
         try:

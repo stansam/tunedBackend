@@ -1,5 +1,6 @@
 from marshmallow import Schema, fields, validate, post_load
 from tuned.dtos.communication import CreateChatDTO, ChatMessageCreateDTO
+from tuned.models.enums import ChatStatus
 
 class CreateChatSchema(Schema):
     subject = fields.String(required=False, allow_none=True, validate=validate.Length(max=255))
@@ -28,7 +29,7 @@ class AssignAdminSchema(Schema):
     admin_id = fields.UUID(required=True)
 
 class ChangeStatusSchema(Schema):
-    status = fields.String(required=True, validate=validate.OneOf(["active", "closed"]))
+    status = fields.String(required=True, validate=validate.OneOf([e.value for e in ChatStatus]))
 
 class EditMessageSchema(Schema):
     content = fields.String(required=True, validate=validate.Length(min=1, max=5000))

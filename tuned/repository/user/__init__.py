@@ -11,6 +11,7 @@ from tuned.repository.user.email_verification import (
 # from tuned.repository.user.referral import GetReferralGrowth
 from tuned.repository.user.alerts import GetActionableAlerts
 from sqlalchemy.orm import Session
+from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
 from tuned.repository.exceptions import DatabaseError
 
@@ -47,6 +48,13 @@ class UserRepository(UserRepositoryProtocol):
     
     def get_actionable_alerts(self, client_id: str) -> list[ActionableAlertDTO]:
         return GetActionableAlerts(self.session).execute(client_id)
+    
+    def get_admin_users(self) -> list[User]:
+        try:
+            stmt = select(User).where(User.is_admin == True)
+            return list(self.session.scalars(stmt).all())
+        except SQLAlchemyError as exc:
+            raise DatabaseError(f"Database error while listing admin users: {exc}") from exc
 
     def save(self) -> None:
         try:

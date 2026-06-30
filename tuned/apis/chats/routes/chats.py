@@ -1,4 +1,6 @@
-from flask import request
+import hmac
+import hashlib
+from flask import request, current_app
 from flask.views import MethodView
 from flask_login import login_required, current_user
 from dataclasses import asdict
@@ -375,3 +377,57 @@ class UploadAttachmentView(MethodView):
         except Exception as e:
             logger.error(f'Chat attachment upload error: {str(e)}')
             return error_response('Failed to upload attachment', status=500)
+
+
+class TawkToHashView(MethodView):
+    decorators = [login_required]
+
+    def get(self):
+        secret_key = current_app.config.get("TAWKTO_SECRET_KEY")
+        if not secret_key:
+            secret_key = current_app.config.get("SECRET_KEY") or "dev_tawkto_secret"
+        
+        user_id = str(current_user.id)
+        hash_digest = hmac.new(
+            secret_key.encode("utf-8"),
+            user_id.encode("utf-8"),
+            hashlib.sha256
+        ).hexdigest()
+        
+        return success_response(data={
+            "hash": hash_digest,
+            "property_id": current_app.config.get("TAWKTO_PROPERTY_ID") or "default_property_id",
+            "widget_id": current_app.config.get("TAWKTO_WIDGET_ID") or "default_widget_id",
+            "user_id": user_id
+        }, status=200)
+
+
+class TawkToWebhookView(MethodView):
+    def post(self):
+        signature = request.headers.get("X-Tawk-Signature")
+        if not signature:
+            logger.warning("[TawkToWebhook] Missing X-Tawk-Signature header")
+            return error_response("Missing signature", status=401)
+            
+        secret_key = current_app.config.get("TAWKTO_SECRET_KEY")
+        if not secret_key:
+            secret_key = current_app.config.get("SECRET_KEY") or "dev_tawkto_secret"
+            
+        body = request.get_data()
+        expected = hmac.new(
+            secret_key.encode("utf-8"),
+            body,
+            hashlib.sha1
+        ).hexdigest()
+        
+        if not hmac.compare_digest(expected, signature):
+            logger.warning("[TawkToWebhook] Signature mismatch")
+            return error_response("Signature mismatch", status=401)
+            
+        data = request.get_json() or {}
+        event = data.get("event")
+        
+        if event == "chat_started":
+            logger.info("[TawkToWebhook] Chat started: %r", data)
+            
+        return success_response(data={"success": True}, status=200)

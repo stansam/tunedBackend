@@ -77,3 +77,7 @@ class BaseConfig:
     PESAPAL_SANDBOX: bool = os.environ.get('PESAPAL_SANDBOX', 'True').lower() == 'true'
     PESAPAL_IPN_URL: str = os.environ.get('PESAPAL_IPN_URL', 'http://localhost:5000/api/payments/pesapal/ipn')
     PESAPAL_CALLBACK_URL: str = os.environ.get('PESAPAL_CALLBACK_URL', 'http://localhost:3000/order/checkout/pesapal-bridge')
+
+    TAWKTO_PROPERTY_ID: Optional[str] = os.environ.get('TAWKTO_PROPERTY_ID')
+    TAWKTO_WIDGET_ID: Optional[str] = os.environ.get('TAWKTO_WIDGET_ID')
+    TAWKTO_SECRET_KEY: Optional[str] = os.environ.get('TAWKTO_SECRET_KEY')

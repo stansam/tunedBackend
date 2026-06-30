@@ -2,7 +2,7 @@ from tuned.apis.chats.routes.chats import (
     ListClientChatsView, CreateChatView, GetChatDetailsView, SendMessageView,
     MarkChatReadView, AdminListChatsView, AdminAssignView, AdminStatusView,
     AdminListAgentsView, EditMessageView, DeleteMessageView, UploadAttachmentView,
-    GetChatMessagesView
+    GetChatMessagesView, TawkToHashView, TawkToWebhookView
 )
 
 CHAT_ROUTES = [
@@ -18,5 +18,7 @@ CHAT_ROUTES = [
     {"url_rule": "/admin/agents", "view_func": AdminListAgentsView.as_view("admin_list_agents"), "methods": ["GET"]},
     {"url_rule": "/<string:chat_id>/messages/<string:message_id>", "view_func": EditMessageView.as_view("edit_message"), "methods": ["PATCH"]},
     {"url_rule": "/<string:chat_id>/messages/<string:message_id>", "view_func": DeleteMessageView.as_view("delete_message"), "methods": ["DELETE"]},
-    {"url_rule": "/<string:chat_id>/attachments", "view_func": UploadAttachmentView.as_view("upload_attachment"), "methods": ["POST"]}
+    {"url_rule": "/<string:chat_id>/attachments", "view_func": UploadAttachmentView.as_view("upload_attachment"), "methods": ["POST"]},
+    {"url_rule": "/tawkto-hash", "view_func": TawkToHashView.as_view("tawkto_hash"), "methods": ["GET"]},
+    {"url_rule": "/tawkto-webhook", "view_func": TawkToWebhookView.as_view("tawkto_webhook"), "methods": ["POST"]}
 ]

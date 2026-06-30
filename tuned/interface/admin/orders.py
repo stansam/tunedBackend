@@ -89,11 +89,13 @@ class AdminOrderService:
 
         try:
             order = self._repos.order.get_by_id(order_id)
+            admin = self._repos.user.get_admin_user()
             from tuned.core.events import get_event_bus
             get_event_bus().emit("order.revision_status_changed", {
                 "order_id":     str(req.order_id),
                 "order_number": order.order_number,
                 "client_id":    str(order.client_id),
+                "admin_id":     str(admin.id),
                 "revision_id":  str(req.id),
                 "new_status":   new_status.value,
                 "priority":     req.priority.value if hasattr(req.priority, "value") else str(req.priority),
@@ -117,11 +119,13 @@ class AdminOrderService:
         self._repos.session.commit()
         try:
             order = self._repos.order.get_by_id(order_id)
+            admin = self._repos.user.get_admin_user()
             from tuned.core.events import get_event_bus
             get_event_bus().emit("order.deadline_extension_requested", {
-                "client_id": str(order.client_id),
-                "order_id": order_id,
-                "order_number": order.order_number,
+                "client_id":       str(order.client_id),
+                "admin_id":        str(admin.id),
+                "order_id":        str(order.id),
+                "order_number":    order.order_number,
                 "requested_hours": requested_hours,
             })
         except Exception as exc:

@@ -117,6 +117,7 @@ class OrderEventHandlers:
 
     def _on_created(self, payload: EventPayload) -> None:
         client_id    = payload.get("client_id")
+        admin_id     = payload.get("admin_id")
         order_number = payload.get("order_number", "")
 
         try:
@@ -127,6 +128,14 @@ class OrderEventHandlers:
                 title="New Order Placed",
                 message=f"Order {order_number} has been created successfully.",
                 notification_type=NotificationType.SUCCESS.value.upper(),
+                action_url=f"/client/orders/{order_number}",
+            )
+            create_in_app_notification.delay(
+                user_id=str(admin_id),
+                title="New Order Placed",
+                message=f"Order {order_number} has been created successfully.",
+                notification_type=NotificationType.SUCCESS.value.upper(),
+                action_url=f"/admin/orders/{order_number}",
             )
         except Exception as exc:
             logger.error(
@@ -165,6 +174,9 @@ class OrderEventHandlers:
     def _on_comment_created(self, payload: EventPayload) -> None:
         result   = payload.get("result")
         order_id  = payload.get("order_id")
+        order_number = payload.get("order_number")
+        client_id = payload.get("client_id")
+        admin_id = payload.get("admin_id")
         try:
             from tuned.extensions import socketio
             from tuned.utils.socket_payload import safe_payload
@@ -176,6 +188,27 @@ class OrderEventHandlers:
         except Exception as exc:
             logger.error(
                 "[OrderEventHandlers._on_comment_created] Socket emit failed: %r", exc
+            )
+        try:
+            from tuned.tasks.notifications import create_in_app_notification
+            from tuned.models.enums import NotificationType
+            create_in_app_notification.delay(
+                user_id=str(client_id),
+                title="Comment added to order",
+                message=f"Order {order_number} has been updated.",
+                notification_type=NotificationType.INFO.value.upper(),
+                action_url=f"/client/orders/{order_number}",
+            )
+            create_in_app_notification.delay(
+                user_id=str(admin_id),
+                title="Comment added to order",
+                message=f"Comment added to order {order_number} by client.",
+                notification_type=NotificationType.INFO.value.upper(),
+                action_url=f"/admin/orders/{order_number}?tab=activity",
+            )
+        except Exception as exc:
+            logger.error(
+                "[OrderEventHandlers._on_comment_created] Notification task failed: %r", exc
             )
     
     def _on_comment_updated(self, payload: EventPayload) -> None:
@@ -213,8 +246,31 @@ class OrderEventHandlers:
     def _on_revision_requested(self, payload: EventPayload) -> None:
         order_number = payload.get("order_number", "")
         order_id     = payload.get("order_id")
+        admin_id     = payload.get("admin_id")
         client_id    = payload.get("client_id")
         revision_id  = payload.get("revision_id")
+
+        try:
+            from tuned.tasks.notifications import create_in_app_notification
+            from tuned.models.enums import NotificationType
+            create_in_app_notification.delay(
+                user_id=str(client_id),
+                title="Order Revision Requested",
+                message=f"Order {order_number} has been updated.",
+                notification_type=NotificationType.SUCCESS.value.upper(),
+                action_url=f"/client/orders/{order_number}",
+            )
+            create_in_app_notification.delay(
+                user_id=str(admin_id),
+                title="Order Revision Requested",
+                message=f"Order {order_number} has been updated.",
+                notification_type=NotificationType.INFO.value.upper(),
+                action_url=f"/admin/orders/{order_number}",
+            )
+        except Exception as exc:
+            logger.error(
+                "[OrderEventHandlers._on_revision_requested] Notification task failed: %r", exc
+            )
 
         try:
             from tuned.extensions import socketio
@@ -225,14 +281,15 @@ class OrderEventHandlers:
             }, to="admin_room")
         except Exception as exc:
             logger.error("[OrderEventHandlers._on_revision_requested] Admin socket failed: %r", exc)
+        
 
     def _on_revision_status_changed(self, payload: EventPayload) -> None:
         client_id    = payload.get("client_id")
+        admin_id     = payload.get("admin_id")
         order_number = payload.get("order_number", "")
         new_status   = payload.get("new_status", "")
         order_id     = payload.get("order_id")
         revision_id  = payload.get("revision_id")
-
         try:
             from tuned.extensions import socketio
             socketio.emit("order:revision:status_changed", {
@@ -250,6 +307,7 @@ class OrderEventHandlers:
 
         try:
             from tuned.tasks.notifications import create_in_app_notification
+            from tuned.models.enums import NotificationType
             status_messages = {
                 "in_progress": f"Your revision request for Order {order_number} is being worked on.",
                 "completed":   f"Revision for Order {order_number} is complete. A new delivery has been made.",
@@ -261,8 +319,15 @@ class OrderEventHandlers:
                 user_id=str(client_id),
                 title="Revision Request Updated",
                 message=message,
-                notification_type="info",
+                notification_type=NotificationType.INFO.value.upper(),
                 action_url=f"/client/orders/{order_number}",
+            )
+            create_in_app_notification.delay(
+                user_id=str(admin_id),
+                title="Revision Status Changed",
+                message=f"Order {order_number} has been updated.",
+                notification_type=NotificationType.INFO.value.upper(),
+                action_url=f"/admin/orders/{order_number}",
             )
         except Exception as exc:
             logger.error("[OrderEventHandlers._on_revision_status_changed] Notification failed: %r", exc)

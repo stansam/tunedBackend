@@ -306,3 +306,5 @@ class UserService:
         ))
         self._repo.save()
         return {"profile_pic_url": user.get_profile_pic_url()}
+    def get_admin_user(self) -> User:
+        return self._repo.get_admin_user()

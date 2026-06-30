@@ -205,13 +205,15 @@ class OrderService:
                 ))
             except Exception as audit_exc:
                 logger.error("[OrderService.create_order] Audit failed: %r", audit_exc)
-
+            admin = self._interfaces.user.get_admin_user()
+            admin_id = str(admin.id)
             # 9. Emit event
             try:
                 from tuned.core.events import get_event_bus
                 get_event_bus().emit("order.created", {
                     "order_id": str(order.id),
                     "client_id": user_id,
+                    "admin_id": admin_id,
                     "order_number": order.order_number,
                 })
             except Exception as event_exc:
@@ -402,10 +404,11 @@ class OrderService:
     #     return [OrderCommentResponseDTO.from_model(c) for c in comments]
 
     def create_order_comment(self, order_id: str, user_id: str, dto: CreateCommentRequestDTO, is_admin: bool, ip: str, ua: str) -> OrderCommentResponseDTO:
+        order: Order | None = None
         if not is_admin:
-            self._repo.get_order_by_id_for_client(order_id, user_id)  # auth check
+            order = self._repo.get_order_by_id_for_client(order_id, user_id)  # auth check
         else:
-            self._repo.get_by_id(order_id)
+            order = self._repo.get_by_id(order_id)
         dto.order_id = order_id
         comment = self._repo.create_order_comment(order_id, user_id, dto.content)
         if dto.attachment_ids:
@@ -415,9 +418,18 @@ class OrderService:
             from dataclasses import asdict
             self._repo.save()
             result = OrderCommentResponseDTO.from_model(comment)
+            admin = self._interfaces.user.get_admin_user()
+            order_number = None
+            client_id = None
+            if order is not None:
+                order_number = order.order_number
+                client_id = str(order.client_id)
             payload = {
                 "result": asdict(result),
-                "order_id": order_id
+                "order_id": order_id,
+                "order_number": order_number,
+                "client_id": client_id,
+                "admin_id": str(admin.id),
             }
             get_event_bus().emit("order.comment", payload)
             return result
